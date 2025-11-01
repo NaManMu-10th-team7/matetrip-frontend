@@ -11,24 +11,24 @@ interface HeaderProps {
   onLogoClick: () => void;
 }
 
-export function Header({ 
-  isLoggedIn, 
-  onLoginClick, 
-  onLogoutClick, 
-  onProfileClick, 
+export function Header({
+  isLoggedIn,
+  onLoginClick,
+  onLogoutClick,
+  onProfileClick,
   onCreatePost,
-  onLogoClick 
+  onLogoClick
 }: HeaderProps) {
   return (
     <header className="bg-white border-b sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <button 
+          <button
             onClick={onLogoClick}
             className="flex items-center gap-2 hover:opacity-80 transition-opacity"
           >
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <Map className="w-5 h-5 text-white" />
+              <Map className="logo w-5 h-5 text-white" />
             </div>
             <span className="text-xl text-gray-900">TripTogether</span>
           </button>
@@ -42,21 +42,21 @@ export function Header({
                     3
                   </Badge>
                 </button>
-                
+
                 <Button onClick={onCreatePost} className="gap-2 bg-blue-600 hover:bg-blue-700">
                   <Plus className="w-4 h-4" />
                   <span className="hidden sm:inline">게시물 작성</span>
                 </Button>
 
-                <button 
+                <button
                   onClick={onProfileClick}
                   className="w-8 h-8 bg-gray-200 rounded-full overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all"
                 >
                   <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500" />
                 </button>
 
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   onClick={onLogoutClick}
                   className="gap-2 text-gray-600"
                 >
@@ -67,7 +67,7 @@ export function Header({
             )}
 
             {!isLoggedIn && (
-              <Button 
+              <Button
                 onClick={onLoginClick}
                 className="gap-2 bg-blue-600 hover:bg-blue-700"
               >

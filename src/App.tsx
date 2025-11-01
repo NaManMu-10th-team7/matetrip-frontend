@@ -14,9 +14,12 @@ import { ReviewPage } from './components/ReviewPage';
 type View = 'main' | 'search' | 'postDetail' | 'workspace' | 'profile' | 'review' | 'login' | 'signup';
 
 export default function App() {
+  // 현재 랜더링할 페이지
   const [currentView, setCurrentView] = useState<View>('main');
+  // 유저의 로그인 상태
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [showCreatePost, setShowCreatePost] = useState(false);
+  //모달
+  const [showCreatePost, setShowCreatePost] = useState(false)
   const [showEditPost, setShowEditPost] = useState(false);
   
   // Navigation states
