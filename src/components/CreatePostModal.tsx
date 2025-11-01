@@ -10,7 +10,18 @@ interface CreatePostModalProps {
   onClose: () => void;
 }
 
-const KEYWORD_OPTIONS = ['힐링', '액티브', '맛집투어', '사진', '자연', '도시', '해변', '산', '카페', '쇼핑'];
+const KEYWORD_OPTIONS = [
+  '힐링',
+  '액티브',
+  '맛집투어',
+  '사진',
+  '자연',
+  '도시',
+  '해변',
+  '산',
+  '카페',
+  '쇼핑',
+];
 
 export function CreatePostModal({ onClose }: CreatePostModalProps) {
   const [formData, setFormData] = useState({
@@ -24,9 +35,9 @@ export function CreatePostModal({ onClose }: CreatePostModalProps) {
   const [selectedKeywords, setSelectedKeywords] = useState<string[]>([]);
 
   const toggleKeyword = (keyword: string) => {
-    setSelectedKeywords(prev =>
+    setSelectedKeywords((prev) =>
       prev.includes(keyword)
-        ? prev.filter(k => k !== keyword)
+        ? prev.filter((k) => k !== keyword)
         : [...prev, keyword]
     );
   };
@@ -60,7 +71,9 @@ export function CreatePostModal({ onClose }: CreatePostModalProps) {
               id="title"
               placeholder="예) 제주도 힐링 여행 같이 가실 분 🌊"
               value={formData.title}
-              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, title: e.target.value }))
+              }
               className="mt-2"
               required
             />
@@ -73,7 +86,12 @@ export function CreatePostModal({ onClose }: CreatePostModalProps) {
               id="description"
               placeholder="여행 계획과 동행에게 바라는 점을 자유롭게 작성해주세요."
               value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  description: e.target.value,
+                }))
+              }
               className="mt-2 min-h-32"
               required
             />
@@ -90,7 +108,12 @@ export function CreatePostModal({ onClose }: CreatePostModalProps) {
                 id="startDate"
                 type="date"
                 value={formData.startDate}
-                onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    startDate: e.target.value,
+                  }))
+                }
                 className="mt-2"
                 required
               />
@@ -104,7 +127,9 @@ export function CreatePostModal({ onClose }: CreatePostModalProps) {
                 id="endDate"
                 type="date"
                 value={formData.endDate}
-                onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, endDate: e.target.value }))
+                }
                 className="mt-2"
                 required
               />
@@ -121,7 +146,9 @@ export function CreatePostModal({ onClose }: CreatePostModalProps) {
               id="location"
               placeholder="예) 제주도"
               value={formData.location}
-              onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, location: e.target.value }))
+              }
               className="mt-2"
               required
             />
@@ -129,7 +156,10 @@ export function CreatePostModal({ onClose }: CreatePostModalProps) {
 
           {/* Max Participants */}
           <div>
-            <Label htmlFor="maxParticipants" className="flex items-center gap-2">
+            <Label
+              htmlFor="maxParticipants"
+              className="flex items-center gap-2"
+            >
               <Users className="w-4 h-4" />
               최대 인원 (본인 포함)
             </Label>
@@ -139,7 +169,12 @@ export function CreatePostModal({ onClose }: CreatePostModalProps) {
               min="2"
               max="10"
               value={formData.maxParticipants}
-              onChange={(e) => setFormData(prev => ({ ...prev, maxParticipants: parseInt(e.target.value) }))}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  maxParticipants: parseInt(e.target.value),
+                }))
+              }
               className="mt-2"
               required
             />
@@ -155,7 +190,9 @@ export function CreatePostModal({ onClose }: CreatePostModalProps) {
               {KEYWORD_OPTIONS.map((keyword) => (
                 <Badge
                   key={keyword}
-                  variant={selectedKeywords.includes(keyword) ? 'default' : 'outline'}
+                  variant={
+                    selectedKeywords.includes(keyword) ? 'default' : 'outline'
+                  }
                   className={`cursor-pointer transition-colors ${
                     selectedKeywords.includes(keyword)
                       ? 'bg-blue-600 hover:bg-blue-700'
@@ -175,7 +212,7 @@ export function CreatePostModal({ onClose }: CreatePostModalProps) {
           <Button variant="outline" onClick={onClose} className="flex-1">
             취소
           </Button>
-          <Button 
+          <Button
             onClick={handleSubmit}
             className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
           >

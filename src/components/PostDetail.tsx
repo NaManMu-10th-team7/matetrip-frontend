@@ -1,5 +1,15 @@
 import { useState } from 'react';
-import { ArrowLeft, MapPin, Calendar, Users, Thermometer, Edit, Trash2, Check, X } from 'lucide-react';
+import {
+  ArrowLeft,
+  MapPin,
+  Calendar,
+  Users,
+  Thermometer,
+  Edit,
+  Trash2,
+  Check,
+  X,
+} from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Card } from './ui/card';
@@ -24,7 +34,8 @@ const MOCK_POST = {
     temp: 36.5,
     travelStyle: ['힐링', '자연', '맛집투어'],
   },
-  image: 'https://images.unsplash.com/photo-1614088459293-5669fadc3448?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0cmF2ZWwlMjBkZXN0aW5hdGlvbnxlbnwxfHx8fDE3NjE4NjQwNzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
+  image:
+    'https://images.unsplash.com/photo-1614088459293-5669fadc3448?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0cmF2ZWwlMjBkZXN0aW5hdGlvbnxlbnwxfHx8fDE3NjE4NjQwNzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
   date: '2025.11.15 - 11.18',
   location: '제주도',
   participants: 3,
@@ -48,10 +59,15 @@ const MOCK_POST = {
   ],
 };
 
-export function PostDetail({ postId, isLoggedIn, onJoinWorkspace, onEditPost }: PostDetailProps) {
+export function PostDetail({
+  postId,
+  isLoggedIn,
+  onJoinWorkspace,
+  onEditPost,
+}: PostDetailProps) {
   const [hasApplied, setHasApplied] = useState(false);
   const [isAccepted, setIsAccepted] = useState(false);
-  
+
   // 현재 사용자가 작성자인지 확인 (실제로는 로그인 정보와 비교)
   const isAuthor = true; // Mock
 
@@ -75,8 +91,8 @@ export function PostDetail({ postId, isLoggedIn, onJoinWorkspace, onEditPost }: 
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <Button 
-        variant="ghost" 
+      <Button
+        variant="ghost"
         className="mb-6 gap-2"
         onClick={() => window.history.back()}
       >
@@ -94,11 +110,9 @@ export function PostDetail({ postId, isLoggedIn, onJoinWorkspace, onEditPost }: 
               alt={MOCK_POST.title}
               className="w-full h-full object-cover"
             />
-            <Badge 
+            <Badge
               className={`absolute top-4 right-4 ${
-                MOCK_POST.status === '모집중' 
-                  ? 'bg-blue-600' 
-                  : 'bg-gray-600'
+                MOCK_POST.status === '모집중' ? 'bg-blue-600' : 'bg-gray-600'
               }`}
             >
               {MOCK_POST.status}
@@ -108,13 +122,15 @@ export function PostDetail({ postId, isLoggedIn, onJoinWorkspace, onEditPost }: 
           {/* Title and Author */}
           <div className="mb-6">
             <h1 className="text-gray-900 mb-4">{MOCK_POST.title}</h1>
-            
+
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full" />
                 <div>
                   <div className="text-gray-900">{MOCK_POST.author.name}</div>
-                  <div className={`text-sm flex items-center gap-1 ${getTempColor(MOCK_POST.author.temp)}`}>
+                  <div
+                    className={`text-sm flex items-center gap-1 ${getTempColor(MOCK_POST.author.temp)}`}
+                  >
                     <Thermometer className="w-4 h-4" />
                     매너온도 {MOCK_POST.author.temp}°C
                   </div>
@@ -123,11 +139,20 @@ export function PostDetail({ postId, isLoggedIn, onJoinWorkspace, onEditPost }: 
 
               {isAuthor && (
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={onEditPost} className="gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onEditPost}
+                    className="gap-2"
+                  >
                     <Edit className="w-4 h-4" />
                     수정
                   </Button>
-                  <Button variant="outline" size="sm" className="gap-2 text-red-600 hover:text-red-700">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 text-red-600 hover:text-red-700"
+                  >
                     <Trash2 className="w-4 h-4" />
                     삭제
                   </Button>
@@ -149,23 +174,32 @@ export function PostDetail({ postId, isLoggedIn, onJoinWorkspace, onEditPost }: 
           {/* Description */}
           <div className="mb-8">
             <h3 className="text-gray-900 mb-4">여행 소개</h3>
-            <p className="text-gray-700 whitespace-pre-line">{MOCK_POST.description}</p>
+            <p className="text-gray-700 whitespace-pre-line">
+              {MOCK_POST.description}
+            </p>
           </div>
 
           <Separator className="my-6" />
 
           {/* Current Members */}
           <div>
-            <h3 className="text-gray-900 mb-4">참여중인 동행 ({MOCK_POST.currentMembers.length}명)</h3>
+            <h3 className="text-gray-900 mb-4">
+              참여중인 동행 ({MOCK_POST.currentMembers.length}명)
+            </h3>
             <div className="space-y-3">
               {MOCK_POST.currentMembers.map((member) => (
-                <div key={member.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <div
+                  key={member.id}
+                  className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
+                >
                   <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full" />
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <span className="text-gray-900">{member.name}</span>
                       {member.isAuthor && (
-                        <Badge variant="secondary" className="text-xs">방장</Badge>
+                        <Badge variant="secondary" className="text-xs">
+                          방장
+                        </Badge>
                       )}
                     </div>
                     <div className={`text-sm ${getTempColor(member.temp)}`}>
@@ -182,35 +216,46 @@ export function PostDetail({ postId, isLoggedIn, onJoinWorkspace, onEditPost }: 
             <>
               <Separator className="my-6" />
               <div>
-                <h3 className="text-gray-900 mb-4">동행 신청 ({MOCK_POST.pendingRequests.length}명)</h3>
+                <h3 className="text-gray-900 mb-4">
+                  동행 신청 ({MOCK_POST.pendingRequests.length}명)
+                </h3>
                 <div className="space-y-3">
                   {MOCK_POST.pendingRequests.map((request) => (
-                    <div key={request.id} className="flex items-center gap-3 p-3 border rounded-lg">
+                    <div
+                      key={request.id}
+                      className="flex items-center gap-3 p-3 border rounded-lg"
+                    >
                       <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full" />
                       <div className="flex-1">
                         <div className="text-gray-900 mb-1">{request.name}</div>
                         <div className="flex gap-1 mb-2">
                           {request.travelStyle.map((style) => (
-                            <Badge key={style} variant="outline" className="text-xs">
+                            <Badge
+                              key={style}
+                              variant="outline"
+                              className="text-xs"
+                            >
                               {style}
                             </Badge>
                           ))}
                         </div>
-                        <div className={`text-sm ${getTempColor(request.temp)}`}>
+                        <div
+                          className={`text-sm ${getTempColor(request.temp)}`}
+                        >
                           매너온도 {request.temp}°C
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           onClick={() => handleAcceptRequest(request.id)}
                           className="gap-1 bg-green-600 hover:bg-green-700"
                         >
                           <Check className="w-4 h-4" />
                           수락
                         </Button>
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           variant="outline"
                           onClick={() => handleRejectRequest(request.id)}
                           className="gap-1"
@@ -231,7 +276,7 @@ export function PostDetail({ postId, isLoggedIn, onJoinWorkspace, onEditPost }: 
         <div className="lg:col-span-1">
           <Card className="p-6 sticky top-24">
             <h3 className="text-gray-900 mb-4">여행 정보</h3>
-            
+
             <div className="space-y-4 mb-6">
               <div className="flex items-center gap-3 text-gray-700">
                 <Calendar className="w-5 h-5 text-gray-400" />
@@ -240,7 +285,7 @@ export function PostDetail({ postId, isLoggedIn, onJoinWorkspace, onEditPost }: 
                   <div>{MOCK_POST.date}</div>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-3 text-gray-700">
                 <MapPin className="w-5 h-5 text-gray-400" />
                 <div>
@@ -248,12 +293,14 @@ export function PostDetail({ postId, isLoggedIn, onJoinWorkspace, onEditPost }: 
                   <div>{MOCK_POST.location}</div>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-3 text-gray-700">
                 <Users className="w-5 h-5 text-gray-400" />
                 <div>
                   <div className="text-sm text-gray-500">모집 인원</div>
-                  <div>{MOCK_POST.participants} / {MOCK_POST.maxParticipants}명</div>
+                  <div>
+                    {MOCK_POST.participants} / {MOCK_POST.maxParticipants}명
+                  </div>
                 </div>
               </div>
             </div>
@@ -274,25 +321,22 @@ export function PostDetail({ postId, isLoggedIn, onJoinWorkspace, onEditPost }: 
             {isLoggedIn && !isAuthor && (
               <>
                 {!hasApplied && !isAccepted && (
-                  <Button 
+                  <Button
                     onClick={handleApply}
                     className="w-full bg-blue-600 hover:bg-blue-700"
                   >
                     동행 신청하기
                   </Button>
                 )}
-                
+
                 {hasApplied && !isAccepted && (
-                  <Button 
-                    disabled
-                    className="w-full bg-gray-400"
-                  >
+                  <Button disabled className="w-full bg-gray-400">
                     신청 대기중
                   </Button>
                 )}
-                
+
                 {isAccepted && (
-                  <Button 
+                  <Button
                     onClick={() => onJoinWorkspace(postId)}
                     className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                   >
@@ -303,7 +347,7 @@ export function PostDetail({ postId, isLoggedIn, onJoinWorkspace, onEditPost }: 
             )}
 
             {isAuthor && (
-              <Button 
+              <Button
                 onClick={() => onJoinWorkspace(postId)}
                 className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
               >
@@ -312,10 +356,7 @@ export function PostDetail({ postId, isLoggedIn, onJoinWorkspace, onEditPost }: 
             )}
 
             {!isLoggedIn && (
-              <Button 
-                disabled
-                className="w-full"
-              >
+              <Button disabled className="w-full">
                 로그인 후 신청 가능
               </Button>
             )}

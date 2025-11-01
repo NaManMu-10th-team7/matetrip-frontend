@@ -11,7 +11,18 @@ interface EditPostModalProps {
   onClose: () => void;
 }
 
-const KEYWORD_OPTIONS = ['힐링', '액티브', '맛집투어', '사진', '자연', '도시', '해변', '산', '카페', '쇼핑'];
+const KEYWORD_OPTIONS = [
+  '힐링',
+  '액티브',
+  '맛집투어',
+  '사진',
+  '자연',
+  '도시',
+  '해변',
+  '산',
+  '카페',
+  '쇼핑',
+];
 
 // Mock data - 실제로는 postId로 데이터를 가져옴
 const MOCK_POST_DATA = {
@@ -26,12 +37,14 @@ const MOCK_POST_DATA = {
 
 export function EditPostModal({ postId, onClose }: EditPostModalProps) {
   const [formData, setFormData] = useState(MOCK_POST_DATA);
-  const [selectedKeywords, setSelectedKeywords] = useState<string[]>(MOCK_POST_DATA.keywords);
+  const [selectedKeywords, setSelectedKeywords] = useState<string[]>(
+    MOCK_POST_DATA.keywords
+  );
 
   const toggleKeyword = (keyword: string) => {
-    setSelectedKeywords(prev =>
+    setSelectedKeywords((prev) =>
       prev.includes(keyword)
-        ? prev.filter(k => k !== keyword)
+        ? prev.filter((k) => k !== keyword)
         : [...prev, keyword]
     );
   };
@@ -64,7 +77,9 @@ export function EditPostModal({ postId, onClose }: EditPostModalProps) {
             <Input
               id="title"
               value={formData.title}
-              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, title: e.target.value }))
+              }
               className="mt-2"
               required
             />
@@ -76,7 +91,12 @@ export function EditPostModal({ postId, onClose }: EditPostModalProps) {
             <Textarea
               id="description"
               value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  description: e.target.value,
+                }))
+              }
               className="mt-2 min-h-32"
               required
             />
@@ -93,7 +113,12 @@ export function EditPostModal({ postId, onClose }: EditPostModalProps) {
                 id="startDate"
                 type="date"
                 value={formData.startDate}
-                onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    startDate: e.target.value,
+                  }))
+                }
                 className="mt-2"
                 required
               />
@@ -107,7 +132,9 @@ export function EditPostModal({ postId, onClose }: EditPostModalProps) {
                 id="endDate"
                 type="date"
                 value={formData.endDate}
-                onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, endDate: e.target.value }))
+                }
                 className="mt-2"
                 required
               />
@@ -123,7 +150,9 @@ export function EditPostModal({ postId, onClose }: EditPostModalProps) {
             <Input
               id="location"
               value={formData.location}
-              onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, location: e.target.value }))
+              }
               className="mt-2"
               required
             />
@@ -131,7 +160,10 @@ export function EditPostModal({ postId, onClose }: EditPostModalProps) {
 
           {/* Max Participants */}
           <div>
-            <Label htmlFor="maxParticipants" className="flex items-center gap-2">
+            <Label
+              htmlFor="maxParticipants"
+              className="flex items-center gap-2"
+            >
               <Users className="w-4 h-4" />
               최대 인원 (본인 포함)
             </Label>
@@ -141,7 +173,12 @@ export function EditPostModal({ postId, onClose }: EditPostModalProps) {
               min="2"
               max="10"
               value={formData.maxParticipants}
-              onChange={(e) => setFormData(prev => ({ ...prev, maxParticipants: parseInt(e.target.value) }))}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  maxParticipants: parseInt(e.target.value),
+                }))
+              }
               className="mt-2"
               required
             />
@@ -157,7 +194,9 @@ export function EditPostModal({ postId, onClose }: EditPostModalProps) {
               {KEYWORD_OPTIONS.map((keyword) => (
                 <Badge
                   key={keyword}
-                  variant={selectedKeywords.includes(keyword) ? 'default' : 'outline'}
+                  variant={
+                    selectedKeywords.includes(keyword) ? 'default' : 'outline'
+                  }
                   className={`cursor-pointer transition-colors ${
                     selectedKeywords.includes(keyword)
                       ? 'bg-blue-600 hover:bg-blue-700'
@@ -177,7 +216,7 @@ export function EditPostModal({ postId, onClose }: EditPostModalProps) {
           <Button variant="outline" onClick={onClose} className="flex-1">
             취소
           </Button>
-          <Button 
+          <Button
             onClick={handleSubmit}
             className="flex-1 bg-blue-600 hover:bg-blue-700"
           >

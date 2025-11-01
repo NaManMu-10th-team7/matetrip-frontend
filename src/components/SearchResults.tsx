@@ -15,7 +15,8 @@ const MOCK_SEARCH_RESULTS = [
     title: '제주도 힐링 여행 같이 가실 분 🌊',
     author: '여행러버',
     authorTemp: 36.5,
-    image: 'https://images.unsplash.com/photo-1614088459293-5669fadc3448?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0cmF2ZWwlMjBkZXN0aW5hdGlvbnxlbnwxfHx8fDE3NjE4NjQwNzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
+    image:
+      'https://images.unsplash.com/photo-1614088459293-5669fadc3448?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0cmF2ZWwlMjBkZXN0aW5hdGlvbnxlbnwxfHx8fDE3NjE4NjQwNzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
     date: '2025.11.15 - 11.18',
     location: '제주도',
     participants: 3,
@@ -30,7 +31,8 @@ const MOCK_SEARCH_RESULTS = [
     title: '제주도 우도 & 성산일출봉 투어',
     author: '제주사랑',
     authorTemp: 38.0,
-    image: 'https://images.unsplash.com/photo-1614088459293-5669fadc3448?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0cmF2ZWwlMjBkZXN0aW5hdGlvbnxlbnwxfHx8fDE3NjE4NjQwNzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
+    image:
+      'https://images.unsplash.com/photo-1614088459293-5669fadc3448?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0cmF2ZWwlMjBkZXN0aW5hdGlvbnxlbnwxfHx8fDE3NjE4NjQwNzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
     date: '2025.11.20 - 11.23',
     location: '제주도',
     participants: 2,
@@ -45,7 +47,8 @@ const MOCK_SEARCH_RESULTS = [
     title: '제주 카페투어 & 드라이브 🚗',
     author: '카페러',
     authorTemp: 37.2,
-    image: 'https://images.unsplash.com/photo-1614088459293-5669fadc3448?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0cmF2ZWwlMjBkZXN0aW5hdGlvbnxlbnwxfHx8fDE3NjE4NjQwNzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
+    image:
+      'https://images.unsplash.com/photo-1614088459293-5669fadc3448?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0cmF2ZWwlMjBkZXN0aW5hdGlvbnxlbnwxfHx8fDE3NjE4NjQwNzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
     date: '2025.11.10 - 11.12',
     location: '제주도',
     participants: 3,
@@ -57,34 +60,37 @@ const MOCK_SEARCH_RESULTS = [
   },
 ];
 
-export function SearchResults({ searchParams, onViewPost }: SearchResultsProps) {
+export function SearchResults({
+  searchParams,
+  onViewPost,
+}: SearchResultsProps) {
   const [sortBy, setSortBy] = useState<'match' | 'latest'>('match');
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="mb-8">
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           className="mb-4 gap-2"
           onClick={() => window.history.back()}
         >
           <ArrowLeft className="w-4 h-4" />
           뒤로 가기
         </Button>
-        
+
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-gray-900 mb-2">검색 결과</h1>
             {searchParams.location && (
               <p className="text-gray-600">
-                "{searchParams.location}" 
-                {searchParams.date && ` · ${searchParams.date}`}
-                {' '}검색 결과 {MOCK_SEARCH_RESULTS.length}개
+                "{searchParams.location}"
+                {searchParams.date && ` · ${searchParams.date}`} 검색 결과{' '}
+                {MOCK_SEARCH_RESULTS.length}개
               </p>
             )}
           </div>
-          
+
           <div className="flex gap-2">
             <Button variant="outline" className="gap-2">
               <SlidersHorizontal className="w-4 h-4" />

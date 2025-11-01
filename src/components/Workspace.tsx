@@ -1,5 +1,12 @@
 import { useState } from 'react';
-import { Users, X, Map as MapIcon, MessageCircle, Search, Calendar } from 'lucide-react';
+import {
+  Users,
+  X,
+  Map as MapIcon,
+  MessageCircle,
+  Search,
+  Calendar,
+} from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
@@ -35,12 +42,8 @@ export function Workspace({ postId, onEndTrip }: WorkspaceProps) {
             <span className="text-sm">{MOCK_MEMBERS.length}명</span>
           </button>
         </div>
-        
-        <Button 
-          variant="destructive" 
-          size="sm"
-          onClick={onEndTrip}
-        >
+
+        <Button variant="destructive" size="sm" onClick={onEndTrip}>
           여행 종료하기
         </Button>
       </div>
@@ -62,7 +65,9 @@ export function Workspace({ postId, onEndTrip }: WorkspaceProps) {
                   <div className="text-sm text-gray-900">{member.name}</div>
                 </div>
                 {member.isAuthor && (
-                  <Badge variant="secondary" className="text-xs">방장</Badge>
+                  <Badge variant="secondary" className="text-xs">
+                    방장
+                  </Badge>
                 )}
               </div>
             ))}

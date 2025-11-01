@@ -17,7 +17,7 @@ export function Header({
   onLogoutClick,
   onProfileClick,
   onCreatePost,
-  onLogoClick
+  onLogoClick,
 }: HeaderProps) {
   return (
     <header className="bg-white border-b sticky top-0 z-50">
@@ -43,7 +43,10 @@ export function Header({
                   </Badge>
                 </button>
 
-                <Button onClick={onCreatePost} className="gap-2 bg-blue-600 hover:bg-blue-700">
+                <Button
+                  onClick={onCreatePost}
+                  className="gap-2 bg-blue-600 hover:bg-blue-700"
+                >
                   <Plus className="w-4 h-4" />
                   <span className="hidden sm:inline">게시물 작성</span>
                 </Button>

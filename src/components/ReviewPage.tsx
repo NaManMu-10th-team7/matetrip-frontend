@@ -18,34 +18,39 @@ const MOCK_COMPANIONS = [
 
 export function ReviewPage({ onComplete }: ReviewPageProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [reviews, setReviews] = useState<Record<number, { rating: number; feedback: string }>>({});
+  const [reviews, setReviews] = useState<
+    Record<number, { rating: number; feedback: string }>
+  >({});
 
   const currentCompanion = MOCK_COMPANIONS[currentIndex];
-  const currentReview = reviews[currentCompanion.id] || { rating: 0, feedback: '' };
+  const currentReview = reviews[currentCompanion.id] || {
+    rating: 0,
+    feedback: '',
+  };
 
   const handleRatingClick = (rating: number) => {
-    setReviews(prev => ({
+    setReviews((prev) => ({
       ...prev,
       [currentCompanion.id]: {
         ...prev[currentCompanion.id],
         rating,
-      }
+      },
     }));
   };
 
   const handleFeedbackChange = (feedback: string) => {
-    setReviews(prev => ({
+    setReviews((prev) => ({
       ...prev,
       [currentCompanion.id]: {
         ...prev[currentCompanion.id],
         feedback,
-      }
+      },
     }));
   };
 
   const handleNext = () => {
     if (currentIndex < MOCK_COMPANIONS.length - 1) {
-      setCurrentIndex(prev => prev + 1);
+      setCurrentIndex((prev) => prev + 1);
     }
   };
 
@@ -75,7 +80,9 @@ export function ReviewPage({ onComplete }: ReviewPageProps) {
         <div className="text-center mb-8">
           <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full mx-auto mb-4" />
           <h3 className="text-gray-900 mb-2">{currentCompanion.name}</h3>
-          <p className="text-sm text-gray-600">이 동행과의 여행은 어떠셨나요?</p>
+          <p className="text-sm text-gray-600">
+            이 동행과의 여행은 어떠셨나요?
+          </p>
         </div>
 
         {/* Rating */}
@@ -168,8 +175,8 @@ export function ReviewPage({ onComplete }: ReviewPageProps) {
                 index === currentIndex
                   ? 'bg-blue-600'
                   : index < currentIndex
-                  ? 'bg-green-600'
-                  : 'bg-gray-300'
+                    ? 'bg-green-600'
+                    : 'bg-gray-300'
               }`}
             />
           ))}
