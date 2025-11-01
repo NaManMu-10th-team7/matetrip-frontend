@@ -19,8 +19,12 @@ export function Login({ onLogin, onSignupClick }: LoginProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle login logic
-    onLogin();
+    // 임시 테스트 로직
+    if (email === 'admin@example.com' && password === '1q2w3e') {
+      onLogin();
+    } else {
+      alert('이메일 또는 비밀번호가 올바르지 않습니다.');
+    }
   };
 
   const handleSocialLogin = (provider: 'google' | 'kakao') => {
