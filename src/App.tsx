@@ -11,7 +11,15 @@ import { Login } from './components/Login';
 import { Signup } from './components/Signup';
 import { ReviewPage } from './components/ReviewPage';
 
-type View = 'main' | 'search' | 'postDetail' | 'workspace' | 'profile' | 'review' | 'login' | 'signup';
+type View =
+  | 'main'
+  | 'search'
+  | 'postDetail'
+  | 'workspace'
+  | 'profile'
+  | 'review'
+  | 'login'
+  | 'signup';
 
 export default function App() {
   // 현재 랜더링할 페이지
@@ -19,12 +27,15 @@ export default function App() {
   // 유저의 로그인 상태
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   //모달
-  const [showCreatePost, setShowCreatePost] = useState(false)
+  const [showCreatePost, setShowCreatePost] = useState(false);
   const [showEditPost, setShowEditPost] = useState(false);
-  
+
   // Navigation states
   const [selectedPost, setSelectedPost] = useState<number | null>(null);
-  const [searchParams, setSearchParams] = useState<{ date?: string; location?: string } | null>(null);
+  const [searchParams, setSearchParams] = useState<{
+    date?: string;
+    location?: string;
+  } | null>(null);
 
   const handleLogin = () => {
     setIsLoggedIn(true);
@@ -67,7 +78,7 @@ export default function App() {
     <div className="min-h-screen bg-gray-50">
       {/* Header - 로그인/회원가입 페이지에서는 숨김 */}
       {currentView !== 'login' && currentView !== 'signup' && (
-        <Header 
+        <Header
           isLoggedIn={isLoggedIn}
           onLoginClick={() => setCurrentView('login')}
           onLogoutClick={handleLogout}
@@ -76,34 +87,31 @@ export default function App() {
           onLogoClick={() => setCurrentView('main')}
         />
       )}
-      
+
       <main>
         {currentView === 'login' && (
-          <Login 
-            onLogin={handleLogin} 
+          <Login
+            onLogin={handleLogin}
             onSignupClick={() => setCurrentView('signup')}
           />
         )}
         {currentView === 'signup' && (
-          <Signup 
+          <Signup
             onSignup={handleLogin}
             onLoginClick={() => setCurrentView('login')}
           />
         )}
         {currentView === 'main' && (
-          <MainPage 
-            onSearch={handleSearch}
-            onViewPost={handleViewPost}
-          />
+          <MainPage onSearch={handleSearch} onViewPost={handleViewPost} />
         )}
         {currentView === 'search' && searchParams && (
-          <SearchResults 
+          <SearchResults
             searchParams={searchParams}
             onViewPost={handleViewPost}
           />
         )}
         {currentView === 'postDetail' && selectedPost && (
-          <PostDetail 
+          <PostDetail
             postId={selectedPost}
             isLoggedIn={isLoggedIn}
             onJoinWorkspace={handleJoinWorkspace}
@@ -111,16 +119,10 @@ export default function App() {
           />
         )}
         {currentView === 'workspace' && selectedPost && (
-          <Workspace 
-            postId={selectedPost}
-            onEndTrip={handleStartReview}
-          />
+          <Workspace postId={selectedPost} onEndTrip={handleStartReview} />
         )}
         {currentView === 'profile' && (
-          <Profile 
-            isLoggedIn={isLoggedIn}
-            onViewPost={handleViewPost}
-          />
+          <Profile isLoggedIn={isLoggedIn} onViewPost={handleViewPost} />
         )}
         {currentView === 'review' && (
           <ReviewPage onComplete={handleReviewComplete} />
@@ -133,9 +135,9 @@ export default function App() {
       )}
 
       {showEditPost && selectedPost && (
-        <EditPostModal 
+        <EditPostModal
           postId={selectedPost}
-          onClose={() => setShowEditPost(false)} 
+          onClose={() => setShowEditPost(false)}
         />
       )}
     </div>

@@ -32,7 +32,7 @@ export function PostCard({ post, onJoin }: PostCardProps) {
   };
 
   return (
-    <Card 
+    <Card
       className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
       onClick={() => onJoin(post.id)}
     >
@@ -42,7 +42,7 @@ export function PostCard({ post, onJoin }: PostCardProps) {
           alt={post.title}
           className="w-full h-full object-cover"
         />
-        <Badge 
+        <Badge
           className={`absolute top-3 right-3 ${
             post.status === '모집중' ? 'bg-blue-600' : 'bg-gray-600'
           }`}
@@ -50,10 +50,10 @@ export function PostCard({ post, onJoin }: PostCardProps) {
           {post.status}
         </Badge>
       </div>
-      
+
       <div className="p-4">
         <h3 className="text-gray-900 mb-2 line-clamp-1">{post.title}</h3>
-        
+
         <div className="flex items-center gap-2 mb-3">
           <div className="w-6 h-6 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full" />
           <span className="text-sm text-gray-600">{post.author}</span>
@@ -73,7 +73,9 @@ export function PostCard({ post, onJoin }: PostCardProps) {
           </div>
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4" />
-            <span>{post.participants} / {post.maxParticipants}명</span>
+            <span>
+              {post.participants} / {post.maxParticipants}명
+            </span>
           </div>
         </div>
 

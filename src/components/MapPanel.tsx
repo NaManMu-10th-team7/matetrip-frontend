@@ -4,7 +4,9 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 
 export function MapPanel() {
-  const [selectedLayer, setSelectedLayer] = useState<'all' | 'day1' | 'day2'>('all');
+  const [selectedLayer, setSelectedLayer] = useState<'all' | 'day1' | 'day2'>(
+    'all'
+  );
 
   return (
     <div className="h-full relative">

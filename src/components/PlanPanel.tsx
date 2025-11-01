@@ -6,13 +6,43 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 
 const MOCK_PLAN = {
   day1: [
-    { id: 1, name: '성산일출봉', time: '09:00', duration: '2시간', distance: '0km' },
-    { id: 2, name: '우도', time: '12:00', duration: '3시간', distance: '5km (차량 15분)' },
-    { id: 3, name: '협재 해수욕장', time: '16:00', duration: '2시간', distance: '45km (차량 1시간)' },
+    {
+      id: 1,
+      name: '성산일출봉',
+      time: '09:00',
+      duration: '2시간',
+      distance: '0km',
+    },
+    {
+      id: 2,
+      name: '우도',
+      time: '12:00',
+      duration: '3시간',
+      distance: '5km (차량 15분)',
+    },
+    {
+      id: 3,
+      name: '협재 해수욕장',
+      time: '16:00',
+      duration: '2시간',
+      distance: '45km (차량 1시간)',
+    },
   ],
   day2: [
-    { id: 4, name: '한라산 등반', time: '07:00', duration: '5시간', distance: '30km (차량 40분)' },
-    { id: 5, name: '카페 투어', time: '14:00', duration: '2시간', distance: '10km (차량 20분)' },
+    {
+      id: 4,
+      name: '한라산 등반',
+      time: '07:00',
+      duration: '5시간',
+      distance: '30km (차량 40분)',
+    },
+    {
+      id: 5,
+      name: '카페 투어',
+      time: '14:00',
+      duration: '2시간',
+      distance: '10km (차량 20분)',
+    },
   ],
 };
 
@@ -22,10 +52,18 @@ export function PlanPanel() {
 
   return (
     <div className="h-full flex flex-col bg-white">
-      <Tabs value={selectedDay} onValueChange={(v) => setSelectedDay(v as 'day1' | 'day2')} className="flex-1 flex flex-col">
+      <Tabs
+        value={selectedDay}
+        onValueChange={(v) => setSelectedDay(v as 'day1' | 'day2')}
+        className="flex-1 flex flex-col"
+      >
         <TabsList className="bg-gray-100 m-4 mb-0">
-          <TabsTrigger value="day1" className="flex-1">Day 1</TabsTrigger>
-          <TabsTrigger value="day2" className="flex-1">Day 2</TabsTrigger>
+          <TabsTrigger value="day1" className="flex-1">
+            Day 1
+          </TabsTrigger>
+          <TabsTrigger value="day2" className="flex-1">
+            Day 2
+          </TabsTrigger>
         </TabsList>
 
         <div className="flex-1 overflow-y-auto p-4">
@@ -40,7 +78,7 @@ export function PlanPanel() {
                     <button className="mt-1 cursor-grab active:cursor-grabbing">
                       <GripVertical className="w-5 h-5 text-gray-400" />
                     </button>
-                    
+
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
@@ -51,11 +89,13 @@ export function PlanPanel() {
                           <Trash2 className="w-4 h-4 text-gray-400 hover:text-red-600" />
                         </button>
                       </div>
-                      
+
                       <div className="space-y-1 text-sm text-gray-600">
                         <div className="flex items-center gap-2">
                           <Clock className="w-4 h-4" />
-                          <span>{place.time} ({place.duration})</span>
+                          <span>
+                            {place.time} ({place.duration})
+                          </span>
                         </div>
                         {index > 0 && (
                           <div className="flex items-center gap-2">

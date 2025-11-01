@@ -12,18 +12,72 @@ interface MainPageProps {
 }
 
 const RECOMMENDED_USERS = [
-  { id: 1, name: '바다조아', avatar: '', travelStyle: ['힐링', '사진', '맛집투어'], matchRate: 95 },
-  { id: 2, name: '산악인', avatar: '', travelStyle: ['액티브', '등산', '자연'], matchRate: 88 },
-  { id: 3, name: '도시탐험가', avatar: '', travelStyle: ['카페', '쇼핑', '핫플'], matchRate: 82 },
+  {
+    id: 1,
+    name: '바다조아',
+    avatar: '',
+    travelStyle: ['힐링', '사진', '맛집투어'],
+    matchRate: 95,
+  },
+  {
+    id: 2,
+    name: '산악인',
+    avatar: '',
+    travelStyle: ['액티브', '등산', '자연'],
+    matchRate: 88,
+  },
+  {
+    id: 3,
+    name: '도시탐험가',
+    avatar: '',
+    travelStyle: ['카페', '쇼핑', '핫플'],
+    matchRate: 82,
+  },
 ];
 
 const REGION_CATEGORIES = [
-  { id: 1, name: '제주도', image: 'https://images.unsplash.com/photo-1614088459293-5669fadc3448?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0cmF2ZWwlMjBkZXN0aW5hdGlvbnxlbnwxfHx8fDE3NjE4NjQwNzB8MA&ixlib=rb-4.1.0&q=80&w=1080', description: '힐링 여행의 성지' },
-  { id: 2, name: '부산', image: 'https://images.unsplash.com/photo-1665231342828-229205867d94?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiZWFjaCUyMHBhcmFkaXNlfGVufDF8fHx8MTc2MTg4Mzg2MHww&ixlib=rb-4.1.0&q=80&w=1080', description: '바다와 도시의 조화' },
-  { id: 3, name: '서울', image: 'https://images.unsplash.com/photo-1597552661064-af143a5f3bee?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzZW91bCUyMGtvcmVhfGVufDF8fHx8MTc2MTk4MjQzNHww&ixlib=rb-4.1.0&q=80&w=1080', description: '트렌디한 도심 여행' },
-  { id: 4, name: '경주', image: 'https://images.unsplash.com/photo-1668850443435-c01eec56c4e5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxneWVvbmdqdSUyMGtvcmVhfGVufDF8fHx8MTc2MTk4MjQzNHww&ixlib=rb-4.1.0&q=80&w=1080', description: '역사 문화 탐방' },
-  { id: 5, name: '강릉', image: 'https://images.unsplash.com/photo-1684042229029-8a899193a8e4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxnYW5nbmV1bmclMjBrb3JlYXxlbnwxfHx8fDE3NjE5ODI0MzV8MA&ixlib=rb-4.1.0&q=80&w=1080', description: '동해안의 낭만' },
-  { id: 6, name: '전주', image: 'https://images.unsplash.com/photo-1520645521318-f03a712f0e67?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjaXR5JTIwdHJhdmVsfGVufDF8fHx8MTc2MTkxMjEzMXww&ixlib=rb-4.1.0&q=80&w=1080', description: '맛집 투어의 메카' },
+  {
+    id: 1,
+    name: '제주도',
+    image:
+      'https://images.unsplash.com/photo-1614088459293-5669fadc3448?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0cmF2ZWwlMjBkZXN0aW5hdGlvbnxlbnwxfHx8fDE3NjE4NjQwNzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
+    description: '힐링 여행의 성지',
+  },
+  {
+    id: 2,
+    name: '부산',
+    image:
+      'https://images.unsplash.com/photo-1665231342828-229205867d94?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiZWFjaCUyMHBhcmFkaXNlfGVufDF8fHx8MTc2MTg4Mzg2MHww&ixlib=rb-4.1.0&q=80&w=1080',
+    description: '바다와 도시의 조화',
+  },
+  {
+    id: 3,
+    name: '서울',
+    image:
+      'https://images.unsplash.com/photo-1597552661064-af143a5f3bee?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzZW91bCUyMGtvcmVhfGVufDF8fHx8MTc2MTk4MjQzNHww&ixlib=rb-4.1.0&q=80&w=1080',
+    description: '트렌디한 도심 여행',
+  },
+  {
+    id: 4,
+    name: '경주',
+    image:
+      'https://images.unsplash.com/photo-1668850443435-c01eec56c4e5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxneWVvbmdqdSUyMGtvcmVhfGVufDF8fHx8MTc2MTk4MjQzNHww&ixlib=rb-4.1.0&q=80&w=1080',
+    description: '역사 문화 탐방',
+  },
+  {
+    id: 5,
+    name: '강릉',
+    image:
+      'https://images.unsplash.com/photo-1684042229029-8a899193a8e4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxnYW5nbmV1bmclMjBrb3JlYXxlbnwxfHx8fDE3NjE5ODI0MzV8MA&ixlib=rb-4.1.0&q=80&w=1080',
+    description: '동해안의 낭만',
+  },
+  {
+    id: 6,
+    name: '전주',
+    image:
+      'https://images.unsplash.com/photo-1520645521318-f03a712f0e67?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjaXR5JTIwdHJhdmVsfGVufDF8fHx8MTc2MTkxMjEzMXww&ixlib=rb-4.1.0&q=80&w=1080',
+    description: '맛집 투어의 메카',
+  },
 ];
 
 export function MainPage({ onSearch, onViewPost }: MainPageProps) {
@@ -39,8 +93,10 @@ export function MainPage({ onSearch, onViewPost }: MainPageProps) {
       {/* Hero Section with Search */}
       <div className="text-center mb-12">
         <h1 className="text-gray-900 mb-4">함께 떠나는 특별한 여행</h1>
-        <p className="text-gray-600 mb-8">새로운 동행과 함께 잊지 못할 추억을 만들어보세요</p>
-        
+        <p className="text-gray-600 mb-8">
+          새로운 동행과 함께 잊지 못할 추억을 만들어보세요
+        </p>
+
         {/* Search Box */}
         <Card className="max-w-3xl mx-auto p-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -63,7 +119,7 @@ export function MainPage({ onSearch, onViewPost }: MainPageProps) {
                 className="pl-10"
               />
             </div>
-            <Button 
+            <Button
               onClick={handleSearch}
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 gap-2"
             >
@@ -79,11 +135,16 @@ export function MainPage({ onSearch, onViewPost }: MainPageProps) {
         <div className="flex items-center gap-2 mb-6">
           <Sparkles className="w-5 h-5 text-purple-600" />
           <h2 className="text-gray-900">당신과 잘 맞는 동행</h2>
-          <Badge variant="secondary" className="ml-2">AI 추천</Badge>
+          <Badge variant="secondary" className="ml-2">
+            AI 추천
+          </Badge>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {RECOMMENDED_USERS.map((user) => (
-            <Card key={user.id} className="p-6 hover:shadow-lg transition-shadow cursor-pointer">
+            <Card
+              key={user.id}
+              className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
+            >
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full" />
                 <div className="flex-1">

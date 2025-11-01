@@ -27,7 +27,6 @@ export function Login({ onLogin, onSignupClick }: LoginProps) {
     } else {
       alert('아이디 비밀번호가 틀렸습니다.');
     }
-
   };
 
   const handleSocialLogin = (provider: 'google' | 'kakao') => {
@@ -60,7 +59,9 @@ export function Login({ onLogin, onSignupClick }: LoginProps) {
             <span className="text-4xl">TripTogether</span>
           </div>
           <p className="text-xl text-center text-white/90 mb-8">
-            새로운 동행과 함께하는<br />특별한 여행의 시작
+            새로운 동행과 함께하는
+            <br />
+            특별한 여행의 시작
           </p>
           <div className="grid grid-cols-3 gap-8 text-center">
             <div>
@@ -145,7 +146,9 @@ export function Login({ onLogin, onSignupClick }: LoginProps) {
                   <Checkbox
                     id="remember"
                     checked={rememberMe}
-                    onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                    onCheckedChange={(checked) =>
+                      setRememberMe(checked as boolean)
+                    }
                   />
                   <label
                     htmlFor="remember"
@@ -214,7 +217,11 @@ export function Login({ onLogin, onSignupClick }: LoginProps) {
                 className="w-full gap-2 border-yellow-400 text-gray-900 hover:bg-yellow-50"
                 onClick={() => handleSocialLogin('kakao')}
               >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                <svg
+                  className="w-5 h-5"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
                   <path d="M12 3C6.5 3 2 6.6 2 11c0 2.8 1.9 5.3 4.7 6.7l-1.2 4.4c-.1.4.3.7.6.5l5.2-3.4c.2 0 .5 0 .7 0 5.5 0 10-3.6 10-8S17.5 3 12 3z" />
                 </svg>
                 카카오로 계속하기
@@ -282,7 +289,10 @@ export function Login({ onLogin, onSignupClick }: LoginProps) {
                 >
                   취소
                 </Button>
-                <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700">
+                <Button
+                  type="submit"
+                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                >
                   임시 비밀번호 발송
                 </Button>
               </div>

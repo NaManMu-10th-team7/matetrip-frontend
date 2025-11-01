@@ -1,4 +1,15 @@
-import { Star, MapPin, Calendar, Users, Award, Thermometer, Edit, Briefcase, Car, Cigarette } from 'lucide-react';
+import {
+  Star,
+  MapPin,
+  Calendar,
+  Users,
+  Award,
+  Thermometer,
+  Edit,
+  Briefcase,
+  Car,
+  Cigarette,
+} from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
@@ -8,7 +19,8 @@ import { Separator } from './ui/separator';
 const MOCK_PROFILE = {
   name: '바다조아',
   bio: '바다를 사랑하는 여행러 🌊',
-  description: '안녕하세요! 전국 바다를 여행하며 힐링하는 것을 좋아합니다. 조용히 경치 감상하는 것도 좋아하고, 맛집 탐방도 즐깁니다.',
+  description:
+    '안녕하세요! 전국 바다를 여행하며 힐링하는 것을 좋아합니다. 조용히 경치 감상하는 것도 좋아하고, 맛집 탐방도 즐깁니다.',
   gender: '여성',
   age: 28,
   job: '디자이너',
@@ -20,13 +32,50 @@ const MOCK_PROFILE = {
   badges: ['인증 회원', '맛집 헌터', '사진 작가'],
   travelStyle: ['힐링', '맛집투어', '사진', '조용한 여행'],
   reviews: [
-    { id: 1, author: '여행러버', rating: 5, comment: '정말 좋은 분이었어요! 배려심도 많으시고 여행 계획도 꼼꼼하게 세우셔서 편했습니다.', date: '2025.10.15', trip: '제주도 힐링 여행' },
-    { id: 2, author: '산악인', rating: 5, comment: '시간 약속 잘 지키시고 매너가 좋으신 분입니다. 또 같이 여행하고 싶어요!', date: '2025.09.20', trip: '부산 바다 여행' },
-    { id: 3, author: '도시탐험가', rating: 4, comment: '좋은 추억 만들어주셔서 감사합니다. 사진도 예쁘게 찍어주셨어요!', date: '2025.08.10', trip: '강릉 해변 여행' },
+    {
+      id: 1,
+      author: '여행러버',
+      rating: 5,
+      comment:
+        '정말 좋은 분이었어요! 배려심도 많으시고 여행 계획도 꼼꼼하게 세우셔서 편했습니다.',
+      date: '2025.10.15',
+      trip: '제주도 힐링 여행',
+    },
+    {
+      id: 2,
+      author: '산악인',
+      rating: 5,
+      comment:
+        '시간 약속 잘 지키시고 매너가 좋으신 분입니다. 또 같이 여행하고 싶어요!',
+      date: '2025.09.20',
+      trip: '부산 바다 여행',
+    },
+    {
+      id: 3,
+      author: '도시탐험가',
+      rating: 4,
+      comment: '좋은 추억 만들어주셔서 감사합니다. 사진도 예쁘게 찍어주셨어요!',
+      date: '2025.08.10',
+      trip: '강릉 해변 여행',
+    },
   ],
   trips: [
-    { id: 1, title: '부산 해운대 바다 여행', image: 'https://images.unsplash.com/photo-1665231342828-229205867d94?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiZWFjaCUyMHBhcmFkaXNlfGVufDF8fHx8MTc2MTg4Mzg2MHww&ixlib=rb-4.1.0&q=80&w=1080', date: '2025.10', status: 'completed' },
-    { id: 2, title: '제주도 힐링 여행', image: 'https://images.unsplash.com/photo-1614088459293-5669fadc3448?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0cmF2ZWwlMjBkZXN0aW5hdGlvbnxlbnwxfHx8fDE3NjE4NjQwNzB8MA&ixlib=rb-4.1.0&q=80&w=1080', date: '2025.11', status: 'recruiting' },
+    {
+      id: 1,
+      title: '부산 해운대 바다 여행',
+      image:
+        'https://images.unsplash.com/photo-1665231342828-229205867d94?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiZWFjaCUyMHBhcmFkaXNlfGVufDF8fHx8MTc2MTg4Mzg2MHww&ixlib=rb-4.1.0&q=80&w=1080',
+      date: '2025.10',
+      status: 'completed',
+    },
+    {
+      id: 2,
+      title: '제주도 힐링 여행',
+      image:
+        'https://images.unsplash.com/photo-1614088459293-5669fadc3448?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0cmF2ZWwlMjBkZXN0aW5hdGlvbnxlbnwxfHx8fDE3NjE4NjQwNzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
+      date: '2025.11',
+      status: 'recruiting',
+    },
   ],
 };
 
@@ -72,14 +121,18 @@ export function Profile({ isLoggedIn, onViewPost }: ProfileProps) {
               <div className="text-center">
                 <div className="flex items-center justify-center gap-1 mb-1">
                   <Thermometer className="w-4 h-4 text-blue-600" />
-                  <span className="text-blue-600">{MOCK_PROFILE.mannerTemp}°C</span>
+                  <span className="text-blue-600">
+                    {MOCK_PROFILE.mannerTemp}°C
+                  </span>
                 </div>
                 <div className="text-xs text-gray-600">매너온도</div>
               </div>
               <div className="text-center">
                 <div className="flex items-center justify-center gap-1 mb-1">
                   <MapPin className="w-4 h-4 text-gray-900" />
-                  <span className="text-gray-900">{MOCK_PROFILE.totalTrips}</span>
+                  <span className="text-gray-900">
+                    {MOCK_PROFILE.totalTrips}
+                  </span>
                 </div>
                 <div className="text-xs text-gray-600">여행 횟수</div>
               </div>
@@ -121,7 +174,7 @@ export function Profile({ isLoggedIn, onViewPost }: ProfileProps) {
               <div className="text-gray-900">{MOCK_PROFILE.job}</div>
             </div>
           </div>
-          
+
           <div className="flex gap-4 mt-4">
             <div className="flex items-center gap-2 text-gray-700">
               <Car className="w-4 h-4" />
@@ -154,26 +207,41 @@ export function Profile({ isLoggedIn, onViewPost }: ProfileProps) {
       {/* Tabs */}
       <Tabs defaultValue="trips" className="w-full">
         <TabsList className="w-full bg-white border rounded-lg mb-6">
-          <TabsTrigger value="trips" className="flex-1">여행 기록</TabsTrigger>
-          <TabsTrigger value="posts" className="flex-1">동행 찾기</TabsTrigger>
-          <TabsTrigger value="reviews" className="flex-1">받은 리뷰</TabsTrigger>
-          {isLoggedIn && <TabsTrigger value="settings" className="flex-1">내 정보</TabsTrigger>}
+          <TabsTrigger value="trips" className="flex-1">
+            여행 기록
+          </TabsTrigger>
+          <TabsTrigger value="posts" className="flex-1">
+            동행 찾기
+          </TabsTrigger>
+          <TabsTrigger value="reviews" className="flex-1">
+            받은 리뷰
+          </TabsTrigger>
+          {isLoggedIn && (
+            <TabsTrigger value="settings" className="flex-1">
+              내 정보
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* Trip History */}
         <TabsContent value="trips">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {MOCK_PROFILE.trips.map((trip) => (
-              <div key={trip.id} className="bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-shadow cursor-pointer">
+              <div
+                key={trip.id}
+                className="bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+              >
                 <div className="relative h-48">
                   <ImageWithFallback
                     src={trip.image}
                     alt={trip.title}
                     className="w-full h-full object-cover"
                   />
-                  <Badge 
+                  <Badge
                     className={`absolute top-3 right-3 ${
-                      trip.status === 'completed' ? 'bg-gray-600' : 'bg-blue-600'
+                      trip.status === 'completed'
+                        ? 'bg-gray-600'
+                        : 'bg-blue-600'
                     }`}
                   >
                     {trip.status === 'completed' ? '완료' : '모집중'}
@@ -194,27 +262,32 @@ export function Profile({ isLoggedIn, onViewPost }: ProfileProps) {
         {/* Posts - 동행 찾기 */}
         <TabsContent value="posts">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {MOCK_PROFILE.trips.filter(t => t.status === 'recruiting').map((trip) => (
-              <div key={trip.id} className="bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-shadow cursor-pointer">
-                <div className="relative h-48">
-                  <ImageWithFallback
-                    src={trip.image}
-                    alt={trip.title}
-                    className="w-full h-full object-cover"
-                  />
-                  <Badge className="absolute top-3 right-3 bg-blue-600">
-                    모집중
-                  </Badge>
-                </div>
-                <div className="p-4">
-                  <h4 className="text-gray-900 mb-2">{trip.title}</h4>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Calendar className="w-4 h-4" />
-                    <span>{trip.date}</span>
+            {MOCK_PROFILE.trips
+              .filter((t) => t.status === 'recruiting')
+              .map((trip) => (
+                <div
+                  key={trip.id}
+                  className="bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+                >
+                  <div className="relative h-48">
+                    <ImageWithFallback
+                      src={trip.image}
+                      alt={trip.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <Badge className="absolute top-3 right-3 bg-blue-600">
+                      모집중
+                    </Badge>
+                  </div>
+                  <div className="p-4">
+                    <h4 className="text-gray-900 mb-2">{trip.title}</h4>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Calendar className="w-4 h-4" />
+                      <span>{trip.date}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
           </div>
         </TabsContent>
 
@@ -222,7 +295,10 @@ export function Profile({ isLoggedIn, onViewPost }: ProfileProps) {
         <TabsContent value="reviews">
           <div className="space-y-4">
             {MOCK_PROFILE.reviews.map((review) => (
-              <div key={review.id} className="bg-white rounded-xl shadow-sm border p-6">
+              <div
+                key={review.id}
+                className="bg-white rounded-xl shadow-sm border p-6"
+              >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full" />
@@ -233,7 +309,10 @@ export function Profile({ isLoggedIn, onViewPost }: ProfileProps) {
                   </div>
                   <div className="flex items-center gap-1">
                     {[...Array(review.rating)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                      <Star
+                        key={i}
+                        className="w-4 h-4 text-yellow-500 fill-yellow-500"
+                      />
                     ))}
                   </div>
                 </div>
@@ -254,16 +333,31 @@ export function Profile({ isLoggedIn, onViewPost }: ProfileProps) {
               <h3 className="text-gray-900 mb-6">비밀번호 변경</h3>
               <div className="space-y-4 max-w-md">
                 <div>
-                  <label className="block text-sm text-gray-700 mb-2">현재 비밀번호</label>
-                  <input type="password" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600" />
+                  <label className="block text-sm text-gray-700 mb-2">
+                    현재 비밀번호
+                  </label>
+                  <input
+                    type="password"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-700 mb-2">새 비밀번호</label>
-                  <input type="password" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600" />
+                  <label className="block text-sm text-gray-700 mb-2">
+                    새 비밀번호
+                  </label>
+                  <input
+                    type="password"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-700 mb-2">새 비밀번호 확인</label>
-                  <input type="password" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600" />
+                  <label className="block text-sm text-gray-700 mb-2">
+                    새 비밀번호 확인
+                  </label>
+                  <input
+                    type="password"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  />
                 </div>
                 <Button className="bg-blue-600 hover:bg-blue-700">
                   비밀번호 변경

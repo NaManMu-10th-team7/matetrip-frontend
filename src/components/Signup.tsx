@@ -1,5 +1,15 @@
 import { useState } from 'react';
-import { Map, Mail, Lock, Eye, EyeOff, User, Phone, CheckCircle2, ArrowLeft } from 'lucide-react';
+import {
+  Map,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  User,
+  Phone,
+  CheckCircle2,
+  ArrowLeft,
+} from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -14,8 +24,18 @@ interface SignupProps {
 }
 
 const TRAVEL_STYLES = [
-  '힐링', '액티브', '맛집투어', '사진', '자연', '도시', '해변', '산', 
-  '캠핑', '문화탐방', '쇼핑', '축제'
+  '힐링',
+  '액티브',
+  '맛집투어',
+  '사진',
+  '자연',
+  '도시',
+  '해변',
+  '산',
+  '캠핑',
+  '문화탐방',
+  '쇼핑',
+  '축제',
 ];
 
 const PERSONALITY_TYPES = [
@@ -28,17 +48,29 @@ const PERSONALITY_TYPES = [
 ];
 
 const MBTI_TYPES = [
-  'ISTJ', 'ISFJ', 'INFJ', 'INTJ',
-  'ISTP', 'ISFP', 'INFP', 'INTP',
-  'ESTP', 'ESFP', 'ENFP', 'ENTP',
-  'ESTJ', 'ESFJ', 'ENFJ', 'ENTJ'
+  'ISTJ',
+  'ISFJ',
+  'INFJ',
+  'INTJ',
+  'ISTP',
+  'ISFP',
+  'INFP',
+  'INTP',
+  'ESTP',
+  'ESFP',
+  'ENFP',
+  'ENTP',
+  'ESTJ',
+  'ESFJ',
+  'ENFJ',
+  'ENTJ',
 ];
 
 export function Signup({ onSignup, onLoginClick }: SignupProps) {
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
+
   // Form data
   const [formData, setFormData] = useState({
     email: '',
@@ -57,33 +89,33 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
 
   const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const toggleTravelStyle = (style: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       travelStyles: prev.travelStyles.includes(style)
-        ? prev.travelStyles.filter(s => s !== style)
-        : [...prev.travelStyles, style]
+        ? prev.travelStyles.filter((s) => s !== style)
+        : [...prev.travelStyles, style],
     }));
   };
 
   const togglePersonality = (personality: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       personality: prev.personality.includes(personality)
-        ? prev.personality.filter(p => p !== personality)
-        : [...prev.personality, personality]
+        ? prev.personality.filter((p) => p !== personality)
+        : [...prev.personality, personality],
     }));
   };
 
   const handleNextStep = () => {
-    setStep(prev => Math.min(prev + 1, 3));
+    setStep((prev) => Math.min(prev + 1, 3));
   };
 
   const handlePrevStep = () => {
-    setStep(prev => Math.max(prev - 1, 1));
+    setStep((prev) => Math.max(prev - 1, 1));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -112,7 +144,9 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
             <span className="text-4xl">TripTogether</span>
           </div>
           <p className="text-xl text-center text-white/90 mb-8">
-            당신의 완벽한 여행 동행을<br />찾아보세요
+            당신의 완벽한 여행 동행을
+            <br />
+            찾아보세요
           </p>
           <div className="space-y-4 text-white/90">
             <div className="flex items-center gap-3">
@@ -167,7 +201,9 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                         type="email"
                         placeholder="example@email.com"
                         value={formData.email}
-                        onChange={(e) => handleInputChange('email', e.target.value)}
+                        onChange={(e) =>
+                          handleInputChange('email', e.target.value)
+                        }
                         className="pl-10"
                         required
                       />
@@ -183,7 +219,9 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                         type={showPassword ? 'text' : 'password'}
                         placeholder="8자 이상 입력해주세요"
                         value={formData.password}
-                        onChange={(e) => handleInputChange('password', e.target.value)}
+                        onChange={(e) =>
+                          handleInputChange('password', e.target.value)
+                        }
                         className="pl-10 pr-10"
                         required
                       />
@@ -192,7 +230,11 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                       >
-                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        {showPassword ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
                       </button>
                     </div>
                   </div>
@@ -206,16 +248,24 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                         type={showConfirmPassword ? 'text' : 'password'}
                         placeholder="비밀번호를 다시 입력해주세요"
                         value={formData.confirmPassword}
-                        onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                        onChange={(e) =>
+                          handleInputChange('confirmPassword', e.target.value)
+                        }
                         className="pl-10 pr-10"
                         required
                       />
                       <button
                         type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                       >
-                        {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        {showConfirmPassword ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
                       </button>
                     </div>
                   </div>
@@ -229,7 +279,9 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                         type="text"
                         placeholder="사용할 닉네임을 입력해주세요"
                         value={formData.nickname}
-                        onChange={(e) => handleInputChange('nickname', e.target.value)}
+                        onChange={(e) =>
+                          handleInputChange('nickname', e.target.value)
+                        }
                         className="pl-10"
                         required
                       />
@@ -246,7 +298,9 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                           type="tel"
                           placeholder="010-0000-0000"
                           value={formData.phone}
-                          onChange={(e) => handleInputChange('phone', e.target.value)}
+                          onChange={(e) =>
+                            handleInputChange('phone', e.target.value)
+                          }
                           className="pl-10"
                           required
                         />
@@ -293,7 +347,9 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                     </button>
                   </div>
 
-                  <p className="text-gray-600 mb-6">선호하는 여행 스타일을 선택해주세요 (복수 선택 가능)</p>
+                  <p className="text-gray-600 mb-6">
+                    선호하는 여행 스타일을 선택해주세요 (복수 선택 가능)
+                  </p>
 
                   <div>
                     <Label>여행 스타일</Label>
@@ -301,7 +357,11 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                       {TRAVEL_STYLES.map((style) => (
                         <Badge
                           key={style}
-                          variant={formData.travelStyles.includes(style) ? 'default' : 'outline'}
+                          variant={
+                            formData.travelStyles.includes(style)
+                              ? 'default'
+                              : 'outline'
+                          }
                           className={`cursor-pointer transition-colors ${
                             formData.travelStyles.includes(style)
                               ? 'bg-blue-600 hover:bg-blue-700'
@@ -330,7 +390,9 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                           }`}
                         >
                           <div className="text-2xl mb-1">{type.emoji}</div>
-                          <div className="text-sm text-gray-900">{type.label}</div>
+                          <div className="text-sm text-gray-900">
+                            {type.label}
+                          </div>
                         </button>
                       ))}
                     </div>
@@ -341,7 +403,9 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                     <select
                       id="mbti"
                       value={formData.mbti}
-                      onChange={(e) => handleInputChange('mbti', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange('mbti', e.target.value)
+                      }
                       className="w-full mt-2 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                     >
                       <option value="">MBTI를 선택해주세요</option>
@@ -384,13 +448,21 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                       <Checkbox
                         id="agreeTerms"
                         checked={formData.agreeTerms}
-                        onCheckedChange={(checked) => handleInputChange('agreeTerms', checked)}
+                        onCheckedChange={(checked) =>
+                          handleInputChange('agreeTerms', checked)
+                        }
                       />
                       <div className="flex-1">
-                        <label htmlFor="agreeTerms" className="text-sm text-gray-900 cursor-pointer">
+                        <label
+                          htmlFor="agreeTerms"
+                          className="text-sm text-gray-900 cursor-pointer"
+                        >
                           (필수) 이용약관 동의
                         </label>
-                        <button type="button" className="text-xs text-blue-600 hover:underline mt-1 block">
+                        <button
+                          type="button"
+                          className="text-xs text-blue-600 hover:underline mt-1 block"
+                        >
                           자세히 보기
                         </button>
                       </div>
@@ -400,13 +472,21 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                       <Checkbox
                         id="agreePrivacy"
                         checked={formData.agreePrivacy}
-                        onCheckedChange={(checked) => handleInputChange('agreePrivacy', checked)}
+                        onCheckedChange={(checked) =>
+                          handleInputChange('agreePrivacy', checked)
+                        }
                       />
                       <div className="flex-1">
-                        <label htmlFor="agreePrivacy" className="text-sm text-gray-900 cursor-pointer">
+                        <label
+                          htmlFor="agreePrivacy"
+                          className="text-sm text-gray-900 cursor-pointer"
+                        >
                           (필수) 개인정보 수집 및 이용 동의
                         </label>
-                        <button type="button" className="text-xs text-blue-600 hover:underline mt-1 block">
+                        <button
+                          type="button"
+                          className="text-xs text-blue-600 hover:underline mt-1 block"
+                        >
                           자세히 보기
                         </button>
                       </div>
@@ -416,14 +496,20 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                       <Checkbox
                         id="agreeMarketing"
                         checked={formData.agreeMarketing}
-                        onCheckedChange={(checked) => handleInputChange('agreeMarketing', checked)}
+                        onCheckedChange={(checked) =>
+                          handleInputChange('agreeMarketing', checked)
+                        }
                       />
                       <div className="flex-1">
-                        <label htmlFor="agreeMarketing" className="text-sm text-gray-900 cursor-pointer">
+                        <label
+                          htmlFor="agreeMarketing"
+                          className="text-sm text-gray-900 cursor-pointer"
+                        >
                           (선택) 마케팅 정보 수신 동의
                         </label>
                         <p className="text-xs text-gray-500 mt-1">
-                          이벤트, 프로모션 등의 혜택 정보를 받아보실 수 있습니다.
+                          이벤트, 프로모션 등의 혜택 정보를 받아보실 수
+                          있습니다.
                         </p>
                       </div>
                     </div>
