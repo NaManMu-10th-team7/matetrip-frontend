@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Maximize2, Layers } from 'lucide-react';
 import { Button } from './ui/button';
-import { Map } from 'react-kakao-maps-sdk';
+import { Map, MapMarker } from 'react-kakao-maps-sdk';
 
 type LayerType = 'all' | 'day1' | 'day2';
 
@@ -52,6 +52,8 @@ function MapUI() {
 }
 
 export function MapPanel() {
+  const [markers, setMarkers] = useState<{ lat: number; lng: number }[]>([]);
+
   return (
     <div className="h-full relative">
       <Map
@@ -62,7 +64,20 @@ export function MapPanel() {
           lng: 126.570667,
         }}
         level={3}
+        onClick={(_t, mouseEvent) => {
+          const latlng = mouseEvent.latLng;
+          setMarkers((prev) => [
+            ...prev,
+            { lat: latlng.getLat(), lng: latlng.getLng() },
+          ]);
+        }}
       >
+        {markers.map((marker, index) => (
+          <MapMarker
+            key={`${marker.lat}-${marker.lng}-${index}`}
+            position={marker}
+          />
+        ))}
         <MapUI />
       </Map>
     </div>
