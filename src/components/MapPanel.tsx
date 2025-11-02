@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus, Maximize2, Layers } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
+import { Map } from 'react-kakao-maps-sdk';
 
 export function MapPanel() {
   const [selectedLayer, setSelectedLayer] = useState<'all' | 'day1' | 'day2'>(
@@ -12,10 +13,20 @@ export function MapPanel() {
     <div className="h-full relative">
       {/* Map placeholder */}
       <div className="h-full bg-gray-200 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-gray-400 mb-2">🗺️</div>
-          <p className="text-gray-600">지도 영역</p>
-          <p className="text-sm text-gray-500">실제로는 Kakao Map API 연동</p>
+        <div className="text-center w-full h-full">
+          <Map // 지도를 표시할 Container
+            id="map"
+            className="h-full"
+            center={{
+              // 지도의 중심좌표
+              lat: 33.450701,
+              lng: 126.570667,
+            }}
+            level={3} // 지도의 확대 레벨
+          />
+          {/* <div className="text-gray-400 mb-2">🗺️</div> */}
+          {/* <p className="text-gray-600">지도 영역</p> */}
+          {/* <p className="text-sm text-gray-500">실제로는 Kakao Map API 연동</p> */}
         </div>
       </div>
 
