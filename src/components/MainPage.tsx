@@ -145,9 +145,13 @@ export function MainPage({ onSearch, onViewPost, onUserClick }: MainPageProps) {
             <Card
               key={user.id}
               className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
+<<<<<<< HEAD
               onClick={() => {
                 onUserClick(user.id);
               }}
+=======
+              onClick={() => {onUserClick(user.id);}}
+>>>>>>> c25052b65d4ec834baaadfea74f45671be4dfd3a
             >
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full" />
