@@ -58,14 +58,28 @@ type MarkerType = {
   address: string;
   content: string; // 장소 이름
   category?: string;
+  // 마커를 고유하게 식별하고, 어떤 레이어에 속하는지 알기 위한 속성 추가
+  id: number;
+  layerId: Exclude<LayerType, 'all'>;
 };
 
 export function MapPanel() {
-  // 마커 정보를 저장할 상태 (주소와 내용 추가)
-  const [markers, setMarkers] = useState<MarkerType[]>([]);
+  // 레이어별로 마커를 저장하도록 상태 구조 변경
+  const [markersByLayer, setMarkersByLayer] = useState<
+    Record<Exclude<LayerType, 'all'>, MarkerType[]>
+  >({
+    day1: [],
+    day2: [],
+  });
+  const [selectedLayer, setSelectedLayer] = useState<LayerType>('all');
 
-  const removeMarker = (targetIndex: number) => {
-    setMarkers((prev) => prev.filter((_, index) => index !== targetIndex));
+  const removeMarker = (markerToRemove: MarkerType) => {
+    setMarkersByLayer((prev) => ({
+      ...prev,
+      [markerToRemove.layerId]: prev[markerToRemove.layerId].filter(
+        (marker) => marker.id !== markerToRemove.id
+      ),
+    }));
   };
 
   // EventMarkerContainer의 props 타입을 명확하게 정의합니다.
@@ -80,8 +94,8 @@ export function MapPanel() {
     return (
       <MapMarker
         key={`${marker.lat}-${marker.lng}-${index}`}
-        position={marker}
-        onClick={() => removeMarker(index)}
+        position={{ lat: marker.lat, lng: marker.lng }}
+        onClick={() => removeMarker(marker)}
         // MapMarker에 직접 onMouseOver와 onMouseOut 이벤트를 다시 적용합니다.
         onMouseOver={() => setIsVisible(true)}
         onMouseOut={() => setIsVisible(false)}
@@ -104,6 +118,58 @@ export function MapPanel() {
     );
   }
 
+  // MapUI 컴포넌트가 selectedLayer 상태와 상태 변경 함수를 props로 받도록 수정
+  function MapUI({
+    selectedLayer,
+    setSelectedLayer,
+  }: {
+    selectedLayer: LayerType;
+    setSelectedLayer: React.Dispatch<React.SetStateAction<LayerType>>;
+  }) {
+    return (
+      <>
+        {/* Layer Controls */}
+        <div className="absolute top-4 left-4 z-10 bg-white rounded-lg shadow-lg p-3 space-y-2 w-32">
+          <div className="flex items-center gap-2 mb-2">
+            <Layers className="w-4 h-4 text-gray-600" />
+            <span className="text-sm">레이어</span>
+          </div>
+          {LAYERS.map((layer) => (
+            <button
+              key={layer.id}
+              onClick={() => setSelectedLayer(layer.id)}
+              className={`w-full px-3 py-2 rounded text-sm transition-colors ${
+                selectedLayer === layer.id
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {layer.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Action Buttons */}
+        <div className="absolute bottom-4 right-4 z-10 flex flex-col gap-2">
+          <Button size="sm" className="gap-2 bg-blue-600 hover:bg-blue-700">
+            <Plus className="w-4 h-4" />
+            여행지 추가
+          </Button>
+          <Button size="sm" variant="outline" className="gap-2 bg-white">
+            <Maximize2 className="w-4 h-4" />
+            전체 화면
+          </Button>
+        </div>
+      </>
+    );
+  }
+
+  // 선택된 레이어에 따라 표시할 마커들을 결정
+  const markersToDisplay =
+    selectedLayer === 'all'
+      ? Object.values(markersByLayer).flat()
+      : markersByLayer[selectedLayer] || [];
+
   return (
     <div className="h-full relative">
       <Map
@@ -115,6 +181,12 @@ export function MapPanel() {
         }}
         level={1}
         onClick={(_t, mouseEvent) => {
+          // '전체' 레이어에서는 마커 추가를 방지
+          if (selectedLayer === 'all') {
+            alert('마커를 추가하려면 Day 1 또는 Day 2 레이어를 선택해주세요.');
+            return;
+          }
+
           // Geocoder 라이브러리 로드 확인
           if (
             !window.kakao ||
@@ -174,17 +246,23 @@ export function MapPanel() {
                   }
 
                   const newMarker = {
+                    id: Date.now(), // 고유 ID로 현재 시간 사용
+                    layerId: selectedLayer, // 현재 선택된 레이어 ID 저장
                     lat: latlng.getLat(),
                     lng: latlng.getLng(),
                     address: address,
                     content: placeName, // 마커에 표시될 내용은 장소 이름으로 설정
                     category: categoryName,
                   };
-                  setMarkers((prev) => [...prev, newMarker]);
+                  // 현재 선택된 레이어의 배열에 새로운 마커 추가
+                  setMarkersByLayer((prev) => ({
+                    ...prev,
+                    [selectedLayer]: [...prev[selectedLayer], newMarker],
+                  }));
                 },
                 {
                   location: latlng, // 현재 클릭한 좌표를 중심으로
-                  radius: 10, // 50미터 반경 내에서 검색합니다.
+                  radius: 50, // 50미터 반경 내에서 검색합니다.
                   sort: window.kakao.maps.services.SortBy.DISTANCE, // 거리순으로 정렬합니다.
                 }
               );
@@ -192,14 +270,17 @@ export function MapPanel() {
           );
         }}
       >
-        {markers.map((marker, index) => (
+        {markersToDisplay.map((marker, index) => (
           <EventMarkerContainer
             key={`EventMarkerContainer-${marker.lat}-${marker.lng}-${index}`}
             marker={marker}
             index={index}
           />
         ))}
-        <MapUI />
+        <MapUI
+          selectedLayer={selectedLayer}
+          setSelectedLayer={setSelectedLayer}
+        />
       </Map>
     </div>
   );
