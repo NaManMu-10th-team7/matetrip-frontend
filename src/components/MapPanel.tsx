@@ -90,20 +90,14 @@ export function MapPanel() {
         {/* isVisible이 true일 때만 정보창을 표시합니다. */}
         {/* yAnchor를 사용해 정보창을 마커 아이콘 위로 올립니다. */}
         {isVisible && (
-          <div
-            className="p-3 bg-white rounded-lg border border-gray-300 shadow-md whitespace-nowrap min-w-[180px] text-black"
-          >
-            <div className="font-bold text-sm mb-1">
-              {marker.content}
-            </div>
+          <div className="p-3 bg-white rounded-lg border border-gray-300 shadow-md whitespace-nowrap min-w-[180px] text-black">
+            <div className="font-bold text-sm mb-1">{marker.content}</div>
             {marker.category && (
               <div className="text-xs text-gray-500 mb-1.5">
                 {marker.category.split(' > ').pop()}
               </div>
             )}
-            <div className="text-xs text-gray-600">
-              {marker.address}
-            </div>
+            <div className="text-xs text-gray-600">{marker.address}</div>
           </div>
         )}
       </MapMarker>
@@ -119,10 +113,14 @@ export function MapPanel() {
           lat: 33.450701,
           lng: 126.570667,
         }}
-        level={3}
+        level={1}
         onClick={(_t, mouseEvent) => {
           // Geocoder 라이브러리 로드 확인
-          if (!window.kakao || !window.kakao.maps || !window.kakao.maps.services) {
+          if (
+            !window.kakao ||
+            !window.kakao.maps ||
+            !window.kakao.maps.services
+          ) {
             alert('Kakao Maps services 라이브러리가 로드되지 않았습니다.');
             return;
           }
@@ -131,54 +129,67 @@ export function MapPanel() {
           const geocoder = new window.kakao.maps.services.Geocoder();
 
           // 좌표를 주소로 변환
-          geocoder.coord2Address(latlng.getLng(), latlng.getLat(), (result, status) => {
-            if (status !== window.kakao.maps.services.Status.OK) {
-              console.error(
-                'Geocoder가 주소를 가져오는 데 실패했습니다. 상태:',
-                status
-              );
-              return;
-            }
+          geocoder.coord2Address(
+            latlng.getLng(),
+            latlng.getLat(),
+            (result, status) => {
+              if (status !== window.kakao.maps.services.Status.OK) {
+                console.error(
+                  'Geocoder가 주소를 가져오는 데 실패했습니다. 상태:',
+                  status
+                );
+                return;
+              }
 
-            const addressResult = result[0];
-            const address =
-              addressResult?.road_address?.address_name ||
-              addressResult?.address?.address_name;
-            // 건물 이름이 있으면 검색 정확도를 위해 건물 이름을, 없으면 주소를 검색 키워드로 사용
-            const searchKeyword =
-              addressResult?.road_address?.building_name || address;
+              const addressResult = result[0];
+              const address =
+                addressResult?.road_address?.address_name ||
+                addressResult?.address?.address_name;
+              // 건물 이름이 있으면 검색 정확도를 위해 건물 이름을, 없으면 주소를 검색 키워드로 사용
+              const searchKeyword =
+                addressResult?.road_address?.building_name || address;
 
-            console.log('클릭한 위치의 주소:', address);
-            console.log('장소 검색 키워드:', searchKeyword);
+              console.log('클릭한 위치의 주소:', address);
+              console.log('장소 검색 키워드:', searchKeyword);
 
-            const places = new window.kakao.maps.services.Places();
-            // 키워드로 장소를 검색합니다. 검색 옵션으로 현재 좌표를 제공하여 정확도를 높입니다.
-            places.keywordSearch(
-              searchKeyword,
-              (data, status) => {
-                let placeName = searchKeyword;
-                let categoryName: string | undefined = undefined;
+              const places = new window.kakao.maps.services.Places();
+              // 키워드로 장소를 검색합니다. 검색 옵션으로 현재 좌표를 제공하여 정확도를 높입니다.
+              places.keywordSearch(
+                searchKeyword,
+                (data, status) => {
+                  let placeName = searchKeyword;
+                  let categoryName: string | undefined = undefined;
 
-                if (status === window.kakao.maps.services.Status.OK) {
-                  // 검색 결과 중 첫 번째 장소의 정보를 사용합니다.
-                  const place = data[0];
-                  placeName = place.place_name;
-                  categoryName = place.category_name;
-                  console.log('검색된 장소:', placeName, '| 카테고리:', categoryName);
+                  if (status === window.kakao.maps.services.Status.OK) {
+                    // 검색 결과 중 첫 번째 장소의 정보를 사용합니다.
+                    const place = data[0];
+                    placeName = place.place_name;
+                    categoryName = place.category_name;
+                    console.log(
+                      '검색된 장소:',
+                      placeName,
+                      '| 카테고리:',
+                      categoryName
+                    );
+                  }
+
+                  const newMarker = {
+                    lat: latlng.getLat(),
+                    lng: latlng.getLng(),
+                    address: address,
+                    content: placeName, // 마커에 표시될 내용은 장소 이름으로 설정
+                    category: categoryName,
+                  };
+                  setMarkers((prev) => [...prev, newMarker]);
+                },
+                {
+                  location: latlng, // 현재 클릭한 좌표를 중심으로
+                  radius: 10, // 50미터 반경 내에서 검색합니다.
+                  sort: window.kakao.maps.services.SortBy.DISTANCE, // 거리순으로 정렬합니다.
                 }
-
-                const newMarker = {
-                  lat: latlng.getLat(),
-                  lng: latlng.getLng(),
-                  address: address,
-                  content: placeName, // 마커에 표시될 내용은 장소 이름으로 설정
-                  category: categoryName,
-                };
-                setMarkers((prev) => [...prev, newMarker]);
-              },
-              { location: latlng } // 현재 클릭한 좌표 주변으로 검색 범위를 좁힙니다.
-            );
-          });
+              );
+            }
+          );
         }}
       >
         {markers.map((marker, index) => (
