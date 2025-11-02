@@ -54,6 +54,10 @@ function MapUI() {
 export function MapPanel() {
   const [markers, setMarkers] = useState<{ lat: number; lng: number }[]>([]);
 
+  const removeMarker = (targetIndex: number) => {
+    setMarkers((prev) => prev.filter((_, index) => index !== targetIndex));
+  };
+
   return (
     <div className="h-full relative">
       <Map
@@ -76,6 +80,7 @@ export function MapPanel() {
           <MapMarker
             key={`${marker.lat}-${marker.lng}-${index}`}
             position={marker}
+            onClick={() => removeMarker(index)}
           />
         ))}
         <MapUI />
