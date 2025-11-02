@@ -1,5 +1,11 @@
 import { useState } from 'react';
-import { Routes, Route, useNavigate, useLocation, Outlet } from 'react-router-dom';
+import {
+  Routes,
+  Route,
+  useNavigate,
+  useLocation,
+  Outlet,
+} from 'react-router-dom';
 import { Header } from './components/Header';
 import { MainPage } from './components/MainPage';
 import { SearchResults } from './components/SearchResults';
@@ -20,7 +26,7 @@ function Layout({
   onLogoutClick,
   onProfileClick,
   onCreatePost,
-  onLogoClick
+  onLogoClick,
 }: {
   isLoggedIn: boolean;
   onLoginClick: () => void;
@@ -59,7 +65,17 @@ function MainPageWrapper() {
     navigate(`/post/${postId}`);
   };
 
-  return <MainPage onSearch={handleSearch} onViewPost={handleViewPost} />;
+  const handleUserClick = (userId: number) => {
+    navigate(`/profile/${userId}`);
+  };
+
+  return (
+    <MainPage
+      onSearch={handleSearch}
+      onViewPost={handleViewPost}
+      onUserClick={handleUserClick}
+    />
+  );
 }
 
 function SearchResultsWrapper() {
@@ -81,7 +97,7 @@ function SearchResultsWrapper() {
 
 function PostDetailWrapper({
   isLoggedIn,
-  onEditPost
+  onEditPost,
 }: {
   isLoggedIn: boolean;
   onEditPost: (postId: number) => void;
@@ -120,18 +136,22 @@ function WorkspaceWrapper() {
   return <Workspace postId={postId} onEndTrip={handleEndTrip} />;
 }
 
-function ProfileWrapper({
-  isLoggedIn
-}: {
-  isLoggedIn: boolean;
-}) {
+function ProfileWrapper({ isLoggedIn }: { isLoggedIn: boolean }) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const userId = parseInt(location.pathname.split('/').pop() || '0');
 
   const handleViewPost = (postId: number) => {
     navigate(`/post/${postId}`);
   };
 
-  return <Profile isLoggedIn={isLoggedIn} onViewPost={handleViewPost} />;
+  return (
+    <Profile
+      isLoggedIn={isLoggedIn}
+      onViewPost={handleViewPost}
+      userId={userId}
+    />
+  );
 }
 
 function LoginWrapper({ onLogin }: { onLogin: () => void }) {
@@ -173,7 +193,9 @@ export default function App() {
   // 모달 상태
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [showEditPost, setShowEditPost] = useState(false);
-  const [selectedPostForEdit, setSelectedPostForEdit] = useState<number | null>(null);
+  const [selectedPostForEdit, setSelectedPostForEdit] = useState<number | null>(
+    null
+  );
 
   const handleLogin = () => {
     setIsLoggedIn(true);
@@ -198,7 +220,10 @@ export default function App() {
       <Routes>
         {/* Routes without Header */}
         <Route path="/login" element={<LoginWrapper onLogin={handleLogin} />} />
-        <Route path="/signup" element={<SignupWrapper onSignup={handleLogin} />} />
+        <Route
+          path="/signup"
+          element={<SignupWrapper onSignup={handleLogin} />}
+        />
 
         {/* Routes with Header */}
         <Route
@@ -228,7 +253,14 @@ export default function App() {
             }
           />
           <Route path="/workspace/:id" element={<WorkspaceWrapper />} />
-          <Route path="/profile" element={<ProfileWrapper isLoggedIn={isLoggedIn} />} />
+          <Route
+            path="/profile"
+            element={<ProfileWrapper isLoggedIn={isLoggedIn} />}
+          />
+          <Route
+            path="/profile/:userId"
+            element={<ProfileWrapper isLoggedIn={isLoggedIn} />}
+          />
           <Route path="/review" element={<ReviewPageWrapper />} />
           <Route path="*" element={<NotFound />} />
         </Route>

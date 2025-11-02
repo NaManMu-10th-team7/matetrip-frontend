@@ -82,9 +82,15 @@ const MOCK_PROFILE = {
 interface ProfileProps {
   isLoggedIn: boolean;
   onViewPost: (postId: number) => void;
+  userId?: number;
 }
 
-export function Profile({ isLoggedIn, onViewPost }: ProfileProps) {
+export function Profile({ isLoggedIn, onViewPost, userId }: ProfileProps) {
+  // TODO: 백엔드 연동 시 userId로 사용자 프로필 데이터 가져오기
+  // const profile = userId
+  //   ? await fetchUserProfile(userId)  // 특정 사용자 프로필 조회
+  //   : MOCK_PROFILE;  // 본인 프로필 (userId 없을 때)
+
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Profile Header */}
@@ -110,6 +116,7 @@ export function Profile({ isLoggedIn, onViewPost }: ProfileProps) {
                   ))}
                 </div>
               </div>
+              {/* TODO: 백엔드 연동 시 - 본인 프로필일 때만 수정 버튼 표시 (!userId || userId === currentUserId) */}
               <Button variant="outline" className="gap-2">
                 <Edit className="w-4 h-4" />
                 프로필 수정
@@ -230,6 +237,7 @@ export function Profile({ isLoggedIn, onViewPost }: ProfileProps) {
               <div
                 key={trip.id}
                 className="bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => onViewPost(trip.id)}
               >
                 <div className="relative h-48">
                   <ImageWithFallback
@@ -268,6 +276,7 @@ export function Profile({ isLoggedIn, onViewPost }: ProfileProps) {
                 <div
                   key={trip.id}
                   className="bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+                  onClick={() => onViewPost(trip.id)}
                 >
                   <div className="relative h-48">
                     <ImageWithFallback

@@ -9,8 +9,11 @@ import { ImageWithFallback } from './figma/ImageWithFallback';
 interface MainPageProps {
   onSearch: (params: { date?: string; location?: string }) => void;
   onViewPost: (postId: number) => void;
+  onUserClick: (userId: number) => void;
 }
 
+// TODO: 백엔드 연동 시 API에서 추천 사용자 목록 가져오기
+// const RECOMMENDED_USERS = await fetchRecommendedUsers();
 const RECOMMENDED_USERS = [
   {
     id: 1,
@@ -80,7 +83,7 @@ const REGION_CATEGORIES = [
   },
 ];
 
-export function MainPage({ onSearch, onViewPost }: MainPageProps) {
+export function MainPage({ onSearch, onViewPost, onUserClick }: MainPageProps) {
   const [searchDate, setSearchDate] = useState('');
   const [searchLocation, setSearchLocation] = useState('');
 
@@ -92,11 +95,6 @@ export function MainPage({ onSearch, onViewPost }: MainPageProps) {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Hero Section with Search */}
       <div className="text-center mb-12">
-        <h1 className="text-gray-900 mb-4">함께 떠나는 특별한 여행</h1>
-        <p className="text-gray-600 mb-8">
-          새로운 동행과 함께 잊지 못할 추억을 만들어보세요
-        </p>
-
         {/* Search Box */}
         <Card className="max-w-3xl mx-auto p-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -144,6 +142,7 @@ export function MainPage({ onSearch, onViewPost }: MainPageProps) {
             <Card
               key={user.id}
               className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
+              onClick={() => {onUserClick(user.id);}}
             >
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full" />
