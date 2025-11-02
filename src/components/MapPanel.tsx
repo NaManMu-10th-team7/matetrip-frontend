@@ -91,26 +91,17 @@ export function MapPanel() {
         {/* yAnchor를 사용해 정보창을 마커 아이콘 위로 올립니다. */}
         {isVisible && (
           <div
-            style={{
-              padding: '10px',
-              color: '#000',
-              background: 'white',
-              borderRadius: '8px',
-              border: '1px solid #ccc',
-              whiteSpace: 'nowrap',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-              minWidth: '180px',
-            }}
+            className="p-3 bg-white rounded-lg border border-gray-300 shadow-md whitespace-nowrap min-w-[180px] text-black"
           >
-            <div style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '4px' }}>
+            <div className="font-bold text-sm mb-1">
               {marker.content}
             </div>
             {marker.category && (
-              <div style={{ fontSize: '12px', color: '#888', marginBottom: '6px' }}>
+              <div className="text-xs text-gray-500 mb-1.5">
                 {marker.category.split(' > ').pop()}
               </div>
             )}
-            <div style={{ fontSize: '13px', color: '#555' }}>
+            <div className="text-xs text-gray-600">
               {marker.address}
             </div>
           </div>
