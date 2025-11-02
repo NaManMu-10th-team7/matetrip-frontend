@@ -61,22 +61,36 @@ export function MapPanel() {
     setMarkers((prev) => prev.filter((_, index) => index !== targetIndex));
   };
 
-  // EventMarkerContainer 컴포넌트에 props 타입 추가
-  function EventMarkerContainer({ marker, content, index }) {
+  // EventMarkerContainer의 props 타입을 명확하게 정의합니다.
+  type EventMarkerContainerProps = {
+    marker: { lat: number; lng: number };
+    content: string;
+    index: number;
+  };
+
+  function EventMarkerContainer({
+    marker,
+    content,
+    index,
+  }: EventMarkerContainerProps) {
     const [isVisible, setIsVisible] = useState(false);
 
     return (
-      // key를 고유하고 안정적으로 변경
       <MapMarker
         key={`${marker.lat}-${marker.lng}-${index}`}
         position={marker}
         onClick={() => removeMarker(index)}
+        // MapMarker에 직접 onMouseOver와 onMouseOut 이벤트를 다시 적용합니다.
         onMouseOver={() => setIsVisible(true)}
         onMouseOut={() => setIsVisible(false)}
+        // isVisible 상태일 때만 자식(CustomOverlay)을 렌더링합니다.
       >
-        {/* isVisible 상태일 때 content(주소)를 보여줍니다. */}
+        {/* isVisible이 true일 때만 정보창을 표시합니다. */}
+        {/* yAnchor를 사용해 정보창을 마커 아이콘 위로 올립니다. */}
         {isVisible && (
-          <div style={{ padding: '5px', color: '#000' }}>{content}</div>
+          <div style={{ padding: '5px', color: '#000', background: 'white', borderRadius: '4px', border: '1px solid #ccc', whiteSpace: 'nowrap' }}>
+            {content}
+          </div>
         )}
       </MapMarker>
     );
@@ -116,7 +130,10 @@ export function MapPanel() {
               };
               setMarkers((prev) => [...prev, newMarker]);
             } else {
-              console.error('주소를 가져오는 데 실패했습니다.');
+              console.error(
+                'Geocoder가 주소를 가져오는 데 실패했습니다. 상태:',
+                status
+              );
             }
           });
         }}
