@@ -52,11 +52,35 @@ function MapUI() {
 }
 
 export function MapPanel() {
-  const [markers, setMarkers] = useState<{ lat: number; lng: number }[]>([]);
+  // 마커 정보를 저장할 상태 (주소와 내용 추가)
+  const [markers, setMarkers] = useState<
+    { lat: number; lng: number; address: string; content: string }[]
+  >([]);
 
   const removeMarker = (targetIndex: number) => {
     setMarkers((prev) => prev.filter((_, index) => index !== targetIndex));
   };
+
+  // EventMarkerContainer 컴포넌트에 props 타입 추가
+  function EventMarkerContainer({ marker, content, index }) {
+    const [isVisible, setIsVisible] = useState(false);
+
+    return (
+      // key를 고유하고 안정적으로 변경
+      <MapMarker
+        key={`${marker.lat}-${marker.lng}-${index}`}
+        position={marker}
+        onClick={() => removeMarker(index)}
+        onMouseOver={() => setIsVisible(true)}
+        onMouseOut={() => setIsVisible(false)}
+      >
+        {/* isVisible 상태일 때 content(주소)를 보여줍니다. */}
+        {isVisible && (
+          <div style={{ padding: '5px', color: '#000' }}>{content}</div>
+        )}
+      </MapMarker>
+    );
+  }
 
   return (
     <div className="h-full relative">
@@ -69,18 +93,40 @@ export function MapPanel() {
         }}
         level={3}
         onClick={(_t, mouseEvent) => {
+          // Geocoder 라이브러리 로드 확인
+          if (!window.kakao || !window.kakao.maps || !window.kakao.maps.services) {
+            alert('Kakao Maps services 라이브러리가 로드되지 않았습니다.');
+            return;
+          }
+
           const latlng = mouseEvent.latLng;
-          setMarkers((prev) => [
-            ...prev,
-            { lat: latlng.getLat(), lng: latlng.getLng() },
-          ]);
+          const geocoder = new window.kakao.maps.services.Geocoder();
+
+          // 좌표를 주소로 변환
+          geocoder.coord2Address(latlng.getLng(), latlng.getLat(), (result, status) => {
+            if (status === window.kakao.maps.services.Status.OK) {
+              const address = result[0]?.road_address?.address_name || result[0]?.address?.address_name;
+              console.log('클릭한 위치의 주소:', address);
+
+              const newMarker = {
+                lat: latlng.getLat(),
+                lng: latlng.getLng(),
+                address: address,
+                content: address, // 우선 주소를 content로 사용
+              };
+              setMarkers((prev) => [...prev, newMarker]);
+            } else {
+              console.error('주소를 가져오는 데 실패했습니다.');
+            }
+          });
         }}
       >
         {markers.map((marker, index) => (
-          <MapMarker
-            key={`${marker.lat}-${marker.lng}-${index}`}
-            position={marker}
-            onClick={() => removeMarker(index)}
+          <EventMarkerContainer
+            key={`EventMarkerContainer-${marker.lat}-${marker.lng}-${index}`}
+            marker={marker}
+            index={index}
+            content={marker.content}
           />
         ))}
         <MapUI />
