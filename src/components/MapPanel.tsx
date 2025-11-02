@@ -33,7 +33,9 @@ export function MapPanel() {
   });
   const [selectedLayer, setSelectedLayer] = useState<LayerType>('all');
   // 최종 여행 계획(일정)을 저장할 상태
-  const [itinerary, setItinerary] = useState<MarkerType[]>([]);
+  const [itinerary, setItinerary] = useState<
+    Record<Exclude<LayerType, 'all'>, MarkerType[]>
+  >({ day1: [], day2: [] });
 
   const removeMarker = (markerToRemove: MarkerType) => {
     setMarkersByLayer((prev) => ({
@@ -46,15 +48,26 @@ export function MapPanel() {
 
   // 여행 일정에 장소를 추가하는 함수
   const addToItinerary = (markerToAdd: MarkerType) => {
-    // 이미 추가된 장소인지 확인
-    if (itinerary.some((item) => item.id === markerToAdd.id)) {
+    // 모든 Day를 통틀어 이미 추가된 장소인지 확인
+    const isAlreadyAdded = Object.values(itinerary)
+      .flat()
+      .some((item) => item.id === markerToAdd.id);
+
+    if (isAlreadyAdded) {
       alert('이미 일정에 추가된 장소입니다.');
       return;
     }
-    setItinerary((prev) => [...prev, markerToAdd]);
-    // 콘솔에서 현재까지 추가된 여행 계획을 확인할 수 있습니다.
-    console.log('여행 계획에 추가됨:', markerToAdd);
-    console.log('현재 여행 계획:', [...itinerary, markerToAdd]);
+
+    const targetDay = markerToAdd.layerId;
+    setItinerary((prev) => {
+      const newItineraryForDay = [...prev[targetDay], markerToAdd];
+      const updatedItinerary = { ...prev, [targetDay]: newItineraryForDay };
+
+      // 콘솔에서 현재까지 추가된 여행 계획을 확인할 수 있습니다.
+      console.log(`Day ${targetDay.slice(-1)} 여행 계획에 추가됨:`, markerToAdd);
+      console.log('현재 전체 여행 계획:', updatedItinerary);
+      return updatedItinerary;
+    });
   };
 
   // EventMarkerContainer의 props 타입을 명확하게 정의합니다.
@@ -289,7 +302,9 @@ export function MapPanel() {
             marker={marker}
             index={index}
             // 현재 마커가 itinerary에 포함되어 있는지 여부를 prop으로 전달
-            isAdded={itinerary.some((item) => item.id === marker.id)}
+            isAdded={Object.values(itinerary)
+              .flat()
+              .some((item) => item.id === marker.id)}
           />
         ))}
         <MapUI
