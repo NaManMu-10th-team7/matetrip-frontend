@@ -7,6 +7,8 @@ import {
   EyeOff,
   User,
   Phone,
+  Pen,
+  FileText,
   CheckCircle2,
   ArrowLeft,
 } from 'lucide-react';
@@ -15,36 +17,26 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Checkbox } from './ui/checkbox';
 import { Badge } from './ui/badge';
+import { Textarea } from './ui/textarea';
 import { Progress } from './ui/progress';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import axios from 'axios';
+import client from '../api/client';
 
 interface SignupProps {
   onSignup: () => void;
   onLoginClick: () => void;
 }
 
-const TRAVEL_STYLES = [
-  '힐링',
-  '액티브',
-  '맛집투어',
-  '사진',
-  '자연',
-  '도시',
-  '해변',
-  '산',
-  '캠핑',
-  '문화탐방',
-  '쇼핑',
-  '축제',
-];
+const TRAVEL_STYLES = ['RELAXED', 'ACTIVE', 'CULTURAL', 'FOODIE', 'NATURE'];
 
-const PERSONALITY_TYPES = [
-  { value: 'planned', label: '계획적', emoji: '📋' },
-  { value: 'spontaneous', label: '즉흥적', emoji: '✨' },
-  { value: 'active', label: '활동적', emoji: '⚡' },
-  { value: 'relaxed', label: '여유로운', emoji: '🌿' },
-  { value: 'social', label: '사교적', emoji: '👥' },
-  { value: 'quiet', label: '조용한', emoji: '🤫' },
+const TRAVEL_TENDENCIES = [
+  // { value: 'planned', label: '계획적', emoji: '📋' },
+  // { value: 'spontaneous', label: '즉흥적', emoji: '✨' },
+  { value: '내향적', label: '내향적', emoji: '⚡' },
+  { value: '외향적', label: '외향적', emoji: '🌿' },
+  // { value: 'social', label: '사교적', emoji: '👥' },
+  // { value: 'quiet', label: '조용한', emoji: '🤫' },
 ];
 
 const MBTI_TYPES = [
@@ -77,13 +69,13 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
     password: '',
     confirmPassword: '',
     nickname: '',
+    gender: '',
     phone: '',
     mbti: '',
     travelStyles: [] as string[],
-    personality: [] as string[],
-    agreeTerms: false,
-    agreePrivacy: false,
-    agreeMarketing: false,
+    travelTendency: [] as string[],
+    intro: '',
+    description: '',
   });
 
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
@@ -101,12 +93,12 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
     }));
   };
 
-  const togglePersonality = (personality: string) => {
+  const toggleTravelTendency = (travelTendency: string) => {
     setFormData((prev) => ({
       ...prev,
-      personality: prev.personality.includes(personality)
-        ? prev.personality.filter((p) => p !== personality)
-        : [...prev.personality, personality],
+      travelTendency: prev.travelTendency.includes(travelTendency)
+        ? prev.travelTendency.filter((p) => p !== travelTendency)
+        : [...prev.travelTendency, travelTendency],
     }));
   };
 
@@ -118,10 +110,43 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
     setStep((prev) => Math.max(prev - 1, 1));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle signup logic
-    onSignup();
+
+    if (formData.password !== formData.confirmPassword) {
+      return;
+    }
+
+    try {
+      const requestData = {
+        email: formData.email,
+        password: formData.password,
+        profile: {
+          nickname: formData.nickname,
+          gender: formData.gender,
+          mbtiTypes: formData.mbti,
+          travelStyles: formData.travelStyles,
+          travelTendency: formData.travelTendency,
+          intro: formData.intro,
+          description: formData.description,
+        },
+      };
+
+      console.log(requestData);
+
+      await client.post('/auth/signup', requestData);
+
+      // 회원가입 성공 시 부모 컴포넌트의 onSignup 함수 호출
+      onSignup();
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        // const apiError = error.response.data as ApiErrorResponse;
+        // setErrorMessage(apiError.message || '회원가입에 실패했습니다.');
+      } else {
+        // setErrorMessage('알 수 없는 오류가 발생했습니다.');
+      }
+      console.error('Signup error:', error);
+    }
   };
 
   const progressValue = (step / 3) * 100;
@@ -289,6 +314,50 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                   </div>
 
                   <div>
+                    <Label>성별</Label>
+                    <div className="flex gap-4 mt-2">
+                      <div className="flex items-center gap-2">
+                        <Input
+                          id="male"
+                          type="radio"
+                          value="남성"
+                          name="gender"
+                          checked={formData.gender === '남성'}
+                          onChange={(e) =>
+                            handleInputChange('gender', e.target.value)
+                          }
+                          className="h-4 w-4 accent-blue-600"
+                        />
+                        <Label
+                          htmlFor="male"
+                          className="cursor-pointer font-normal"
+                        >
+                          남성
+                        </Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          id="female"
+                          type="radio"
+                          value="여성"
+                          name="gender"
+                          checked={formData.gender === '여성'}
+                          onChange={(e) =>
+                            handleInputChange('gender', e.target.value)
+                          }
+                          className="h-4 w-4 accent-blue-600"
+                        />
+                        <Label
+                          htmlFor="female"
+                          className="cursor-pointer font-normal"
+                        >
+                          여성
+                        </Label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
                     <Label htmlFor="phone">연락처</Label>
                     <div className="flex gap-2 mt-2">
                       <div className="relative flex-1">
@@ -378,13 +447,13 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                   <div>
                     <Label>여행 성향</Label>
                     <div className="grid grid-cols-2 gap-3 mt-3">
-                      {PERSONALITY_TYPES.map((type) => (
+                      {TRAVEL_TENDENCIES.map((type) => (
                         <button
                           key={type.value}
                           type="button"
-                          onClick={() => togglePersonality(type.value)}
+                          onClick={() => toggleTravelTendency(type.value)}
                           className={`p-4 rounded-lg border-2 transition-all ${
-                            formData.personality.includes(type.value)
+                            formData.travelTendency.includes(type.value)
                               ? 'border-blue-600 bg-blue-50'
                               : 'border-gray-200 hover:border-gray-300'
                           }`}
@@ -441,84 +510,47 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                     </button>
                   </div>
 
-                  <p className="text-gray-600 mb-6">약관에 동의해주세요</p>
+                  <p className="text-gray-600 mb-6">
+                    프로필을 완성하고 자신을 소개해보세요.
+                  </p>
 
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
-                      <Checkbox
-                        id="agreeTerms"
-                        checked={formData.agreeTerms}
-                        onCheckedChange={(checked) =>
-                          handleInputChange('agreeTerms', checked)
+                  <div>
+                    <Label htmlFor="intro">한줄소개</Label>
+                    <div className="relative mt-2">
+                      <Pen className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <Input
+                        id="intro"
+                        type="text"
+                        placeholder="예) 바다를 사랑하는 여행러 🌊"
+                        value={formData.intro}
+                        onChange={(e) =>
+                          handleInputChange('intro', e.target.value)
                         }
+                        className="pl-10"
+                        maxLength={50}
                       />
-                      <div className="flex-1">
-                        <label
-                          htmlFor="agreeTerms"
-                          className="text-sm text-gray-900 cursor-pointer"
-                        >
-                          (필수) 이용약관 동의
-                        </label>
-                        <button
-                          type="button"
-                          className="text-xs text-blue-600 hover:underline mt-1 block"
-                        >
-                          자세히 보기
-                        </button>
-                      </div>
                     </div>
+                  </div>
 
-                    <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
-                      <Checkbox
-                        id="agreePrivacy"
-                        checked={formData.agreePrivacy}
-                        onCheckedChange={(checked) =>
-                          handleInputChange('agreePrivacy', checked)
+                  <div>
+                    <Label htmlFor="description">상세소개</Label>
+                    <div className="relative mt-2">
+                      <FileText className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                      <Textarea
+                        id="description"
+                        placeholder="자신에 대해 자유롭게 소개해주세요. (여행 스타일, 좋아하는 것 등)"
+                        value={formData.description}
+                        onChange={(e) =>
+                          handleInputChange('description', e.target.value)
                         }
+                        className="pl-10 min-h-32"
                       />
-                      <div className="flex-1">
-                        <label
-                          htmlFor="agreePrivacy"
-                          className="text-sm text-gray-900 cursor-pointer"
-                        >
-                          (필수) 개인정보 수집 및 이용 동의
-                        </label>
-                        <button
-                          type="button"
-                          className="text-xs text-blue-600 hover:underline mt-1 block"
-                        >
-                          자세히 보기
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
-                      <Checkbox
-                        id="agreeMarketing"
-                        checked={formData.agreeMarketing}
-                        onCheckedChange={(checked) =>
-                          handleInputChange('agreeMarketing', checked)
-                        }
-                      />
-                      <div className="flex-1">
-                        <label
-                          htmlFor="agreeMarketing"
-                          className="text-sm text-gray-900 cursor-pointer"
-                        >
-                          (선택) 마케팅 정보 수신 동의
-                        </label>
-                        <p className="text-xs text-gray-500 mt-1">
-                          이벤트, 프로모션 등의 혜택 정보를 받아보실 수
-                          있습니다.
-                        </p>
-                      </div>
                     </div>
                   </div>
 
                   <Button
                     type="submit"
                     className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                    disabled={!formData.agreeTerms || !formData.agreePrivacy}
                   >
                     회원가입 완료
                   </Button>
