@@ -54,10 +54,17 @@ function Layout({
 function MainPageWrapper() {
   const navigate = useNavigate();
 
-  const handleSearch = (params: { date?: string; location?: string }) => {
+  const handleSearch = (params: {
+    startDate?: string;
+    endDate?: string;
+    location?: string;
+    title?: string;
+  }) => {
     const searchParams = new URLSearchParams();
-    if (params.date) searchParams.set('date', params.date);
+    if (params.startDate) searchParams.set('startDate', params.startDate);
+    if (params.endDate) searchParams.set('endDate', params.endDate);
     if (params.location) searchParams.set('location', params.location);
+    if (params.title) searchParams.set('title', params.title);
     navigate(`/search?${searchParams.toString()}`);
   };
 
@@ -84,8 +91,10 @@ function SearchResultsWrapper() {
   const searchParams = new URLSearchParams(location.search);
 
   const params = {
-    date: searchParams.get('date') || undefined,
+    startDate: searchParams.get('startDate') || undefined,
+    endDate: searchParams.get('endDate') || undefined,
     location: searchParams.get('location') || undefined,
+    title: searchParams.get('title') || undefined,
   };
 
   const handleViewPost = (postId: number) => {

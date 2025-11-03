@@ -1,11 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, SlidersHorizontal, TrendingUp, Search } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { PostCard } from './PostCard';
 
 interface SearchResultsProps {
-  searchParams: { date?: string; location?: string };
+  searchParams: {
+    startDate?: string;
+    endDate?:string;
+    location?: string;
+    title?: string;
+  };
   onViewPost: (postId: number) => void;
 }
 
@@ -64,7 +69,45 @@ export function SearchResults({
   searchParams,
   onViewPost,
 }: SearchResultsProps) {
+  // TODO: API 응답 타입에 맞게 Post 타입 정의 필요
+  const [results, setResults] = useState<typeof MOCK_SEARCH_RESULTS>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const [sortBy, setSortBy] = useState<'match' | 'latest'>('match');
+
+  useEffect(() => {
+    const fetchResults = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        // TODO: 실제 API 엔드포인트와 쿼리 파라미터로 교체해야 합니다.
+        const filteredParams = Object.entries(searchParams).reduce(
+          (acc, [key, value]) => {
+            if (value) acc[key] = value;
+            return acc;
+          },
+          {} as Record<string, string>
+        );
+        const query = new URLSearchParams(filteredParams).toString();
+        console.log(`Fetching... /api/posts/search?${query}`);
+
+        // API 호출 시뮬레이션
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        // MOCK 데이터를 필터링하여 API 응답을 시뮬레이션합니다.
+        // 실제 구현에서는 API가 필터링된 결과를 반환합니다.
+        setResults(MOCK_SEARCH_RESULTS);
+      } catch (e) {
+        setError(e as Error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchResults();
+  }, [searchParams]);
+
+  const searchKeywords = Object.values(searchParams).filter(Boolean).join(', ');
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -82,11 +125,9 @@ export function SearchResults({
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-gray-900 mb-2">검색 결과</h1>
-            {searchParams.location && (
+            {searchKeywords && !isLoading && (
               <p className="text-gray-600">
-                "{searchParams.location}"
-                {searchParams.date && ` · ${searchParams.date}`} 검색 결과{' '}
-                {MOCK_SEARCH_RESULTS.length}개
+                "{searchKeywords}" 검색 결과 {results.length}개
               </p>
             )}
           </div>
@@ -118,9 +159,20 @@ export function SearchResults({
         </div>
       </div>
 
+      {/* Loading State */}
+      {isLoading && <div className="text-center py-16">로딩 중...</div>}
+
+      {/* Error State */}
+      {error && (
+        <div className="text-center py-16 text-red-500">
+          오류가 발생했습니다: {error.message}
+        </div>
+      )}
+
       {/* Results Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {MOCK_SEARCH_RESULTS.map((post) => (
+      {!isLoading && !error && results.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {results.map((post) => (
           <div key={post.id} className="relative">
             {sortBy === 'match' && (
               <Badge className="absolute -top-2 -right-2 z-10 bg-purple-600 gap-1">
@@ -130,11 +182,12 @@ export function SearchResults({
             )}
             <PostCard post={post} onJoin={onViewPost} />
           </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Empty State */}
-      {MOCK_SEARCH_RESULTS.length === 0 && (
+      {!isLoading && !error && results.length === 0 && (
         <div className="text-center py-16">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Search className="w-8 h-8 text-gray-400" />
