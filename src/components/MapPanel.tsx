@@ -230,7 +230,6 @@ export function MapPanel() {
         onClick={(_t, mouseEvent) => {
           // '전체' 레이어에서는 마커 추가를 방지
           if (selectedLayer === 'all') {
-            alert('마커를 추가하려면 Day 1 또는 Day 2 레이어를 선택해주세요.');
             return;
           }
 
@@ -333,19 +332,26 @@ export function MapPanel() {
         {dayLayers.map((layer) => {
           const shouldDisplay =
             selectedLayer === 'all' || selectedLayer === layer.id;
-          const path = polylinePaths[layer.id];
+          const dayPath = polylinePaths[layer.id];
           return (
             shouldDisplay &&
-            path.length > 1 && (
-              <Polyline
-                key={`polyline-${layer.id}`}
-                path={path}
-                strokeWeight={3}
-                strokeColor={layer.color}
-                strokeOpacity={0.8}
-                strokeStyle={'solid'}
-              />
-            )
+            dayPath.length > 1 &&
+            // 경로를 구간별로 나누어 각각의 Polyline으로 렌더링합니다.
+            dayPath.map((_, index) => {
+              if (index === 0) return null; // 첫 번째 점에서는 시작만 하므로 선을 그리지 않습니다.
+              const segmentPath = [dayPath[index - 1], dayPath[index]];
+              return (
+                <Polyline
+                  key={`polyline-${layer.id}-${index}`}
+                  path={segmentPath}
+                  strokeWeight={3}
+                  strokeColor={layer.color}
+                  strokeOpacity={0.8}
+                  strokeStyle={'solid'}
+                  endArrow={true} // 선의 끝에 화살표를 추가합니다.
+                />
+              );
+            })
           );
         })}
 
