@@ -35,20 +35,19 @@ export function Login({ onLogin, onSignupClick }: LoginProps) {
 
     try {
       // 1. NestJS 백엔드에 로그인 요청
-      const response = await client.post<LoginSuccessResponse>('/auth/login', {
-        email: email,
-        password: password,
-      });
+      const response = await client.post<LoginSuccessResponse>(
+        '/auth/login',
+        {
+          email: email,
+          password: password,
+        },
+        { withCredentials: true }
+      ); // 쿠키 전달을 위해 withCredentials 설정
 
-      // 2. 응답 데이터에서 Access Token 추출
-      if (response.data.accessToken) {
-        // 임시로 로컬스토리지에 토큰 저장. 추후 HttpOnly로 쿠키에 저장 예정
-        localStorage.setItem('token', response.data.accessToken);
-
-        console.log('로그인 성공, 토큰 저장 : ', response.data.accessToken);
-
-        // 메인 페이지 이동
-        navigate('/');
+      if (response.status === 200) {
+        // 2. 로그인 성공
+        alert('로그인 되었습니다.');
+        navigate('/'); // 홈으로 이동
       }
     } catch (error) {
       // 3. 로그인 실패. axios 에러 객체(AxiosError)로 타입 가드 수행
