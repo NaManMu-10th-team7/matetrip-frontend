@@ -189,7 +189,6 @@ export default function App() {
 
   // 유저의 로그인 상태
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-
   // 모달 상태
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [showEditPost, setShowEditPost] = useState(false);
