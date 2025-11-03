@@ -138,9 +138,14 @@ const MOCK_PROFILE: ProfileData = {
 interface ProfileProps {
   isLoggedIn: boolean;
   onViewPost: (postId: number) => void;
+  userId?: number;
 }
 
 export function Profile({ isLoggedIn, onViewPost: _onViewPost }: ProfileProps) {
+  // TODO: 백엔드 연동 시 userId로 사용자 프로필 데이터 가져오기
+  // const profile = userId
+  //   ? await fetchUserProfile(userId)  // 특정 사용자 프로필 조회
+  //   : MOCK_PROFILE;  // 본인 프로필 (userId 없을 때)
   const [profile, setProfile] = useState<ProfileData>(MOCK_PROFILE);
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState<ProfileData>(profile);
@@ -240,7 +245,7 @@ export function Profile({ isLoggedIn, onViewPost: _onViewPost }: ProfileProps) {
                   ))}
                 </div>
               </div>
-
+              {/* TODO: 백엔드 연동 시 - 본인 프로필일 때만 수정 버튼 표시 (!userId || userId === currentUserId) */}
               {isEditing ? (
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={cancelEditing}>
@@ -470,6 +475,7 @@ export function Profile({ isLoggedIn, onViewPost: _onViewPost }: ProfileProps) {
               <div
                 key={trip.id}
                 className="bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => onViewPost(trip.id)}
               >
                 <div className="relative h-48">
                   <ImageWithFallback
@@ -507,6 +513,7 @@ export function Profile({ isLoggedIn, onViewPost: _onViewPost }: ProfileProps) {
                 <div
                   key={trip.id}
                   className="bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+                  onClick={() => onViewPost(trip.id)}
                 >
                   <div className="relative h-48">
                     <ImageWithFallback

@@ -65,7 +65,17 @@ function MainPageWrapper() {
     navigate(`/post/${postId}`);
   };
 
-  return <MainPage onSearch={handleSearch} onViewPost={handleViewPost} />;
+  const handleUserClick = (userId: number) => {
+    navigate(`/profile/${userId}`);
+  };
+
+  return (
+    <MainPage
+      onSearch={handleSearch}
+      onViewPost={handleViewPost}
+      onUserClick={handleUserClick}
+    />
+  );
 }
 
 function SearchResultsWrapper() {
@@ -128,12 +138,20 @@ function WorkspaceWrapper() {
 
 function ProfileWrapper({ isLoggedIn }: { isLoggedIn: boolean }) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const userId = parseInt(location.pathname.split('/').pop() || '0');
 
   const handleViewPost = (postId: number) => {
     navigate(`/post/${postId}`);
   };
 
-  return <Profile isLoggedIn={isLoggedIn} onViewPost={handleViewPost} />;
+  return (
+    <Profile
+      isLoggedIn={isLoggedIn}
+      onViewPost={handleViewPost}
+      userId={userId}
+    />
+  );
 }
 
 function LoginWrapper({ onLogin }: { onLogin: () => void }) {
@@ -237,6 +255,10 @@ export default function App() {
           <Route path="/workspace/:id" element={<WorkspaceWrapper />} />
           <Route
             path="/profile"
+            element={<ProfileWrapper isLoggedIn={isLoggedIn} />}
+          />
+          <Route
+            path="/profile/:userId"
             element={<ProfileWrapper isLoggedIn={isLoggedIn} />}
           />
           <Route path="/review" element={<ReviewPageWrapper />} />
