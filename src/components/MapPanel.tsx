@@ -1,15 +1,16 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Plus, Maximize2, Layers } from 'lucide-react';
 import { Button } from './ui/button';
-import { Map, MapMarker } from 'react-kakao-maps-sdk';
+import { Map, MapMarker, Polyline } from 'react-kakao-maps-sdk';
 
 type LayerType = 'all' | 'day1' | 'day2';
 
-const LAYERS: { id: LayerType; label: string }[] = [
-  { id: 'all', label: '전체' },
-  { id: 'day1', label: 'Day 1' },
-  { id: 'day2', label: 'Day 2' },
-];
+// 레이어 정보를 동적으로 관리하기 위해 확장 가능한 타입 정의
+type DayLayer = {
+  id: `day${number}`;
+  label: string;
+  color: string; // Polyline 색상을 위한 속성 추가
+};
 
 // 마커 데이터의 타입을 정의합니다.
 type MarkerType = {
@@ -20,22 +21,35 @@ type MarkerType = {
   category?: string;
   // 마커를 고유하게 식별하고, 어떤 레이어에 속하는지 알기 위한 속성 추가
   id: number;
-  layerId: Exclude<LayerType, 'all'>;
+  layerId: DayLayer['id'];
 };
 
 export function MapPanel() {
+  // 레이어 정보를 상수가 아닌 상태로 관리하여 동적 확장성을 확보
+  const [dayLayers, setDayLayers] = useState<DayLayer[]>([
+    { id: 'day1', label: 'Day 1', color: '#FF0000' }, // 빨간색
+    { id: 'day2', label: 'Day 2', color: '#0000FF' }, // 파란색
+  ]);
+
+  // '전체' 레이어를 포함한 전체 UI용 레이어 목록
+  const UILayers: { id: LayerType | DayLayer['id']; label: string }[] = [
+    { id: 'all', label: '전체' },
+    ...dayLayers,
+  ];
+
   // 레이어별로 마커를 저장하도록 상태 구조 변경
   const [markersByLayer, setMarkersByLayer] = useState<
-    Record<Exclude<LayerType, 'all'>, MarkerType[]>
-  >({
-    day1: [],
-    day2: [],
-  });
+    Record<DayLayer['id'], MarkerType[]>
+  >(() =>
+    dayLayers.reduce((acc, layer) => ({ ...acc, [layer.id]: [] }), {})
+  );
   const [selectedLayer, setSelectedLayer] = useState<LayerType>('all');
   // 최종 여행 계획(일정)을 저장할 상태
   const [itinerary, setItinerary] = useState<
-    Record<Exclude<LayerType, 'all'>, MarkerType[]>
-  >({ day1: [], day2: [] });
+    Record<DayLayer['id'], MarkerType[]>
+  >(() =>
+    dayLayers.reduce((acc, layer) => ({ ...acc, [layer.id]: [] }), {})
+  );
 
   const removeMarker = (markerToRemove: MarkerType) => {
     setMarkersByLayer((prev) => ({
@@ -160,7 +174,7 @@ export function MapPanel() {
             <Layers className="w-4 h-4 text-gray-600" />
             <span className="text-sm">레이어</span>
           </div>
-          {LAYERS.map((layer) => (
+          {UILayers.map((layer) => (
             <button
               key={layer.id}
               onClick={() => setSelectedLayer(layer.id)}
@@ -195,6 +209,13 @@ export function MapPanel() {
     selectedLayer === 'all'
       ? Object.values(markersByLayer).flat()
       : markersByLayer[selectedLayer] || [];
+
+  // itinerary 데이터를 기반으로 Polyline 경로를 동적으로 생성
+  const polylinePaths = dayLayers.reduce((acc, layer) => {
+    const path =
+      itinerary[layer.id]?.map((m) => ({ lat: m.lat, lng: m.lng })) || [];
+    return { ...acc, [layer.id]: path };
+  }, {} as Record<DayLayer['id'], { lat: number; lng: number }[]>);
 
   return (
     <div className="h-full relative">
@@ -307,6 +328,27 @@ export function MapPanel() {
               .some((item) => item.id === marker.id)}
           />
         ))}
+
+        {/* 모든 Day 레이어를 순회하며 Polyline을 동적으로 렌더링 */}
+        {dayLayers.map((layer) => {
+          const shouldDisplay =
+            selectedLayer === 'all' || selectedLayer === layer.id;
+          const path = polylinePaths[layer.id];
+          return (
+            shouldDisplay &&
+            path.length > 1 && (
+              <Polyline
+                key={`polyline-${layer.id}`}
+                path={path}
+                strokeWeight={3}
+                strokeColor={layer.color}
+                strokeOpacity={0.8}
+                strokeStyle={'solid'}
+              />
+            )
+          );
+        })}
+
         <MapUI
           selectedLayer={selectedLayer}
           setSelectedLayer={setSelectedLayer}
