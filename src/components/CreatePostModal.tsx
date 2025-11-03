@@ -16,7 +16,7 @@ interface PostData {
   startDate: string;
   endDate: string;
   location: string;
-  max_participants: number;
+  maxParticipants: number;
   keywords: string[];
 }
 
@@ -57,7 +57,7 @@ export function CreatePostModal({ onClose }: CreatePostModalProps) {
     startDate: '',
     endDate: '',
     location: '',
-    max_participants: 2,
+    maxParticipants: 2,
   });
   const [isLoading, setIsLoading] = useState(false);
   const [selectedKeywords, setSelectedKeywords] = useState<string[]>([]);
@@ -229,11 +229,11 @@ export function CreatePostModal({ onClose }: CreatePostModalProps) {
               type="number"
               min="2"
               max="10"
-              value={formData.max_participants}
+              value={formData.maxParticipants}
               onChange={(e) =>
                 setFormData((prev) => ({
                   ...prev,
-                  max_participants: parseInt(e.target.value),
+                  maxParticipants: parseInt(e.target.value),
                 }))
               }
               className="mt-2"
