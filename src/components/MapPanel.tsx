@@ -1,7 +1,12 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Plus, Maximize2, Layers } from 'lucide-react';
 import { Button } from './ui/button';
-import { Map, MapMarker, Polyline } from 'react-kakao-maps-sdk';
+import {
+  Map,
+  MapMarker,
+  Polyline,
+  CustomOverlayMap,
+} from 'react-kakao-maps-sdk';
 
 type LayerType = 'all' | 'day1' | 'day2';
 
@@ -40,16 +45,12 @@ export function MapPanel() {
   // 레이어별로 마커를 저장하도록 상태 구조 변경
   const [markersByLayer, setMarkersByLayer] = useState<
     Record<DayLayer['id'], MarkerType[]>
-  >(() =>
-    dayLayers.reduce((acc, layer) => ({ ...acc, [layer.id]: [] }), {})
-  );
+  >(() => dayLayers.reduce((acc, layer) => ({ ...acc, [layer.id]: [] }), {}));
   const [selectedLayer, setSelectedLayer] = useState<LayerType>('all');
   // 최종 여행 계획(일정)을 저장할 상태
   const [itinerary, setItinerary] = useState<
     Record<DayLayer['id'], MarkerType[]>
-  >(() =>
-    dayLayers.reduce((acc, layer) => ({ ...acc, [layer.id]: [] }), {})
-  );
+  >(() => dayLayers.reduce((acc, layer) => ({ ...acc, [layer.id]: [] }), {}));
 
   const removeMarker = (markerToRemove: MarkerType) => {
     setMarkersByLayer((prev) => ({
@@ -78,7 +79,10 @@ export function MapPanel() {
       const updatedItinerary = { ...prev, [targetDay]: newItineraryForDay };
 
       // 콘솔에서 현재까지 추가된 여행 계획을 확인할 수 있습니다.
-      console.log(`Day ${targetDay.slice(-1)} 여행 계획에 추가됨:`, markerToAdd);
+      console.log(
+        `Day ${targetDay.slice(-1)} 여행 계획에 추가됨:`,
+        markerToAdd
+      );
       console.log('현재 전체 여행 계획:', updatedItinerary);
       return updatedItinerary;
     });
@@ -92,7 +96,11 @@ export function MapPanel() {
     isAdded: boolean;
   };
 
-  function EventMarkerContainer({ marker, index, isAdded }: EventMarkerContainerProps) {
+  function EventMarkerContainer({
+    marker,
+    index,
+    isAdded,
+  }: EventMarkerContainerProps) {
     const [isVisible, setIsVisible] = useState(false);
     const timerRef = useRef<number | null>(null);
 
@@ -211,11 +219,14 @@ export function MapPanel() {
       : markersByLayer[selectedLayer] || [];
 
   // itinerary 데이터를 기반으로 Polyline 경로를 동적으로 생성
-  const polylinePaths = dayLayers.reduce((acc, layer) => {
-    const path =
-      itinerary[layer.id]?.map((m) => ({ lat: m.lat, lng: m.lng })) || [];
-    return { ...acc, [layer.id]: path };
-  }, {} as Record<DayLayer['id'], { lat: number; lng: number }[]>);
+  const polylinePaths = dayLayers.reduce(
+    (acc, layer) => {
+      const path =
+        itinerary[layer.id]?.map((m) => ({ lat: m.lat, lng: m.lng })) || [];
+      return { ...acc, [layer.id]: path };
+    },
+    {} as Record<DayLayer['id'], { lat: number; lng: number }[]>
+  );
 
   return (
     <div className="h-full relative">
@@ -327,6 +338,41 @@ export function MapPanel() {
               .some((item) => item.id === marker.id)}
           />
         ))}
+
+        {/* 여행 계획(itinerary)에 포함된 마커에 순서 번호 표시 */}
+        {Object.entries(itinerary).map(([layerId, dayItinerary]) => {
+          const shouldDisplay =
+            selectedLayer === 'all' || selectedLayer === layerId;
+          return (
+            shouldDisplay &&
+            dayItinerary.map((marker, index) => (
+              <CustomOverlayMap
+                key={`order-overlay-${marker.id}`}
+                position={{ lat: marker.lat, lng: marker.lng }}
+                yAnchor={2.5} // 마커 아이콘 위로 오버레이를 올립니다.
+                zIndex={1} // 마커보다 위에 표시되도록 z-index 설정
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '1.25rem', // w-5
+                    height: '1.25rem', // h-5
+                    backgroundColor: 'black',
+                    color: 'white',
+                    fontSize: '0.75rem', // text-xs
+                    borderRadius: '9999px', // rounded-full
+                    boxShadow:
+                      '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)', // shadow-md
+                  }}
+                >
+                  {index + 1}
+                </div>
+              </CustomOverlayMap>
+            ))
+          );
+        })}
 
         {/* 모든 Day 레이어를 순회하며 Polyline을 동적으로 렌더링 */}
         {dayLayers.map((layer) => {
