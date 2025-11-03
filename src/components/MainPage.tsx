@@ -1,5 +1,12 @@
 import { useState } from 'react';
-import { Search, Calendar, MapPin, TrendingUp, Sparkles } from 'lucide-react';
+import {
+  Search,
+  Calendar,
+  MapPin,
+  TrendingUp,
+  Sparkles,
+  FileText,
+} from 'lucide-react';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
@@ -7,7 +14,12 @@ import { Badge } from './ui/badge';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 
 interface MainPageProps {
-  onSearch: (params: { date?: string; location?: string }) => void;
+  onSearch: (params: {
+    startDate?: string;
+    endDate?: string;
+    location?: string;
+    title?: string;
+  }) => void;
   onViewPost: (postId: number) => void;
   onUserClick: (userId: number) => void;
 }
@@ -84,12 +96,19 @@ const REGION_CATEGORIES = [
 ];
 
 export function MainPage({ onSearch, onViewPost, onUserClick }: MainPageProps) {
-  const [searchDate, setSearchDate] = useState('');
+  const [searchStartDate, setSearchStartDate] = useState('');
+  const [searchEndDate, setSearchEndDate] = useState('');
   const [searchLocation, setSearchLocation] = useState('');
+  const [searchTitle, setSearchTitle] = useState('');
 
   const handleSearch = (e?: React.FormEvent) => {
     e?.preventDefault();
-    onSearch({ date: searchDate, location: searchLocation });
+    onSearch({
+      startDate: searchStartDate,
+      endDate: searchEndDate,
+      location: searchLocation,
+      title: searchTitle,
+    });
   };
 
   return (
@@ -97,31 +116,52 @@ export function MainPage({ onSearch, onViewPost, onUserClick }: MainPageProps) {
       {/* Hero Section with Search */}
       <div className="text-center mb-12">
         {/* Search Box */}
-        <Card className="max-w-3xl mx-auto p-6">
+        <Card className="mx-auto p-6">
           <form onSubmit={handleSearch}>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex items-center gap-4">
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <Input
                   type="date"
-                  aria-label="여행 일정"
-                  value={searchDate}
-                  onChange={(e) => setSearchDate(e.target.value)}
-                  className="pl-10"
+                  aria-label="여행 시작일"
+                  value={searchStartDate}
+                  onChange={(e) => setSearchStartDate(e.target.value)}
+                  className="pl-10 w-full"
+                />
+              </div>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Input
+                  type="date"
+                  aria-label="여행 종료일"
+                  value={searchEndDate}
+                  onChange={(e) => setSearchEndDate(e.target.value)}
+                  className="pl-10 w-full"
                 />
               </div>
               <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <Input
+                  placeholder="여행지"
                   aria-label="여행지"
                   value={searchLocation}
                   onChange={(e) => setSearchLocation(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 w-full"
+                />
+              </div>
+              <div className="relative flex-1">
+                <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Input
+                  placeholder="게시글 제목"
+                  aria-label="게시글 제목"
+                  value={searchTitle}
+                  onChange={(e) => setSearchTitle(e.target.value)}
+                  className="pl-10 w-full"
                 />
               </div>
               <Button
                 type="submit"
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 gap-2"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 gap-2 flex-shrink-0"
               >
                 <Search className="w-4 h-4" />
                 검색
