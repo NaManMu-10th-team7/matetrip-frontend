@@ -20,8 +20,9 @@ import { ImageWithFallback } from './figma/ImageWithFallback';
 import client from '../api/client'; // API 클라이언트 임포트
 import { type Post } from './PostCard'; // Post 타입 임포트
 import { translateKeyword } from '../utils/keyword'; // 키워드 번역 함수 임포트
-import { type Participation } from '../types';
+
 import { useAuthStore } from '../store/authStore';
+import type { Participation } from '../types/participation.ts';
 
 interface PostDetailProps {
   postId: string;
