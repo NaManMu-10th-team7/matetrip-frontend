@@ -72,11 +72,11 @@ function MainPageWrapper() {
     navigate(`/search?${searchParams.toString()}`);
   };
 
-  const handleViewPost = (postId: number) => {
+  const handleViewPost = (postId: string) => {
     navigate(`/post/${postId}`);
   };
 
-  const handleUserClick = (userId: number) => {
+  const handleUserClick = (userId: string) => { // userId도 string일 가능성이 높으므로 함께 변경
     navigate(`/profile/${userId}`);
   };
 
@@ -101,7 +101,7 @@ function SearchResultsWrapper() {
     title: searchParams.get('title') || undefined,
   };
 
-  const handleViewPost = (postId: number) => {
+  const handleViewPost = (postId: string) => {
     navigate(`/post/${postId}`);
   };
 
@@ -111,15 +111,15 @@ function SearchResultsWrapper() {
 function PostDetailWrapper({
   isLoggedIn,
   onEditPost,
-}: {
+}: { // onEditPost prop의 postId 타입을 string으로 변경
   isLoggedIn: boolean;
-  onEditPost: (postId: number) => void;
+  onEditPost: (postId: string) => void;
 }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const postId = parseInt(location.pathname.split('/').pop() || '0');
+  const postId = location.pathname.split('/').pop() || ''; // postId를 string으로 직접 추출
 
-  const handleJoinWorkspace = (postId: number) => {
+  const handleJoinWorkspace = (postId: string) => { // handleJoinWorkspace의 postId 타입을 string으로 변경
     navigate(`/workspace/${postId}`);
   };
 
@@ -140,7 +140,7 @@ function PostDetailWrapper({
 function WorkspaceWrapper() {
   const navigate = useNavigate();
   const location = useLocation();
-  const postId = parseInt(location.pathname.split('/').pop() || '0');
+  const postId = location.pathname.split('/').pop() || ''; // postId를 string으로 직접 추출
 
   const handleEndTrip = () => {
     navigate('/review');
@@ -156,10 +156,10 @@ function ProfileWrapper({ isLoggedIn, loggedInUserId }: { isLoggedIn: boolean; l
   // 어떤 userId를 사용할지 결정합니다:
   // 경로가 정확히 '/profile'인 경우, 로그인된 사용자의 ID (loggedInUserId)를 사용합니다.
   // 그 외의 경우 (예: '/profile/:userId'), URL에서 userId를 파싱합니다.
-  const userIdFromUrl = parseInt(location.pathname.split('/').pop() || '0');
+  const userIdFromUrl = location.pathname.split('/').pop() || ''; // userId를 string으로 직접 추출
   const targetUserId = location.pathname === '/profile' ? loggedInUserId : userIdFromUrl;
 
-  const handleViewPost = (postId: number) => {
+  const handleViewPost = (postId: string) => {
     navigate(`/post/${postId}`);
   };
 
@@ -211,7 +211,7 @@ export default function App() {
   // 모달 상태
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [showEditPost, setShowEditPost] = useState(false);
-  const [selectedPostForEdit, setSelectedPostForEdit] = useState<number | null>(
+  const [selectedPostForEdit, setSelectedPostForEdit] = useState<string | null>( // 상태 타입을 string으로 변경
     null
   );
 
@@ -299,7 +299,7 @@ export default function App() {
       )}
       {showEditPost && (
         <EditPostModal
-          postId={selectedPostForEdit || 0}
+          postId={selectedPostForEdit || ''} // postId가 string이므로 기본값을 빈 문자열로 변경
           onClose={() => setShowEditPost(false)}
         />
       )}

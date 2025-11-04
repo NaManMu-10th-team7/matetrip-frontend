@@ -25,28 +25,28 @@ interface MainPageProps {
     title?: string;
   }) => void;
   onViewPost: (postId: string) => void;
-  onUserClick: (userId: number) => void;
+  onUserClick: (userId: string) => void;
 }
 
 // TODO: 백엔드 연동 시 API에서 추천 사용자 목록 가져오기
 // const RECOMMENDED_USERS = await fetchRecommendedUsers();
 const RECOMMENDED_USERS = [
   {
-    id: 1,
+    id: '1',
     name: '바다조아',
     avatar: '',
     travelStyle: ['힐링', '사진', '맛집투어'],
     matchRate: 95,
   },
   {
-    id: 2,
+    id: '2',
     name: '산악인',
     avatar: '',
     travelStyle: ['액티브', '등산', '자연'],
     matchRate: 88,
   },
   {
-    id: 3,
+    id: '3',
     name: '도시탐험가',
     avatar: '',
     travelStyle: ['카페', '쇼핑', '핫플'],
@@ -115,7 +115,8 @@ export function MainPage({ onSearch, onViewPost, onUserClick }: MainPageProps) {
         const response = await client.get<Post[]>('/post');
         // 최신 글이 위로 오도록 생성일(createdAt) 기준으로 정렬합니다.
         const sortedPosts = response.data.sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
         setPosts(sortedPosts);
       } catch (error) {
@@ -129,7 +130,12 @@ export function MainPage({ onSearch, onViewPost, onUserClick }: MainPageProps) {
 
   const handleSearch = (e: React.FormEvent) => {
     e?.preventDefault();
-    onSearch({ startDate: searchStartDate, endDate: searchEndDate, location: searchLocation, title: searchTitle });
+    onSearch({
+      startDate: searchStartDate,
+      endDate: searchEndDate,
+      location: searchLocation,
+      title: searchTitle,
+    });
   };
 
   return (
@@ -239,9 +245,13 @@ export function MainPage({ onSearch, onViewPost, onUserClick }: MainPageProps) {
           <h2 className="text-gray-900">최신 동행 모집</h2>
         </div>
         {isLoading ? (
-          <div className="text-center text-gray-500">게시글을 불러오는 중...</div>
+          <div className="text-center text-gray-500">
+            게시글을 불러오는 중...
+          </div>
         ) : posts.length === 0 ? (
-          <div className="text-center text-gray-500 py-10">최신 게시글이 없습니다.</div>
+          <div className="text-center text-gray-500 py-10">
+            최신 게시글이 없습니다.
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* 최신 6개의 게시글만 보여줍니다. */}
