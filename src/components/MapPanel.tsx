@@ -58,15 +58,32 @@ export function MapPanel({ workspaceId }: { workspaceId: string }) {
 
     const targetDay = markerToAdd.planDayId;
     setItinerary((prev) => {
-      const newItineraryForDay = [...prev[targetDay], markerToAdd];
+      const newItineraryForDay = [...(prev[targetDay] || []), markerToAdd];
       const updatedItinerary = { ...prev, [targetDay]: newItineraryForDay };
 
-      // 콘솔에서 현재까지 추가된 여행 계획을 확인할 수 있습니다.
+      // --- POI Connection 전체 데이터 시뮬레이션 ---
+      const simulatedConnections = newItineraryForDay.map((poi, index, arr) => {
+        // 각 POI를 기준으로 prev와 next를 결정합니다.
+        const prevPoiId = index > 0 ? arr[index - 1].id : null;
+        const nextPoiId = index < arr.length - 1 ? arr[index + 1].id : null;
+
+        return {
+          // 이 객체는 각 POI가 가지는 연결 정보를 나타냅니다.
+          // 실제 테이블에서는 이 관계를 기반으로 레코드가 생성/업데이트됩니다.
+          poi_id: poi.id, // 어떤 POI에 대한 연결 정보인지 명시
+          placeName: poi.placeName, // 이해를 돕기 위해 장소 이름 추가
+          prev_poi_id: prevPoiId,
+          next_poi_id: nextPoiId,
+          plan_day_id: targetDay,
+        };
+      });
+
       console.log(
-        `Day ${targetDay.slice(-1)} 여행 계획에 추가됨:`,
-        markerToAdd
+        `[시뮬레이션] Day ${targetDay.slice(-1)}의 전체 POI_Connection 테이블 데이터:`,
+        simulatedConnections
       );
-      console.log('현재 전체 여행 계획:', updatedItinerary);
+      // -----------------------------------------
+
       return updatedItinerary;
     });
   };

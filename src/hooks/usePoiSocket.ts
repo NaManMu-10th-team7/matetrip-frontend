@@ -91,8 +91,11 @@ export function usePoiSocket(workspaceId: string) {
     const MOCK_USER_ID = '00000000-0000-0000-0000-000000000000';
 
     const payload = { ...poiData, workspaceId, createdBy: MOCK_USER_ID };
-    console.log('Emitting MARK event with payload:', payload);
-    socketRef.current?.emit(PoiSocketEvent.MARK, { ...poiData, workspaceId });
+    console.log(
+      '[시뮬레이션] POI 테이블 저장 데이터 (MARK 이벤트 전송):',
+      payload
+    );
+    socketRef.current?.emit(PoiSocketEvent.MARK, payload);
   };
 
   const unmarkPoi = (poiId: number | string) => {
