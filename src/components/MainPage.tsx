@@ -16,6 +16,7 @@ import { ImageWithFallback } from './figma/ImageWithFallback';
 import client from '../api/client';
 import { type Post } from '../types/post';
 import { MainPostCard } from './MainPostCard';
+import { MainPostCardSkeleton } from './MainPostCardSkeleton';
 
 interface MainPageProps {
   onSearch: (params: {
@@ -245,8 +246,10 @@ export function MainPage({ onSearch, onViewPost, onUserClick }: MainPageProps) {
           <h2 className="text-gray-900">최신 동행 모집</h2>
         </div>
         {isLoading ? (
-          <div className="text-center text-gray-500">
-            게시글을 불러오는 중...
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <MainPostCardSkeleton key={index} />
+            ))}
           </div>
         ) : posts.length === 0 ? (
           <div className="text-center text-gray-500 py-10">
