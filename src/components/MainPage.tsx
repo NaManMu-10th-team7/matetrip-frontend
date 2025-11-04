@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Search,
   Calendar,
@@ -6,12 +6,16 @@ import {
   TrendingUp,
   Sparkles,
   FileText,
+  ClipboardList,
 } from 'lucide-react';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import client from '../api/client';
+import { type Post } from '../types/post';
+import { MainPostCard } from './MainPostCard';
 
 interface MainPageProps {
   onSearch: (params: {
@@ -20,7 +24,7 @@ interface MainPageProps {
     location?: string;
     title?: string;
   }) => void;
-  onViewPost: (postId: number) => void;
+  onViewPost: (postId: string) => void;
   onUserClick: (userId: number) => void;
 }
 
@@ -100,6 +104,29 @@ export function MainPage({ onSearch, onViewPost, onUserClick }: MainPageProps) {
   const [searchEndDate, setSearchEndDate] = useState('');
   const [searchLocation, setSearchLocation] = useState('');
   const [searchTitle, setSearchTitle] = useState('');
+
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      setIsLoading(true);
+      try {
+        const response = await client.get<Post[]>('/post');
+        // 최신 글이 위로 오도록 생성일(createdAt) 기준으로 정렬합니다.
+        const sortedPosts = response.data.sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        setPosts(sortedPosts);
+      } catch (error) {
+        console.error('Failed to fetch posts:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPosts();
+  }, []);
 
   const handleSearch = (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -209,6 +236,30 @@ export function MainPage({ onSearch, onViewPost, onUserClick }: MainPageProps) {
             </Card>
           ))}
         </div>
+      </section>
+
+      {/* Recent Posts Section */}
+      <section className="mb-12">
+        <div className="flex items-center gap-2 mb-6">
+          <ClipboardList className="w-5 h-5 text-blue-600" />
+          <h2 className="text-gray-900">최신 동행 모집</h2>
+        </div>
+        {isLoading ? (
+          <div className="text-center text-gray-500">
+            게시글을 불러오는 중...
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* 최신 6개의 게시글만 보여줍니다. */}
+            {posts.slice(0, 6).map((post) => (
+              <MainPostCard
+                key={post.id}
+                post={post}
+                onClick={() => onViewPost(post.id)}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Region Categories */}
