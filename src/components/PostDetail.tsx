@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   // Lucide-react 아이콘 임포트
   User,
@@ -45,30 +45,30 @@ export function PostDetail({
   const [error, setError] = useState<Error | null>(null);
   const [participations, setParticipations] = useState<Participation[]>([]);
 
-  useEffect(() => {
-    const fetchPostDetail = async () => {
-      if (!postId) return;
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await client.get<Post>(`/post/${postId}`);
-        const postData = response.data;
-        setPost(postData);
+  const fetchPostDetail = useCallback(async () => {
+    if (!postId) return;
+    setIsLoading(true);
+    setError(null);
+    try {
+      // 두 API를 동시에 호출하여 성능을 개선합니다.
+      const [postResponse, participationsResponse] = await Promise.all([
+        client.get<Post>(`/post/${postId}`),
+        client.get<Participation[]>(`/posts/${postId}/participations`),
+      ]);
 
-        const participationsResponse = await client.get<Participation[]>(
-          `/posts/${postId}/participations`
-        );
-        setParticipations(participationsResponse.data);
-      } catch (err) {
-        setError(err as Error);
-        console.error('Failed to fetch post details:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchPostDetail();
+      setPost(postResponse.data);
+      setParticipations(participationsResponse.data);
+    } catch (err) {
+      setError(err as Error);
+      console.error('Failed to fetch post details:', err);
+    } finally {
+      setIsLoading(false);
+    }
   }, [postId]);
+
+  useEffect(() => {
+    fetchPostDetail();
+  }, [fetchPostDetail]);
 
   // 현재 로그인한 사용자가 게시글 작성자인지 확인
   const isAuthor = user && post ? user.userId === post.writerId : false;
@@ -82,10 +82,15 @@ export function PostDetail({
     : undefined;
 
   const handleApply = async () => {
-    // TODO: 동행 신청 API 연동
-    // 예: await client.post(`/posts/${postId}/participations`);
-    // 성공 후에는 fetchPostDetail()을 다시 호출하여 상태를 갱신합니다.
-    console.log('Applying for post:', postId);
+    try {
+      await client.post(`/posts/${postId}/participations`);
+      alert('동행 신청이 완료되었습니다.');
+      // 참여 목록을 다시 불러와 상태를 갱신합니다.
+      await fetchPostDetail();
+    } catch (err) {
+      console.error('Failed to apply for post:', err);
+      alert('동행 신청 중 오류가 발생했습니다.');
+    }
   };
 
   const handleAcceptRequest = (userId: number) => {
@@ -244,7 +249,9 @@ export function PostDetail({
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-gray-900">{p.requester.profile.nickname}</span>
+                        <span className="text-gray-900">
+                          {p.requester.profile.nickname}
+                        </span>
                         <Badge variant="outline" className="text-xs">
                           {p.status}
                         </Badge>
