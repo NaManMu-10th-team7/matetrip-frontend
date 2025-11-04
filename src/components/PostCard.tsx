@@ -38,15 +38,15 @@ interface Post {
 
 interface PostCardProps {
   post: Post;
-  onJoin: (postId: number) => void;
+  onClick: (postId: string) => void;
   image?: string;
 }
 
-export function PostCard({ post, onJoin, image }: PostCardProps) {
+export function PostCard({ post, onClick, image }: PostCardProps) {
   return (
     <Card
       className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-      onClick={() => onJoin(post.id)}
+      onClick={() => onClick(post.id)}
     >
       <div className="relative h-48">
         <ImageWithFallback
