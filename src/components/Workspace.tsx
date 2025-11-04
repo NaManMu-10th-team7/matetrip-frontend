@@ -99,7 +99,7 @@ export function Workspace({ postId, onEndTrip }: WorkspaceProps) {
 
           <div className="flex-1 overflow-hidden">
             <TabsContent value="map" className="h-full m-0">
-              <MapPanel />
+              <MapPanel workspaceId={postId} />
             </TabsContent>
 
             <TabsContent value="chat" className="h-full m-0">
