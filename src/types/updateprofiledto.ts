@@ -8,7 +8,7 @@ export interface UpdateProfileDto {
   intro: string;
   description: string;
   travelStyles: TravelStyleType[]; // 서버 TravelStyleType enum 값 배열
-  travelTendency: TravelTendencyType[]; // 서버 TendencyType 값 배열
-  mbti: MbtiType; // 16가지 MBTI 중 하나
+  tendency: TravelTendencyType[]; // 서버 TendencyType 값 배열
+  mbtiTypes: MbtiType; // 16가지 MBTI 중 하나
   profileImageId: string | null; // 없으면 null로 보내면 OK
 }

@@ -31,8 +31,10 @@ import {
   type GenderType,
 } from '../constants/gender';
 import { MBTI_OPTIONS, type MbtiType } from '../constants/mbti';
-import { TENDENCY_OPTIONS, type TendencyType } from '../constants/tendencyType';
-import type { TravelTendencyType } from '../constants/travelTendencyType';
+import {
+  TENDENCY_OPTIONS,
+  type TravelTendencyType,
+} from '../constants/travelTendencyType';
 import type { UpdateProfileDto } from '../types/updateprofiledto';
 import { useAuthStore } from '../store/authStore';
 
@@ -60,13 +62,13 @@ interface ProfileData {
   gender: GenderType;
   age: number;
   //job: string;
-  mbti: MbtiType;
+  mbtiTypes: MbtiType;
   smoking: boolean;
   driverLicense: boolean;
   //mannerTemp: number;
   //totalTrips: number;
   //badges: string[];
-  travelTendency: TravelTendencyType[];
+  tendency: TravelTendencyType[];
   travelStyles: TravelStyleType[];
   reviews: Review[];
   trips: Trip[];
@@ -79,10 +81,10 @@ const EMPTY_PROFILE: ProfileData = {
   description: '',
   gender: '남성',
   age: 28,
-  mbti: 'ENFP',
+  mbtiTypes: 'ENFP',
   smoking: false,
   driverLicense: false,
-  travelTendency: [],
+  tendency: [],
   travelStyles: [],
   reviews: [],
   trips: [],
@@ -211,7 +213,7 @@ export function Profile({
   };
   //Select에 한 번만 묶여 있으니 항상 하나만 선택
   const handleMbtiChange = (value: MbtiType) => {
-    setDraft((prev) => ({ ...prev, mbti: value }));
+    setDraft((prev) => ({ ...prev, mbtiTypes: value }));
   };
 
   //여행 성향 버튼을 토글할때 쓰는 함수 draft의 travelStyle 배열을 직접 편집 이미 있으면 제거하고, 없으면 추가
@@ -220,9 +222,21 @@ export function Profile({
       const alreadySelected = prev.travelStyles.includes(style);
       return {
         ...prev,
-        travelStyle: alreadySelected
+        travelStyles: alreadySelected
           ? prev.travelStyles.filter((item) => item !== style)
           : [...prev.travelStyles, style],
+      };
+    });
+  };
+
+  const handleTravelTendencyToggle = (tendency: TravelTendencyType) => {
+    setDraft((prev) => {
+      const alreadySelected = prev.tendency.includes(tendency);
+      return {
+        ...prev,
+        tendency: alreadySelected
+          ? prev.tendency.filter((item) => item !== tendency)
+          : [...prev.tendency, tendency],
       };
     });
   };
@@ -235,9 +249,9 @@ export function Profile({
     intro: dto.intro ?? prev.intro,
     description: dto.description ?? prev.description,
     gender: dto.gender ?? prev.gender,
-    mbti: dto.mbti ?? prev.mbti,
-    travelTendency: dto.travelTendency ?? [],
-    travelStyles: dto.travelStyles ?? [],
+    mbtiTypes: dto.mbtiTypes ?? prev.mbtiTypes,
+    tendency: dto.tendency ?? prev.tendency,
+    travelStyles: dto.travelStyles ?? prev.travelStyles,
     profileImageId: dto.profileImageId ?? prev.profileImageId,
   });
 
@@ -253,6 +267,7 @@ export function Profile({
         if (!res.ok) throw new Error(`...`);
 
         const data: UpdateProfileDto = await res.json();
+        console.log(data);
         if (!isMounted) return;
 
         setProfile((prev) => {
@@ -288,9 +303,9 @@ export function Profile({
       description: draft.description,
       intro: draft.intro,
       gender: draft.gender,
-      mbti: draft.mbti,
+      mbtiTypes: draft.mbtiTypes,
       travelStyles: draft.travelStyles,
-      travelTendency: draft.travelTendency,
+      tendency: draft.tendency,
       profileImageId: null,
       //profileImageId: selectedBinaryContentId ?? null,
     };
@@ -303,7 +318,11 @@ export function Profile({
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error('업데이트 실패');
+      if (!res.ok) {
+        const detail = await res.text();
+        console.error(res.status, detail);
+        throw new Error('업데이트 실패');
+      }
 
       const updatedData: UpdateProfileDto = await res.json();
 
@@ -351,6 +370,55 @@ export function Profile({
                 ) : (
                   <p className="text-gray-600 mb-3">{viewData.intro}</p>
                 )}
+
+                <div className="mt-6 pt-6 border-t">
+                  <h4 className="text-gray-900 mb-3">여행 성향</h4>
+                  {canEditProfile && isEditing ? (
+                    <div className="flex flex-wrap gap-2">
+                      {TENDENCY_OPTIONS.map(({ value, label }) => {
+                        const selected = draft.tendency.includes(value);
+                        return (
+                          <button
+                            type="button"
+                            key={value}
+                            onClick={() => handleTravelTendencyToggle(value)}
+                            className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                              selected
+                                ? 'border-blue-600 bg-blue-50 text-blue-700'
+                                : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {viewData.tendency.length > 0 ? (
+                        viewData.tendency.map((tendency) => {
+                          const label =
+                            TENDENCY_OPTIONS.find(
+                              (option) => option.value === tendency
+                            )?.label ?? tendency;
+                          return (
+                            <Badge
+                              key={tendency}
+                              variant="outline"
+                              className="text-xs"
+                            >
+                              {label}
+                            </Badge>
+                          );
+                        })
+                      ) : (
+                        <span className="text-xs text-gray-400">
+                          등록된 여행 성향이 없습니다
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
 
                 {/* <div className="flex flex-wrap gap-2">
                   {viewData.badges.map((badge) => (
@@ -450,7 +518,10 @@ export function Profile({
 
               <label className="space-y-2 text-sm text-gray-700">
                 <span>MBTI</span>
-                <Select value={draft.mbti} onValueChange={handleMbtiChange}>
+                <Select
+                  value={draft.mbtiTypes}
+                  onValueChange={handleMbtiChange}
+                >
                   <SelectTrigger className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-100">
                     <SelectValue placeholder="MBTI를 선택하세요" />
                   </SelectTrigger>
@@ -500,7 +571,7 @@ export function Profile({
                 </div>
                 <div className="text-center p-3 bg-gray-50 rounded-lg">
                   <div className="text-sm text-gray-500 mb-1">MBTI</div>
-                  <div className="text-gray-900">{viewData.mbti}</div>
+                  <div className="text-gray-900">{viewData.mbtiTypes}</div>
                 </div>
                 <div className="text-center p-3 bg-gray-50 rounded-lg">
                   <div className="text-sm text-gray-500 mb-1">직업</div>

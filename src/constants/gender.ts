@@ -15,6 +15,6 @@ export const GENDER_OPTIONS: ReadonlyArray<{
   value: GenderType;
   label: string;
 }> = [
-  { value: GENDER_TYPES.MALE, label: '남성' },
-  { value: GENDER_TYPES.FEMALE, label: '여성' },
+  { value: GENDER_TYPES.MALE, label: '남성' }, //남성 남성
+  { value: GENDER_TYPES.FEMALE, label: '여성' }, // 여성 여성
 ] as const;

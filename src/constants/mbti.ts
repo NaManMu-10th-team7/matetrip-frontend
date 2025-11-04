@@ -27,3 +27,4 @@ export const MBTI_OPTIONS: ReadonlyArray<{
   value: MbtiType;
   label: string;
 }> = MBTI_TYPES.map((type) => ({ value: type, label: type }));
+//MBTI_TYPES.map((type) => ...) → MBTI_TYPES 배열을 순회하며 각 원소를 type으로 받아 새 배열을 만듭니다.

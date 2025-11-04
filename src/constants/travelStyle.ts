@@ -14,13 +14,11 @@ export type TravelStyleType =
 
 // UI에서 쓸 한글 라벨과 실제 값(value)을 묶은 옵션 리스트
 // 실제 값은 TRAVEL_STYLE_TYPES를 참조해서 오타 없이 재사용한다
+
 export const TRAVEL_STYLE_OPTIONS: ReadonlyArray<{
   value: TravelStyleType;
   label: string;
-}> = [
-  { value: TRAVEL_STYLE_TYPES.RELAXED, label: '힐링' },
-  { value: TRAVEL_STYLE_TYPES.ACTIVE, label: '액티비티' },
-  { value: TRAVEL_STYLE_TYPES.CULTURAL, label: '문화 탐방' },
-  { value: TRAVEL_STYLE_TYPES.FOODIE, label: '맛집 투어' },
-  { value: TRAVEL_STYLE_TYPES.NATURE, label: '자연/사진' },
-] as const;
+}> = (Object.values(TRAVEL_STYLE_TYPES) as TravelStyleType[]).map((label) => ({
+  value: label,
+  label,
+}));
