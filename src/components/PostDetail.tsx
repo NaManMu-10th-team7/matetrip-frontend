@@ -44,20 +44,31 @@ export function PostDetail({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [participations, setParticipations] = useState<Participation[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<Participation[]>([]);
+  const [approvedParticipants, setApprovedParticipants] = useState<
+    Participation[]
+  >([]);
 
   const fetchPostDetail = useCallback(async () => {
     if (!postId) return;
     setIsLoading(true);
     setError(null);
     try {
-      // 두 API를 동시에 호출하여 성능을 개선합니다.
       const [postResponse, participationsResponse] = await Promise.all([
         client.get<Post>(`/post/${postId}`),
         client.get<Participation[]>(`/posts/${postId}/participations`),
       ]);
 
       setPost(postResponse.data);
-      setParticipations(participationsResponse.data);
+      const allParticipations = participationsResponse.data;
+      setParticipations(allParticipations);
+      // 참여자 목록을 상태별로 분리합니다.
+      setApprovedParticipants(
+        allParticipations.filter((p) => p.status === '승인'),
+      );
+      setPendingRequests(
+        allParticipations.filter((p) => p.status === '대기중'),
+      );
     } catch (err) {
       setError(err as Error);
       console.error('Failed to fetch post details:', err);
@@ -93,12 +104,30 @@ export function PostDetail({
     }
   };
 
-  const handleAcceptRequest = (userId: number) => {
-    console.log('Accept request from user:', userId);
+  const handleAcceptRequest = async (participationId: number) => {
+    try {
+      await client.patch(`/posts/${postId}/participations/${participationId}`, {
+        status: '승인',
+      });
+      alert('신청을 수락했습니다.');
+      await fetchPostDetail(); // 데이터를 새로고침하여 UI를 업데이트합니다.
+    } catch (err) {
+      console.error('Failed to accept request:', err);
+      alert('요청 수락 중 오류가 발생했습니다.');
+    }
   };
 
-  const handleRejectRequest = (userId: number) => {
-    console.log('Reject request from user:', userId);
+  const handleRejectRequest = async (participationId: number) => {
+    try {
+      await client.patch(`/posts/${postId}/participations/${participationId}`, {
+        status: '거절',
+      });
+      alert('신청을 거절했습니다.');
+      await fetchPostDetail(); // 데이터를 새로고침하여 UI를 업데이트합니다.
+    } catch (err) {
+      console.error('Failed to reject request:', err);
+      alert('요청 거절 중 오류가 발생했습니다.');
+    }
   };
 
   const handleViewProfile = (userId: string) => {
@@ -234,11 +263,11 @@ export function PostDetail({
           {/* TODO: 참여중인 동행 목록 API 연동 필요 */}
           <div>
             <h3 className="text-gray-900 mb-4">
-              참여중인 동행 ({participations.length}명)
+              참여중인 동행 ({approvedParticipants.length}명)
             </h3>
-            {participations.length > 0 ? (
+            {approvedParticipants.length > 0 ? (
               <div className="space-y-3">
-                {participations.map((p) => (
+                {approvedParticipants.map((p) => (
                   <div
                     key={p.id}
                     className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100"
@@ -252,9 +281,6 @@ export function PostDetail({
                         <span className="text-gray-900">
                           {p.requester.profile.nickname}
                         </span>
-                        <Badge variant="outline" className="text-xs">
-                          {p.status}
-                        </Badge>
                       </div>
                       {/* TODO: 매너온도 데이터 연동 */}
                     </div>
@@ -268,50 +294,51 @@ export function PostDetail({
 
           {/* Pending Requests (Author Only) */}
           {/* TODO: 동행 신청 목록 API 연동 필요 */}
-          {isAuthor &&
-            false && ( // MOCK_POST.pendingRequests.length > 0
-              <>
-                <Separator className="my-6" />
-                <div>
-                  <h3 className="text-gray-900 mb-4">동행 신청 (0명)</h3>
-                  <div className="space-y-3">
-                    {/* {MOCK_POST.pendingRequests.map((request) => (
+          {isAuthor && pendingRequests.length > 0 && (
+            <>
+              <Separator className="my-6" />
+              <div>
+                <h3 className="text-gray-900 mb-4">
+                  동행 신청 ({pendingRequests.length}명)
+                </h3>
+                <div className="space-y-3">
+                  {pendingRequests.map((request) => (
                     <div
                       key={request.id}
                       className="flex items-center gap-3 p-3 border rounded-lg"
                     >
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full" />
+                      <div
+                        className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full cursor-pointer"
+                        onClick={() =>
+                          handleViewProfile(String(request.requester.id))
+                        }
+                      />
                       <div className="flex-1">
-                        <div className="text-gray-900 mb-1">{request.name}</div>
-                        <div className="flex gap-1 mb-2">
-                          {request.travelStyle.map((style) => (
-                            <Badge
-                              key={style}
-                              variant="outline"
-                              className="text-xs"
-                            >
-                              {style}
-                            </Badge>
-                          ))}
-                        </div>
                         <div
-                          className={`text-sm ${getTempColor(request.temp)}`}
+                          className="text-gray-900 mb-1 cursor-pointer"
+                          onClick={() =>
+                            handleViewProfile(String(request.requester.id))
+                          }
                         >
-                          매너온도 {request.temp}°C
+                          {request.requester.profile.nickname}
                         </div>
+                        <div className="flex gap-1 mb-2">
+                          {/* TODO: 신청자 여행 스타일 표시 */}
+                        </div>
+                        {/* TODO: 매너온도 표시 */}
                       </div>
                       <div className="flex gap-2">
                         <Button
                           size="sm"
                           onClick={() => handleAcceptRequest(request.id)}
-                          className="gap-1 bg-green-600 hover:bg-green-700"
+                          className="gap-1 bg-blue-600 hover:bg-blue-700"
                         >
                           <Check className="w-4 h-4" />
                           수락
                         </Button>
                         <Button
                           size="sm"
-                          variant="outline"
+                          variant="destructive"
                           onClick={() => handleRejectRequest(request.id)}
                           className="gap-1"
                         >
@@ -320,11 +347,11 @@ export function PostDetail({
                         </Button>
                       </div>
                     </div>
-                  ))} */}
-                  </div>
+                  ))}
                 </div>
-              </>
-            )}
+              </div>
+            </>
+          )}
         </div>
 
         {/* Sidebar */}
@@ -355,7 +382,8 @@ export function PostDetail({
                   <div className="text-sm text-gray-500">모집 인원</div>
                   <div>
                     {/* TODO: 현재 참여 인원 API 연동 필요 */}
-                    {post.participants || 1} / {post.maxParticipants}명
+                    {approvedParticipants.length + 1} / {post.maxParticipants}
+                    명
                   </div>
                 </div>
               </div>
