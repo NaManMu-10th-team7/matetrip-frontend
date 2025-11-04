@@ -183,7 +183,7 @@ export function SearchResults({
               )}
               <PostCard
                 post={post}
-                onJoin={() => onViewPost(post.id)}
+                onClick={() => onViewPost(post.id)}
                 // post.image가 없을 경우 기본 이미지 URL을 전달합니다.
                 image={post.image || 'https://images.unsplash.com/photo-1533106418989-87423dec6922?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0cmF2ZWx8ZW58MXx8fHwxNzIxNzE2MDMwfDA&ixlib=rb-4.1.0&q=80&w=1080'}
               />

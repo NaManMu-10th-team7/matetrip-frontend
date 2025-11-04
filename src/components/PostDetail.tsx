@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { // Lucide-react 아이콘 임포트
+import {
+  // Lucide-react 아이콘 임포트
   ArrowLeft,
   MapPin,
   Calendar,
@@ -86,7 +87,11 @@ export function PostDetail({
   }
 
   if (error) {
-    return <div className="text-center py-16 text-red-500">오류가 발생했습니다: {error.message}</div>;
+    return (
+      <div className="text-center py-16 text-red-500">
+        오류가 발생했습니다: {error.message}
+      </div>
+    );
   }
 
   if (!post) {
@@ -110,7 +115,10 @@ export function PostDetail({
           {/* Header Image */}
           <div className="relative h-96 rounded-2xl overflow-hidden mb-6">
             <ImageWithFallback
-              src={post.image || 'https://images.unsplash.com/photo-1533106418989-87423dec6922?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0cmF2ZWx8ZW58MXx8fHwxNzIxNzE2MDMwfDA&ixlib=rb-4.1.0&q=80&w=1080'}
+              src={
+                post.image ||
+                'https://images.unsplash.com/photo-1533106418989-87423dec6922?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0cmF2ZWx8ZW58MXx8fHwxNzIxNzE2MDMwfDA&ixlib=rb-4.1.0&q=80&w=1080'
+              }
               alt={post.title}
               className="w-full h-full object-cover"
             />
@@ -131,7 +139,9 @@ export function PostDetail({
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full" />
                 <div>
-                  <div className="text-gray-900">{post.writerProfile.nickname}</div>
+                  <div className="text-gray-900">
+                    {post.writerProfile.nickname}
+                  </div>
                   {/* TODO: 매너온도 기능 구현 시 아래 코드 활성화 */}
                   {/* <div
                     className={`text-sm flex items-center gap-1 ${getTempColor(36.5)}`}
@@ -179,8 +189,10 @@ export function PostDetail({
           {/* Description */}
           <div className="mb-8">
             <h3 className="text-gray-900 mb-4">여행 소개</h3>
-            {post.description ? (
-              <p className="text-gray-700 whitespace-pre-line">{post.description}</p>
+            {post.content ? (
+              <p className="text-gray-700 whitespace-pre-line">
+                {post.content}
+              </p>
             ) : (
               <p className="text-gray-500">작성된 여행 소개가 없습니다.</p>
             )}
@@ -219,13 +231,14 @@ export function PostDetail({
 
           {/* Pending Requests (Author Only) */}
           {/* TODO: 동행 신청 목록 API 연동 필요 */}
-          {isAuthor && false && ( // MOCK_POST.pendingRequests.length > 0
-            <>
-              <Separator className="my-6" />
-              <div>
-                <h3 className="text-gray-900 mb-4">동행 신청 (0명)</h3>
-                <div className="space-y-3">
-                  {/* {MOCK_POST.pendingRequests.map((request) => (
+          {isAuthor &&
+            false && ( // MOCK_POST.pendingRequests.length > 0
+              <>
+                <Separator className="my-6" />
+                <div>
+                  <h3 className="text-gray-900 mb-4">동행 신청 (0명)</h3>
+                  <div className="space-y-3">
+                    {/* {MOCK_POST.pendingRequests.map((request) => (
                     <div
                       key={request.id}
                       className="flex items-center gap-3 p-3 border rounded-lg"
@@ -271,10 +284,10 @@ export function PostDetail({
                       </div>
                     </div>
                   ))} */}
+                  </div>
                 </div>
-              </div>
-            </>
-          )}
+              </>
+            )}
         </div>
 
         {/* Sidebar */}
