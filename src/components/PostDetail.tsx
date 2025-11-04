@@ -19,6 +19,7 @@ import { ImageWithFallback } from './figma/ImageWithFallback';
 import client from '../api/client'; // API 클라이언트 임포트
 import { type Post } from './PostCard'; // Post 타입 임포트
 import { translateKeyword } from '../utils/keyword'; // 키워드 번역 함수 임포트
+import { useAuthStore } from '../store/authStore';
 
 interface PostDetailProps {
   postId: string;
@@ -33,6 +34,7 @@ export function PostDetail({
   onJoinWorkspace,
   onEditPost,
 }: PostDetailProps) {
+  const { user } = useAuthStore();
   const [post, setPost] = useState<Post | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -59,9 +61,8 @@ export function PostDetail({
     fetchPostDetail();
   }, [postId]);
 
-  // 현재 사용자가 작성자인지 확인 (실제로는 로그인 정보와 비교)
-  // TODO: 실제 로그인된 사용자 ID와 post.writerId를 비교하는 로직으로 변경 필요
-  const isAuthor = true; // Mock
+  // 현재 로그인한 사용자가 게시글 작성자인지 확인
+  const isAuthor = user && post ? user.id === post.writerProfile.id : false;
 
   const handleApply = () => {
     setHasApplied(true);
@@ -337,59 +338,36 @@ export function PostDetail({
               </div>
             </div>
 
+            {/* --- 버튼 영역: 로그인 상태 및 작성자 여부에 따라 분기 --- */}
+            {!isLoggedIn && (
+              <Button disabled className="w-full">
+                로그인 후 신청 가능
+              </Button>
+            )}
+
+            {isLoggedIn && isAuthor && (
+              <Button
+                onClick={() => onJoinWorkspace(postId)}
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              >
+                워크스페이스 입장
+              </Button>
+            )}
+
             {isLoggedIn && !isAuthor && (
               <>
+                {/* TODO: 동행 신청 상태(hasApplied, isAccepted) API 연동 필요 */}
                 {!hasApplied && !isAccepted && (
-                  <Button
-                    onClick={handleApply}
-                    className="w-full bg-blue-600 hover:bg-blue-700"
-                  >
+                  <Button onClick={handleApply} className="w-full bg-blue-600 hover:bg-blue-700">
                     동행 신청하기
                   </Button>
                 )}
-
                 {hasApplied && !isAccepted && (
                   <Button disabled className="w-full bg-gray-400">
                     신청 대기중
                   </Button>
                 )}
-
-                {isAccepted && (
-                  <Button
-                    onClick={() => onJoinWorkspace(postId)}
-                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                  >
-                    워크스페이스 입장
-                  </Button>
-                )}
               </>
-            )}
-
-            {/* {isAuthor && (
-              <Button
-                onClick={() => onJoinWorkspace(postId)}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-              >
-                워크스페이스 입장
-              </Button>
-            )}
-
-            {!isLoggedIn && (
-              <Button disabled className="w-full">
-                로그인 후 신청 가능
-              </Button>
-            )} */}
-            {isLoggedIn ? (
-              <Button
-                onClick={() => onJoinWorkspace(postId)}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-              >
-                워크스페이스 입장
-              </Button>
-            ) : (
-              <Button disabled className="w-full">
-                로그인 후 신청 가능
-              </Button>
             )}
           </Card>
         </div>
