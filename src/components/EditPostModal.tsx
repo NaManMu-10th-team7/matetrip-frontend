@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Calendar, MapPin, Users, Tag } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -11,48 +11,61 @@ interface EditPostModalProps {
   onClose: () => void;
 }
 
+interface PostData {
+  title: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  location: string;
+  maxParticipants: number;
+  keywords: string[];
+}
+
 const KEYWORD_OPTIONS = [
-  '힐링',
-  '액티브',
-  '맛집투어',
-  '사진',
-  '자연',
-  '도시',
-  '해변',
-  '산',
-  '카페',
-  '쇼핑',
+  { key: 'FOOD', label: '음식' },
+  { key: 'ACCOMMODATION', label: '숙박' },
+  { key: 'ACTIVITY', label: '액티비티' },
+  { key: 'TRANSPORT', label: '교통' },
 ];
 
-// Mock data - 실제로는 postId로 데이터를 가져옴
-const MOCK_POST_DATA = {
-  title: '제주도 힐링 여행 같이 가실 분 🌊',
-  description: '제주도에서 여유롭게 힐링하면서 맛집도 탐방할 분들 구합니다!',
-  startDate: '2025-11-15',
-  endDate: '2025-11-18',
+// 실제 API 연동 전 사용할 예시 데이터
+const MOCK_POST_DATA: PostData = {
+  title: '제주도 미식 여행 동행 구해요!',
+  description:
+    '제주도 맛집이란 맛집은 다 가볼 예정입니다. 같이 맛있는 거 먹으면서 즐겁게 여행하실 분 찾습니다. 숙소는 아직 미정이고 같이 상의해서 정해요!',
+  startDate: '2025-12-01',
+  endDate: '2025-12-04',
   location: '제주도',
-  maxParticipants: 4,
-  keywords: ['힐링', '자연', '맛집투어'],
+  maxParticipants: 3,
+  keywords: ['음식', '숙박'], // KEYWORD_OPTIONS에 있는 값으로 설정
 };
 
 export function EditPostModal({ postId, onClose }: EditPostModalProps) {
-  const [formData, setFormData] = useState(MOCK_POST_DATA);
+  // postId는 실제 API 연동 시 사용됩니다. 지금은 MOCK_POST_DATA를 사용합니다.
+  console.log(`수정할 게시물 ID: ${postId}`);
+
+  const [formData, setFormData] = useState<Omit<PostData, 'keywords'>>(
+    MOCK_POST_DATA
+  );
   const [selectedKeywords, setSelectedKeywords] = useState<string[]>(
     MOCK_POST_DATA.keywords
   );
 
-  const toggleKeyword = (keyword: string) => {
+  const toggleKeyword = (keywordLabel: string) => {
     setSelectedKeywords((prev) =>
-      prev.includes(keyword)
-        ? prev.filter((k) => k !== keyword)
-        : [...prev, keyword]
+      prev.includes(keywordLabel)
+        ? prev.filter((k) => k !== keywordLabel)
+        : [...prev, keywordLabel]
     );
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Updated post:', { ...formData, keywords: selectedKeywords });
-    onClose();
+    const updatedPostData = { ...formData, keywords: selectedKeywords };
+    // TODO: 실제 API 연동 시 아래 console.log 대신 updatePost 함수를 호출합니다.
+    console.log('수정된 게시물 데이터:', updatedPostData);
+    alert('콘솔을 확인하세요. 게시물 수정 데이터가 기록되었습니다.');
+    onClose(); // 성공 시 모달 닫기
   };
 
   return (
@@ -193,18 +206,20 @@ export function EditPostModal({ postId, onClose }: EditPostModalProps) {
             <div className="flex flex-wrap gap-2">
               {KEYWORD_OPTIONS.map((keyword) => (
                 <Badge
-                  key={keyword}
+                  key={keyword.key}
                   variant={
-                    selectedKeywords.includes(keyword) ? 'default' : 'outline'
+                    selectedKeywords.includes(keyword.label)
+                      ? 'default'
+                      : 'outline'
                   }
                   className={`cursor-pointer transition-colors ${
-                    selectedKeywords.includes(keyword)
+                    selectedKeywords.includes(keyword.label)
                       ? 'bg-blue-600 hover:bg-blue-700'
                       : 'hover:bg-gray-100'
                   }`}
-                  onClick={() => toggleKeyword(keyword)}
+                  onClick={() => toggleKeyword(keyword.label)}
                 >
-                  {keyword}
+                  {keyword.label}
                 </Badge>
               ))}
             </div>
