@@ -264,8 +264,9 @@ export function MapPanel({ workspaceId }: { workspaceId: string }) {
             {openInfoWindow === marker.id && (
               <CustomOverlayMap
                 position={{ lat: marker.latitude, lng: marker.longitude }}
-                yAnchor={1.4}
+                yAnchor={1.2} // 마커와 정보창 사이의 간격을 줄여 마우스 이동이 편하도록 조정
                 zIndex={2} // 정보창이 다른 오버레이보다 위에 표시되도록 z-index 설정
+                clickable={true} // 이 오버레이 클릭 시 맵 클릭 이벤트가 발생하지 않도록 설정
               >
                 <div
                   className="bg-white rounded-lg border border-gray-300 shadow-md min-w-[200px] text-black overflow-hidden"
