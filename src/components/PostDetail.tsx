@@ -73,16 +73,10 @@ export function PostDetail({
   // 현재 로그인한 사용자가 게시글 작성자인지 확인
   const isAuthor = user && post ? user.userId === post.writerProfile.id : false;
 
-  console.log(`isLogged`, isLoggedIn);
-  console.log(`isAuthor`, isAuthor);
-
   // 현재 로그인한 사용자의 참여 정보 확인
   const userParticipation = user
     ? participations.find((p) => p.requester.id === user.userId)
     : undefined;
-
-  console.log(user?.userId);
-  console.log(`userParticipation`, userParticipation);
 
   const handleApply = async () => {
     // TODO: 동행 신청 API 연동
