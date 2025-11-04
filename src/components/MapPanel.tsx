@@ -248,6 +248,7 @@ export function MapPanel({ workspaceId }: { workspaceId: string }) {
               <CustomOverlayMap
                 position={{ lat: marker.latitude, lng: marker.longitude }}
                 yAnchor={1.4}
+                zIndex={2} // 정보창이 다른 오버레이보다 위에 표시되도록 z-index 설정
               >
                 <div
                   className="bg-white rounded-lg border border-gray-300 shadow-md min-w-[200px] text-black overflow-hidden"
