@@ -1,11 +1,8 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import client from '../api/client';
-
-// 앱 전역에서 사용할 표준 User 타입 정의
-// 두 API 응답의 필드를 종합하여 정의합니다.
-interface User {
-  id: string;
+ 
+interface Profile {
   email: string;
   nickname: string;
   gender: string;
@@ -14,11 +11,15 @@ interface User {
   mbtiTypes: string;
   travelStyles: string[];
   profileImageId: string | null;
-  // 로그인 응답에만 있는 필드는 optional로 처리
-  travelTendency?: string[];
-  createdAt?: string;
-  updatedAt?: string | null;
 }
+
+interface User {
+  userId: string;
+  profile: Profile;
+}
+
+// API 응답 데이터 타입을 정의합니다.
+type MyProfileInfoResponse = User;
 
 interface AuthState {
   isLoggedIn: boolean;
@@ -39,24 +40,34 @@ export const useAuthStore = create<AuthState>()(
       set({ isAuthLoading: true }, false, 'checkAuth/start');
       try {
         // HttpOnly 쿠키가 포함된 요청을 보내 사용자 정보를 가져옵니다.
-        // '/profile/my'는 평탄한 구조의 사용자 정보를 반환합니다.
-        const response = await client.get<User>('/profile/my');
+        const response = await client.get<MyProfileInfoResponse>(
+          '/profile/my/info'
+        );
 
-        if (response.data && response.data.id) {
-          // response.data는 이미 User 타입과 호환되므로 바로 할당합니다.
+        const userData = response.data;
+
+        if (userData && userData.userId && userData.profile) {
           set(
-            { isLoggedIn: true, user: response.data, isAuthLoading: false },
+            { isLoggedIn: true, user: userData, isAuthLoading: false },
             false,
             'checkAuth/success'
           );
         } else {
           // 응답은 성공했지만 데이터가 없는 경우
-          set({ isLoggedIn: false, user: null, isAuthLoading: false }, false, 'checkAuth/no-user');
+          set(
+            { isLoggedIn: false, user: null, isAuthLoading: false },
+            false,
+            'checkAuth/no-user'
+          );
         }
       } catch (error) {
         console.error('Authentication check failed:', error);
         // API 요청 실패 시
-        set({ isLoggedIn: false, user: null, isAuthLoading: false }, false, 'checkAuth/failure');
+        set(
+          { isLoggedIn: false, user: null, isAuthLoading: false },
+          false,
+          'checkAuth/failure'
+        );
       }
     },
     // login 함수는 이제 사용되지 않으므로, 로그인 성공 시 checkAuth()를 호출하는 패턴을 유지합니다.
