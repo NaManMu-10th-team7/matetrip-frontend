@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Routes,
   Route,
@@ -18,10 +18,12 @@ import { Login } from './components/Login';
 import { Signup } from './components/Signup';
 import { ReviewPage } from './components/ReviewPage';
 import { NotFound } from './components/NotFound';
+import { useAuthStore } from './store/authStore'; // Zustand 스토어 임포트
 
 // Layout component for pages with Header
 function Layout({
   isLoggedIn,
+  isAuthLoading,
   onLoginClick,
   onLogoutClick,
   onProfileClick,
@@ -29,6 +31,7 @@ function Layout({
   onLogoClick,
 }: {
   isLoggedIn: boolean;
+  isAuthLoading: boolean;
   onLoginClick: () => void;
   onLogoutClick: () => void;
   onProfileClick: () => void;
@@ -39,6 +42,7 @@ function Layout({
     <>
       <Header
         isLoggedIn={isLoggedIn}
+        isAuthLoading={isAuthLoading}
         onLoginClick={onLoginClick}
         onLogoutClick={onLogoutClick}
         onProfileClick={onProfileClick}
@@ -145,10 +149,15 @@ function WorkspaceWrapper() {
   return <Workspace postId={postId} onEndTrip={handleEndTrip} />;
 }
 
-function ProfileWrapper({ isLoggedIn }: { isLoggedIn: boolean }) {
+function ProfileWrapper({ isLoggedIn, loggedInUserId }: { isLoggedIn: boolean; loggedInUserId?: number }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const userId = parseInt(location.pathname.split('/').pop() || '0');
+
+  // 어떤 userId를 사용할지 결정합니다:
+  // 경로가 정확히 '/profile'인 경우, 로그인된 사용자의 ID (loggedInUserId)를 사용합니다.
+  // 그 외의 경우 (예: '/profile/:userId'), URL에서 userId를 파싱합니다.
+  const userIdFromUrl = parseInt(location.pathname.split('/').pop() || '0');
+  const targetUserId = location.pathname === '/profile' ? loggedInUserId : userIdFromUrl;
 
   const handleViewPost = (postId: number) => {
     navigate(`/post/${postId}`);
@@ -158,7 +167,7 @@ function ProfileWrapper({ isLoggedIn }: { isLoggedIn: boolean }) {
     <Profile
       isLoggedIn={isLoggedIn}
       onViewPost={handleViewPost}
-      userId={userId}
+      userId={targetUserId}
     />
   );
 }
@@ -196,8 +205,9 @@ function ReviewPageWrapper() {
 export default function App() {
   const navigate = useNavigate();
 
-  // 유저의 로그인 상태
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // Zustand 스토어에서 상태와 액션을 가져옵니다.
+  const { isLoggedIn, isAuthLoading, user, checkAuth, logout: storeLogout } = useAuthStore();
+
   // 모달 상태
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [showEditPost, setShowEditPost] = useState(false);
@@ -205,13 +215,21 @@ export default function App() {
     null
   );
 
+  // 앱이 처음 로드될 때 쿠키를 통해 로그인 상태를 확인합니다.
+  // checkAuth 함수는 Zustand 스토어에 의해 안정적으로 제공되므로 의존성 배열에 포함해도 안전합니다.
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
   const handleLogin = () => {
-    setIsLoggedIn(true);
+    // 로그인 성공 후, Zustand 스토어의 checkAuth를 호출하여 상태를 동기화합니다.
+    // 이 시점에서 서버는 HttpOnly 쿠키를 설정했을 것입니다.
+    checkAuth();
     navigate('/');
   };
 
   const handleLogout = () => {
-    setIsLoggedIn(false);
+    storeLogout(); // Zustand 스토어의 logout 액션을 호출하여 상태를 업데이트합니다.
     navigate('/');
   };
 
@@ -230,7 +248,7 @@ export default function App() {
         <Route path="/login" element={<LoginWrapper onLogin={handleLogin} />} />
         <Route
           path="/signup"
-          element={<SignupWrapper onSignup={handleLogin} />}
+          element={<SignupWrapper onSignup={handleLogin} />} // 회원가입 후 자동 로그인 처리
         />
 
         {/* Routes with Header */}
@@ -238,6 +256,7 @@ export default function App() {
           element={
             <Layout
               isLoggedIn={isLoggedIn}
+              isAuthLoading={isAuthLoading}
               onLoginClick={() => navigate('/login')}
               onLogoutClick={handleLogout}
               onProfileClick={handleProfileClick}
@@ -263,11 +282,11 @@ export default function App() {
           <Route path="/workspace/:id" element={<WorkspaceWrapper />} />
           <Route
             path="/profile"
-            element={<ProfileWrapper isLoggedIn={isLoggedIn} />}
+            element={<ProfileWrapper isLoggedIn={isLoggedIn} loggedInUserId={user?.id} />}
           />
           <Route
             path="/profile/:userId"
-            element={<ProfileWrapper isLoggedIn={isLoggedIn} />}
+            element={<ProfileWrapper isLoggedIn={isLoggedIn} />} // userId는 URL에서 파싱
           />
           <Route path="/review" element={<ReviewPageWrapper />} />
           <Route path="*" element={<NotFound />} />
