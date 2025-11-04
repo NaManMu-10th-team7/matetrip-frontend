@@ -71,7 +71,10 @@ export function PostDetail({
   }, [postId]);
 
   // 현재 로그인한 사용자가 게시글 작성자인지 확인
-  const isAuthor = user && post ? user.userId === post.writerProfile.id : false;
+  const isAuthor = user && post ? user.userId === post.writerId : false;
+  // console.log(`isAuthor: ${isAuthor}`);
+  // console.log(user);
+  // console.log(post);
 
   // 현재 로그인한 사용자의 참여 정보 확인
   const userParticipation = user
@@ -224,26 +227,24 @@ export function PostDetail({
 
           {/* Current Members */}
           {/* TODO: 참여중인 동행 목록 API 연동 필요 */}
-          {participations.length > 0 && (
-            <div>
-              <h3 className="text-gray-900 mb-4">
-                참여중인 동행 ({participations.length}명)
-              </h3>
+          <div>
+            <h3 className="text-gray-900 mb-4">
+              참여중인 동행 ({participations.length}명)
+            </h3>
+            {participations.length > 0 ? (
               <div className="space-y-3">
                 {participations.map((p) => (
                   <div
                     key={p.id}
                     className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleViewProfile(p.requester.id)}
+                    onClick={() => handleViewProfile(String(p.requester.id))}
                   >
                     <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
                       <User className="w-6 h-6 text-white" />
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-gray-900">
-                          {p.requester.profile.nickname}
-                        </span>
+                        <span className="text-gray-900">{p.requester.profile.nickname}</span>
                         <Badge variant="outline" className="text-xs">
                           {p.status}
                         </Badge>
@@ -253,8 +254,10 @@ export function PostDetail({
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <p className="text-gray-500">현재 참여중인 동행이 없습니다.</p>
+            )}
+          </div>
 
           {/* Pending Requests (Author Only) */}
           {/* TODO: 동행 신청 목록 API 연동 필요 */}
