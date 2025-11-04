@@ -2,6 +2,7 @@ import { Calendar, MapPin, Users, Thermometer } from 'lucide-react';
 import { type BadgeProps, Badge } from './ui/badge';
 import { Card } from './ui/card';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { translateKeyword } from '../utils/keyword';
 
 interface Post {
   id: number;
@@ -85,7 +86,7 @@ export function PostCard({ post, onJoin, image }: PostCardProps) {
         <div className="flex flex-wrap gap-1">
           {post.keywords.map((keyword) => (
             <Badge key={keyword} variant="secondary" className="text-xs">
-              {keyword}
+              {translateKeyword(keyword)}
             </Badge>
           ))}
         </div>

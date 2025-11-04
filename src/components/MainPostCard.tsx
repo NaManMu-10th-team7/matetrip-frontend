@@ -1,5 +1,6 @@
 import { Calendar, MapPin } from 'lucide-react';
 import { type Post } from '../types/post';
+import { translateKeyword } from '../utils/keyword';
 import { Badge } from './ui/badge';
 import { Card } from './ui/card';
 
@@ -7,16 +8,6 @@ interface MainPostCardProps {
   post: Post;
   onClick: (postId: string) => void;
 }
-
-// 백엔드에서 받은 영문 키워드를 한글로 변환하기 위한 맵
-const KEYWORD_MAP: { [key: string]: string } = {
-  FOOD: '음식',
-  ACCOMMODATION: '숙박',
-  ACTIVITY: '액티비티',
-  TRANSPORT: '교통',
-};
-
-const translateKeyword = (keyword: string) => KEYWORD_MAP[keyword] || keyword;
 
 export function MainPostCard({ post, onClick }: MainPostCardProps) {
   const getStatusBadgeClass = (status: string) => {
