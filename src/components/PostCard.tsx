@@ -4,19 +4,35 @@ import { Card } from './ui/card';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { translateKeyword } from '../utils/keyword';
 
+// Define WriterProfile interface based on the new API response
+interface WriterProfile {
+  id: string;
+  nickname: string;
+  gender?: string;
+  description?: string;
+  intro?: string;
+  mbtiTypes?: string;
+  travelStyles?: string[];
+}
+
 interface Post {
-  id: number;
+  id: string; // Changed from number to string
+  writerId: string; // Added
+  writerProfile: WriterProfile; // Added
+  createdAt: string; // Added
   title: string;
-  author: string;
-  authorTemp?: number;
-  image: string;
-  date: string;
+  // author: string; // Removed, replaced by writerProfile.nickname
+  // authorTemp?: number; // Removed, not in new API response
+  image?: string; // Made optional, as per SearchResults.tsx passing a fallback
+  // date: string; // Removed, replaced by startDate and endDate
+  startDate: string; // Added
+  endDate: string; // Added
   location: string;
-  participants: number;
+  participants?: number; // Made optional, not in sample JSON
   maxParticipants: number;
   keywords: string[];
-  status: '모집중' | '모집완료';
-  description: string;
+  status: '모집중' | '모집완료' | '여행중' | '여행완료'; // Expanded based on MainPostCard's getStatusBadgeClass
+  description?: string; // Made optional, not in sample JSON
   matchRate?: number;
 }
 
@@ -27,12 +43,6 @@ interface PostCardProps {
 }
 
 export function PostCard({ post, onJoin, image }: PostCardProps) {
-  const getTempColor = (temp: number | undefined) => {
-    if (temp >= 38) return 'text-green-600';
-    if (temp >= 37) return 'text-blue-600';
-    return 'text-gray-600';
-  };
-
   return (
     <Card
       className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
@@ -58,18 +68,16 @@ export function PostCard({ post, onJoin, image }: PostCardProps) {
 
         <div className="flex items-center gap-2 mb-3">
           <div className="w-6 h-6 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full" />
-          <span className="text-sm text-gray-600">{post.author}</span>
-          {post.authorTemp && (
-            <span className={`text-xs ${getTempColor(post.authorTemp)}`}>
-              {post.authorTemp}°C
-            </span>
-          )}
+          {/* Display writer's nickname */}
+          <span className="text-sm text-gray-600">{post.writerProfile?.nickname || '알 수 없는 사용자'}</span>
+          {/* authorTemp and its display are removed as they are not in the new API response */}
         </div>
 
         <div className="space-y-2 mb-3 text-sm text-gray-600">
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4" />
-            <span>{post.date}</span>
+            {/* Display startDate and endDate instead of a single 'date' field */}
+            <span>{`${post.startDate} ~ ${post.endDate}`}</span>
           </div>
           <div className="flex items-center gap-2">
             <MapPin className="w-4 h-4" />
@@ -78,7 +86,7 @@ export function PostCard({ post, onJoin, image }: PostCardProps) {
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4" />
             <span>
-              {post.participants} / {post.maxParticipants}명
+              {post.participants !== undefined ? `${post.participants} / ` : ''}{post.maxParticipants}명
             </span>
           </div>
         </div>
