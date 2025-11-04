@@ -1,5 +1,5 @@
 import { Calendar, MapPin, Users, Thermometer } from 'lucide-react';
-import { Badge } from './ui/badge';
+import { type BadgeProps, Badge } from './ui/badge';
 import { Card } from './ui/card';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 
@@ -7,7 +7,7 @@ interface Post {
   id: number;
   title: string;
   author: string;
-  authorTemp: number;
+  authorTemp?: number;
   image: string;
   date: string;
   location: string;
@@ -22,10 +22,11 @@ interface Post {
 interface PostCardProps {
   post: Post;
   onJoin: (postId: number) => void;
+  image?: string;
 }
 
-export function PostCard({ post, onJoin }: PostCardProps) {
-  const getTempColor = (temp: number) => {
+export function PostCard({ post, onJoin, image }: PostCardProps) {
+  const getTempColor = (temp: number | undefined) => {
     if (temp >= 38) return 'text-green-600';
     if (temp >= 37) return 'text-blue-600';
     return 'text-gray-600';
@@ -38,7 +39,7 @@ export function PostCard({ post, onJoin }: PostCardProps) {
     >
       <div className="relative h-48">
         <ImageWithFallback
-          src={post.image}
+          src={image || post.image}
           alt={post.title}
           className="w-full h-full object-cover"
         />
@@ -57,9 +58,11 @@ export function PostCard({ post, onJoin }: PostCardProps) {
         <div className="flex items-center gap-2 mb-3">
           <div className="w-6 h-6 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full" />
           <span className="text-sm text-gray-600">{post.author}</span>
-          <span className={`text-xs ${getTempColor(post.authorTemp)}`}>
-            {post.authorTemp}°C
-          </span>
+          {post.authorTemp && (
+            <span className={`text-xs ${getTempColor(post.authorTemp)}`}>
+              {post.authorTemp}°C
+            </span>
+          )}
         </div>
 
         <div className="space-y-2 mb-3 text-sm text-gray-600">

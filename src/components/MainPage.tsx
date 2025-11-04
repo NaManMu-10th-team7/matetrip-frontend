@@ -18,6 +18,12 @@ import { type Post } from '../types/post';
 import { MainPostCard } from './MainPostCard';
 
 interface MainPageProps {
+  onSearch: (params: {
+    startDate?: string;
+    endDate?: string;
+    location?: string;
+    title?: string;
+  }) => void;
   onViewPost: (postId: string) => void;
   onUserClick: (userId: number) => void;
 }
@@ -93,7 +99,7 @@ const REGION_CATEGORIES = [
   },
 ];
 
-export function MainPage({ onViewPost, onUserClick }: MainPageProps) {
+export function MainPage({ onSearch, onViewPost, onUserClick }: MainPageProps) {
   const [searchStartDate, setSearchStartDate] = useState('');
   const [searchEndDate, setSearchEndDate] = useState('');
   const [searchLocation, setSearchLocation] = useState('');
@@ -102,43 +108,28 @@ export function MainPage({ onViewPost, onUserClick }: MainPageProps) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchPosts = async (params: {
-    startDate?: string;
-    endDate?: string;
-    location?: string;
-    title?: string;
-  }) => {
-    setIsLoading(true);
-    try {
-      const queryParams = new URLSearchParams();
-      if (params.startDate) queryParams.append('startDate', params.startDate);
-      if (params.endDate) queryParams.append('endDate', params.endDate);
-      if (params.location) queryParams.append('location', params.location);
-      if (params.title) queryParams.append('title', params.title);
-
-      const endpoint =
-        queryParams.toString() === '' ? '/post' : `/post/search?${queryParams.toString()}`;
-      const response = await client.get<Post[]>(endpoint);
-
-      const sortedPosts = response.data.sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
-      setPosts(sortedPosts);
-    } catch (error) {
-      console.error('Failed to fetch posts:', error);
-      setPosts([]); // 에러 발생 시 게시글 목록을 비웁니다.
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchPosts({}); // 컴포넌트 마운트 시 모든 게시글을 불러옵니다.
+    const fetchInitialPosts = async () => {
+      setIsLoading(true);
+      try {
+        const response = await client.get<Post[]>('/post');
+        // 최신 글이 위로 오도록 생성일(createdAt) 기준으로 정렬합니다.
+        const sortedPosts = response.data.sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        setPosts(sortedPosts);
+      } catch (error) {
+        console.error('Failed to fetch posts:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchInitialPosts();
   }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e?.preventDefault();
-    fetchPosts({ startDate: searchStartDate, endDate: searchEndDate, location: searchLocation, title: searchTitle });
+    onSearch({ startDate: searchStartDate, endDate: searchEndDate, location: searchLocation, title: searchTitle });
   };
 
   return (
@@ -248,11 +239,9 @@ export function MainPage({ onViewPost, onUserClick }: MainPageProps) {
           <h2 className="text-gray-900">최신 동행 모집</h2>
         </div>
         {isLoading ? (
-          <div className="text-center text-gray-500">
-            {posts.length > 0 ? '게시글을 검색하는 중...' : '게시글을 불러오는 중...'}
-          </div>
+          <div className="text-center text-gray-500">게시글을 불러오는 중...</div>
         ) : posts.length === 0 ? (
-          <div className="text-center text-gray-500 py-10">검색 결과가 없습니다.</div>
+          <div className="text-center text-gray-500 py-10">최신 게시글이 없습니다.</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* 최신 6개의 게시글만 보여줍니다. */}
@@ -277,7 +266,7 @@ export function MainPage({ onViewPost, onUserClick }: MainPageProps) {
           {REGION_CATEGORIES.map((region) => (
             <button
               key={region.id}
-              onClick={() => fetchPosts({ location: region.name })}
+              onClick={() => onSearch({ location: region.name })}
               className="group relative aspect-[3/4] rounded-xl overflow-hidden hover:shadow-lg transition-all"
             >
               <ImageWithFallback
