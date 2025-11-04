@@ -289,7 +289,7 @@ export function MapPanel({ workspaceId }: { workspaceId: string }) {
                     </div>
                     <Button
                       size="xs"
-                      className={`w-full h-7 text-xs ${
+                      className={`w-full h-8 text-xs ${
                         Object.values(itinerary)
                           .flat()
                           .some((item) => item.id === marker.id)
