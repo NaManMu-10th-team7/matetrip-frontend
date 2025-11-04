@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import client from '../api/client';
- 
+
 interface Profile {
   email: string;
   nickname: string;
@@ -40,9 +40,8 @@ export const useAuthStore = create<AuthState>()(
       set({ isAuthLoading: true }, false, 'checkAuth/start');
       try {
         // HttpOnly 쿠키가 포함된 요청을 보내 사용자 정보를 가져옵니다.
-        const response = await client.get<MyProfileInfoResponse>(
-          '/profile/my/info'
-        );
+        const response =
+          await client.get<MyProfileInfoResponse>('/profile/my/info');
 
         const userData = response.data;
 

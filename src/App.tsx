@@ -19,6 +19,7 @@ import { Signup } from './components/Signup';
 import { ReviewPage } from './components/ReviewPage';
 import { NotFound } from './components/NotFound';
 import { useAuthStore } from './store/authStore'; // Zustand 스토어 임포트
+import { NotificationListener } from './components/NotificationListener';
 
 // Layout component for pages with Header
 function Layout({
@@ -76,7 +77,8 @@ function MainPageWrapper() {
     navigate(`/post/${postId}`);
   };
 
-  const handleUserClick = (userId: string) => { // userId도 string일 가능성이 높으므로 함께 변경
+  const handleUserClick = (userId: string) => {
+    // userId도 string일 가능성이 높으므로 함께 변경
     navigate(`/profile/${userId}`);
   };
 
@@ -111,7 +113,8 @@ function SearchResultsWrapper() {
 function PostDetailWrapper({
   isLoggedIn,
   onEditPost,
-}: { // onEditPost prop의 postId 타입을 string으로 변경
+}: {
+  // onEditPost prop의 postId 타입을 string으로 변경
   isLoggedIn: boolean;
   onEditPost: (postId: string) => void;
 }) {
@@ -119,7 +122,8 @@ function PostDetailWrapper({
   const location = useLocation();
   const postId = location.pathname.split('/').pop() || ''; // postId를 string으로 직접 추출
 
-  const handleJoinWorkspace = (postId: string) => { // handleJoinWorkspace의 postId 타입을 string으로 변경
+  const handleJoinWorkspace = (postId: string) => {
+    // handleJoinWorkspace의 postId 타입을 string으로 변경
     navigate(`/workspace/${postId}`);
   };
 
@@ -149,7 +153,13 @@ function WorkspaceWrapper() {
   return <Workspace postId={postId} onEndTrip={handleEndTrip} />;
 }
 
-function ProfileWrapper({ isLoggedIn, loggedInUserId }: { isLoggedIn: boolean; loggedInUserId?: number }) {
+function ProfileWrapper({
+  isLoggedIn,
+  loggedInUserId,
+}: {
+  isLoggedIn: boolean;
+  loggedInUserId?: string;
+}) {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -157,7 +167,8 @@ function ProfileWrapper({ isLoggedIn, loggedInUserId }: { isLoggedIn: boolean; l
   // 경로가 정확히 '/profile'인 경우, 로그인된 사용자의 ID (loggedInUserId)를 사용합니다.
   // 그 외의 경우 (예: '/profile/:userId'), URL에서 userId를 파싱합니다.
   const userIdFromUrl = location.pathname.split('/').pop() || ''; // userId를 string으로 직접 추출
-  const targetUserId = location.pathname === '/profile' ? loggedInUserId : userIdFromUrl;
+  const targetUserId =
+    location.pathname === '/profile' ? loggedInUserId : userIdFromUrl;
 
   const handleViewPost = (postId: string) => {
     navigate(`/post/${postId}`);
@@ -206,7 +217,13 @@ export default function App() {
   const navigate = useNavigate();
 
   // Zustand 스토어에서 상태와 액션을 가져옵니다.
-  const { isLoggedIn, isAuthLoading, user, checkAuth, logout: storeLogout } = useAuthStore();
+  const {
+    isLoggedIn,
+    isAuthLoading,
+    user,
+    checkAuth,
+    logout: storeLogout,
+  } = useAuthStore();
 
   // 모달 상태
   const [showCreatePost, setShowCreatePost] = useState(false);
@@ -243,6 +260,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/*isLoggedIn && */ <NotificationListener />}
       <Routes>
         {/* Routes without Header */}
         <Route path="/login" element={<LoginWrapper onLogin={handleLogin} />} />
@@ -282,7 +300,12 @@ export default function App() {
           <Route path="/workspace/:id" element={<WorkspaceWrapper />} />
           <Route
             path="/profile"
-            element={<ProfileWrapper isLoggedIn={isLoggedIn} loggedInUserId={user?.id} />}
+            element={
+              <ProfileWrapper
+                isLoggedIn={isLoggedIn}
+                loggedInUserId={user?.id}
+              />
+            }
           />
           <Route
             path="/profile/:userId"
