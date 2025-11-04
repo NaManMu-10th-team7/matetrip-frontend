@@ -14,6 +14,7 @@ const PoiSocketEvent = {
   UNMARKED: 'unmarked',
 } as const;
 
+// DayLayer 타입을 훅으로 이동하여 중앙에서 관리합니다.
 // 백엔드의 DTO와 타입을 맞춥니다.
 // 실제 프로젝트에서는 이 타입들을 공유하는 라이브러리로 분리하면 더 좋습니다.
 export type Poi = {

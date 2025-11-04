@@ -9,29 +9,16 @@ import {
 } from 'react-kakao-maps-sdk';
 import { usePoiSocket, Poi } from '../hooks/usePoiSocket.ts';
 
-// 레이어 정보를 동적으로 관리하기 위해 확장 가능한 타입 정의
-type DayLayer = {
-  id: string; // UUID를 저장하기 위해 string으로 변경
+export type DayLayer = {
+  id: string; // UUID
   label: string;
-  color: string; // Polyline 색상을 위한 속성 추가
+  color: string;
 };
 
-export function MapPanel({ workspaceId }: { workspaceId: string }) {
+export function MapPanel({ workspaceId, dayLayers }: { workspaceId: string, dayLayers: DayLayer[] }) {
   // 2. usePoiSocket 훅을 사용하여 소켓 통신 로직을 가져온다.
   // 이제 pois 상태는 웹소켓을 통해 서버와 동기화된다.
   const { pois, markPoi, unmarkPoi } = usePoiSocket(workspaceId);
-
-  // 레이어 정보를 상수가 아닌 상태로 관리하여 동적 확장성을 확보
-  const [dayLayers, setDayLayers] = useState<DayLayer[]>(() => {
-    // 여행 일수만큼 UUID를 생성하여 초기 레이어를 설정합니다.
-    // 지금은 2일로 하드코딩하지만, 나중에 여행 정보에서 받아올 수 있습니다.
-    const initialDays = 2;
-    return Array.from({ length: initialDays }, (_, i) => ({
-      id: crypto.randomUUID(), // UUID 생성
-      label: `Day ${i + 1}`,
-      color: i % 2 === 0 ? '#FF0000' : '#0000FF', // 색상 교차 적용
-    }));
-  });
 
   // '전체' 레이어를 포함한 전체 UI용 레이어 목록
   const UILayers: { id: 'all' | DayLayer['id']; label: string }[] = [
