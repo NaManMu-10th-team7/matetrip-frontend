@@ -228,8 +228,8 @@ export default function App() {
     navigate('/');
   };
 
-  const handleLogout = () => {
-    storeLogout(); // Zustand 스토어의 logout 액션을 호출하여 상태를 업데이트합니다.
+  const handleLogout = async () => {
+    await storeLogout(); // Zustand 스토어의 logout 액션을 호출하여 상태를 업데이트합니다.
     navigate('/');
   };
 

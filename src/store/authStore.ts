@@ -26,7 +26,7 @@ interface AuthState {
   user: User | null;
   checkAuth: () => Promise<void>;
   login: (user: User) => void; // 이 함수는 현재 사용되지 않지만, 필요에 따라 추가할 수 있습니다.
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -63,6 +63,17 @@ export const useAuthStore = create<AuthState>()(
     // 필요하다면, 로그인 응답을 User 타입으로 변환하는 로직을 여기에 추가할 수 있습니다.
     // 예: login: (loginResponse) => { const user = mapLoginResponseToUser(loginResponse); set... }
     login: (user: User) => set({ isLoggedIn: true, user }, false, 'auth/login'),
-    logout: () => set({ isLoggedIn: false, user: null }, false, 'auth/logout'),
+    logout: async () => {
+      try {
+        // 서버에 로그아웃 요청을 보내 HttpOnly 쿠키를 삭제합니다.
+        await client.post('/auth/logout');
+      } catch (error) {
+        // API 요청이 실패하더라도 클라이언트 상태는 초기화하는 것이 사용자 경험에 좋습니다.
+        console.error('Logout API call failed:', error);
+      } finally {
+        // API 호출 성공 여부와 관계없이 클라이언트의 인증 상태를 초기화합니다.
+        set({ isLoggedIn: false, user: null }, false, 'auth/logout');
+      }
+    },
   }))
 );
