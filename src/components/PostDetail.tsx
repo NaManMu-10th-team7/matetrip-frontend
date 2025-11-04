@@ -71,7 +71,7 @@ export function PostDetail({
   }, [postId]);
 
   // 현재 로그인한 사용자가 게시글 작성자인지 확인
-  const isAuthor = user && post ? user.id === post.writerProfile.id : false;
+  const isAuthor = user && post ? user.userId === post.writerProfile.id : false;
 
   console.log(`isLogged`, isLoggedIn);
   console.log(`isAuthor`, isAuthor);
