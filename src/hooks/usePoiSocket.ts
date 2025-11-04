@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { useAuthStore } from '../store/authStore.ts';
 
 // 백엔드의 PoiSocketEvent와 동일하게 정의합니다.
 const PoiSocketEvent = {
@@ -41,6 +42,7 @@ export function usePoiSocket(workspaceId: string) {
   // 소켓 인스턴스를 ref로 관리하여 리렌더링 시에도 연결을 유지합니다.
   const socketRef = useRef<Socket | null>(null);
   const [pois, setPois] = useState<Poi[]>([]);
+  const { user } = useAuthStore();
 
   useEffect(() => {
     // 백엔드 주소와 네임스페이스에 맞게 소켓을 연결합니다.
@@ -88,10 +90,13 @@ export function usePoiSocket(workspaceId: string) {
   const markPoi = (
     poiData: Omit<CreatePoiDto, 'workspaceId' | 'createdBy'>
   ) => {
-    // TODO: 실제 사용자 인증 로직이 구현되면, 현재 로그인된 사용자의 ID를 사용해야 합니다.
-    const MOCK_USER_ID = '00000000-0000-0000-0000-000000000000';
+    // 로그인한 사용자가 없으면 작업을 중단합니다.
+    if (!user?.userId) {
+      console.error('인증된 사용자 정보가 없습니다. POI를 마킹할 수 없습니다.');
+      return;
+    }
 
-    const payload = { ...poiData, workspaceId, createdBy: MOCK_USER_ID };
+    const payload = { ...poiData, workspaceId, createdBy: user.userId };
     console.log(
       '[시뮬레이션] POI 테이블 저장 데이터 (MARK 이벤트 전송):',
       payload
