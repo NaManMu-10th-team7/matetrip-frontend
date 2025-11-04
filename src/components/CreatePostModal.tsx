@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { X, Calendar, MapPin, Users, Tag } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -10,28 +10,56 @@ interface CreatePostModalProps {
   onClose: () => void;
 }
 
+interface PostData {
+  title: string;
+  content: string;
+  startDate: string;
+  endDate: string;
+  location: string;
+  maxParticipants: number;
+  keywords: string[];
+}
+
 const KEYWORD_OPTIONS = [
-  '힐링',
-  '액티브',
-  '맛집투어',
-  '사진',
-  '자연',
-  '도시',
-  '해변',
-  '산',
-  '카페',
-  '쇼핑',
+  { key: 'FOOD', label: '음식' },
+  { key: 'ACCOMMODATION', label: '숙박' },
+  { key: 'ACTIVITY', label: '액티비티' },
+  { key: 'TRANSPORT', label: '교통' },
 ];
+
+/**
+ * 동행 모집 게시글을 생성하는 API를 호출
+ * @param postData 게시글 데이터
+ */
+async function createPost(postData: PostData) {
+  const response = await fetch('http://localhost:3000/post', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(postData),
+  });
+
+  if (!response.ok) {
+    // 서버에서 구체적인 에러 메시지를 보냈을 경우를 대비
+    const errorData = await response.json().catch(() => null);
+    const errorMessage = errorData?.message || '게시글 작성에 실패했습니다.';
+    throw new Error(errorMessage);
+  }
+
+  return response.json();
+}
 
 export function CreatePostModal({ onClose }: CreatePostModalProps) {
   const [formData, setFormData] = useState({
     title: '',
-    description: '',
+    content: '',
     startDate: '',
     endDate: '',
     location: '',
-    maxParticipants: 4,
+    maxParticipants: 2,
   });
+  const [isLoading, setIsLoading] = useState(false);
   const [selectedKeywords, setSelectedKeywords] = useState<string[]>([]);
 
   const toggleKeyword = (keyword: string) => {
@@ -42,12 +70,41 @@ export function CreatePostModal({ onClose }: CreatePostModalProps) {
     );
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    console.log('Create post:', { ...formData, keywords: selectedKeywords });
-    onClose();
-  };
 
+    if (
+      formData.startDate &&
+      formData.endDate &&
+      formData.startDate > formData.endDate
+    ) {
+      alert('종료일은 시작일보다 이후여야 합니다.');
+      return;
+    }
+
+    setIsLoading(true);
+    const postData: PostData = {
+      ...formData,
+      keywords: selectedKeywords,
+    };
+
+    console.log(postData);
+
+    try {
+      await createPost(postData);
+      alert('동행 모집 게시글이 작성되었습니다.');
+      onClose(); // 성공 시 모달 닫기
+    } catch (error) {
+      console.error('Error creating post:', error);
+      alert(
+        error instanceof Error
+          ? error.message
+          : '알 수 없는 오류가 발생했습니다.'
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -63,7 +120,11 @@ export function CreatePostModal({ onClose }: CreatePostModalProps) {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form
+          id="create-post-form"
+          onSubmit={handleSubmit}
+          className="p-6 space-y-6"
+        >
           {/* Title */}
           <div>
             <Label htmlFor="title">여행 제목</Label>
@@ -85,11 +146,11 @@ export function CreatePostModal({ onClose }: CreatePostModalProps) {
             <Textarea
               id="description"
               placeholder="여행 계획과 동행에게 바라는 점을 자유롭게 작성해주세요."
-              value={formData.description}
+              value={formData.content}
               onChange={(e) =>
                 setFormData((prev) => ({
                   ...prev,
-                  description: e.target.value,
+                  content: e.target.value,
                 }))
               }
               className="mt-2 min-h-32"
@@ -187,20 +248,22 @@ export function CreatePostModal({ onClose }: CreatePostModalProps) {
               여행 키워드
             </Label>
             <div className="flex flex-wrap gap-2">
-              {KEYWORD_OPTIONS.map((keyword) => (
+              {KEYWORD_OPTIONS.map((option) => (
                 <Badge
-                  key={keyword}
+                  key={option.key}
                   variant={
-                    selectedKeywords.includes(keyword) ? 'default' : 'outline'
+                    selectedKeywords.includes(option.key)
+                      ? 'default'
+                      : 'outline'
                   }
                   className={`cursor-pointer transition-colors ${
-                    selectedKeywords.includes(keyword)
+                    selectedKeywords.includes(option.key)
                       ? 'bg-blue-600 hover:bg-blue-700'
                       : 'hover:bg-gray-100'
                   }`}
-                  onClick={() => toggleKeyword(keyword)}
+                  onClick={() => toggleKeyword(option.key)}
                 >
-                  {keyword}
+                  {option.label}
                 </Badge>
               ))}
             </div>
@@ -213,10 +276,12 @@ export function CreatePostModal({ onClose }: CreatePostModalProps) {
             취소
           </Button>
           <Button
-            onClick={handleSubmit}
+            type="submit"
+            form="create-post-form"
+            disabled={isLoading}
             className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
           >
-            작성 완료
+            {isLoading ? '작성 중...' : '작성 완료'}
           </Button>
         </div>
       </div>

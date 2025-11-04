@@ -5,6 +5,10 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Checkbox } from './ui/checkbox';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import client from '../api/client';
+import type { ApiErrorResponse, LoginSuccessResponse } from '../types';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 interface LoginProps {
   onLogin: () => void;
@@ -19,13 +23,45 @@ export function Login({ onLogin, onSignupClick }: LoginProps) {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [errorMessage, setErrorMessage] = useState<string>('');
+
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    //임시 테스트 로그인 로직
-    if (email === 'admin@email.com' && password === '1q2w3e') {
-      onLogin();
-    } else {
-      alert('아이디 비밀번호가 틀렸습니다.');
+
+    // 이전 에러 메시지 초기화
+    setErrorMessage('');
+
+    try {
+      // 1. NestJS 백엔드에 로그인 요청
+      const response = await client.post<LoginSuccessResponse>(
+        '/auth/login',
+        {
+          email: email,
+          password: password,
+        },
+        { withCredentials: true }
+      ); // 쿠키 전달을 위해 withCredentials 설정
+
+      if (response.status === 200) {
+        // 2. 로그인 성공
+        alert('로그인 되었습니다.');
+        navigate('/'); // 홈으로 이동
+      }
+    } catch (error) {
+      // 3. 로그인 실패. axios 에러 객체(AxiosError)로 타입 가드 수행
+      if (axios.isAxiosError(error) && error.response) {
+        const apiError = error.response.data as ApiErrorResponse;
+        setErrorMessage(apiError.message || '로그인에 실패했습니다.');
+      } else {
+        // 네트워크 오류 또는 알 수 없는 오류
+        setErrorMessage(
+          '서버에 연결할 수 없거나 알 수 없는 오류가 발생했습니다.'
+        );
+      }
+
+      console.error('로그인 중 에러 발생 : ', error);
     }
   };
 
@@ -56,7 +92,7 @@ export function Login({ onLogin, onSignupClick }: LoginProps) {
             <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
               <Map className="w-10 h-10 text-white" />
             </div>
-            <span className="text-4xl">TripTogether</span>
+            <span className="text-4xl">MateTrip</span>
           </div>
           <p className="text-xl text-center text-white/90 mb-8">
             새로운 동행과 함께하는
@@ -88,7 +124,7 @@ export function Login({ onLogin, onSignupClick }: LoginProps) {
             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
               <Map className="w-6 h-6 text-white" />
             </div>
-            <span className="text-2xl text-gray-900">TripTogether</span>
+            <span className="text-2xl text-gray-900">MateTrip</span>
           </div>
 
           <div className="bg-white rounded-2xl shadow-sm border p-8">
@@ -241,7 +277,7 @@ export function Login({ onLogin, onSignupClick }: LoginProps) {
           </div>
 
           <p className="mt-6 text-center text-xs text-gray-500">
-            로그인함으로써 TripTogether의{' '}
+            로그인함으로써 MateTrip의{' '}
             <a href="#" className="text-blue-600 hover:underline">
               이용약관
             </a>{' '}
