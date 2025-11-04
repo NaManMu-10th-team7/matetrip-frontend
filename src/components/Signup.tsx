@@ -132,12 +132,20 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
         },
       };
 
-      console.log(requestData);
+      const signupResponse = await client.post('/auth/signup', requestData);
 
-      await client.post('/auth/signup', requestData);
+      // 회원가입 성공(201 Created) 후, 바로 로그인 처리
+      if (signupResponse.status === 201) {
+        const loginResponse = await client.post('/auth/login', {
+          email: formData.email,
+          password: formData.password,
+        });
 
-      // 회원가입 성공 시 부모 컴포넌트의 onSignup 함수 호출
-      onSignup();
+        if (loginResponse.status === 200) {
+          // 로그인 성공 시 부모 컴포넌트의 onSignup 함수 호출 (상태 업데이트 및 페이지 이동)
+          onSignup();
+        }
+      }
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
         // const apiError = error.response.data as ApiErrorResponse;
