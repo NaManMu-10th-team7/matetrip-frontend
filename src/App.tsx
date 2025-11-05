@@ -131,8 +131,11 @@ function PostDetailWrapper({
           id: string;
           workspaceName: string;
         }>('/workspace', { postId, workspaceName });
-        const { id } = response.data;
-        navigate(`/workspace/${id}`);
+        const { id, workspaceName: resWorkspaceName } = response.data;
+        // navigate의 state를 사용하여 워크스페이스 이름을 전달합니다.
+        navigate(`/workspace/${id}`, {
+          state: { workspaceName: resWorkspaceName },
+        });
       } catch (error) {
         console.error('Failed to create or join workspace:', error);
         alert('워크스페이스에 입장하는 중 오류가 발생했습니다.');
@@ -159,13 +162,20 @@ function PostDetailWrapper({
 function WorkspaceWrapper() {
   const navigate = useNavigate();
   const location = useLocation();
-  const postId = location.pathname.split('/').pop() || ''; // postId를 string으로 직접 추출
+  const workspaceId = location.pathname.split('/').pop() || ''; // 명확한 변수명으로 변경
+  const workspaceName = location.state?.workspaceName || '워크스페이스'; // state에서 이름 가져오기
 
   const handleEndTrip = () => {
     navigate('/review');
   };
 
-  return <Workspace postId={postId} onEndTrip={handleEndTrip} />;
+  return (
+    <Workspace
+      workspaceId={workspaceId}
+      workspaceName={workspaceName}
+      onEndTrip={handleEndTrip}
+    />
+  );
 }
 
 function ProfileWrapper({
