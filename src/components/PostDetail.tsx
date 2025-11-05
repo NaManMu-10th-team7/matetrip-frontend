@@ -157,6 +157,9 @@ export function PostDetail({
     return <div className="text-center py-16">게시글을 찾을 수 없습니다.</div>;
   }
 
+  // 모집 인원이 다 찼는지 확인 (작성자 포함)
+  const isFull = approvedParticipants.length + 1 >= post.maxParticipants;
+
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <Button
@@ -426,12 +429,20 @@ export function PostDetail({
             {isLoggedIn && !isAuthor && (
               <>
                 {!userParticipation && (
-                  <Button
-                    onClick={handleApply}
-                    className="w-full bg-blue-600 hover:bg-blue-700"
-                  >
-                    동행 신청하기
-                  </Button>
+                  <>
+                    {isFull ? (
+                      <Button disabled className="w-full bg-gray-400">
+                        모집이 마감되었습니다
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={handleApply}
+                        className="w-full bg-blue-600 hover:bg-blue-700"
+                      >
+                        동행 신청하기
+                      </Button>
+                    )}
+                  </>
                 )}
                 {userParticipation?.status === '대기중' && (
                   <Button disabled className="w-full bg-gray-400">
