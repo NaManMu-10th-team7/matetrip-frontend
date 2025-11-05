@@ -251,7 +251,6 @@ export function MapPanel({ workspaceId, dayLayers }: { workspaceId: string, dayL
           <MapMarker
             key={`marker-${marker.id}`} // key는 고유해야 합니다.
             position={{ lat: marker.latitude, lng: marker.longitude }}
-            onClick={() => unmarkPoi(marker.id)}
             onMouseOver={() => setOpenInfoWindow(marker.id)}
             onMouseOut={() => setOpenInfoWindow(null)}
           >
@@ -274,29 +273,42 @@ export function MapPanel({ workspaceId, dayLayers }: { workspaceId: string, dayL
                     <div className="text-xs text-gray-600 mb-3">
                       {marker.address}
                     </div>
-                    <Button
-                      size="xs"
-                      className={`w-full h-8 text-xs ${
-                        Object.values(itinerary)
+                    <div className="flex gap-2">
+                      <Button
+                        size="xs"
+                        className={`flex-1 h-8 text-xs ${
+                          Object.values(itinerary)
+                            .flat()
+                            .some((item) => item.id === marker.id)
+                            ? 'bg-gray-400 cursor-not-allowed'
+                            : 'bg-blue-600 hover:bg-blue-700'
+                        }`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          addToItinerary(marker);
+                        }}
+                        disabled={Object.values(itinerary)
+                          .flat()
+                          .some((item) => item.id === marker.id)}
+                      >
+                        {Object.values(itinerary)
                           .flat()
                           .some((item) => item.id === marker.id)
-                          ? 'bg-gray-400 cursor-not-allowed'
-                          : 'bg-blue-600 hover:bg-blue-700'
-                      }`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        addToItinerary(marker);
-                      }}
-                      disabled={Object.values(itinerary)
-                        .flat()
-                        .some((item) => item.id === marker.id)}
-                    >
-                      {Object.values(itinerary)
-                        .flat()
-                        .some((item) => item.id === marker.id)
-                        ? '추가됨'
-                        : '일정에 추가'}
-                    </Button>
+                          ? '추가됨'
+                          : '일정에 추가'}
+                      </Button>
+                      <Button
+                        size="xs"
+                        variant="destructive"
+                        className="flex-1 h-8 text-xs"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          unmarkPoi(marker.id);
+                        }}
+                      >
+                        삭제
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </CustomOverlayMap>
