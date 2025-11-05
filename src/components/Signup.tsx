@@ -174,7 +174,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
             <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
               <Map className="w-10 h-10 text-white" />
             </div>
-            <span className="text-4xl">TripTogether</span>
+            <span className="text-4xl">MateTrip</span>
           </div>
           <p className="text-xl text-center text-white/90 mb-8">
             당신의 완벽한 여행 동행을
@@ -206,7 +206,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
               <Map className="w-6 h-6 text-white" />
             </div>
-            <span className="text-2xl text-gray-900">TripTogether</span>
+            <span className="text-2xl text-gray-900">MateTrip</span>
           </div>
 
           <div className="bg-white rounded-2xl shadow-sm border p-8">
