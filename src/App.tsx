@@ -19,6 +19,7 @@ import { Signup } from './components/Signup';
 import { ReviewPage } from './components/ReviewPage';
 import { NotFound } from './components/NotFound';
 import { useAuthStore } from './store/authStore'; // Zustand 스토어 임포트
+import type { Post } from './components/PostCard';
 
 // Layout component for pages with Header
 function Layout({
@@ -111,20 +112,20 @@ function SearchResultsWrapper() {
 function PostDetailWrapper({
   isLoggedIn,
   onEditPost,
-}: { // onEditPost prop의 postId 타입을 string으로 변경
+}: {
   isLoggedIn: boolean;
-  onEditPost: (postId: string) => void;
+  onEditPost: (post: Post) => void;
 }) {
   const navigate = useNavigate();
   const location = useLocation();
   const postId = location.pathname.split('/').pop() || ''; // postId를 string으로 직접 추출
 
-  const handleJoinWorkspace = (postId: string) => { // handleJoinWorkspace의 postId 타입을 string으로 변경
-    navigate(`/workspace/${postId}`);
+  const handleJoinWorkspace = (pId: string) => {
+    navigate(`/workspace/${pId}`);
   };
 
-  const handleEditPost = () => {
-    onEditPost(postId);
+  const handleViewProfile = (userId: string) => {
+    navigate(`/workspace/${postId}`);
   };
 
   return (
@@ -132,7 +133,8 @@ function PostDetailWrapper({
       postId={postId}
       isLoggedIn={isLoggedIn}
       onJoinWorkspace={handleJoinWorkspace}
-      onEditPost={handleEditPost}
+      onEditPost={onEditPost} // onEditPost를 그대로 전달
+      onViewProfile={handleViewProfile}
     />
   );
 }
@@ -211,9 +213,7 @@ export default function App() {
   // 모달 상태
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [showEditPost, setShowEditPost] = useState(false);
-  const [selectedPostForEdit, setSelectedPostForEdit] = useState<string | null>( // 상태 타입을 string으로 변경
-    null
-  );
+  const [selectedPostForEdit, setSelectedPostForEdit] = useState<Post | null>(null);
 
   // 앱이 처음 로드될 때 쿠키를 통해 로그인 상태를 확인합니다.
   // checkAuth 함수는 Zustand 스토어에 의해 안정적으로 제공되므로 의존성 배열에 포함해도 안전합니다.
@@ -272,8 +272,8 @@ export default function App() {
             element={
               <PostDetailWrapper
                 isLoggedIn={isLoggedIn}
-                onEditPost={(postId) => {
-                  setSelectedPostForEdit(postId);
+                onEditPost={(post) => {
+                  setSelectedPostForEdit(post);
                   setShowEditPost(true);
                 }}
               />
@@ -297,9 +297,9 @@ export default function App() {
       {showCreatePost && (
         <CreatePostModal onClose={() => setShowCreatePost(false)} />
       )}
-      {showEditPost && (
+      {showEditPost && selectedPostForEdit && (
         <EditPostModal
-          postId={selectedPostForEdit || ''} // postId가 string이므로 기본값을 빈 문자열로 변경
+          post={selectedPostForEdit}
           onClose={() => setShowEditPost(false)}
         />
       )}

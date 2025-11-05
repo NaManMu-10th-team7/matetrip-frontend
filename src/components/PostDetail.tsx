@@ -29,7 +29,7 @@ interface PostDetailProps {
   isLoggedIn: boolean;
   onJoinWorkspace: (postId: string) => void;
   onViewProfile: (userId: string) => void;
-  onEditPost: () => void;
+  onEditPost: (post: Post) => void;
 }
 
 export function PostDetail({
@@ -216,7 +216,11 @@ export function PostDetail({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={onEditPost}
+                    onClick={() => {
+                      if (post) {
+                        onEditPost(post);
+                      }
+                    }}
                     className="gap-2"
                   >
                     <Edit className="w-4 h-4" />
