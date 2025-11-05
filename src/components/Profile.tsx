@@ -457,14 +457,15 @@ export function Profile({
       <div className="bg-white rounded-xl shadow-sm border p-8 mb-6">
         <div className="flex flex-col md:flex-row gap-6">
           <div className="flex-shrink-0">
-            <div
-              className="w-32 h-32 rounded-full border-4 border-white shadow-lg bg-gradient-to-br from-blue-400 to-purple-500 bg-cover bg-center"
-              style={
-                profileImageUrl
-                  ? { backgroundImage: `url(${profileImageUrl})` }
-                  : undefined
-              }
-            />
+            <div className="w-32 h-32 rounded-full border-4 border-white shadow-lg overflow-hidden bg-gradient-to-br from-blue-400 to-purple-500">
+              {profileImageUrl ? (
+                <ImageWithFallback
+                  src={profileImageUrl}
+                  alt="Profile"
+                  className="w-full h-full object-cover object-center"
+                />
+              ) : null}
+            </div>
             {canEditProfile && isEditing && (
               <>
                 <input
