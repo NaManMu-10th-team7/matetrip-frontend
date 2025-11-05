@@ -7,7 +7,7 @@ import {
   Polyline,
   CustomOverlayMap,
 } from 'react-kakao-maps-sdk';
-import { usePoiSocket, Poi } from '../hooks/usePoiSocket.ts';
+import { usePoiSocket, Poi } from '../hooks/usePoiSocket';
 
 export type DayLayer = {
   id: string; // UUID
