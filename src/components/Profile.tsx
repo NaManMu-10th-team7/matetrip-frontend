@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import {
   Star,
   MapPin,
@@ -68,7 +68,7 @@ interface ProfileData {
   //mannerTemp: number;
   //totalTrips: number;
   //badges: string[];
-  tendency: TravelTendencyType[];
+  travelTendency: TravelTendencyType[];
   travelStyles: TravelStyleType[];
   reviews: Review[];
   trips: Trip[];
@@ -84,7 +84,7 @@ const EMPTY_PROFILE: ProfileData = {
   mbtiTypes: 'ENFP',
   smoking: false,
   driverLicense: false,
-  tendency: [],
+  travelTendency: [],
   travelStyles: [],
   reviews: [],
   trips: [],
@@ -231,12 +231,12 @@ export function Profile({
 
   const handleTravelTendencyToggle = (tendency: TravelTendencyType) => {
     setDraft((prev) => {
-      const alreadySelected = prev.tendency.includes(tendency);
+      const alreadySelected = prev.travelTendency.includes(tendency);
       return {
         ...prev,
-        tendency: alreadySelected
-          ? prev.tendency.filter((item) => item !== tendency)
-          : [...prev.tendency, tendency],
+        travelTendency: alreadySelected
+          ? prev.travelTendency.filter((item) => item !== tendency)
+          : [...prev.travelTendency, tendency],
       };
     });
   };
@@ -250,11 +250,12 @@ export function Profile({
     description: dto.description ?? prev.description,
     gender: dto.gender ?? prev.gender,
     mbtiTypes: dto.mbtiTypes ?? prev.mbtiTypes,
-    tendency: dto.tendency ?? prev.tendency,
+    travelTendency: dto.travelTendency ?? prev.travelTendency,
     travelStyles: dto.travelStyles ?? prev.travelStyles,
     profileImageId: dto.profileImageId ?? prev.profileImageId,
   });
 
+  //----초기 GET 함수 -----
   useEffect(() => {
     let isMounted = true;
 
@@ -286,6 +287,87 @@ export function Profile({
     };
   }, []);
 
+  // ---------사진쪽 변수 명들 --------------------
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  // url 을 기억함: 마지막 정리 변수
+  const profileImagePreviewRef = useRef<string | null>(null);
+
+  // 상태 선언
+  //profileImagePreview는 blob: 미리보기를 위한 state.
+  const [profileImagePreview, setProfileImagePreview] = useState<string | null>(
+    null
+  );
+  const [pendingProfileImageFile, setPendingProfileImageFile] =
+    useState<File | null>(null);
+  // 받은 url 을 담아둠
+  const [profileImageRemoteUrl, setProfileImageRemoteUrl] = useState<
+    string | null
+  >(null);
+
+  //이전 URL을 revoke하고 새 상태를 세팅
+  const updateProfileImagePreview = (nextUrl: string | null) => {
+    //사진 보이게 하기
+    if (
+      profileImagePreviewRef.current &&
+      profileImagePreviewRef.current !== nextUrl
+    ) {
+      //이전 URL을 정리
+      URL.revokeObjectURL(profileImagePreviewRef.current);
+    }
+    // 새로운 URL을 반영한다
+    profileImagePreviewRef.current = nextUrl;
+    setProfileImagePreview(nextUrl);
+  };
+
+  // presigned GET URL 받아오기 --- ##파일 가져오기
+  useEffect(() => {
+    if (!viewData.profileImageId) {
+      setProfileImageRemoteUrl(null);
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(
+          `http://localhost:3000/binary-content/${viewData.profileImageId}/presigned-url`,
+          { credentials: 'include' }
+        );
+        if (!res.ok) throw new Error('presigned GET 요청 실패');
+        const { url } = await res.json();
+        if (!cancelled) setProfileImageRemoteUrl(url);
+      } catch (err) {
+        console.error('프로필 이미지 URL 불러오기 실패:', err);
+        if (!cancelled) setProfileImageRemoteUrl(null);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [viewData.profileImageId]);
+
+  // 3) 최종적으로 div에 넘길 주소 계산
+  //?? : 왼쪽 값이 null이나 undefined가 아니면 그대로 쓰고, 그렇지 않으면 오른쪽 값을 쓰는 식
+  const profileImageUrl = profileImagePreview ?? profileImageRemoteUrl;
+
+  const openFilePicker = () => {
+    fileInputRef.current?.click();
+  };
+
+  //url 만 빼와서 저장 -> 프로필 저장 후 db에 넣게
+  const handleProfileImageSelected = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setPendingProfileImageFile(file);
+    const objectUrl = URL.createObjectURL(file);
+    updateProfileImagePreview(objectUrl);
+    event.target.value = '';
+  };
+
   //편집중
   const startEditing = () => {
     setDraft(profile);
@@ -295,22 +377,53 @@ export function Profile({
   const cancelEditing = () => {
     setDraft(profile);
     setIsEditing(false);
+    setPendingProfileImageFile(null);
+    updateProfileImagePreview(null);
   };
   //편집 저장
   const saveProfile = async () => {
-    const payload: UpdateProfileDto = {
-      nickname: draft.nickname,
-      description: draft.description,
-      intro: draft.intro,
-      gender: draft.gender,
-      mbtiTypes: draft.mbtiTypes,
-      travelStyles: draft.travelStyles,
-      tendency: draft.tendency,
-      profileImageId: null,
-      //profileImageId: selectedBinaryContentId ?? null,
-    };
-
+    let profileImageId = draft.profileImageId;
+    // 먼저 사진부터 저장
     try {
+      if (pendingProfileImageFile) {
+        const file = pendingProfileImageFile;
+        const safeFileType = file.type || 'application/octet-stream';
+
+        const presignResponse = await fetch(
+          'http://localhost:3000/binary-content/presigned-url',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              fileName: file.name,
+              fileSize: file.size,
+              fileType: safeFileType,
+            }),
+          }
+        );
+        if (!presignResponse.ok) throw new Error('presigned-url 요청 실패');
+        const { uploadUrl, binaryContentId } = await presignResponse.json();
+
+        const s3Response = await fetch(uploadUrl, {
+          method: 'PUT',
+          body: file,
+        });
+        if (!s3Response.ok) throw new Error('S3 업로드 실패');
+        profileImageId = binaryContentId;
+      }
+      // 그 뒤에 내용 저장
+      const payload: UpdateProfileDto = {
+        nickname: draft.nickname,
+        description: draft.description,
+        intro: draft.intro,
+        gender: draft.gender,
+        mbtiTypes: draft.mbtiTypes,
+        travelStyles: draft.travelStyles,
+        travelTendency: draft.travelTendency,
+        profileImageId,
+      };
+
       const res = await fetch('http://localhost:3000/profile/my', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -325,12 +438,13 @@ export function Profile({
       }
 
       const updatedData: UpdateProfileDto = await res.json();
-
       setProfile((prev) => {
         const next = mapDtoToProfile(updatedData, prev);
         setDraft(next);
         return next;
       });
+      setPendingProfileImageFile(null);
+      updateProfileImagePreview(null);
 
       setIsEditing(false);
     } catch (err) {
@@ -343,16 +457,33 @@ export function Profile({
       <div className="bg-white rounded-xl shadow-sm border p-8 mb-6">
         <div className="flex flex-col md:flex-row gap-6">
           <div className="flex-shrink-0">
-            <div className="w-32 h-32 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full border-4 border-white shadow-lg" />
+            <div
+              className="w-32 h-32 rounded-full border-4 border-white shadow-lg bg-gradient-to-br from-blue-400 to-purple-500 bg-cover bg-center"
+              style={
+                profileImageUrl
+                  ? { backgroundImage: `url(${profileImageUrl})` }
+                  : undefined
+              }
+            />
             {canEditProfile && isEditing && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="mt-3 w-full"
-              >
-                프로필 사진 변경
-              </Button>
+              <>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleProfileImageSelected}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-3 w-full"
+                  onClick={openFilePicker}
+                >
+                  프로필 사진 변경
+                </Button>
+              </>
             )}
           </div>
 
@@ -376,7 +507,7 @@ export function Profile({
                   {canEditProfile && isEditing ? (
                     <div className="flex flex-wrap gap-2">
                       {TENDENCY_OPTIONS.map(({ value, label }) => {
-                        const selected = draft.tendency.includes(value);
+                        const selected = draft.travelTendency.includes(value);
                         return (
                           <button
                             type="button"
@@ -395,8 +526,8 @@ export function Profile({
                     </div>
                   ) : (
                     <div className="flex flex-wrap gap-2">
-                      {viewData.tendency.length > 0 ? (
-                        viewData.tendency.map((tendency) => {
+                      {viewData.travelTendency.length > 0 ? (
+                        viewData.travelTendency.map((tendency) => {
                           const label =
                             TENDENCY_OPTIONS.find(
                               (option) => option.value === tendency
