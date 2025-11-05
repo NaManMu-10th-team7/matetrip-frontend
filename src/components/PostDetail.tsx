@@ -27,7 +27,7 @@ import type { Participation } from '../types/participation.ts';
 interface PostDetailProps {
   postId: string;
   isLoggedIn: boolean;
-  onJoinWorkspace: (postId: string) => void;
+  onJoinWorkspace: (postId: string, workspaceName: string) => void;
   onViewProfile: (userId: string) => void;
   onEditPost: (post: Post) => void;
 }
@@ -419,7 +419,7 @@ export function PostDetail({
 
             {isLoggedIn && isAuthor && (
               <Button
-                onClick={() => onJoinWorkspace(postId)}
+                onClick={() => onJoinWorkspace(post.id, post.title)}
                 className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
               >
                 워크스페이스 입장
@@ -456,7 +456,7 @@ export function PostDetail({
                 )}
                 {userParticipation?.status === '승인' && (
                   <Button
-                    onClick={() => onJoinWorkspace(postId)}
+                    onClick={() => onJoinWorkspace(post.id, post.title)}
                     className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                   >
                     워크스페이스 입장
