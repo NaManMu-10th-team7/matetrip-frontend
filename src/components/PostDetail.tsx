@@ -64,10 +64,10 @@ export function PostDetail({
       setParticipations(allParticipations);
       // 참여자 목록을 상태별로 분리합니다.
       setApprovedParticipants(
-        allParticipations.filter((p) => p.status === '승인'),
+        allParticipations.filter((p) => p.status === '승인')
       );
       setPendingRequests(
-        allParticipations.filter((p) => p.status === '대기중'),
+        allParticipations.filter((p) => p.status === '대기중')
       );
     } catch (err) {
       setError(err as Error);
@@ -294,7 +294,7 @@ export function PostDetail({
 
           {/* Pending Requests (Author Only) */}
           {/* TODO: 동행 신청 목록 API 연동 필요 */}
-          {isAuthor && pendingRequests.length > 0 && (
+          {pendingRequests.length > 0 && (
             <>
               <Separator className="my-6" />
               <div>
@@ -327,25 +327,27 @@ export function PostDetail({
                         </div>
                         {/* TODO: 매너온도 표시 */}
                       </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => handleAcceptRequest(request.id)}
-                          className="gap-1 bg-blue-600 hover:bg-blue-700"
-                        >
-                          <Check className="w-4 h-4" />
-                          수락
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handleRejectRequest(request.id)}
-                          className="gap-1"
-                        >
-                          <X className="w-4 h-4" />
-                          거절
-                        </Button>
-                      </div>
+                      {isAuthor && (
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleAcceptRequest(request.id)}
+                            className="gap-1 bg-blue-600 hover:bg-blue-700"
+                          >
+                            <Check className="w-4 h-4" />
+                            승인
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleRejectRequest(request.id)}
+                            className="gap-1"
+                          >
+                            <X className="w-4 h-4" />
+                            거절
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -382,8 +384,7 @@ export function PostDetail({
                   <div className="text-sm text-gray-500">모집 인원</div>
                   <div>
                     {/* TODO: 현재 참여 인원 API 연동 필요 */}
-                    {approvedParticipants.length + 1} / {post.maxParticipants}
-                    명
+                    {approvedParticipants.length + 1} / {post.maxParticipants}명
                   </div>
                 </div>
               </div>
