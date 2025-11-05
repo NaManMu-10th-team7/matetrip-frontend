@@ -11,6 +11,7 @@ import { translateKeyword } from '../utils/keyword';
 
 interface EditPostModalProps {
   onClose: () => void;
+  onSuccess: () => void;
   post: Post;
 }
 
@@ -36,7 +37,11 @@ const KEYWORD_LABEL_TO_KEY_MAP = Object.fromEntries(
   KEYWORD_OPTIONS.map((opt) => [opt.label, opt.key])
 );
 
-export function EditPostModal({ post, onClose }: EditPostModalProps) {
+export function EditPostModal({
+  post,
+  onClose,
+  onSuccess,
+}: EditPostModalProps) {
   const [formData, setFormData] = useState({
     title: post.title,
     content: post.content,
@@ -72,8 +77,8 @@ export function EditPostModal({ post, onClose }: EditPostModalProps) {
 
     try {
       await client.patch(`/post/${post.id}`, updatedPostData);
-      alert('게시물이 성공적으로 수정되었습니다.');
-      onClose(); // 성공 시 모달 닫기
+      // alert('게시물이 성공적으로 수정되었습니다.'); // App.tsx에서 처리하도록 변경
+      onSuccess(); // 성공 콜백 호출
     } catch (error) {
       console.error('Failed to update post:', error);
       alert('게시물 수정 중 오류가 발생했습니다. 다시 시도해 주세요.');

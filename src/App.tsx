@@ -300,7 +300,12 @@ export default function App() {
       {showEditPost && selectedPostForEdit && (
         <EditPostModal
           post={selectedPostForEdit}
-          onClose={() => setShowEditPost(false)}
+          onClose={() => setShowEditPost(false)} // 사용자가 X 버튼이나 취소 버튼을 눌렀을 때
+          onSuccess={() => {
+            setShowEditPost(false); // 모달 닫기
+            alert('게시물이 성공적으로 수정되었습니다.');
+            navigate(0); // 현재 페이지 새로고침하여 데이터 갱신
+          }}
         />
       )}
     </div>
