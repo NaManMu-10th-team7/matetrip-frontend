@@ -4,7 +4,9 @@ export interface WorkspaceResDto {
 }
 
 export interface PlanDayDto {
+  dayNo: number;
   id: string;
+  planDate: string;
 }
 
 export interface CreateWorkspaceResponse {
