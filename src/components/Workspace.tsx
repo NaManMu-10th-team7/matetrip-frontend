@@ -11,12 +11,14 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { type DayLayer, MapPanel } from './MapPanel';
+import type { PlanDayDto } from '../types/workspace';
 import { ChatPanel } from './ChatPanel';
 import { PlanPanel } from './PlanPanel';
 
 interface WorkspaceProps {
   workspaceId: string;
   workspaceName: string;
+  planDayDtos: PlanDayDto[];
   onEndTrip: () => void;
 }
 
@@ -29,6 +31,7 @@ const MOCK_MEMBERS = [
 export function Workspace({
   workspaceId,
   workspaceName,
+  planDayDtos,
   onEndTrip,
 }: WorkspaceProps) {
   const [showMembers, setShowMembers] = useState(false);
