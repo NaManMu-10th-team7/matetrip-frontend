@@ -282,15 +282,14 @@ export function MapPanel({
                   }
 
                   // 5. 새 마커 정보를 로컬 상태에 바로 추가하는 대신,
-                  // markPoi 함수를 호출하여 서버에 'mark' 이벤트를 보낸다.
-                  // id는 서버에서 생성되므로, 여기서는 제외한다.
+                  //    markPoi 함수를 호출하여 서버에 'mark' 이벤트를 보낸다.
+                  //    id는 서버에서 생성되므로, 여기서는 제외한다.
                   markPoi({
                     planDayId: selectedLayer, // 현재 선택된 레이어 ID 저장
                     latitude: latlng.getLat(),
                     longitude: latlng.getLng(),
                     address: address,
                     placeName: placeName, // 마커에 표시될 내용은 장소 이름으로 설정
-                    // category는 새로운 DTO에 없으므로 제거
                   });
                 },
                 {

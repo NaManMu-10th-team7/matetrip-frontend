@@ -27,17 +27,19 @@ export type Poi = {
   planDayId?: string;
 };
 
-type CreatePoiDto = {
+export type CreatePoiDto = {
   workspaceId: string;
   createdBy: string; // 현재 사용자 ID (임시)
-  planDayId?: string;
   longitude: number;
   latitude: number;
   address: string;
   placeName?: string;
+  planDayId?: string;
 };
+
 type RemovePoiDto = { workspaceId: string; poiId: number | string };
 
+// 서버와 동기화할 때 받는 데이터 타입
 type SyncPayload = {
   pois: Poi[];
   connections: Record<string, unknown>;
@@ -93,7 +95,7 @@ export function usePoiSocket(workspaceId: string) {
 
   // POI 추가/삭제를 위한 함수를 반환합니다.
   const markPoi = (
-    poiData: Omit<CreatePoiDto, 'workspaceId' | 'createdBy'>
+    poiData: Omit<CreatePoiDto, 'workspaceId' | 'createdBy' | 'id'>
   ) => {
     // 로그인한 사용자가 없으면 작업을 중단합니다.
     if (!user?.userId) {

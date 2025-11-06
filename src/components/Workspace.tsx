@@ -44,15 +44,22 @@ export function Workspace({
   onEndTrip,
 }: WorkspaceProps) {
   const [showMembers, setShowMembers] = useState(false);
-  const [dayLayers, setDayLayers] = useState<DayLayer[]>([]);
-
-  useEffect(() => {
-    const newDayLayers = planDayDtos.map((day) => ({
+  const [dayLayers, setDayLayers] = useState<DayLayer[]>(() =>
+    planDayDtos.map((day) => ({
       id: day.id,
       label: day.planDate,
       color: generateRandomColor(),
-    }));
-    setDayLayers(newDayLayers);
+    }))
+  );
+
+  useEffect(() => {
+    setDayLayers(
+      planDayDtos.map((day) => ({
+        id: day.id,
+        label: day.planDate,
+        color: generateRandomColor(),
+      }))
+    );
   }, [planDayDtos]);
 
   return (
