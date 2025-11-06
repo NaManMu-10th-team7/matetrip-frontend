@@ -183,7 +183,7 @@ function ProfileWrapper({
   loggedInUserId,
 }: {
   isLoggedIn: boolean;
-  loggedInUserId?: number;
+  loggedInUserId?: string;
 }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -327,7 +327,7 @@ export default function App() {
             element={
               <ProfileWrapper
                 isLoggedIn={isLoggedIn}
-                loggedInUserId={user?.id}
+                loggedInUserId={user?.userId}
               />
             }
           />

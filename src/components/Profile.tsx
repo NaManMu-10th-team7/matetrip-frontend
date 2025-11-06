@@ -82,7 +82,7 @@ const MOCK_PROFILE = {
 interface ProfileProps {
   isLoggedIn: boolean;
   onViewPost: (postId: string) => void;
-  userId?: number;
+  userId?: string;
 }
 
 export function Profile({ isLoggedIn, onViewPost, userId }: ProfileProps) {
