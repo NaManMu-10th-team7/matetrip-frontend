@@ -25,6 +25,7 @@ export function MapPanel({
   // 2. usePoiSocket 훅을 사용하여 소켓 통신 로직을 가져온다.
   // 이제 pois 상태는 웹소켓을 통해 서버와 동기화된다.
   const { pois, markPoi, unmarkPoi } = usePoiSocket(workspaceId);
+  console.log(pois);
 
   // '전체' 레이어를 포함한 전체 UI용 레이어 목록
   const UILayers: { id: 'all' | DayLayer['id']; label: string }[] = [
@@ -186,9 +187,9 @@ export function MapPanel({
 
   // 선택된 레이어에 따라 표시할 마커들을 결정
   const markersToDisplay =
-    selectedLayer === 'all' // 4. pois 배열을 필터링하여 현재 레이어에 맞는 마커만 표시하기
-      ? pois
-      : pois.filter((p) => p.planDayId === selectedLayer);
+    selectedLayer === 'all'
+      ? pois || []
+      : (pois || []).filter((p) => p.planDayId === selectedLayer);
 
   // itinerary 데이터를 기반으로 Polyline 경로를 동적으로 생성
   const polylinePaths = dayLayers.reduce(

@@ -38,6 +38,11 @@ type CreatePoiDto = {
 };
 type RemovePoiDto = { workspaceId: string; poiId: number | string };
 
+type SyncPayload = {
+  pois: Poi[];
+  connections: Record<string, unknown>;
+};
+
 export function usePoiSocket(workspaceId: string) {
   // 소켓 인스턴스를 ref로 관리하여 리렌더링 시에도 연결을 유지합니다.
   const socketRef = useRef<Socket | null>(null);
@@ -63,9 +68,9 @@ export function usePoiSocket(workspaceId: string) {
     });
 
     // 3. 'sync' 이벤트: 서버로부터 초기 POI 목록을 받아 상태를 업데이트합니다.
-    socket.on(PoiSocketEvent.SYNC, (initialPois: Poi[]) => {
-      console.log('Syncing POIs:', initialPois);
-      setPois(initialPois);
+    socket.on(PoiSocketEvent.SYNC, (payload: SyncPayload) => {
+      console.log('Syncing Data:', payload);
+      setPois(payload.pois || []); // payload.pois가 없을 경우를 대비해 빈 배열을 기본값으로 설정
     });
 
     // 4. 'marked' 이벤트: 다른 사용자가 추가한 POI를 실시간으로 반영합니다.
