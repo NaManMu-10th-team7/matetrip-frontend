@@ -50,10 +50,18 @@ export type CreatePoiConnectionDto = {
   planDayId: string;
 };
 
+// 백엔드에서 오는 Connection의 실제 타입
+export type PoiConnection = {
+  id: string;
+  prevPoiId: string | number;
+  nextPoiId: string | number;
+  planDayId: string;
+};
+
 // 서버와 동기화할 때 받는 데이터 타입
 type SyncPayload = {
   pois: Poi[];
-  connections: Record<string, unknown>;
+  connections: Record<string, PoiConnection[]>; // planDayId를 키로 가지는 객체
 };
 
 export function usePoiSocket(workspaceId: string) {
@@ -61,6 +69,9 @@ export function usePoiSocket(workspaceId: string) {
   const socketRef = useRef<Socket | null>(null);
   const [pois, setPois] = useState<Poi[]>([]);
   const { user } = useAuthStore();
+  const [connections, setConnections] = useState<
+    Record<string, PoiConnection[]>
+  >({});
 
   useEffect(() => {
     // 백엔드 주소와 네임스페이스에 맞게 소켓을 연결합니다.
@@ -84,6 +95,7 @@ export function usePoiSocket(workspaceId: string) {
     socket.on(PoiSocketEvent.SYNC, (payload: SyncPayload) => {
       console.log('Syncing Data:', payload);
       setPois(payload.pois || []); // payload.pois가 없을 경우를 대비해 빈 배열을 기본값으로 설정
+      setConnections(payload.connections || {});
     });
 
     // 4. 'marked' 이벤트: 다른 사용자가 추가한 POI를 실시간으로 반영합니다.
@@ -97,9 +109,16 @@ export function usePoiSocket(workspaceId: string) {
     });
 
     // 6. 'connected' 이벤트: POI 연결 성공 시 서버로부터 받은 연결 정보를 콘솔에 출력합니다.
-    socket.on(PoiSocketEvent.CONNECTED, (connectionData) => {
+    socket.on(PoiSocketEvent.CONNECTED, (connectionData: PoiConnection) => {
       console.log('✅ POI Connection successful:', connectionData);
-      // 필요하다면 여기서 상태를 업데이트할 수 있습니다. (예: setConnections(...))
+      // 실시간으로 connections 상태를 업데이트합니다.
+      setConnections((prev) => {
+        const dayConnections = prev[connectionData.planDayId] || [];
+        return {
+          ...prev,
+          [connectionData.planDayId]: [...dayConnections, connectionData],
+        };
+      });
     });
 
     // 컴포넌트 언마운트 시 소켓 연결을 해제합니다.
@@ -146,5 +165,5 @@ export function usePoiSocket(workspaceId: string) {
   // unmarkPoi와 마찬가지로 disconnectPoi 함수도 추가할 수 있습니다.
   // const disconnectPoi = ( ... ) => { ... };
 
-  return { pois, markPoi, unmarkPoi, connectPoi };
+  return { pois, connections, markPoi, unmarkPoi, connectPoi };
 }

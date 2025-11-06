@@ -2,15 +2,15 @@ import React, { useState, useRef, useCallback } from 'react';
 import { Plus, Maximize2, Layers, ListOrdered } from 'lucide-react';
 import { Button } from './ui/button';
 import {
-  Map,
+  Map as KakaoMap,
   MapMarker,
   Polyline,
-  CustomOverlayMap,
+  CustomOverlayMap
 } from 'react-kakao-maps-sdk'; // prettier-ignore
 import {
   usePoiSocket,
   Poi,
-  CreatePoiConnectionDto,
+  PoiConnection,
 } from '../hooks/usePoiSocket';
 
 export type DayLayer = {
@@ -28,7 +28,9 @@ export function MapPanel({
 }) {
   // 2. usePoiSocket 훅을 사용하여 소켓 통신 로직을 가져온다.
   // 이제 pois 상태는 웹소켓을 통해 서버와 동기화된다.
-  const { pois, markPoi, unmarkPoi, connectPoi } = usePoiSocket(workspaceId);
+  const { pois, connections, markPoi, unmarkPoi, connectPoi } = usePoiSocket(
+    workspaceId
+  );
 
   // '전체' 레이어를 포함한 전체 UI용 레이어 목록
   const UILayers: { id: 'all' | DayLayer['id']; label: string }[] = [
@@ -41,10 +43,46 @@ export function MapPanel({
   const [selectedLayer, setSelectedLayer] = useState<'all' | string>('all');
 
   // 최종 여행 계획(일정)을 저장할 상태
-  const [itinerary, setItinerary] = useState<Record<string, Poi[]>>(() =>
-    dayLayers.reduce((acc, layer) => ({ ...acc, [layer.id]: [] }), {})
-  );
+  const [itinerary, setItinerary] = useState<Record<string, Poi[]>>({});
 
+  // pois와 connections 데이터가 변경될 때마다 itinerary를 재구성합니다.
+  // 이 로직 덕분에 새로고침 후에도 일정이 복원됩니다.
+  React.useEffect(() => {
+    const newItinerary: Record<string, Poi[]> = dayLayers.reduce(
+      (acc, layer) => ({ ...acc, [layer.id]: [] }),
+      {}
+    );
+
+    if (!pois || pois.length === 0 || !connections) {
+      setItinerary(newItinerary);
+      return;
+    }
+
+    const poiMap = new Map(pois.map((p) => [p.id, p]));
+
+    for (const dayId in connections) {
+      const dayConnections = connections[dayId] || [];
+      if (dayConnections.length === 0) continue;
+
+      // 연결의 시작점을 찾습니다. (다른 연결의 nextPoiId가 아닌 POI)
+      const allNextPoiIds = new Set(dayConnections.map((c) => c.nextPoiId));
+      let currentPoiId = dayConnections.find(
+        (c) => !allNextPoiIds.has(c.prevPoiId)
+      )?.prevPoiId;
+
+      // 시작점부터 순서대로 순회하며 경로를 만듭니다.
+      while (currentPoiId) {
+        const poi = poiMap.get(currentPoiId);
+        if (poi) newItinerary[dayId].push(poi);
+        const nextConnection = dayConnections.find(
+          (c) => c.prevPoiId === currentPoiId
+        );
+        currentPoiId = nextConnection?.nextPoiId;
+      }
+    }
+    setItinerary(newItinerary);
+  }, [pois, connections, dayLayers]);
+  
   // 여행 일정에 장소를 추가하는 함수
   const addToItinerary = (markerToAdd: Poi) => {
     // 모든 Day를 통틀어 이미 추가된 장소인지 확인
@@ -75,11 +113,11 @@ export function MapPanel({
       });
     }
 
-    setItinerary((prev) => {
-      const newItineraryForDay = [...(prev[targetDayId] || []), markerToAdd];
-      const updatedItinerary = { ...prev, [targetDayId]: newItineraryForDay };
-      return updatedItinerary;
-    });
+    // 로컬 상태를 즉시 업데이트하여 UI에 반영합니다.
+    // 어차피 'CONNECTED' 이벤트가 발생하면 useEffect에 의해 다시 계산되지만,
+    // 사용자 경험을 위해 즉시 반영하는 것이 좋습니다.
+    const newItineraryForDay = [...(itinerary[targetDayId] || []), markerToAdd];
+    setItinerary({ ...itinerary, [targetDayId]: newItineraryForDay });
   };
 
   // 여행 일정 목록을 보여주는 새로운 컴포넌트
@@ -207,7 +245,7 @@ export function MapPanel({
 
   return (
     <div className="h-full relative">
-      <Map
+      <KakaoMap
         className="w-full h-full"
         center={{
           lat: 33.450701, // latitude
@@ -435,7 +473,7 @@ export function MapPanel({
           setSelectedLayer={setSelectedLayer}
         />
         <ItineraryPanel itinerary={itinerary} dayLayers={dayLayers} />
-      </Map>
+      </KakaoMap>
     </div>
   );
 }
