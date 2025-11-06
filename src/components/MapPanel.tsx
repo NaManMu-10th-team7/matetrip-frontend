@@ -61,23 +61,40 @@ export function MapPanel({
     const poiMap = new Map(pois.map((p) => [p.id, p]));
 
     for (const dayId in connections) {
+      // newItinerary에 해당 dayId가 없으면 건너뜁니다. (오류 방지)
+      if (!newItinerary[dayId]) {
+        continue;
+      }
+
       const dayConnections = connections[dayId] || [];
       if (dayConnections.length === 0) continue;
 
-      // 연결의 시작점을 찾습니다. (다른 연결의 nextPoiId가 아닌 POI)
+      // 모든 prev와 next ID를 집합으로 만듭니다.
       const allNextPoiIds = new Set(dayConnections.map((c) => c.nextPoiId));
-      let currentPoiId = dayConnections.find(
-        (c) => !allNextPoiIds.has(c.prevPoiId)
-      )?.prevPoiId;
+      const allPrevPoiIds = new Set(dayConnections.map((c) => c.prevPoiId));
 
-      // 시작점부터 순서대로 순회하며 경로를 만듭니다.
-      while (currentPoiId) {
-        const poi = poiMap.get(currentPoiId);
-        if (poi) newItinerary[dayId].push(poi);
-        const nextConnection = dayConnections.find(
-          (c) => c.prevPoiId === currentPoiId
-        );
-        currentPoiId = nextConnection?.nextPoiId;
+      // 경로의 시작점들을 찾습니다 (다른 연결의 next가 아닌 prev들).
+      const startNodeIds = [...allPrevPoiIds].filter(
+        (id) => !allNextPoiIds.has(id)
+      );
+
+      const visited = new Set(); // 순환 참조 방지를 위한 방문 기록
+
+      // 각 시작점에서부터 경로를 재구성합니다.
+      for (const startId of startNodeIds) {
+        let currentPoiId: string | number | undefined = startId;
+        while (currentPoiId && !visited.has(currentPoiId)) {
+          visited.add(currentPoiId);
+          const poi = poiMap.get(currentPoiId);
+          if (poi) {
+            newItinerary[dayId].push(poi);
+          }
+
+          const nextConnection = dayConnections.find(
+            (c) => c.prevPoiId === currentPoiId
+          );
+          currentPoiId = nextConnection?.nextPoiId;
+        }
       }
     }
     setItinerary(newItinerary);
