@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Users,
   X,
@@ -28,6 +28,15 @@ const MOCK_MEMBERS = [
   { id: 3, name: '제주사랑', isAuthor: false },
 ];
 
+const generateRandomColor = () => {
+  const letters = '0123456789ABCDEF';
+  let color = '#';
+  for (let i = 0; i < 6; i++) {
+    color += letters[Math.floor(Math.random() * 16)];
+  }
+  return color;
+};
+
 export function Workspace({
   workspaceId,
   workspaceName,
@@ -35,18 +44,16 @@ export function Workspace({
   onEndTrip,
 }: WorkspaceProps) {
   const [showMembers, setShowMembers] = useState(false);
-  // DayLayers 상태를 최상위 공통 부모인 Workspace 컴포넌트에서 관리합니다.
-  const [dayLayers, setDayLayers] = useState<DayLayer[]>(() => {
-    // 여행 일수만큼 UUID를 생성하여 초기 레이어를 설정합니다.
-    // 이 로직은 Workspace가 렌더링될 때 한 번만 실행됩니다.
-    // !! 중요: 모든 사용자가 동일한 ID를 공유해야 하므로, 시뮬레이션 단계에서는 UUID 대신 고정된 문자열 ID를 사용합니다.
-    const initialDays = 2;
-    return Array.from({ length: initialDays }, (_, i) => ({
-      id: `day-${i + 1}`, // 예: 'day-1', 'day-2'
-      label: `Day ${i + 1}`,
-      color: i % 2 === 0 ? '#FF5733' : '#3357FF',
+  const [dayLayers, setDayLayers] = useState<DayLayer[]>([]);
+
+  useEffect(() => {
+    const newDayLayers = planDayDtos.map((day) => ({
+      id: day.id,
+      label: day.planDate,
+      color: generateRandomColor(),
     }));
-  });
+    setDayLayers(newDayLayers);
+  }, [planDayDtos]);
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
