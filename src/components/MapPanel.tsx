@@ -6,8 +6,12 @@ import {
   MapMarker,
   Polyline,
   CustomOverlayMap,
-} from 'react-kakao-maps-sdk';
-import { usePoiSocket, Poi } from '../hooks/usePoiSocket';
+} from 'react-kakao-maps-sdk'; // prettier-ignore
+import {
+  usePoiSocket,
+  Poi,
+  CreatePoiConnectionDto,
+} from '../hooks/usePoiSocket';
 
 export type DayLayer = {
   id: string; // UUID
@@ -24,7 +28,7 @@ export function MapPanel({
 }) {
   // 2. usePoiSocket 훅을 사용하여 소켓 통신 로직을 가져온다.
   // 이제 pois 상태는 웹소켓을 통해 서버와 동기화된다.
-  const { pois, markPoi, unmarkPoi } = usePoiSocket(workspaceId);
+  const { pois, markPoi, unmarkPoi, connectPoi } = usePoiSocket(workspaceId);
 
   // '전체' 레이어를 포함한 전체 UI용 레이어 목록
   const UILayers: { id: 'all' | DayLayer['id']; label: string }[] = [
@@ -53,34 +57,27 @@ export function MapPanel({
       return;
     }
 
-    const targetDay = markerToAdd.planDayId;
-    setItinerary((prev) => {
-      const newItineraryForDay = [...(prev[targetDay] || []), markerToAdd];
-      const updatedItinerary = { ...prev, [targetDay]: newItineraryForDay };
+    const targetDayId = markerToAdd.planDayId;
+    if (!targetDayId) {
+      alert('이 장소는 특정 날짜에 속해있지 않아 일정에 추가할 수 없습니다.');
+      return;
+    }
 
-      // --- POI Connection 전체 데이터 시뮬레이션 ---
-      const simulatedConnections = newItineraryForDay.map((poi, index, arr) => {
-        // 각 POI를 기준으로 prev와 next를 결정합니다.
-        const prevPoiId = index > 0 ? arr[index - 1].id : null;
-        const nextPoiId = index < arr.length - 1 ? arr[index + 1].id : null;
+    const currentDayItinerary = itinerary[targetDayId] || [];
+    const lastPoiInDay = currentDayItinerary[currentDayItinerary.length - 1];
 
-        return {
-          // 이 객체는 각 POI가 가지는 연결 정보를 나타냅니다.
-          // 실제 테이블에서는 이 관계를 기반으로 레코드가 생성/업데이트됩니다.
-          poi_id: poi.id, // 어떤 POI에 대한 연결 정보인지 명시
-          placeName: poi.placeName, // 이해를 돕기 위해 장소 이름 추가
-          prev_poi_id: prevPoiId,
-          next_poi_id: nextPoiId,
-          plan_day_id: targetDay,
-        };
+    // 만약 해당 날짜에 이미 장소가 있다면, 마지막 장소와 새 장소를 연결합니다.
+    if (lastPoiInDay) {
+      connectPoi({
+        prevPoiId: lastPoiInDay.id,
+        nextPoiId: markerToAdd.id,
+        planDayId: targetDayId,
       });
+    }
 
-      console.log(
-        `[시뮬레이션] Day ${targetDay.slice(-1)}의 전체 POI_Connection 테이블 데이터:`,
-        simulatedConnections
-      );
-      // -----------------------------------------
-
+    setItinerary((prev) => {
+      const newItineraryForDay = [...(prev[targetDayId] || []), markerToAdd];
+      const updatedItinerary = { ...prev, [targetDayId]: newItineraryForDay };
       return updatedItinerary;
     });
   };

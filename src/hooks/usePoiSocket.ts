@@ -13,6 +13,10 @@ const PoiSocketEvent = {
   MARKED: 'marked',
   UNMARK: 'unmark',
   UNMARKED: 'unmarked',
+  POI_CONNECT: 'poi:connect',
+  CONNECTED: 'connected',
+  POI_DISCONNECT: 'poi:disconnect',
+  DISCONNECTED: 'disconnected',
 } as const;
 
 // DayLayer 타입을 훅으로 이동하여 중앙에서 관리합니다.
@@ -38,6 +42,13 @@ export type CreatePoiDto = {
 };
 
 type RemovePoiDto = { workspaceId: string; poiId: number | string };
+
+export type CreatePoiConnectionDto = {
+  workspaceId: string;
+  prevPoiId: number | string;
+  nextPoiId: number | string;
+  planDayId: string;
+};
 
 // 서버와 동기화할 때 받는 데이터 타입
 type SyncPayload = {
@@ -85,6 +96,12 @@ export function usePoiSocket(workspaceId: string) {
       setPois((prevPois) => prevPois.filter((p) => p.id !== removedPoi.id));
     });
 
+    // 6. 'connected' 이벤트: POI 연결 성공 시 서버로부터 받은 연결 정보를 콘솔에 출력합니다.
+    socket.on(PoiSocketEvent.CONNECTED, (connectionData) => {
+      console.log('✅ POI Connection successful:', connectionData);
+      // 필요하다면 여기서 상태를 업데이트할 수 있습니다. (예: setConnections(...))
+    });
+
     // 컴포넌트 언마운트 시 소켓 연결을 해제합니다.
     return () => {
       console.log('Disconnecting socket...');
@@ -115,5 +132,19 @@ export function usePoiSocket(workspaceId: string) {
     socketRef.current?.emit(PoiSocketEvent.UNMARK, { workspaceId, poiId });
   };
 
-  return { pois, markPoi, unmarkPoi };
+  const connectPoi = (
+    connectionData: Omit<CreatePoiConnectionDto, 'workspaceId'>
+  ) => {
+    const payload = { ...connectionData, workspaceId };
+    console.log(
+      '[시뮬레이션] POI_Connection 테이블 저장 데이터 (POI_CONNECT 이벤트 전송):',
+      payload
+    );
+    socketRef.current?.emit(PoiSocketEvent.POI_CONNECT, payload);
+  };
+
+  // unmarkPoi와 마찬가지로 disconnectPoi 함수도 추가할 수 있습니다.
+  // const disconnectPoi = ( ... ) => { ... };
+
+  return { pois, markPoi, unmarkPoi, connectPoi };
 }
