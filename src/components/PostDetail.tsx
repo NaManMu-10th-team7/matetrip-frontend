@@ -27,9 +27,9 @@ import type { Participation } from '../types/participation.ts';
 interface PostDetailProps {
   postId: string;
   isLoggedIn: boolean;
-  onJoinWorkspace: (postId: string) => void;
+  onJoinWorkspace: (postId: string, workspaceName: string) => void;
   onViewProfile: (userId: string) => void;
-  onEditPost: () => void;
+  onEditPost: (post: Post) => void;
 }
 
 export function PostDetail({
@@ -64,10 +64,10 @@ export function PostDetail({
       setParticipations(allParticipations);
       // 참여자 목록을 상태별로 분리합니다.
       setApprovedParticipants(
-        allParticipations.filter((p) => p.status === '승인'),
+        allParticipations.filter((p) => p.status === '승인')
       );
       setPendingRequests(
-        allParticipations.filter((p) => p.status === '대기중'),
+        allParticipations.filter((p) => p.status === '대기중')
       );
     } catch (err) {
       setError(err as Error);
@@ -157,6 +157,9 @@ export function PostDetail({
     return <div className="text-center py-16">게시글을 찾을 수 없습니다.</div>;
   }
 
+  // 모집 인원이 다 찼는지 확인 (작성자 포함)
+  const isFull = approvedParticipants.length + 1 >= post.maxParticipants;
+
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <Button
@@ -216,7 +219,11 @@ export function PostDetail({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={onEditPost}
+                    onClick={() => {
+                      if (post) {
+                        onEditPost(post);
+                      }
+                    }}
                     className="gap-2"
                   >
                     <Edit className="w-4 h-4" />
@@ -294,7 +301,7 @@ export function PostDetail({
 
           {/* Pending Requests (Author Only) */}
           {/* TODO: 동행 신청 목록 API 연동 필요 */}
-          {isAuthor && pendingRequests.length > 0 && (
+          {pendingRequests.length > 0 && (
             <>
               <Separator className="my-6" />
               <div>
@@ -327,25 +334,27 @@ export function PostDetail({
                         </div>
                         {/* TODO: 매너온도 표시 */}
                       </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => handleAcceptRequest(request.id)}
-                          className="gap-1 bg-blue-600 hover:bg-blue-700"
-                        >
-                          <Check className="w-4 h-4" />
-                          수락
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handleRejectRequest(request.id)}
-                          className="gap-1"
-                        >
-                          <X className="w-4 h-4" />
-                          거절
-                        </Button>
-                      </div>
+                      {isAuthor && (
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleAcceptRequest(request.id)}
+                            className="gap-1 bg-blue-600 hover:bg-blue-700"
+                          >
+                            <Check className="w-4 h-4" />
+                            승인
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleRejectRequest(request.id)}
+                            className="gap-1"
+                          >
+                            <X className="w-4 h-4" />
+                            거절
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -382,8 +391,7 @@ export function PostDetail({
                   <div className="text-sm text-gray-500">모집 인원</div>
                   <div>
                     {/* TODO: 현재 참여 인원 API 연동 필요 */}
-                    {approvedParticipants.length + 1} / {post.maxParticipants}
-                    명
+                    {approvedParticipants.length + 1} / {post.maxParticipants}명
                   </div>
                 </div>
               </div>
@@ -411,7 +419,7 @@ export function PostDetail({
 
             {isLoggedIn && isAuthor && (
               <Button
-                onClick={() => onJoinWorkspace(postId)}
+                onClick={() => onJoinWorkspace(post.id, post.title)}
                 className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
               >
                 워크스페이스 입장
@@ -421,12 +429,20 @@ export function PostDetail({
             {isLoggedIn && !isAuthor && (
               <>
                 {!userParticipation && (
-                  <Button
-                    onClick={handleApply}
-                    className="w-full bg-blue-600 hover:bg-blue-700"
-                  >
-                    동행 신청하기
-                  </Button>
+                  <>
+                    {isFull ? (
+                      <Button disabled className="w-full bg-gray-400">
+                        모집이 마감되었습니다
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={handleApply}
+                        className="w-full bg-blue-600 hover:bg-blue-700"
+                      >
+                        동행 신청하기
+                      </Button>
+                    )}
+                  </>
                 )}
                 {userParticipation?.status === '대기중' && (
                   <Button disabled className="w-full bg-gray-400">
@@ -440,7 +456,7 @@ export function PostDetail({
                 )}
                 {userParticipation?.status === '승인' && (
                   <Button
-                    onClick={() => onJoinWorkspace(postId)}
+                    onClick={() => onJoinWorkspace(post.id, post.title)}
                     className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                   >
                     워크스페이스 입장

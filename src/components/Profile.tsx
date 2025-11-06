@@ -162,7 +162,7 @@ const EMPTY_PROFILE: ProfileData = {
 interface ProfileProps {
   isLoggedIn: boolean;
   onViewPost: (postId: string) => void;
-  userId?: number;
+  userId?: string;
 }
 
 export function Profile({
@@ -240,8 +240,6 @@ export function Profile({
       };
     });
   };
-  //profiledata 를 받지만 dto로 받는 형식은 updateprofiledto 일떄 기본값은 profiledata지만
-  // 그외의 update 된 정보들은 받은 정보들로 덮어씀
   const mapDtoToProfile = (
     dto: UpdateProfileDto,
     prev: ProfileData
@@ -411,11 +409,10 @@ export function Profile({
           method: 'PUT',
           body: file,
         });
-        // s3버킷에게 요청 및 사진이랑 프로필 연결
         if (!s3Response.ok) throw new Error('S3 업로드 실패');
         profileImageId = binaryContentId;
       }
-      // 그 뒤에 내용 저장 -- 사진 저장 아님
+      // 그 뒤에 내용 저장
       const payload: UpdateProfileDto = {
         nickname: draft.nickname,
         description: draft.description,

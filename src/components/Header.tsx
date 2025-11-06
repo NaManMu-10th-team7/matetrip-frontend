@@ -1,6 +1,7 @@
 import { Bell, Map, Plus, User, LogIn, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
+import { useAuthStore } from '../store/authStore';
 
 interface HeaderProps {
   isLoggedIn: boolean;
@@ -21,6 +22,8 @@ export function Header({
   onCreatePost,
   onLogoClick,
 }: HeaderProps) {
+  const { user } = useAuthStore();
+
   return (
     <header className="bg-white border-b sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -32,7 +35,7 @@ export function Header({
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
               <Map className="logo w-5 h-5 text-white" />
             </div>
-            <span className="text-xl text-gray-900">TripTogether</span>
+            <span className="text-xl text-gray-900">MateTrip</span>
           </button>
 
           <div className="flex items-center gap-3">
@@ -59,12 +62,19 @@ export function Header({
                   <span className="hidden sm:inline">게시물 작성</span>
                 </Button>
 
-                <button
-                  onClick={onProfileClick}
-                  className="w-8 h-8 bg-gray-200 rounded-full overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all"
-                >
-                  <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={onProfileClick}
+                    className="w-8 h-8 bg-gray-200 rounded-full overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all"
+                  >
+                    <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500" />
+                  </button>
+                  {user && (
+                    <span className="text-sm font-medium text-gray-700 hidden sm:inline">
+                      {user.profile.nickname}님
+                    </span>
+                  )}
+                </div>
 
                 <Button
                   variant="ghost"

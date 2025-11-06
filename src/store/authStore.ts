@@ -60,8 +60,15 @@ export const useAuthStore = create<AuthState>()(
             'checkAuth/no-user'
           );
         }
-      } catch (error) {
-        console.error('Authentication check failed:', error);
+      } catch (error: any) {
+        // 401 Unauthorized 에러는 로그인이 안된 상태이므로 정상적인 흐름입니다.
+        // 개발 콘솔에 에러 대신 정보를 로깅하거나, 아무것도 로깅하지 않을 수 있습니다.
+        if (error.response && error.response.status === 401) {
+          // console.info('User is not authenticated.');
+        } else {
+          // 401 이외의 다른 에러(서버 문제 등)는 콘솔에 에러로 표시합니다.
+          console.error('Authentication check failed:', error);
+        }
         // API 요청 실패 시
         set(
           { isLoggedIn: false, user: null, isAuthLoading: false },

@@ -8,15 +8,15 @@ import {
   Calendar,
 } from 'lucide-react';
 import { Button } from './ui/button';
-import { DayLayer } from '@/hooks/usePoiSocket';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { MapPanel } from './MapPanel';
+import { type DayLayer, MapPanel } from './MapPanel';
 import { ChatPanel } from './ChatPanel';
 import { PlanPanel } from './PlanPanel';
 
 interface WorkspaceProps {
-  postId: string;
+  workspaceId: string;
+  workspaceName: string;
   onEndTrip: () => void;
 }
 
@@ -26,7 +26,11 @@ const MOCK_MEMBERS = [
   { id: 3, name: '제주사랑', isAuthor: false },
 ];
 
-export function Workspace({ postId, onEndTrip }: WorkspaceProps) {
+export function Workspace({
+  workspaceId,
+  workspaceName,
+  onEndTrip,
+}: WorkspaceProps) {
   const [showMembers, setShowMembers] = useState(false);
   // DayLayers 상태를 최상위 공통 부모인 Workspace 컴포넌트에서 관리합니다.
   const [dayLayers, setDayLayers] = useState<DayLayer[]>(() => {
@@ -46,7 +50,7 @@ export function Workspace({ postId, onEndTrip }: WorkspaceProps) {
       {/* Header */}
       <div className="bg-white border-b px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <h2 className="text-gray-900">제주도 힐링 여행</h2>
+          <h2 className="text-gray-900">{workspaceName}</h2>
           <button
             onClick={() => setShowMembers(!showMembers)}
             className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
@@ -112,7 +116,7 @@ export function Workspace({ postId, onEndTrip }: WorkspaceProps) {
 
           <div className="flex-1 overflow-hidden">
             <TabsContent value="map" className="h-full m-0">
-              <MapPanel workspaceId={postId} dayLayers={dayLayers} />
+              <MapPanel workspaceId={workspaceId} dayLayers={dayLayers} />
             </TabsContent>
 
             <TabsContent value="chat" className="h-full m-0">
