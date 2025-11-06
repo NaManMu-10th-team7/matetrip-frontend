@@ -145,7 +145,7 @@ function PostDetailWrapper({
   };
 
   const handleViewProfile = (userId: string) => {
-    navigate(`/workspace/${postId}`);
+    navigate(`/profile/${userId}`);
   };
 
   return (
