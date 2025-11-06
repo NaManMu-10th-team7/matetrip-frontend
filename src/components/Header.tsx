@@ -1,7 +1,7 @@
 import { Bell, Map, Plus, User, LogIn, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { useAuthStore } from '../store/authStore.ts';
+import { useAuthStore } from '../store/authStore';
 
 interface HeaderProps {
   isLoggedIn: boolean;
