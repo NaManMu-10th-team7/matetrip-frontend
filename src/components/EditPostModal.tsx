@@ -248,6 +248,7 @@ export function EditPostModal({
         {/* Footer */}
         <div className="flex gap-3 p-6 border-t sticky bottom-0 bg-white">
           <Button
+            type="button"
             variant="outline"
             onClick={onClose}
             className="flex-1"
