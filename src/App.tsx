@@ -20,6 +20,8 @@ import { ReviewPage } from './components/ReviewPage';
 import { NotFound } from './components/NotFound';
 import { useAuthStore } from './store/authStore'; // Zustand 스토어 임포트
 import { NotificationListener } from './components/NotificationListener';
+import type { Post } from './components/PostCard';
+import client from './api/client';
 
 // Layout component for pages with Header
 function Layout({
@@ -116,19 +118,36 @@ function PostDetailWrapper({
 }: {
   // onEditPost prop의 postId 타입을 string으로 변경
   isLoggedIn: boolean;
-  onEditPost: (postId: string) => void;
+  onEditPost: (post: Post) => void;
 }) {
   const navigate = useNavigate();
   const location = useLocation();
   const postId = location.pathname.split('/').pop() || ''; // postId를 string으로 직접 추출
 
-  const handleJoinWorkspace = (postId: string) => {
-    // handleJoinWorkspace의 postId 타입을 string으로 변경
-    navigate(`/workspace/${postId}`);
+  const handleJoinWorkspace = (postId: string, workspaceName: string) => {
+    // TODO : 워크스페이스 생성 API를 호출해서 생성된 id 를 반환해야 함.
+    const createAndNavigate = async () => {
+      try {
+        // API 응답 데이터 구조에 맞게 타입과 변수명 수정
+        const response = await client.post<{
+          id: string;
+          workspaceName: string;
+        }>('/workspace', { postId, workspaceName });
+        const { id, workspaceName: resWorkspaceName } = response.data;
+        // navigate의 state를 사용하여 워크스페이스 이름을 전달합니다.
+        navigate(`/workspace/${id}`, {
+          state: { workspaceName: resWorkspaceName },
+        });
+      } catch (error) {
+        console.error('Failed to create or join workspace:', error);
+        alert('워크스페이스에 입장하는 중 오류가 발생했습니다.');
+      }
+    };
+    createAndNavigate();
   };
 
-  const handleEditPost = () => {
-    onEditPost(postId);
+  const handleViewProfile = (userId: string) => {
+    navigate(`/profile/${userId}`);
   };
 
   return (
@@ -136,7 +155,8 @@ function PostDetailWrapper({
       postId={postId}
       isLoggedIn={isLoggedIn}
       onJoinWorkspace={handleJoinWorkspace}
-      onEditPost={handleEditPost}
+      onEditPost={onEditPost} // onEditPost를 그대로 전달
+      onViewProfile={handleViewProfile}
     />
   );
 }
@@ -144,13 +164,20 @@ function PostDetailWrapper({
 function WorkspaceWrapper() {
   const navigate = useNavigate();
   const location = useLocation();
-  const postId = location.pathname.split('/').pop() || ''; // postId를 string으로 직접 추출
+  const workspaceId = location.pathname.split('/').pop() || ''; // 명확한 변수명으로 변경
+  const workspaceName = location.state?.workspaceName || '워크스페이스'; // state에서 이름 가져오기
 
   const handleEndTrip = () => {
     navigate('/review');
   };
 
-  return <Workspace postId={postId} onEndTrip={handleEndTrip} />;
+  return (
+    <Workspace
+      workspaceId={workspaceId}
+      workspaceName={workspaceName}
+      onEndTrip={handleEndTrip}
+    />
+  );
 }
 
 function ProfileWrapper({
@@ -228,7 +255,7 @@ export default function App() {
   // 모달 상태
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [showEditPost, setShowEditPost] = useState(false);
-  const [selectedPostForEdit, setSelectedPostForEdit] = useState<string | null>( // 상태 타입을 string으로 변경
+  const [selectedPostForEdit, setSelectedPostForEdit] = useState<Post | null>(
     null
   );
 
@@ -290,8 +317,8 @@ export default function App() {
             element={
               <PostDetailWrapper
                 isLoggedIn={isLoggedIn}
-                onEditPost={(postId) => {
-                  setSelectedPostForEdit(postId);
+                onEditPost={(post) => {
+                  setSelectedPostForEdit(post);
                   setShowEditPost(true);
                 }}
               />
@@ -303,7 +330,7 @@ export default function App() {
             element={
               <ProfileWrapper
                 isLoggedIn={isLoggedIn}
-                loggedInUserId={user?.id}
+                loggedInUserId={user?.userId}
               />
             }
           />
@@ -320,10 +347,15 @@ export default function App() {
       {showCreatePost && (
         <CreatePostModal onClose={() => setShowCreatePost(false)} />
       )}
-      {showEditPost && (
+      {showEditPost && selectedPostForEdit && (
         <EditPostModal
-          postId={selectedPostForEdit || ''} // postId가 string이므로 기본값을 빈 문자열로 변경
-          onClose={() => setShowEditPost(false)}
+          post={selectedPostForEdit}
+          onClose={() => setShowEditPost(false)} // 사용자가 X 버튼이나 취소 버튼을 눌렀을 때
+          onSuccess={() => {
+            setShowEditPost(false); // 모달 닫기
+            alert('게시물이 성공적으로 수정되었습니다.');
+            navigate(0); // 현재 페이지 새로고침하여 데이터 갱신
+          }}
         />
       )}
     </div>

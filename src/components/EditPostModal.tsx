@@ -5,10 +5,14 @@ import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
 import { Badge } from './ui/badge';
+import type { Post } from './PostCard';
+import client from '../api/client';
+import { translateKeyword } from '../utils/keyword';
 
 interface EditPostModalProps {
-  postId: string;
   onClose: () => void;
+  onSuccess: () => void;
+  post: Post;
 }
 
 interface PostData {
@@ -28,43 +32,59 @@ const KEYWORD_OPTIONS = [
   { key: 'TRANSPORT', label: '교통' },
 ];
 
-// 실제 API 연동 전 사용할 예시 데이터
-const MOCK_POST_DATA: PostData = {
-  title: '제주도 미식 여행 동행 구해요!',
-  description:
-    '제주도 맛집이란 맛집은 다 가볼 예정입니다. 같이 맛있는 거 먹으면서 즐겁게 여행하실 분 찾습니다. 숙소는 아직 미정이고 같이 상의해서 정해요!',
-  startDate: '2025-12-01',
-  endDate: '2025-12-04',
-  location: '제주도',
-  maxParticipants: 3,
-  keywords: ['음식', '숙박'], // KEYWORD_OPTIONS에 있는 값으로 설정
-};
+// API 전송을 위해 레이블을 key로 변환하기 위한 맵
+const KEYWORD_LABEL_TO_KEY_MAP = Object.fromEntries(
+  KEYWORD_OPTIONS.map((opt) => [opt.label, opt.key])
+);
 
-export function EditPostModal({ postId, onClose }: EditPostModalProps) {
-  // postId는 실제 API 연동 시 사용됩니다. 지금은 MOCK_POST_DATA를 사용합니다.
-  console.log(`수정할 게시물 ID: ${postId}`);
-
-  const [formData, setFormData] =
-    useState<Omit<PostData, 'keywords'>>(MOCK_POST_DATA);
-  const [selectedKeywords, setSelectedKeywords] = useState<string[]>(
-    MOCK_POST_DATA.keywords
+export function EditPostModal({
+  post,
+  onClose,
+  onSuccess,
+}: EditPostModalProps) {
+  const [formData, setFormData] = useState({
+    title: post.title,
+    content: post.content,
+    startDate: post.startDate,
+    endDate: post.endDate,
+    location: post.location,
+    maxParticipants: post.maxParticipants,
+  });
+  // post.keywords는 ['FOOD'] 형태이므로, 화면 표시를 위해 한글 레이블로 변환합니다.
+  const [selectedKeywordLabels, setSelectedKeywordLabels] = useState<string[]>(
+    post.keywords.map(translateKeyword)
   );
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const toggleKeyword = (keywordLabel: string) => {
-    setSelectedKeywords((prev) =>
+    setSelectedKeywordLabels((prev) =>
       prev.includes(keywordLabel)
         ? prev.filter((k) => k !== keywordLabel)
         : [...prev, keywordLabel]
     );
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const updatedPostData = { ...formData, keywords: selectedKeywords };
-    // TODO: 실제 API 연동 시 아래 console.log 대신 updatePost 함수를 호출합니다.
-    console.log('수정된 게시물 데이터:', updatedPostData);
-    alert('콘솔을 확인하세요. 게시물 수정 데이터가 기록되었습니다.');
-    onClose(); // 성공 시 모달 닫기
+    setIsSubmitting(true);
+
+    // API 전송을 위해 선택된 한글 레이블을 영문 key로 변환합니다.
+    const keywordsForApi = selectedKeywordLabels.map(
+      (label) => KEYWORD_LABEL_TO_KEY_MAP[label]
+    );
+
+    const updatedPostData = { ...formData, keywords: keywordsForApi };
+
+    try {
+      await client.patch(`/post/${post.id}`, updatedPostData);
+      // alert('게시물이 성공적으로 수정되었습니다.'); // App.tsx에서 처리하도록 변경
+      onSuccess(); // 성공 콜백 호출
+    } catch (error) {
+      console.error('Failed to update post:', error);
+      alert('게시물 수정 중 오류가 발생했습니다. 다시 시도해 주세요.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -102,11 +122,11 @@ export function EditPostModal({ postId, onClose }: EditPostModalProps) {
             <Label htmlFor="description">상세 설명</Label>
             <Textarea
               id="description"
-              value={formData.description}
+              value={formData.content}
               onChange={(e) =>
                 setFormData((prev) => ({
                   ...prev,
-                  description: e.target.value,
+                  content: e.target.value,
                 }))
               }
               className="mt-2 min-h-32"
@@ -207,12 +227,12 @@ export function EditPostModal({ postId, onClose }: EditPostModalProps) {
                 <Badge
                   key={keyword.key}
                   variant={
-                    selectedKeywords.includes(keyword.label)
+                    selectedKeywordLabels.includes(keyword.label)
                       ? 'default'
                       : 'outline'
                   }
                   className={`cursor-pointer transition-colors ${
-                    selectedKeywords.includes(keyword.label)
+                    selectedKeywordLabels.includes(keyword.label)
                       ? 'bg-blue-600 hover:bg-blue-700'
                       : 'hover:bg-gray-100'
                   }`}
@@ -227,14 +247,21 @@ export function EditPostModal({ postId, onClose }: EditPostModalProps) {
 
         {/* Footer */}
         <div className="flex gap-3 p-6 border-t sticky bottom-0 bg-white">
-          <Button variant="outline" onClick={onClose} className="flex-1">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            className="flex-1"
+            disabled={isSubmitting}
+          >
             취소
           </Button>
           <Button
             onClick={handleSubmit}
             className="flex-1 bg-blue-600 hover:bg-blue-700"
+            disabled={isSubmitting}
           >
-            수정 완료
+            {isSubmitting ? '수정 중...' : '수정 완료'}
           </Button>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Plus, Maximize2, Layers } from 'lucide-react';
+import { Plus, Maximize2, Layers, ListOrdered } from 'lucide-react';
 import { Button } from './ui/button';
 import {
   Map,
@@ -15,7 +15,13 @@ export type DayLayer = {
   color: string;
 };
 
-export function MapPanel({ workspaceId, dayLayers }: { workspaceId: string, dayLayers: DayLayer[] }) {
+export function MapPanel({
+  workspaceId,
+  dayLayers,
+}: {
+  workspaceId: string;
+  dayLayers: DayLayer[];
+}) {
   // 2. usePoiSocket 훅을 사용하여 소켓 통신 로직을 가져온다.
   // 이제 pois 상태는 웹소켓을 통해 서버와 동기화된다.
   const { pois, markPoi, unmarkPoi } = usePoiSocket(workspaceId);
@@ -28,13 +34,11 @@ export function MapPanel({ workspaceId, dayLayers }: { workspaceId: string, dayL
 
   // 1. selectedLayer의 타입을 DayLayer['id'] 에서 동적으로 추론하도록 변경
   //    'all' 타입을 포함하여 유연성을 확보합니다.
-  const [selectedLayer, setSelectedLayer] = useState<'all' | string>(
-    'all'
-  );
+  const [selectedLayer, setSelectedLayer] = useState<'all' | string>('all');
 
   // 최종 여행 계획(일정)을 저장할 상태
-  const [itinerary, setItinerary] = useState<Record<string, Poi[]>>(
-    () => dayLayers.reduce((acc, layer) => ({ ...acc, [layer.id]: [] }), {})
+  const [itinerary, setItinerary] = useState<Record<string, Poi[]>>(() =>
+    dayLayers.reduce((acc, layer) => ({ ...acc, [layer.id]: [] }), {})
   );
 
   // 여행 일정에 장소를 추가하는 함수
@@ -80,6 +84,58 @@ export function MapPanel({ workspaceId, dayLayers }: { workspaceId: string, dayL
       return updatedItinerary;
     });
   };
+
+  // 여행 일정 목록을 보여주는 새로운 컴포넌트
+  function ItineraryPanel({
+    itinerary,
+    dayLayers,
+  }: {
+    itinerary: Record<string, Poi[]>;
+    dayLayers: DayLayer[];
+  }) {
+    return (
+      <div className="absolute top-4 right-4 z-10 bg-white rounded-lg shadow-lg p-3 space-y-2 w-60 max-h-[calc(100vh-5rem)] overflow-y-auto">
+        <div className="flex items-center gap-2 mb-2">
+          <ListOrdered className="w-4 h-4 text-gray-600" />
+          <span className="text-sm font-semibold">여행 일정</span>
+        </div>
+        <div className="space-y-3">
+          {dayLayers.map((layer) => (
+            <div key={layer.id}>
+              <h3
+                className="text-sm font-bold mb-2 pb-1 border-b"
+                style={{ borderBottomColor: layer.color }}
+              >
+                {layer.label}
+              </h3>
+              <ul className="space-y-2">
+                {itinerary[layer.id] && itinerary[layer.id].length > 0 ? (
+                  itinerary[layer.id].map((poi, index) => (
+                    <li
+                      key={poi.id}
+                      className="flex items-center gap-2 text-xs"
+                    >
+                      <span
+                        className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full text-white text-xs"
+                        style={{ backgroundColor: layer.color }}
+                      >
+                        {index + 1}
+                      </span>
+                      <span className="truncate">{poi.placeName}</span>
+                    </li>
+                  ))
+                ) : (
+                  <p className="text-xs text-gray-500">
+                    추가된 장소가 없습니다.
+                  </p>
+                )}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   // MapUI 컴포넌트가 selectedLayer 상태와 상태 변경 함수를 props로 받도록 수정
   function MapUI({
@@ -275,7 +331,7 @@ export function MapPanel({ workspaceId, dayLayers }: { workspaceId: string, dayL
                     </div>
                     <div className="flex gap-2">
                       <Button
-                        size="xs"
+                        size="sm"
                         className={`flex-1 h-8 text-xs ${
                           Object.values(itinerary)
                             .flat()
@@ -298,7 +354,7 @@ export function MapPanel({ workspaceId, dayLayers }: { workspaceId: string, dayL
                           : '일정에 추가'}
                       </Button>
                       <Button
-                        size="xs"
+                        size="sm"
                         variant="destructive"
                         className="flex-1 h-8 text-xs"
                         onClick={(e) => {
@@ -306,7 +362,7 @@ export function MapPanel({ workspaceId, dayLayers }: { workspaceId: string, dayL
                           unmarkPoi(marker.id);
                         }}
                       >
-                        삭제
+                        마커 삭제
                       </Button>
                     </div>
                   </div>
@@ -382,6 +438,7 @@ export function MapPanel({ workspaceId, dayLayers }: { workspaceId: string, dayL
           selectedLayer={selectedLayer}
           setSelectedLayer={setSelectedLayer}
         />
+        <ItineraryPanel itinerary={itinerary} dayLayers={dayLayers} />
       </Map>
     </div>
   );

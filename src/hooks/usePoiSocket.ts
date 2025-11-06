@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { useAuthStore } from '../store/authStore.ts';
+import { useAuthStore } from '../store/authStore';
 
 // 백엔드의 PoiSocketEvent와 동일하게 정의합니다.
 const PoiSocketEvent = {
