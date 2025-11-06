@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { type DayLayer, MapPanel } from './MapPanel';
 import { ChatPanel } from './ChatPanel';
 import { PlanPanel } from './PlanPanel';
+import { VideoChat } from './VideoChat';
 
 interface WorkspaceProps {
   workspaceId: string;
@@ -91,7 +92,9 @@ export function Workspace({
           </div>
         </div>
       )}
-
+      <div className="flex justify-center">
+        <VideoChat workspaceId={workspaceId} />
+      </div>
       {/* Main Content with Tabs */}
       <div className="flex-1 overflow-hidden">
         <Tabs defaultValue="map" className="h-full flex flex-col">
