@@ -104,8 +104,10 @@ export function usePoiSocket(workspaceId: string) {
     });
 
     // 5. 'unmarked' 이벤트: 다른 사용자가 삭제한 POI를 실시간으로 반영합니다.
-    socket.on(PoiSocketEvent.UNMARKED, (removedPoi: Poi) => {
-      setPois((prevPois) => prevPois.filter((p) => p.id !== removedPoi.id));
+    // 백엔드에서 { poiId: ... } 형태로 데이터를 보내주는 것에 맞춰 수정합니다.
+    socket.on(PoiSocketEvent.UNMARKED, (data: { poiId: number | string }) => {
+      console.log('POI Unmarked:', data);
+      setPois((prevPois) => prevPois.filter((p) => p.id !== data.poiId));
     });
 
     // 6. 'connected' 이벤트: POI 연결 성공 시 서버로부터 받은 연결 정보를 콘솔에 출력합니다.
