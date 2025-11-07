@@ -1,7 +1,7 @@
-import { Bell, Map, Plus, User, LogIn, LogOut } from 'lucide-react';
+import { Map, Plus, LogIn, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
-import { Badge } from './ui/badge';
 import { useAuthStore } from '../store/authStore';
+import { NotificationPopover } from './NotificationPopover';
 
 interface HeaderProps {
   isLoggedIn: boolean;
@@ -47,12 +47,7 @@ export function Header({
               </div>
             ) : isLoggedIn ? (
               <>
-                <button className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                  <Bell className="w-5 h-5" />
-                  <Badge className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center p-0 bg-red-500 text-white text-xs">
-                    3
-                  </Badge>
-                </button>
+                <NotificationPopover />
 
                 <Button
                   onClick={onCreatePost}

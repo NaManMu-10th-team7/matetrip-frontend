@@ -20,8 +20,9 @@ import { ReviewPage } from './components/ReviewPage';
 import { NotFound } from './components/NotFound';
 import { useAuthStore } from './store/authStore'; // Zustand 스토어 임포트
 import { NotificationListener } from './components/NotificationListener';
-import type { Post } from './components/PostCard';
 import client from './api/client';
+import type { Post } from './types/post';
+import { Toaster } from 'sonner';
 
 // Layout component for pages with Header
 function Layout({
@@ -287,7 +288,8 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/*isLoggedIn && */ <NotificationListener />}
+      <Toaster position="top-right" />
+      {isLoggedIn && <NotificationListener />}
       <Routes>
         {/* Routes without Header */}
         <Route path="/login" element={<LoginWrapper onLogin={handleLogin} />} />

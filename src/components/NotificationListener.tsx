@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
+import { useNotificationStore } from '../store/useNotificationStore';
+import { toast } from 'sonner';
 
 export const NotificationListener = () => {
   const { user } = useAuthStore();
@@ -34,10 +36,45 @@ export const NotificationListener = () => {
         console.log('[SSE] 새 알림 수신 : ', notificationData);
 
         // 실제 알림 UI를 띄움
-        // 임시로 alert 사용
-        alert(notificationData.content);
+        const uniqueToastId = `notification-${Date.now()}`;
+
+        toast.info(
+          <div
+            onClick={() => toast.dismiss(uniqueToastId)}
+            style={{
+              cursor: 'pointer',
+            }}
+          >
+            {notificationData.content}
+          </div>,
+          {
+            id: uniqueToastId,
+            duration: 5000,
+          }
+        );
       } catch (error) {
         console.error('[SSE] 알림 데이터 파싱 실패:', error);
+      }
+    });
+
+    // 7. 뱃지 갱신 이벤트
+    eventSource.addEventListener('unread-update', (event) => {
+      try {
+        const { unreadCount } = JSON.parse(event.data);
+
+        useNotificationStore.setState({ unreadCount: unreadCount });
+      } catch (error) {
+        console.error('[SSE] unread-update 데이터 파싱 실패 : ', error);
+      }
+    });
+
+    // 8. 목록 미리 갱신 이벤트
+    eventSource.addEventListener('list-stale', (event) => {
+      // 새 알림이 오면 1페이지 목록을 미리 갱신
+      try {
+        useNotificationStore.getState().fetchInitialNotifications();
+      } catch (error) {
+        console.error('[SSE] fetchInitialNotifications 호출 실패 : ', error);
       }
     });
 
