@@ -64,8 +64,10 @@ export function Workspace({
   // MapPanel과 PlanPanel이 공유할 일정 상태를 Workspace 컴포넌트로 이동
   const [itinerary, setItinerary] = useState<Record<string, Poi[]>>({});
 
-  // unmarkPoi 함수를 PlanPanel에 전달하기 위해 usePoiSocket 훅을 Workspace에서 사용
-  const { unmarkPoi } = usePoiSocket(workspaceId);
+  // 소켓은 최상위 컴포넌트에서 한 번만 연결하고,
+  // 모든 반환값을 하위 컴포넌트에 props로 전달합니다.
+  const { pois, connections, isSyncing, markPoi, unmarkPoi, connectPoi } =
+    usePoiSocket(workspaceId);
 
   // planDayDtos가 변경될 때마다 dayLayers를 다시 계산합니다.
   // useMemo를 사용하여 planDayDtos가 실제로 변경되었을 때만 map 함수가 실행되도록 최적화합니다.
@@ -151,11 +153,15 @@ export function Workspace({
           <div className="flex-1 overflow-hidden">
             <TabsContent value="map" className="h-full m-0">
               <MapPanel
-                workspaceId={workspaceId}
-                unmarkPoi={unmarkPoi}
                 itinerary={itinerary}
                 setItinerary={setItinerary}
                 dayLayers={dayLayers}
+                pois={pois}
+                connections={connections}
+                isSyncing={isSyncing}
+                markPoi={markPoi}
+                unmarkPoi={unmarkPoi}
+                connectPoi={connectPoi}
               />
             </TabsContent>
 

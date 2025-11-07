@@ -15,9 +15,13 @@ import {
   Map as KakaoMap,
   MapMarker,
   Polyline,
-  CustomOverlayMap
+  CustomOverlayMap,
 } from 'react-kakao-maps-sdk'; // prettier-ignore
-import { usePoiSocket, type Poi } from '../hooks/usePoiSocket';
+import {
+  type Poi,
+  type PoiConnection,
+  type CreatePoiConnectionDto,
+} from '../hooks/usePoiSocket';
 import { Input } from './ui/input';
 import { KAKAO_REST_API_KEY } from '../constants';
 import { useDirections } from '../hooks/useDirections';
@@ -280,19 +284,27 @@ export function MapPanel({
   itinerary,
   setItinerary,
   dayLayers,
+  pois,
+  connections,
+  isSyncing,
+  markPoi,
   unmarkPoi,
+  connectPoi,
 }: {
-  workspaceId: string;
   itinerary: Record<string, Poi[]>;
   setItinerary: React.Dispatch<React.SetStateAction<Record<string, Poi[]>>>;
   dayLayers: DayLayer[];
+  pois: Poi[];
+  connections: Record<string, PoiConnection[]>;
+  isSyncing: boolean;
+  markPoi: (
+    poiData: Omit<CreatePoiDto, 'workspaceId' | 'createdBy' | 'id'>
+  ) => void;
   unmarkPoi: (poiId: string | number) => void;
+  connectPoi: (
+    connectionData: Omit<CreatePoiConnectionDto, 'workspaceId'>
+  ) => void;
 }) {
-  // 2. usePoiSocket 훅을 사용하여 소켓 통신 로직을 가져온다.
-  // 이제 pois 상태는 웹소켓을 통해 서버와 동기화된다.
-  const { pois, connections, isSyncing, markPoi, connectPoi } =
-    usePoiSocket(workspaceId);
-
   // '전체' 레이어를 포함한 전체 UI용 레이어 목록
   const UILayers: { id: 'all' | DayLayer['id']; label: string }[] = [
     { id: 'all', label: '전체' },
