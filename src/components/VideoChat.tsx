@@ -47,63 +47,61 @@ function ParticipantTile({
   const localButton = 'bg-transparent text-white focus-visible:outline-none';
 
   const highlightClass = isSpeaking
-    ? 'border-[10px] border-blue-500 shadow-[0_0_36px_rgba(59,130,246,0.5)]'
-    : 'ring ring-[2px] ring-offset-[3px] ring-offset-black';
+    ? 'border-2 border-blue-400 shadow-[0_0_36px_rgba(59,130,246,0.5)]'
+    : 'border-2 border-transparent shadow-[0_0_36px_rgba(59,130,246,0.5)]';
 
   return (
     <div
-      className={` group relative flex h-full w-full overflow-hidden  bg-black ${highlightClass} transition-all duration-200
+      className={` group relative flex h-full w-full transition-all duration-200 overflow-hidden ${highlightClass}
       `}
       style={{ borderRadius: '24px' }}
     >
-      <div className="relative flex h-full w-full overflow-hidden">
-        <video
-          ref={videoRef}
-          className={`h-full w-full object-cover transition-opacity ${
-            !isCamOn ? 'opacity-0' : 'opacity-100'
-          }`}
-          autoPlay
-          playsInline
-          muted={isLocal}
-        />
-        {/* 카메라 꺼져있을 때 모두에게 공통되게 해당  */}
-        {!isCamOn && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-3 bg-black text-white ">
-            <User className="h-16 w-16" strokeWidth={1.5} />
-            <span className="text-xs">카메라가 꺼져 있습니다</span>
-          </div>
-        )}
-
-        <div
-          className={`absolute inset-x-0 bottom-0 flex items-center gap-3 px-4 py-3 text-white ${controlsClass}`}
-        >
-          <button
-            type="button"
-            onClick={isLocal ? onToggleCamera : undefined}
-            disabled={!isLocal}
-            className={`${buttonBase} ${localButton}`}
-            aria-label={isCamOn ? '카메라 끄기' : '카메라 켜기'}
-          >
-            {isCamOn ? (
-              <Video className="h-5 w-5" />
-            ) : (
-              <VideoOff className="h-5 w-5" />
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={isLocal ? onToggleMic : undefined}
-            disabled={!isLocal}
-            className={`${buttonBase} ${localButton}`}
-            aria-label={isMicOn ? '마이크 끄기' : '마이크 켜기'}
-          >
-            {isMicOn ? (
-              <Mic className="h-5 w-5" />
-            ) : (
-              <MicOff className="h-5 w-5" />
-            )}
-          </button>
+      <video
+        ref={videoRef}
+        className={`h-full w-full object-cover transition-opacity ${
+          !isCamOn ? 'opacity-0' : 'opacity-100'
+        }`}
+        autoPlay
+        playsInline
+        muted={isLocal}
+      />
+      {/* 카메라 꺼져있을 때 모두에게 공통되게 해당  */}
+      {!isCamOn && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-3 bg-black text-white ">
+          <User className="h-16 w-16" strokeWidth={1.5} />
+          <span className="text-xs">카메라가 꺼져 있습니다</span>
         </div>
+      )}
+
+      <div
+        className={`absolute inset-x-0 bottom-0 flex items-center gap-3 px-4 py-3 text-white ${controlsClass}`}
+      >
+        <button
+          type="button"
+          onClick={isLocal ? onToggleCamera : undefined}
+          disabled={!isLocal}
+          className={`${buttonBase} ${localButton}`}
+          aria-label={isCamOn ? '카메라 끄기' : '카메라 켜기'}
+        >
+          {isCamOn ? (
+            <Video className="h-5 w-5" />
+          ) : (
+            <VideoOff className="h-5 w-5" />
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={isLocal ? onToggleMic : undefined}
+          disabled={!isLocal}
+          className={`${buttonBase} ${localButton}`}
+          aria-label={isMicOn ? '마이크 끄기' : '마이크 켜기'}
+        >
+          {isMicOn ? (
+            <Mic className="h-5 w-5" />
+          ) : (
+            <MicOff className="h-5 w-5" />
+          )}
+        </button>
       </div>
     </div>
   );
