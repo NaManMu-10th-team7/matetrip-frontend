@@ -23,6 +23,7 @@ import { NotificationListener } from './components/NotificationListener';
 import client from './api/client';
 import type { Post } from './types/post';
 import { Toaster } from 'sonner';
+import PublicOnlyRoute from './components/PublicOnlyRoute';
 
 // Layout component for pages with Header
 function Layout({
@@ -292,11 +293,16 @@ export default function App() {
       {isLoggedIn && <NotificationListener />}
       <Routes>
         {/* Routes without Header */}
-        <Route path="/login" element={<LoginWrapper onLogin={handleLogin} />} />
-        <Route
-          path="/signup"
-          element={<SignupWrapper onSignup={handleLogin} />} // 회원가입 후 자동 로그인 처리
-        />
+        <Route element={<PublicOnlyRoute />}>
+          <Route
+            path="/login"
+            element={<LoginWrapper onLogin={handleLogin} />}
+          />
+          <Route
+            path="/signup"
+            element={<SignupWrapper onSignup={handleLogin} />} // 회원가입 후 자동 로그인 처리
+          />
+        </Route>
 
         {/* Routes with Header */}
         <Route
