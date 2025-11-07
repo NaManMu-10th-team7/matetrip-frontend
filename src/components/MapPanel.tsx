@@ -1,5 +1,13 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Plus, Maximize2, Layers, ListOrdered, Search } from 'lucide-react';
+import {
+  Plus,
+  Maximize2,
+  Layers,
+  ListOrdered,
+  Search,
+  ChevronUp,
+  ChevronDown,
+} from 'lucide-react';
 import { Button } from './ui/button'; // prettier-ignore
 import {
   Map as KakaoMap,
@@ -19,6 +27,7 @@ export type DayLayer = {
 
 // 카카오 장소 검색 결과 타입을 정의합니다.
 type KakaoPlace = kakao.maps.services.PlacesSearchResultItem;
+type KakaoPagination = kakao.maps.services.Pagination;
 
 const KAKAO_MAP_SERVICES_STATUS = window.kakao?.maps.services.Status;
 
@@ -203,6 +212,8 @@ export function MapPanel({
   }) {
     const [keyword, setKeyword] = useState('');
     const [results, setResults] = useState<KakaoPlace[]>([]);
+    const [pagination, setPagination] = useState<KakaoPagination | null>(null);
+    const [isResultsVisible, setIsResultsVisible] = useState(true);
 
     const handleSearch = useCallback(() => {
       if (!keyword.trim()) {
@@ -210,23 +221,36 @@ export function MapPanel({
         return;
       }
 
+      // 검색 시 결과 창을 항상 펼칩니다.
+      setIsResultsVisible(true);
+
       if (!window.kakao || !window.kakao.maps || !window.kakao.maps.services) {
         alert('카카오 지도 서비스가 로드되지 않았습니다.');
         return;
       }
 
       const places = new window.kakao.maps.services.Places();
-      places.keywordSearch(keyword, (data, status) => {
+      // 페이지네이션 콜백 함수
+      const searchCallback = (
+        data: KakaoPlace[],
+        status: kakao.maps.services.Status,
+        pagi: KakaoPagination
+      ) => {
         if (status === KAKAO_MAP_SERVICES_STATUS.OK) {
           setResults(data);
+          setPagination(pagi);
         } else if (status === KAKAO_MAP_SERVICES_STATUS.ZERO_RESULT) {
           alert('검색 결과가 없습니다.');
           setResults([]);
+          setPagination(null);
         } else {
           alert('검색 중 오류가 발생했습니다.');
           setResults([]);
+          setPagination(null);
         }
-      });
+      };
+
+      places.keywordSearch(keyword, searchCallback);
     }, [keyword]);
 
     return (
@@ -235,6 +259,7 @@ export function MapPanel({
           <Search className="w-4 h-4 text-gray-600" />
           <span className="text-sm font-semibold">장소 검색</span>
         </div>
+
         <div className="flex gap-2">
           <Input
             type="text"
@@ -248,22 +273,67 @@ export function MapPanel({
             검색
           </Button>
         </div>
-        <ul className="flex-1 overflow-y-auto space-y-2 pt-2">
-          {results.map((place) => (
-            <li
-              key={place.id}
-              className="p-2 rounded-md hover:bg-gray-100 cursor-pointer"
-              onClick={() => onPlaceClick(place)}
+        {/* 검색 결과가 있을 때만 접기/펴기 버튼을 표시합니다. */}
+        {results.length > 0 && (
+          <div className="border-t pt-1">
+            <Button
+              variant="ghost"
+              className="w-full h-6"
+              onClick={() => setIsResultsVisible(!isResultsVisible)}
             >
-              <div className="text-sm font-semibold truncate">
-                {place.place_name}
+              {isResultsVisible ? (
+                <ChevronUp className="w-4 h-4 text-gray-500" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-gray-500" />
+              )}
+            </Button>
+          </div>
+        )}
+        {isResultsVisible && (
+          <>
+            <ul className="overflow-y-auto space-y-2 pt-2 max-h-[400px]">
+              {results.map((place) => (
+                <li
+                  key={place.id}
+                  className="p-2 rounded-md hover:bg-gray-100 cursor-pointer"
+                  onClick={() => onPlaceClick(place)}
+                >
+                  <div className="text-sm font-semibold truncate">
+                    {place.place_name}
+                  </div>
+                  <div className="text-xs text-gray-500 truncate">
+                    {place.road_address_name || place.address_name}
+                  </div>
+                </li>
+              ))}
+            </ul>
+            {pagination && results.length > 0 && (
+              <div className="flex justify-center items-center gap-3 pt-2 border-t">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => pagination.gotoPage(pagination.current - 1)}
+                  disabled={!pagination.hasPrevPage}
+                  className="h-7 px-2"
+                >
+                  이전
+                </Button>
+                <span className="text-xs">
+                  {pagination.current} / {Math.ceil(pagination.totalCount / 15)}
+                </span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => pagination.gotoPage(pagination.current + 1)}
+                  disabled={!pagination.hasNextPage}
+                  className="h-7 px-2"
+                >
+                  다음
+                </Button>
               </div>
-              <div className="text-xs text-gray-500 truncate">
-                {place.road_address_name || place.address_name}
-              </div>
-            </li>
-          ))}
-        </ul>
+            )}
+          </>
+        )}
       </div>
     );
   }
