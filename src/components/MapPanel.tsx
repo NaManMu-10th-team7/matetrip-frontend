@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Plus, Maximize2, Layers, ListOrdered } from 'lucide-react';
-import { Button } from './ui/button';
+import { Plus, Maximize2, Layers, ListOrdered, Search } from 'lucide-react';
+import { Button } from './ui/button'; // prettier-ignore
 import {
   Map as KakaoMap,
   MapMarker,
@@ -8,6 +8,7 @@ import {
   CustomOverlayMap
 } from 'react-kakao-maps-sdk'; // prettier-ignore
 import { usePoiSocket, Poi, PoiConnection } from '../hooks/usePoiSocket';
+import { Input } from './ui/input';
 import { useDirections } from '../hooks/useDirections';
 
 export type DayLayer = {
@@ -15,6 +16,11 @@ export type DayLayer = {
   label: string;
   color: string;
 };
+
+// 카카오 장소 검색 결과 타입을 정의합니다.
+type KakaoPlace = kakao.maps.services.PlacesSearchResultItem;
+
+const KAKAO_MAP_SERVICES_STATUS = window.kakao?.maps.services.Status;
 
 export function MapPanel({
   workspaceId,
@@ -189,6 +195,79 @@ export function MapPanel({
     );
   }
 
+  // 장소 검색 패널 컴포넌트
+  function SearchPanel({
+    onPlaceClick,
+  }: {
+    onPlaceClick: (place: KakaoPlace) => void;
+  }) {
+    const [keyword, setKeyword] = useState('');
+    const [results, setResults] = useState<KakaoPlace[]>([]);
+
+    const handleSearch = useCallback(() => {
+      if (!keyword.trim()) {
+        alert('검색어를 입력해주세요.');
+        return;
+      }
+
+      if (!window.kakao || !window.kakao.maps || !window.kakao.maps.services) {
+        alert('카카오 지도 서비스가 로드되지 않았습니다.');
+        return;
+      }
+
+      const places = new window.kakao.maps.services.Places();
+      places.keywordSearch(keyword, (data, status) => {
+        if (status === KAKAO_MAP_SERVICES_STATUS.OK) {
+          setResults(data);
+        } else if (status === KAKAO_MAP_SERVICES_STATUS.ZERO_RESULT) {
+          alert('검색 결과가 없습니다.');
+          setResults([]);
+        } else {
+          alert('검색 중 오류가 발생했습니다.');
+          setResults([]);
+        }
+      });
+    }, [keyword]);
+
+    return (
+      <div className="absolute top-4 left-40 z-10 bg-white rounded-lg shadow-lg p-3 space-y-2 w-64 max-h-[calc(100vh-5rem)] flex flex-col">
+        <div className="flex items-center gap-2 mb-1">
+          <Search className="w-4 h-4 text-gray-600" />
+          <span className="text-sm font-semibold">장소 검색</span>
+        </div>
+        <div className="flex gap-2">
+          <Input
+            type="text"
+            placeholder="장소, 주소 검색"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            className="h-9"
+          />
+          <Button size="sm" onClick={handleSearch} className="h-9">
+            검색
+          </Button>
+        </div>
+        <ul className="flex-1 overflow-y-auto space-y-2 pt-2">
+          {results.map((place) => (
+            <li
+              key={place.id}
+              className="p-2 rounded-md hover:bg-gray-100 cursor-pointer"
+              onClick={() => onPlaceClick(place)}
+            >
+              <div className="text-sm font-semibold truncate">
+                {place.place_name}
+              </div>
+              <div className="text-xs text-gray-500 truncate">
+                {place.road_address_name || place.address_name}
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+
   // MapUI 컴포넌트가 selectedLayer 상태와 상태 변경 함수를 props로 받도록 수정
   function MapUI({
     selectedLayer,
@@ -247,10 +326,22 @@ export function MapPanel({
     null
   );
 
+  // 지도 객체를 저장하기 위한 ref
+  const mapRef = useRef<kakao.maps.Map>(null);
+
+  // 검색 결과 클릭 시 지도를 해당 위치로 이동시키는 함수
+  const handlePlaceClick = (place: KakaoPlace) => {
+    const map = mapRef.current;
+    if (!map) return;
+    const moveLatLon = new window.kakao.maps.LatLng(Number(place.y), Number(place.x));
+    map.panTo(moveLatLon);
+  };
+
   return (
     <div className="h-full relative">
       <KakaoMap
         className="w-full h-full"
+        ref={mapRef}
         center={{
           lat: 33.450701, // latitude
           lng: 126.570667, // longitude
@@ -280,7 +371,7 @@ export function MapPanel({
             latlng.getLng(),
             latlng.getLat(),
             (result, status) => {
-              if (status !== window.kakao.maps.services.Status.OK) {
+              if (status !== KAKAO_MAP_SERVICES_STATUS.OK) {
                 console.error(
                   'Geocoder가 주소를 가져오는 데 실패했습니다. 상태:',
                   status
@@ -307,7 +398,7 @@ export function MapPanel({
                   let placeName = searchKeyword;
                   let categoryName: string | undefined = undefined;
 
-                  if (status === window.kakao.maps.services.Status.OK) {
+                  if (status === KAKAO_MAP_SERVICES_STATUS.OK) {
                     // 검색 결과 중 첫 번째 장소의 정보를 사용합니다.
                     const place = data[0];
                     placeName = place.place_name;
@@ -335,7 +426,7 @@ export function MapPanel({
                 {
                   location: latlng, // 현재 클릭한 좌표를 중심으로
                   radius: 50, // 50미터 반경 내에서 검색합니다.
-                  sort: window.kakao.maps.services.SortBy.DISTANCE, // 거리순으로 정렬합니다.
+                  sort: window.kakao.maps.services.SortBy.DISTANCE, // 거리순으로 정렬
                 }
               );
             }
@@ -477,6 +568,7 @@ export function MapPanel({
           selectedLayer={selectedLayer}
           setSelectedLayer={setSelectedLayer}
         />
+        <SearchPanel onPlaceClick={handlePlaceClick} />
         <ItineraryPanel itinerary={itinerary} dayLayers={dayLayers} />
       </KakaoMap>
     </div>
