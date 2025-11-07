@@ -28,7 +28,7 @@ export type DayLayer = {
 
 // 카카오 장소 검색 결과 타입을 정의합니다.
 type KakaoPlace = kakao.maps.services.PlacesSearchResultItem;
-type KakaoPagination = kakao.maps.services.Pagination;
+type KakaoPagination = kakao.maps.Pagination;
 
 const KAKAO_MAP_SERVICES_STATUS = window.kakao?.maps.services.Status;
 
@@ -58,10 +58,7 @@ function ItineraryPanel({
             <ul className="space-y-2">
               {itinerary[layer.id] && itinerary[layer.id].length > 0 ? (
                 itinerary[layer.id].map((poi, index) => (
-                  <li
-                    key={poi.id}
-                    className="flex items-center gap-2 text-xs"
-                  >
+                  <li key={poi.id} className="flex items-center gap-2 text-xs">
                     <span
                       className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full text-white text-xs"
                       style={{ backgroundColor: layer.color }}
@@ -72,9 +69,7 @@ function ItineraryPanel({
                   </li>
                 ))
               ) : (
-                <p className="text-xs text-gray-500">
-                  추가된 장소가 없습니다.
-                </p>
+                <p className="text-xs text-gray-500">추가된 장소가 없습니다.</p>
               )}
             </ul>
           </div>
