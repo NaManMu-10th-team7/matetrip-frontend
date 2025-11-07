@@ -11,6 +11,7 @@ interface NotificationState {
   page: number;
   hasMore: boolean;
   isLoading: boolean;
+  setUnreadCount: (count: number) => void;
   fetchUnreadCount: () => Promise<void>;
   fetchInitialNotifications: () => Promise<void>;
   fetchMoreNotifications: () => Promise<void>;
@@ -23,6 +24,11 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   page: 1,
   hasMore: true,
   isLoading: false,
+
+  /**
+   * 안읽은 알림 개수 반영
+   */
+  setUnreadCount: (count: number) => set({ unreadCount: count }),
 
   /**
    * 읽지 않은 알림 개수 가져오기
@@ -41,9 +47,11 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
    * 첫 페이지 알림 가져오기
    */
   fetchInitialNotifications: async () => {
-    if (get().isLoading) return;
+    const { isLoading, notifications } = get();
 
-    if (get().notifications.length === 0) {
+    if (isLoading) return;
+
+    if (notifications.length === 0) {
       set({ isLoading: true });
     }
 
@@ -102,7 +110,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
     // 이미 읽음 처리된 알림은 API를 호출하지 않음
     if (target?.confirmed) {
-      console.log('Alreay confirmed:', notificationId);
+      console.log('Already confirmed:', notificationId);
       return;
     }
 

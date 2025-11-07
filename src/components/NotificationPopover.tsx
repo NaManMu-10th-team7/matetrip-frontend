@@ -35,8 +35,8 @@ export function NotificationPopover() {
     }
   }, [isOpen, fetchInitialNotifications]);
 
-  const handleNotificationClick = (id: string) => {
-    markNotificationAsRead(id);
+  const handleNotificationClick = async (id: string) => {
+    await markNotificationAsRead(id);
   };
 
   // 수동 스크롤 핸들러

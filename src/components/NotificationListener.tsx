@@ -62,7 +62,7 @@ export const NotificationListener = () => {
       try {
         const { unreadCount } = JSON.parse(event.data);
 
-        useNotificationStore.setState({ unreadCount: unreadCount });
+        useNotificationStore.getState().setUnreadCount(unreadCount);
       } catch (error) {
         console.error('[SSE] unread-update 데이터 파싱 실패 : ', error);
       }
@@ -84,7 +84,9 @@ export const NotificationListener = () => {
 
       // EventSource는 연결이 끊어지면 자동으로 재연결 시도
       // 401(Unauthorized) 등 인증 오류 시 수동으로 닫기
-      eventSource.close();
+      if (eventSource.readyState === EventSource.CLOSED) {
+        console.log('[SSE] 연결이 영구적으로 닫혔습니다.');
+      }
     };
 
     // 7. 컴포넌트가 언마운트될 때(페이지 이동, 로그아웃 등) 연결을 닫음.
