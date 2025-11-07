@@ -14,7 +14,7 @@ import { MapPanel, type DayLayer } from './MapPanel';
 import type { PlanDayDto } from '../types/workspace';
 import { ChatPanel } from './ChatPanel';
 import { PlanPanel } from './PlanPanel';
-import { usePoiSocket } from '../hooks/usePoiSocket.ts';
+import { type Poi, usePoiSocket } from '../hooks/usePoiSocket.ts';
 
 interface WorkspaceProps {
   workspaceId: string;
