@@ -28,13 +28,26 @@ const MOCK_MEMBERS = [
   { id: 3, name: '제주사랑', isAuthor: false },
 ];
 
-const generateRandomColor = () => {
-  const letters = '0123456789ABCDEF';
-  let color = '#';
-  for (let i = 0; i < 6; i++) {
-    color += letters[Math.floor(Math.random() * 16)];
+/**
+ * 주어진 문자열(예: day.id)을 기반으로 일관된 색상을 생성합니다.
+ * @param str - 색상을 생성할 기반이 되는 문자열
+ * @returns 16진수 색상 코드 (e.g., '#RRGGBB')
+ */
+const generateColorFromString = (str: string) => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    // 간단한 해시 함수(djb2)를 사용하여 문자열을 숫자로 변환합니다.
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
   }
-  return color;
+
+  let color = '#';
+  for (let i = 0; i < 3; i++) {
+    // 해시 값을 사용하여 RGB 각 채널의 색상 값을 생성합니다.
+    // 0x80을 더해 너무 어두운 색상이 생성되는 것을 방지하고, 0xFF로 AND 연산을 하여 255를 넘지 않도록 합니다.
+    const value = (hash >> (i * 8)) & 0xff;
+    color += `00${(value + 0x80) % 256 < 128 ? value + 128 : value}`.slice(-2);
+  }
+  return color.toUpperCase();
 };
 
 export function Workspace({
@@ -48,7 +61,7 @@ export function Workspace({
     planDayDtos.map((day) => ({
       id: day.id,
       label: day.planDate,
-      color: generateRandomColor(),
+      color: generateColorFromString(day.id),
     }))
   );
 
