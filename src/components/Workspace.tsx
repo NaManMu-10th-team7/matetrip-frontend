@@ -10,10 +10,11 @@ import {
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { MapPanel } from './MapPanel';
+import { MapPanel, type DayLayer } from './MapPanel';
 import type { PlanDayDto } from '../types/workspace';
 import { ChatPanel } from './ChatPanel';
 import { PlanPanel } from './PlanPanel';
+import { usePoiSocket } from '../hooks/usePoiSocket.ts';
 
 interface WorkspaceProps {
   workspaceId: string;
@@ -59,18 +60,24 @@ export function Workspace({
   onEndTrip,
 }: WorkspaceProps) {
   const [showMembers, setShowMembers] = useState(false);
-  
+
   // MapPanel과 PlanPanel이 공유할 일정 상태를 Workspace 컴포넌트로 이동
   const [itinerary, setItinerary] = useState<Record<string, Poi[]>>({});
 
+  // unmarkPoi 함수를 PlanPanel에 전달하기 위해 usePoiSocket 훅을 Workspace에서 사용
+  const { unmarkPoi } = usePoiSocket(workspaceId);
+
   // planDayDtos가 변경될 때마다 dayLayers를 다시 계산합니다.
   // useMemo를 사용하여 planDayDtos가 실제로 변경되었을 때만 map 함수가 실행되도록 최적화합니다.
-  const dayLayers = useMemo(() =>
-    planDayDtos.map((day) => ({
-      id: day.id,
-      label: day.planDate,
-      color: generateColorFromString(day.id),
-    })), [planDayDtos]);
+  const dayLayers = useMemo(
+    () =>
+      planDayDtos.map((day) => ({
+        id: day.id,
+        label: day.planDate,
+        color: generateColorFromString(day.id),
+      })),
+    [planDayDtos]
+  );
 
   // dayLayers가 처음 마운트될 때 itinerary의 초기 구조를 설정합니다.
   useEffect(() => {
@@ -154,6 +161,7 @@ export function Workspace({
             <TabsContent value="map" className="h-full m-0">
               <MapPanel
                 workspaceId={workspaceId}
+                unmarkPoi={unmarkPoi}
                 itinerary={itinerary}
                 setItinerary={setItinerary}
                 dayLayers={dayLayers}
@@ -171,7 +179,11 @@ export function Workspace({
             </TabsContent>
 
             <TabsContent value="plan" className="h-full m-0">
-              <PlanPanel itinerary={itinerary} dayLayers={dayLayers} />
+              <PlanPanel
+                itinerary={itinerary}
+                dayLayers={dayLayers}
+                unmarkPoi={unmarkPoi}
+              />
             </TabsContent>
           </div>
         </Tabs>

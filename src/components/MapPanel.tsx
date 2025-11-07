@@ -280,15 +280,17 @@ export function MapPanel({
   itinerary,
   setItinerary,
   dayLayers,
+  unmarkPoi,
 }: {
   workspaceId: string;
   itinerary: Record<string, Poi[]>;
   setItinerary: React.Dispatch<React.SetStateAction<Record<string, Poi[]>>>;
   dayLayers: DayLayer[];
+  unmarkPoi: (poiId: string | number) => void;
 }) {
   // 2. usePoiSocket 훅을 사용하여 소켓 통신 로직을 가져온다.
   // 이제 pois 상태는 웹소켓을 통해 서버와 동기화된다.
-  const { pois, connections, isSyncing, markPoi, unmarkPoi, connectPoi } =
+  const { pois, connections, isSyncing, markPoi, connectPoi } =
     usePoiSocket(workspaceId);
 
   // '전체' 레이어를 포함한 전체 UI용 레이어 목록
