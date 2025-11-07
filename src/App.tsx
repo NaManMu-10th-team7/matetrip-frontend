@@ -19,9 +19,13 @@ import { Signup } from './components/Signup';
 import { ReviewPage } from './components/ReviewPage';
 import { NotFound } from './components/NotFound';
 import { useAuthStore } from './store/authStore'; // Zustand 스토어 임포트
-import type { Post } from './components/PostCard';
+import { NotificationListener } from './components/NotificationListener';
 import client from './api/client';
 import type { CreateWorkspaceResponse } from './types/workspace';
+import type { Post } from './types/post';
+import { Toaster } from 'sonner';
+import PublicOnlyRoute from './components/PublicOnlyRoute';
+
 
 // Layout component for pages with Header
 function Layout({
@@ -116,6 +120,7 @@ function PostDetailWrapper({
   isLoggedIn,
   onEditPost,
 }: {
+  // onEditPost prop의 postId 타입을 string으로 변경
   isLoggedIn: boolean;
   onEditPost: (post: Post) => void;
 }) {
@@ -304,13 +309,20 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <Toaster position="top-right" />
+      {isLoggedIn && <NotificationListener />}
       <Routes>
         {/* Routes without Header */}
-        <Route path="/login" element={<LoginWrapper onLogin={handleLogin} />} />
-        <Route
-          path="/signup"
-          element={<SignupWrapper onSignup={handleLogin} />} // 회원가입 후 자동 로그인 처리
-        />
+        <Route element={<PublicOnlyRoute />}>
+          <Route
+            path="/login"
+            element={<LoginWrapper onLogin={handleLogin} />}
+          />
+          <Route
+            path="/signup"
+            element={<SignupWrapper onSignup={handleLogin} />} // 회원가입 후 자동 로그인 처리
+          />
+        </Route>
 
         {/* Routes with Header */}
         <Route
