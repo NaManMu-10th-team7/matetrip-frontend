@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Users,
   X,
@@ -10,7 +10,7 @@ import {
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { type DayLayer, MapPanel } from './MapPanel';
+import { MapPanel } from './MapPanel';
 import type { PlanDayDto } from '../types/workspace';
 import { ChatPanel } from './ChatPanel';
 import { PlanPanel } from './PlanPanel';
@@ -59,6 +59,9 @@ export function Workspace({
   onEndTrip,
 }: WorkspaceProps) {
   const [showMembers, setShowMembers] = useState(false);
+  
+  // MapPanel과 PlanPanel이 공유할 일정 상태를 Workspace 컴포넌트로 이동
+  const [itinerary, setItinerary] = useState<Record<string, Poi[]>>({});
 
   // planDayDtos가 변경될 때마다 dayLayers를 다시 계산합니다.
   // useMemo를 사용하여 planDayDtos가 실제로 변경되었을 때만 map 함수가 실행되도록 최적화합니다.
@@ -68,6 +71,15 @@ export function Workspace({
       label: day.planDate,
       color: generateColorFromString(day.id),
     })), [planDayDtos]);
+
+  // dayLayers가 처음 마운트될 때 itinerary의 초기 구조를 설정합니다.
+  useEffect(() => {
+    const initialItinerary = dayLayers.reduce(
+      (acc, layer) => ({ ...acc, [layer.id]: [] }),
+      {}
+    );
+    setItinerary(initialItinerary);
+  }, [dayLayers]);
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
@@ -140,7 +152,12 @@ export function Workspace({
 
           <div className="flex-1 overflow-hidden">
             <TabsContent value="map" className="h-full m-0">
-              <MapPanel workspaceId={workspaceId} dayLayers={dayLayers} />
+              <MapPanel
+                workspaceId={workspaceId}
+                itinerary={itinerary}
+                setItinerary={setItinerary}
+                dayLayers={dayLayers}
+              />
             </TabsContent>
 
             <TabsContent value="chat" className="h-full m-0">
@@ -154,7 +171,7 @@ export function Workspace({
             </TabsContent>
 
             <TabsContent value="plan" className="h-full m-0">
-              <PlanPanel dayLayers={dayLayers} />
+              <PlanPanel itinerary={itinerary} dayLayers={dayLayers} />
             </TabsContent>
           </div>
         </Tabs>

@@ -30,6 +30,8 @@ export type Poi = {
   placeName?: string;
   planDayId?: string;
   categoryName?: string;
+  distance?: number;
+  duration?: number;
 };
 
 export type CreatePoiDto = {
@@ -60,6 +62,8 @@ export type PoiConnection = {
   prevPoiId: string | number;
   nextPoiId: string | number;
   planDayId: string;
+  distance?: number;
+  duration?: number;
 };
 
 // 서버와 동기화할 때 받는 데이터 타입
@@ -136,6 +140,20 @@ export function usePoiSocket(workspaceId: string) {
           [connectionData.planDayId]: [...dayConnections, connectionData],
         };
       });
+
+      // itinerary 상태 업데이트를 위해 연결된 POI에 distance와 duration 추가
+      setPois((prevPois) =>
+        prevPois.map((poi) => {
+          if (poi.id === connectionData.nextPoiId) {
+            return {
+              ...poi,
+              distance: connectionData.distance,
+              duration: connectionData.duration,
+            };
+          }
+          return poi;
+        })
+      );
     });
 
     // 컴포넌트 언마운트 시 소켓 연결을 해제합니다.

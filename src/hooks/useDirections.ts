@@ -1,12 +1,11 @@
 import axios from 'axios';
 import { useState, useEffect, useRef } from 'react';
 import type { Poi } from './usePoiSocket';
+import { KAKAO_REST_API_KEY } from '../constants';
 
 type Itinerary = Record<string, Poi[]>;
 type LatLng = { lat: number; lng: number }; // 위도(latitude)와 경도(longitude)를 가지는 좌표 객체 타입
 type DailyRoutePaths = Record<string, LatLng[]>; // 날짜별로 계산된 경로(좌표 배열)를 저장하는 객체 타입
-
-const KAKAO_REST_API_KEY = import.meta.env.VITE_REACT_APP_KAKAOMAP_REST_KEY; // .env 파일에서 카카오 REST API 키를 가져온다.
 
 /**
  * [헬퍼 함수] 카카오모빌리티 길찾기 API를 호출하여 특정 날짜의 POI들 간의 경로를 계산한다.

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
+import axios from 'axios';
 import {
   Plus,
   Maximize2,
@@ -18,6 +19,7 @@ import {
 } from 'react-kakao-maps-sdk'; // prettier-ignore
 import { usePoiSocket, type Poi } from '../hooks/usePoiSocket';
 import { Input } from './ui/input';
+import { KAKAO_REST_API_KEY } from '../constants';
 import { useDirections } from '../hooks/useDirections';
 
 export type DayLayer = {
@@ -275,9 +277,13 @@ function MapUI({
 
 export function MapPanel({
   workspaceId,
+  itinerary,
+  setItinerary,
   dayLayers,
 }: {
   workspaceId: string;
+  itinerary: Record<string, Poi[]>;
+  setItinerary: React.Dispatch<React.SetStateAction<Record<string, Poi[]>>>;
   dayLayers: DayLayer[];
 }) {
   // 2. usePoiSocket 훅을 사용하여 소켓 통신 로직을 가져온다.
@@ -294,9 +300,6 @@ export function MapPanel({
   // 1. selectedLayer의 타입을 DayLayer['id'] 에서 동적으로 추론하도록 변경
   //    'all' 타입을 포함하여 유연성을 확보합니다.
   const [selectedLayer, setSelectedLayer] = useState<'all' | string>('all');
-
-  // 최종 여행 계획(일정)을 저장할 상태
-  const [itinerary, setItinerary] = useState<Record<string, Poi[]>>({});
 
   // pois와 connections 데이터가 변경될 때마다 itinerary를 재구성합니다.
   // 이 로직 덕분에 새로고침 후에도 일정이 복원됩니다.
@@ -338,14 +341,20 @@ export function MapPanel({
         let currentPoiId: string | number | undefined = startId;
         while (currentPoiId && !visited.has(currentPoiId)) {
           visited.add(currentPoiId);
-          const poi = poiMap.get(currentPoiId);
-          if (poi) {
-            newItinerary[dayId].push(poi);
-          }
-
           const nextConnection = dayConnections.find(
             (c) => c.prevPoiId === currentPoiId
           );
+          const poi = poiMap.get(currentPoiId);
+
+          if (poi) {
+            // 이전 POI에서 현재 POI로 오는 connection 정보를 찾습니다.
+            const inboundConnection = dayConnections.find(
+              (c) => c.nextPoiId === currentPoiId
+            );
+            // connection에 있는 distance와 duration을 poi 객체에 복사합니다.
+            const poiWithConnectionInfo = { ...poi, ...inboundConnection };
+            newItinerary[dayId].push(poiWithConnectionInfo);
+          }
           currentPoiId = nextConnection?.nextPoiId;
         }
       }
@@ -357,7 +366,7 @@ export function MapPanel({
   const { routePaths } = useDirections(itinerary);
 
   // 여행 일정에 장소를 추가하는 함수
-  const addToItinerary = (markerToAdd: Poi) => {
+  const addToItinerary = async (markerToAdd: Poi) => {
     const isAlreadyAdded = Object.values(itinerary)
       .flat()
       .some((item) => item.id === markerToAdd.id);
@@ -377,14 +386,48 @@ export function MapPanel({
     const lastPoiInDay = currentDayItinerary[currentDayItinerary.length - 1];
 
     if (lastPoiInDay) {
-      // 마지막 장소가 있으면 연결 정보만 서버로 보냅니다.
-      // 거리/시간 계산은 백엔드에서 처리하거나, 필요 시 여기서도 가능합니다.
-      // 지금은 경로 표시에 집중하므로 connect만 호출합니다.
+      // 마지막 장소가 있으면, 카카오 API로 거리/시간을 계산한 후 서버로 보냅니다.
+      let distance: number | undefined;
+      let duration: number | undefined;
+
+      try {
+        const response = await axios.get(
+          'https://apis-navi.kakaomobility.com/v1/directions',
+          {
+            headers: {
+              Authorization: `KakaoAK ${KAKAO_REST_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            params: {
+              origin: `${lastPoiInDay.longitude},${lastPoiInDay.latitude}`,
+              destination: `${markerToAdd.longitude},${markerToAdd.latitude}`,
+            },
+          }
+        );
+
+        const route = response.data.routes[0];
+        if (route) {
+          distance = route.summary.distance; // 미터(m) 단위
+          duration = route.summary.duration; // 초(s) 단위
+          console.log(
+            `[${lastPoiInDay.placeName} -> ${markerToAdd.placeName}] 거리: ${distance}m, 시간: ${duration}s`
+          );
+        }
+      } catch (error) {
+        console.error('경로 거리/시간 계산 중 오류 발생:', error);
+        // 오류가 발생해도 연결은 시도하되, 거리/시간 정보는 보내지 않습니다.
+      }
+
       connectPoi({
         prevPoiId: lastPoiInDay.id,
         nextPoiId: markerToAdd.id,
         planDayId: targetDayId,
+        distance,
+        duration,
       });
+    } else {
+      // 해당 날짜의 첫 번째 장소이므로, 연결 정보 없이 마커 정보만 상태에 반영
+      // (연결은 두 개 이상의 POI가 있을 때만 의미가 있음)
     }
 
     // 로컬 상태를 즉시 업데이트하여 UI에 반영합니다.
