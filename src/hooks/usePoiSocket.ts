@@ -76,6 +76,7 @@ export function usePoiSocket(workspaceId: string) {
   const [connections, setConnections] = useState<
     Record<string, PoiConnection[]>
   >({});
+  const [isSyncing, setIsSyncing] = useState(true);
 
   useEffect(() => {
     // 백엔드 주소와 네임스페이스에 맞게 소켓을 연결합니다.
@@ -100,6 +101,7 @@ export function usePoiSocket(workspaceId: string) {
       console.log('Syncing Data:', payload);
       setPois(payload.pois || []); // payload.pois가 없을 경우를 대비해 빈 배열을 기본값으로 설정
       setConnections(payload.connections || {});
+      setIsSyncing(false); // 최초 동기화 완료
     });
 
     // 4. 'marked' 이벤트: 다른 사용자가 추가한 POI를 실시간으로 반영합니다.
@@ -171,5 +173,5 @@ export function usePoiSocket(workspaceId: string) {
   // unmarkPoi와 마찬가지로 disconnectPoi 함수도 추가할 수 있습니다.
   // const disconnectPoi = ( ... ) => { ... };
 
-  return { pois, connections, markPoi, unmarkPoi, connectPoi };
+  return { pois, connections, isSyncing, markPoi, unmarkPoi, connectPoi };
 }

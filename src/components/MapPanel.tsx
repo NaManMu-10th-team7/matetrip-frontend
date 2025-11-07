@@ -7,6 +7,7 @@ import {
   Search,
   ChevronUp,
   ChevronDown,
+  Loader2,
 } from 'lucide-react';
 import { Button } from './ui/button'; // prettier-ignore
 import {
@@ -40,7 +41,7 @@ export function MapPanel({
 }) {
   // 2. usePoiSocket 훅을 사용하여 소켓 통신 로직을 가져온다.
   // 이제 pois 상태는 웹소켓을 통해 서버와 동기화된다.
-  const { pois, connections, markPoi, unmarkPoi, connectPoi } =
+  const { pois, connections, isSyncing, markPoi, unmarkPoi, connectPoi } =
     usePoiSocket(workspaceId);
 
   // '전체' 레이어를 포함한 전체 UI용 레이어 목록
@@ -412,6 +413,15 @@ export function MapPanel({
 
   return (
     <div className="h-full relative">
+      {isSyncing && (
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
+          <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
+          <p className="mt-4 text-lg text-gray-700">
+            워크스페이스 데이터를 동기화하는 중입니다...
+          </p>
+        </div>
+      )}
+
       <KakaoMap
         className="w-full h-full"
         ref={mapRef}
