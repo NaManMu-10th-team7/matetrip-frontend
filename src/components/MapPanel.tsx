@@ -7,11 +7,7 @@ import {
   Polyline,
   CustomOverlayMap
 } from 'react-kakao-maps-sdk'; // prettier-ignore
-import {
-  usePoiSocket,
-  Poi,
-  PoiConnection,
-} from '../hooks/usePoiSocket';
+import { usePoiSocket, Poi, PoiConnection } from '../hooks/usePoiSocket';
 
 export type DayLayer = {
   id: string; // UUID
@@ -28,9 +24,8 @@ export function MapPanel({
 }) {
   // 2. usePoiSocket 훅을 사용하여 소켓 통신 로직을 가져온다.
   // 이제 pois 상태는 웹소켓을 통해 서버와 동기화된다.
-  const { pois, connections, markPoi, unmarkPoi, connectPoi } = usePoiSocket(
-    workspaceId
-  );
+  const { pois, connections, markPoi, unmarkPoi, connectPoi } =
+    usePoiSocket(workspaceId);
 
   // '전체' 레이어를 포함한 전체 UI용 레이어 목록
   const UILayers: { id: 'all' | DayLayer['id']; label: string }[] = [
@@ -99,7 +94,7 @@ export function MapPanel({
     }
     setItinerary(newItinerary);
   }, [pois, connections, dayLayers]);
-  
+
   // 여행 일정에 장소를 추가하는 함수
   const addToItinerary = (markerToAdd: Poi) => {
     // 모든 Day를 통틀어 이미 추가된 장소인지 확인
@@ -341,6 +336,7 @@ export function MapPanel({
                     latitude: latlng.getLat(),
                     longitude: latlng.getLng(),
                     address: address,
+                    categoryName: categoryName,
                     placeName: placeName, // 마커에 표시될 내용은 장소 이름으로 설정
                   });
                 },
@@ -377,6 +373,14 @@ export function MapPanel({
                     <div className="font-bold text-sm mb-1">
                       {marker.placeName}
                     </div>
+                    {marker.categoryName && (
+                      <div className="text-xs text-gray-500 mb-1">
+                        {
+                          // "음식점 > 한식 > 냉면" 같은 카테고리 문자열에서 마지막 부분만 추출
+                          marker.categoryName.split(' > ').pop()
+                        }
+                      </div>
+                    )}
                     <div className="text-xs text-gray-600 mb-3">
                       {marker.address}
                     </div>

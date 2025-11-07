@@ -29,6 +29,7 @@ export type Poi = {
   address: string;
   placeName?: string;
   planDayId?: string;
+  categoryName?: string;
 };
 
 export type CreatePoiDto = {
@@ -39,6 +40,7 @@ export type CreatePoiDto = {
   address: string;
   placeName?: string;
   planDayId?: string;
+  categoryName?: string;
 };
 
 type RemovePoiDto = { workspaceId: string; poiId: number | string };
