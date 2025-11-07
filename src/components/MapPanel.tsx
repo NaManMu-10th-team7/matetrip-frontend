@@ -354,8 +354,12 @@ export function MapPanel({
               (c) => c.nextPoiId === currentPoiId
             );
             // connection에 있는 distance와 duration을 poi 객체에 복사합니다.
-            const poiWithConnectionInfo = { ...poi, ...inboundConnection };
-            newItinerary[dayId].push(poiWithConnectionInfo);
+            newItinerary[dayId].push({
+              ...poi,
+              // inboundConnection이 없을 수도 있으므로 optional chaining을 사용합니다.
+              distance: inboundConnection?.distance,
+              duration: inboundConnection?.duration,
+            });
           }
           currentPoiId = nextConnection?.nextPoiId;
         }
