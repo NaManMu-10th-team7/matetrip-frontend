@@ -79,15 +79,6 @@ export function Workspace({
     [planDayDtos]
   );
 
-  // dayLayers가 처음 마운트될 때 itinerary의 초기 구조를 설정합니다.
-  useEffect(() => {
-    const initialItinerary = dayLayers.reduce(
-      (acc, layer) => ({ ...acc, [layer.id]: [] }),
-      {}
-    );
-    setItinerary(initialItinerary);
-  }, [dayLayers]);
-
   return (
     <div className="h-screen flex flex-col bg-gray-50">
       {/* Header */}
