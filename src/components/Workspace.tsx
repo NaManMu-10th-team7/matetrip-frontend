@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Users,
   X,
@@ -57,13 +57,15 @@ export function Workspace({
   onEndTrip,
 }: WorkspaceProps) {
   const [showMembers, setShowMembers] = useState(false);
-  const [dayLayers] = useState<DayLayer[]>(() =>
+
+  // planDayDtos가 변경될 때마다 dayLayers를 다시 계산합니다.
+  // useMemo를 사용하여 planDayDtos가 실제로 변경되었을 때만 map 함수가 실행되도록 최적화합니다.
+  const dayLayers = useMemo(() =>
     planDayDtos.map((day) => ({
       id: day.id,
       label: day.planDate,
       color: generateColorFromString(day.id),
-    }))
-  );
+    })), [planDayDtos]);
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
