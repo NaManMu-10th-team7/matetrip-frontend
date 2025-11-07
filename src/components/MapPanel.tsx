@@ -128,7 +128,10 @@ function SearchPanel({
       status: kakao.maps.services.Status,
       pagi: KakaoPagination
     ) => {
-      if (status === KAKAO_MAP_SERVICES_STATUS.OK) {
+      if (
+        KAKAO_MAP_SERVICES_STATUS &&
+        status === KAKAO_MAP_SERVICES_STATUS.OK
+      ) {
         setResults(data);
         setPagination(pagi);
       } else if (status === KAKAO_MAP_SERVICES_STATUS.ZERO_RESULT) {
@@ -540,7 +543,10 @@ export function MapPanel({
             latlng.getLng(),
             latlng.getLat(),
             (result, status) => {
-              if (status !== KAKAO_MAP_SERVICES_STATUS.OK) {
+              if (
+                !KAKAO_MAP_SERVICES_STATUS ||
+                status !== KAKAO_MAP_SERVICES_STATUS.OK
+              ) {
                 console.error(
                   'Geocoder가 주소를 가져오는 데 실패했습니다. 상태:',
                   status
@@ -567,7 +573,10 @@ export function MapPanel({
                   let placeName = searchKeyword;
                   let categoryName: string | undefined = undefined;
 
-                  if (status === KAKAO_MAP_SERVICES_STATUS.OK) {
+                  if (
+                    KAKAO_MAP_SERVICES_STATUS &&
+                    status === KAKAO_MAP_SERVICES_STATUS.OK
+                  ) {
                     // 검색 결과 중 첫 번째 장소의 정보를 사용합니다.
                     const place = data[0];
                     placeName = place.place_name;
