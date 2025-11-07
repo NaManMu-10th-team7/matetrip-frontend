@@ -96,12 +96,21 @@ export function usePoiSocket(workspaceId: string) {
       console.log(`Joined workspace: ${data.workspaceId}`);
     });
 
+    // SYNC 타임아웃 설정 (예: 10초)
+    const syncTimeout = setTimeout(() => {
+      console.error('SYNC 타임아웃: 서버 응답이 없습니다.');
+      setIsSyncing(false);
+      // 사용자에게 알림을 보여주는 로직을 추가할 수도 있습니다.
+      // 예: alert('데이터를 불러오는 데 실패했습니다. 페이지를 새로고침해주세요.');
+    }, 10000);
+
     // 3. 'sync' 이벤트: 서버로부터 초기 POI 목록을 받아 상태를 업데이트합니다.
     socket.on(PoiSocketEvent.SYNC, (payload: SyncPayload) => {
+      clearTimeout(syncTimeout); // SYNC 성공 시 타임아웃을 제거합니다.
       console.log('Syncing Data:', payload);
       setPois(payload.pois || []); // payload.pois가 없을 경우를 대비해 빈 배열을 기본값으로 설정
       setConnections(payload.connections || {});
-      setIsSyncing(false); // 최초 동기화 완료
+      setIsSyncing(false);
     });
 
     // 4. 'marked' 이벤트: 다른 사용자가 추가한 POI를 실시간으로 반영합니다.
@@ -132,6 +141,7 @@ export function usePoiSocket(workspaceId: string) {
     // 컴포넌트 언마운트 시 소켓 연결을 해제합니다.
     return () => {
       console.log('Disconnecting socket...');
+      clearTimeout(syncTimeout); // 컴포넌트 언마운트 시 타임아웃도 정리합니다.
       socket.emit(PoiSocketEvent.LEAVE, { workspaceId });
       socket.disconnect();
     };
