@@ -385,6 +385,12 @@ export function MapPanel({
 
   // 여행 일정에 장소를 추가하는 함수
   const addToItinerary = async (markerToAdd: Poi) => {
+    if (!KAKAO_REST_API_KEY) {
+      console.error('Kakao REST API Key가 설정되지 않았습니다.');
+      alert('경로 계산 기능을 사용할 수 없습니다. API 키를 확인해주세요.');
+      return;
+    }
+
     const isAlreadyAdded = Object.values(itinerary)
       .flat()
       .some((item) => item.id === markerToAdd.id);
