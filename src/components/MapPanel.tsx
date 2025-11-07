@@ -1,6 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Plus, Maximize2, Layers, ListOrdered } from 'lucide-react';
-import axios from 'axios';
 import { Button } from './ui/button';
 import {
   Map as KakaoMap,
@@ -9,6 +8,7 @@ import {
   CustomOverlayMap
 } from 'react-kakao-maps-sdk'; // prettier-ignore
 import { usePoiSocket, Poi, PoiConnection } from '../hooks/usePoiSocket';
+import { useDirections } from '../hooks/useDirections';
 
 export type DayLayer = {
   id: string; // UUID
@@ -96,9 +96,11 @@ export function MapPanel({
     setItinerary(newItinerary);
   }, [pois, connections, dayLayers]);
 
+  // 3. useDirections 훅을 사용하여 itinerary 기반으로 전체 경로를 가져옵니다.
+  const { routePaths } = useDirections(itinerary);
+
   // 여행 일정에 장소를 추가하는 함수
-  // 길찾기 API가 비동기이므로 async 함수로 변경합니다.
-  const addToItinerary = async (markerToAdd: Poi) => {
+  const addToItinerary = (markerToAdd: Poi) => {
     const isAlreadyAdded = Object.values(itinerary)
       .flat()
       .some((item) => item.id === markerToAdd.id);
@@ -117,54 +119,15 @@ export function MapPanel({
     const currentDayItinerary = itinerary[targetDayId] || [];
     const lastPoiInDay = currentDayItinerary[currentDayItinerary.length - 1];
 
-    // 만약 해당 날짜에 이미 장소가 있다면, 마지막 장소와 새 장소를 연결합니다.
     if (lastPoiInDay) {
-      try {
-        const KAKAO_REST_API_KEY = import.meta.env
-          .VITE_REACT_APP_KAKAOMAP_REST_KEY;
-        if (!KAKAO_REST_API_KEY) {
-          throw new Error('Kakao REST API Key가 설정되지 않았습니다.');
-        }
-
-        const origin = `${lastPoiInDay.longitude},${lastPoiInDay.latitude}`;
-        const destination = `${markerToAdd.longitude},${markerToAdd.latitude}`;
-
-        const response = await axios.get(
-          'https://apis-navi.kakaomobility.com/v1/directions',
-          {
-            headers: {
-              Authorization: `KakaoAK ${KAKAO_REST_API_KEY}`,
-              'Content-Type': 'application/json',
-            },
-            params: { origin, destination },
-          }
-        );
-
-        const route = response.data.routes[0];
-        if (route) {
-          const summary = route.summary;
-          console.log('길찾기 성공:', {
-            distance: summary.distance,
-            duration: summary.duration,
-          });
-          // 거리와 시간 정보를 포함하여 connectPoi 호출
-          connectPoi({
-            prevPoiId: lastPoiInDay.id,
-            nextPoiId: markerToAdd.id,
-            planDayId: targetDayId,
-            distance: summary.distance, // 미터 단위
-            duration: summary.duration, // 초 단위
-          });
-        }
-      } catch (error) {
-        console.error('카카오모빌리티 API 호출 중 오류 발생:', error);
-        // 길찾기에 실패하더라도 거리/시간 정보 없이 연결은 시도합니다.
-        connectPoi({
-          prevPoiId: lastPoiInDay.id,
-          nextPoiId: markerToAdd.id,
-          planDayId: targetDayId,
-        });
-      }
+      // 마지막 장소가 있으면 연결 정보만 서버로 보냅니다.
+      // 거리/시간 계산은 백엔드에서 처리하거나, 필요 시 여기서도 가능합니다.
+      // 지금은 경로 표시에 집중하므로 connect만 호출합니다.
+      connectPoi({
+        prevPoiId: lastPoiInDay.id,
+        nextPoiId: markerToAdd.id,
+        planDayId: targetDayId,
+      });
     }
 
     // 로컬 상태를 즉시 업데이트하여 UI에 반영합니다.
@@ -278,19 +241,6 @@ export function MapPanel({
     selectedLayer === 'all'
       ? pois || []
       : (pois || []).filter((p) => p.planDayId === selectedLayer);
-
-  // itinerary 데이터를 기반으로 Polyline 경로를 동적으로 생성
-  const polylinePaths = dayLayers.reduce(
-    (acc, layer) => {
-      const path =
-        itinerary[layer.id]?.map((m) => ({
-          lat: m.latitude,
-          lng: m.longitude,
-        })) || [];
-      return { ...acc, [layer.id]: path };
-    },
-    {} as Record<DayLayer['id'], { lat: number; lng: number }[]>
-  );
 
   // 마커 위에 정보창(infowindow)을 표시하기 위한 상태
   const [openInfoWindow, setOpenInfoWindow] = useState<string | number | null>(
@@ -504,30 +454,22 @@ export function MapPanel({
           );
         })}
 
-        {/* 모든 Day 레이어를 순회하며 Polyline을 동적으로 렌더링 */}
+        {/* useDirections 훅에서 받아온 실제 경로를 Polyline으로 렌더링 */}
         {dayLayers.map((layer) => {
           const shouldDisplay =
             selectedLayer === 'all' || selectedLayer === layer.id;
-          const dayPath = polylinePaths[layer.id];
+          const dayPath = routePaths[layer.id];
           return (
             shouldDisplay &&
-            dayPath.length > 1 &&
-            // 경로를 구간별로 나누어 각각의 Polyline으로 렌더링합니다.
-            dayPath.map((_, index) => {
-              if (index === 0) return null; // 첫 번째 점에서는 시작만 하므로 선을 그리지 않습니다.
-              const segmentPath = [dayPath[index - 1], dayPath[index]];
-              return (
-                <Polyline
-                  key={`polyline-${layer.id}-${index}`}
-                  path={segmentPath}
-                  strokeWeight={3}
-                  strokeColor={layer.color}
-                  strokeOpacity={0.8}
-                  strokeStyle={'solid'}
-                  endArrow={true} // 선의 끝에 화살표를 추가합니다.
-                />
-              );
-            })
+            dayPath && (
+              <Polyline
+                path={dayPath}
+                strokeWeight={4} // 경로가 잘 보이도록 두께 조정
+                strokeColor={layer.color}
+                strokeOpacity={0.8}
+                strokeStyle={'solid'}
+              />
+            )
           );
         })}
 
