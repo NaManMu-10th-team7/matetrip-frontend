@@ -52,16 +52,6 @@ export function Workspace({
     }))
   );
 
-  useEffect(() => {
-    setDayLayers(
-      planDayDtos.map((day) => ({
-        id: day.id,
-        label: day.planDate,
-        color: generateRandomColor(),
-      }))
-    );
-  }, [planDayDtos]);
-
   return (
     <div className="h-screen flex flex-col bg-gray-50">
       {/* Header */}
