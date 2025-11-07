@@ -43,9 +43,11 @@ const generateColorFromString = (str: string) => {
   let color = '#';
   for (let i = 0; i < 3; i++) {
     // 해시 값을 사용하여 RGB 각 채널의 색상 값을 생성합니다.
-    // 0x80을 더해 너무 어두운 색상이 생성되는 것을 방지하고, 0xFF로 AND 연산을 하여 255를 넘지 않도록 합니다.
     const value = (hash >> (i * 8)) & 0xff;
-    color += `00${(value + 0x80) % 256 < 128 ? value + 128 : value}`.slice(-2);
+    // 값을 128-255 범위로 조정하여 너무 어두운 색상을 방지합니다.
+    const brightValue = Math.floor(value / 2) + 128;
+    // 값을 16진수로 변환하고, 한 자리 수일 경우 앞에 '0'을 붙여 두 자리로 만듭니다.
+    color += brightValue.toString(16).padStart(2, '0');
   }
   return color.toUpperCase();
 };
