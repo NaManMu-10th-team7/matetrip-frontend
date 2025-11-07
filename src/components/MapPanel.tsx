@@ -105,7 +105,12 @@ function SearchPanel({
     // 검색 시 결과 창을 항상 펼칩니다.
     setIsResultsVisible(true);
 
-    if (!window.kakao || !window.kakao.maps || !window.kakao.maps.services) {
+    if (
+      !window.kakao ||
+      !window.kakao.maps ||
+      !window.kakao.maps.services ||
+      !KAKAO_MAP_SERVICES_STATUS
+    ) {
       alert('카카오 지도 서비스가 로드되지 않았습니다.');
       return;
     }
