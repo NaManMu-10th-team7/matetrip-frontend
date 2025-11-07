@@ -651,6 +651,7 @@ export function MapPanel({
             shouldDisplay &&
             dayPath && (
               <Polyline
+                key={layer.id}
                 path={dayPath}
                 strokeWeight={4} // 경로가 잘 보이도록 두께 조정
                 strokeColor={layer.color}
