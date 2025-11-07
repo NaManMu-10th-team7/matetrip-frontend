@@ -50,6 +50,8 @@ export type CreatePoiConnectionDto = {
   prevPoiId: number | string;
   nextPoiId: number | string;
   planDayId: string;
+  distance?: number; // 미터(m) 단위
+  duration?: number; // 초(s) 단위
 };
 
 // 백엔드에서 오는 Connection의 실제 타입

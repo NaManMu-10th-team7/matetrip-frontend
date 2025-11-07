@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Plus, Maximize2, Layers, ListOrdered } from 'lucide-react';
+import axios from 'axios';
 import { Button } from './ui/button';
 import {
   Map as KakaoMap,
@@ -96,8 +97,8 @@ export function MapPanel({
   }, [pois, connections, dayLayers]);
 
   // 여행 일정에 장소를 추가하는 함수
-  const addToItinerary = (markerToAdd: Poi) => {
-    // 모든 Day를 통틀어 이미 추가된 장소인지 확인
+  // 길찾기 API가 비동기이므로 async 함수로 변경합니다.
+  const addToItinerary = async (markerToAdd: Poi) => {
     const isAlreadyAdded = Object.values(itinerary)
       .flat()
       .some((item) => item.id === markerToAdd.id);
@@ -118,11 +119,52 @@ export function MapPanel({
 
     // 만약 해당 날짜에 이미 장소가 있다면, 마지막 장소와 새 장소를 연결합니다.
     if (lastPoiInDay) {
-      connectPoi({
-        prevPoiId: lastPoiInDay.id,
-        nextPoiId: markerToAdd.id,
-        planDayId: targetDayId,
-      });
+      try {
+        const KAKAO_REST_API_KEY = import.meta.env
+          .VITE_REACT_APP_KAKAOMAP_REST_KEY;
+        if (!KAKAO_REST_API_KEY) {
+          throw new Error('Kakao REST API Key가 설정되지 않았습니다.');
+        }
+
+        const origin = `${lastPoiInDay.longitude},${lastPoiInDay.latitude}`;
+        const destination = `${markerToAdd.longitude},${markerToAdd.latitude}`;
+
+        const response = await axios.get(
+          'https://apis-navi.kakaomobility.com/v1/directions',
+          {
+            headers: {
+              Authorization: `KakaoAK ${KAKAO_REST_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            params: { origin, destination },
+          }
+        );
+
+        const route = response.data.routes[0];
+        if (route) {
+          const summary = route.summary;
+          console.log('길찾기 성공:', {
+            distance: summary.distance,
+            duration: summary.duration,
+          });
+          // 거리와 시간 정보를 포함하여 connectPoi 호출
+          connectPoi({
+            prevPoiId: lastPoiInDay.id,
+            nextPoiId: markerToAdd.id,
+            planDayId: targetDayId,
+            distance: summary.distance, // 미터 단위
+            duration: summary.duration, // 초 단위
+          });
+        }
+      } catch (error) {
+        console.error('카카오모빌리티 API 호출 중 오류 발생:', error);
+        // 길찾기에 실패하더라도 거리/시간 정보 없이 연결은 시도합니다.
+        connectPoi({
+          prevPoiId: lastPoiInDay.id,
+          nextPoiId: markerToAdd.id,
+          planDayId: targetDayId,
+        });
+      }
     }
 
     // 로컬 상태를 즉시 업데이트하여 UI에 반영합니다.
