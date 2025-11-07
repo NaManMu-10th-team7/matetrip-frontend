@@ -25,6 +25,7 @@ interface ParticipantTileProps {
   onToggleMic: () => void;
 }
 
+// 하나의 객체 ( session 안에 있는 하나의 유저 공간 )
 function ParticipantTile({
   streamManager,
   isLocal,
@@ -47,10 +48,11 @@ function ParticipantTile({
   const localButton = 'bg-transparent text-white focus-visible:outline-none';
 
   const highlightClass = isSpeaking
-    ? 'border-2 border-blue-400 shadow-[0_0_36px_rgba(59,130,246,0.5)]'
-    : 'border-2 border-transparent shadow-[0_0_36px_rgba(59,130,246,0.5)]';
+    ? 'border-4 border-blue-400 shadow-[0_0_36px_rgba(59,130,246,0.5)]'
+    : 'border-4 border-transparent shadow-[0_0_36px_rgba(59,130,246,0.5)]';
 
   return (
+    //모서리 둥글게가 안돼서 style 로 강제함
     <div
       className={` group relative flex h-full w-full transition-all duration-200 overflow-hidden ${highlightClass}
       `}
@@ -73,6 +75,7 @@ function ParticipantTile({
         </div>
       )}
 
+      {/* 버튼들 [카메라 & 마이크 ] */}
       <div
         className={`absolute inset-x-0 bottom-0 flex items-center gap-3 px-4 py-3 text-white ${controlsClass}`}
       >
@@ -187,7 +190,7 @@ export const VideoChat = ({ workspaceId }: Props) => {
           return next;
         });
       });
-
+      //화면이랑 마이크 상태 체크(react한테 state 전해주기 위함)
       newSession.on(
         'streamPropertyChanged',
         (event: StreamPropertyChangedEvent) => {
@@ -372,6 +375,7 @@ export const VideoChat = ({ workspaceId }: Props) => {
     if (participantCount === 2) return 2;
     if (participantCount === 3) return 3;
     if (participantCount === 4) return 2;
+    //열 최대가 3임. 그 이후에는 행이 늘어남
     return Math.min(3, Math.ceil(Math.sqrt(participantCount)));
   })();
   console.log('VideoChat participantCount:', participantCount);
