@@ -36,9 +36,11 @@ const KAKAO_MAP_SERVICES_STATUS = window.kakao?.maps.services.Status;
 function ItineraryPanel({
   itinerary,
   dayLayers,
+  onPoiClick,
 }: {
   itinerary: Record<string, Poi[]>;
   dayLayers: DayLayer[];
+  onPoiClick: (poi: Poi) => void;
 }) {
   return (
     <div className="absolute top-4 right-4 z-10 bg-white rounded-lg shadow-lg p-3 space-y-2 w-60 max-h-[calc(100vh-5rem)] overflow-y-auto">
@@ -58,7 +60,11 @@ function ItineraryPanel({
             <ul className="space-y-2">
               {itinerary[layer.id] && itinerary[layer.id].length > 0 ? (
                 itinerary[layer.id].map((poi, index) => (
-                  <li key={poi.id} className="flex items-center gap-2 text-xs">
+                  <li
+                    key={poi.id}
+                    className="flex items-center gap-2 text-xs p-1 rounded-md cursor-pointer hover:bg-gray-100"
+                    onClick={() => onPoiClick(poi)}
+                  >
                     <span
                       className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full text-white text-xs"
                       style={{ backgroundColor: layer.color }}
@@ -408,6 +414,17 @@ export function MapPanel({
     map.panTo(moveLatLon);
   };
 
+  // 일정 패널의 POI 클릭 시 지도를 해당 위치로 이동시키는 함수
+  const handlePoiClick = (poi: Poi) => {
+    const map = mapRef.current;
+    if (!map) return;
+    const moveLatLon = new window.kakao.maps.LatLng(
+      poi.latitude,
+      poi.longitude
+    );
+    map.panTo(moveLatLon);
+  };
+
   return (
     <div className="h-full relative">
       {isSyncing && (
@@ -650,7 +667,11 @@ export function MapPanel({
           UILayers={UILayers}
         />
         <SearchPanel onPlaceClick={handlePlaceClick} />
-        <ItineraryPanel itinerary={itinerary} dayLayers={dayLayers} />
+        <ItineraryPanel
+          itinerary={itinerary}
+          dayLayers={dayLayers}
+          onPoiClick={handlePoiClick}
+        />
       </KakaoMap>
     </div>
   );
