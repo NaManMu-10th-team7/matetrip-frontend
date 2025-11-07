@@ -32,6 +32,241 @@ type KakaoPagination = kakao.maps.services.Pagination;
 
 const KAKAO_MAP_SERVICES_STATUS = window.kakao?.maps.services.Status;
 
+// 여행 일정 목록을 보여주는 새로운 컴포넌트
+function ItineraryPanel({
+  itinerary,
+  dayLayers,
+}: {
+  itinerary: Record<string, Poi[]>;
+  dayLayers: DayLayer[];
+}) {
+  return (
+    <div className="absolute top-4 right-4 z-10 bg-white rounded-lg shadow-lg p-3 space-y-2 w-60 max-h-[calc(100vh-5rem)] overflow-y-auto">
+      <div className="flex items-center gap-2 mb-2">
+        <ListOrdered className="w-4 h-4 text-gray-600" />
+        <span className="text-sm font-semibold">여행 일정</span>
+      </div>
+      <div className="space-y-3">
+        {dayLayers.map((layer) => (
+          <div key={layer.id}>
+            <h3
+              className="text-sm font-bold mb-2 pb-1 border-b"
+              style={{ borderBottomColor: layer.color }}
+            >
+              {layer.label}
+            </h3>
+            <ul className="space-y-2">
+              {itinerary[layer.id] && itinerary[layer.id].length > 0 ? (
+                itinerary[layer.id].map((poi, index) => (
+                  <li
+                    key={poi.id}
+                    className="flex items-center gap-2 text-xs"
+                  >
+                    <span
+                      className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full text-white text-xs"
+                      style={{ backgroundColor: layer.color }}
+                    >
+                      {index + 1}
+                    </span>
+                    <span className="truncate">{poi.placeName}</span>
+                  </li>
+                ))
+              ) : (
+                <p className="text-xs text-gray-500">
+                  추가된 장소가 없습니다.
+                </p>
+              )}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// 장소 검색 패널 컴포넌트
+function SearchPanel({
+  onPlaceClick,
+}: {
+  onPlaceClick: (place: KakaoPlace) => void;
+}) {
+  const [keyword, setKeyword] = useState('');
+  const [results, setResults] = useState<KakaoPlace[]>([]);
+  const [pagination, setPagination] = useState<KakaoPagination | null>(null);
+  const [isResultsVisible, setIsResultsVisible] = useState(true);
+
+  const handleSearch = useCallback(() => {
+    if (!keyword.trim()) {
+      alert('검색어를 입력해주세요.');
+      return;
+    }
+
+    // 검색 시 결과 창을 항상 펼칩니다.
+    setIsResultsVisible(true);
+
+    if (!window.kakao || !window.kakao.maps || !window.kakao.maps.services) {
+      alert('카카오 지도 서비스가 로드되지 않았습니다.');
+      return;
+    }
+
+    const places = new window.kakao.maps.services.Places();
+    // 페이지네이션 콜백 함수
+    const searchCallback = (
+      data: KakaoPlace[],
+      status: kakao.maps.services.Status,
+      pagi: KakaoPagination
+    ) => {
+      if (status === KAKAO_MAP_SERVICES_STATUS.OK) {
+        setResults(data);
+        setPagination(pagi);
+      } else if (status === KAKAO_MAP_SERVICES_STATUS.ZERO_RESULT) {
+        alert('검색 결과가 없습니다.');
+        setResults([]);
+        setPagination(null);
+      } else {
+        alert('검색 중 오류가 발생했습니다.');
+        setResults([]);
+        setPagination(null);
+      }
+    };
+
+    places.keywordSearch(keyword, searchCallback);
+  }, [keyword]);
+
+  return (
+    <div className="absolute top-4 left-40 z-10 bg-white rounded-lg shadow-lg p-3 space-y-2 w-64 max-h-[calc(100vh-5rem)] flex flex-col">
+      <div className="flex items-center gap-2 mb-1">
+        <Search className="w-4 h-4 text-gray-600" />
+        <span className="text-sm font-semibold">장소 검색</span>
+      </div>
+
+      <div className="flex gap-2">
+        <Input
+          type="text"
+          placeholder="장소, 주소 검색"
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+          className="h-9"
+        />
+        <Button size="sm" onClick={handleSearch} className="h-9">
+          검색
+        </Button>
+      </div>
+      {/* 검색 결과가 있을 때만 접기/펴기 버튼을 표시합니다. */}
+      {results.length > 0 && (
+        <div className="border-t pt-1">
+          <Button
+            variant="ghost"
+            className="w-full h-6"
+            onClick={() => setIsResultsVisible(!isResultsVisible)}
+          >
+            {isResultsVisible ? (
+              <ChevronUp className="w-4 h-4 text-gray-500" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-gray-500" />
+            )}
+          </Button>
+        </div>
+      )}
+      {isResultsVisible && (
+        <>
+          <ul className="overflow-y-auto space-y-2 pt-2 max-h-[400px]">
+            {results.map((place) => (
+              <li
+                key={place.id}
+                className="p-2 rounded-md hover:bg-gray-100 cursor-pointer"
+                onClick={() => onPlaceClick(place)}
+              >
+                <div className="text-sm font-semibold truncate">
+                  {place.place_name}
+                </div>
+                <div className="text-xs text-gray-500 truncate">
+                  {place.road_address_name || place.address_name}
+                </div>
+              </li>
+            ))}
+          </ul>
+          {pagination && results.length > 0 && (
+            <div className="flex justify-center items-center gap-3 pt-2 border-t">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => pagination.gotoPage(pagination.current - 1)}
+                disabled={!pagination.hasPrevPage}
+                className="h-7 px-2"
+              >
+                이전
+              </Button>
+              <span className="text-xs">
+                {pagination.current} / {Math.ceil(pagination.totalCount / 15)}
+              </span>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => pagination.gotoPage(pagination.current + 1)}
+                disabled={!pagination.hasNextPage}
+                className="h-7 px-2"
+              >
+                다음
+              </Button>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// MapUI 컴포넌트가 selectedLayer 상태와 상태 변경 함수를 props로 받도록 수정
+function MapUI({
+  selectedLayer,
+  setSelectedLayer,
+  UILayers,
+}: {
+  // 2. MapUI 컴포넌트의 props 타입도 동적으로 변경된 타입에 맞게 수정합니다.
+  selectedLayer: 'all' | string;
+  setSelectedLayer: React.Dispatch<React.SetStateAction<'all' | string>>;
+  UILayers: { id: 'all' | DayLayer['id']; label: string }[];
+}) {
+  return (
+    <>
+      {/* Layer Controls */}
+      <div className="absolute top-4 left-4 z-10 bg-white rounded-lg shadow-lg p-3 space-y-2 w-32">
+        <div className="flex items-center gap-2 mb-2">
+          <Layers className="w-4 h-4 text-gray-600" />
+          <span className="text-sm">레이어</span>
+        </div>
+        {UILayers.map((layer) => (
+          <button
+            key={layer.id}
+            onClick={() => setSelectedLayer(layer.id)}
+            className={`w-full px-3 py-2 rounded text-sm transition-colors ${
+              selectedLayer === layer.id
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            {layer.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Action Buttons */}
+      <div className="absolute bottom-4 right-4 z-10 flex flex-col gap-2">
+        <Button size="sm" className="gap-2 bg-blue-600 hover:bg-blue-700">
+          <Plus className="w-4 h-4" />
+          여행지 추가
+        </Button>
+        <Button size="sm" variant="outline" className="gap-2 bg-white">
+          <Maximize2 className="w-4 h-4" />
+          전체 화면
+        </Button>
+      </div>
+    </>
+  );
+}
+
 export function MapPanel({
   workspaceId,
   dayLayers,
@@ -152,239 +387,6 @@ export function MapPanel({
     const newItineraryForDay = [...(itinerary[targetDayId] || []), markerToAdd];
     setItinerary({ ...itinerary, [targetDayId]: newItineraryForDay });
   };
-
-  // 여행 일정 목록을 보여주는 새로운 컴포넌트
-  function ItineraryPanel({
-    itinerary,
-    dayLayers,
-  }: {
-    itinerary: Record<string, Poi[]>;
-    dayLayers: DayLayer[];
-  }) {
-    return (
-      <div className="absolute top-4 right-4 z-10 bg-white rounded-lg shadow-lg p-3 space-y-2 w-60 max-h-[calc(100vh-5rem)] overflow-y-auto">
-        <div className="flex items-center gap-2 mb-2">
-          <ListOrdered className="w-4 h-4 text-gray-600" />
-          <span className="text-sm font-semibold">여행 일정</span>
-        </div>
-        <div className="space-y-3">
-          {dayLayers.map((layer) => (
-            <div key={layer.id}>
-              <h3
-                className="text-sm font-bold mb-2 pb-1 border-b"
-                style={{ borderBottomColor: layer.color }}
-              >
-                {layer.label}
-              </h3>
-              <ul className="space-y-2">
-                {itinerary[layer.id] && itinerary[layer.id].length > 0 ? (
-                  itinerary[layer.id].map((poi, index) => (
-                    <li
-                      key={poi.id}
-                      className="flex items-center gap-2 text-xs"
-                    >
-                      <span
-                        className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full text-white text-xs"
-                        style={{ backgroundColor: layer.color }}
-                      >
-                        {index + 1}
-                      </span>
-                      <span className="truncate">{poi.placeName}</span>
-                    </li>
-                  ))
-                ) : (
-                  <p className="text-xs text-gray-500">
-                    추가된 장소가 없습니다.
-                  </p>
-                )}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  // 장소 검색 패널 컴포넌트
-  function SearchPanel({
-    onPlaceClick,
-  }: {
-    onPlaceClick: (place: KakaoPlace) => void;
-  }) {
-    const [keyword, setKeyword] = useState('');
-    const [results, setResults] = useState<KakaoPlace[]>([]);
-    const [pagination, setPagination] = useState<KakaoPagination | null>(null);
-    const [isResultsVisible, setIsResultsVisible] = useState(true);
-
-    const handleSearch = useCallback(() => {
-      if (!keyword.trim()) {
-        alert('검색어를 입력해주세요.');
-        return;
-      }
-
-      // 검색 시 결과 창을 항상 펼칩니다.
-      setIsResultsVisible(true);
-
-      if (!window.kakao || !window.kakao.maps || !window.kakao.maps.services) {
-        alert('카카오 지도 서비스가 로드되지 않았습니다.');
-        return;
-      }
-
-      const places = new window.kakao.maps.services.Places();
-      // 페이지네이션 콜백 함수
-      const searchCallback = (
-        data: KakaoPlace[],
-        status: kakao.maps.services.Status,
-        pagi: KakaoPagination
-      ) => {
-        if (status === KAKAO_MAP_SERVICES_STATUS.OK) {
-          setResults(data);
-          setPagination(pagi);
-        } else if (status === KAKAO_MAP_SERVICES_STATUS.ZERO_RESULT) {
-          alert('검색 결과가 없습니다.');
-          setResults([]);
-          setPagination(null);
-        } else {
-          alert('검색 중 오류가 발생했습니다.');
-          setResults([]);
-          setPagination(null);
-        }
-      };
-
-      places.keywordSearch(keyword, searchCallback);
-    }, [keyword]);
-
-    return (
-      <div className="absolute top-4 left-40 z-10 bg-white rounded-lg shadow-lg p-3 space-y-2 w-64 max-h-[calc(100vh-5rem)] flex flex-col">
-        <div className="flex items-center gap-2 mb-1">
-          <Search className="w-4 h-4 text-gray-600" />
-          <span className="text-sm font-semibold">장소 검색</span>
-        </div>
-
-        <div className="flex gap-2">
-          <Input
-            type="text"
-            placeholder="장소, 주소 검색"
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            className="h-9"
-          />
-          <Button size="sm" onClick={handleSearch} className="h-9">
-            검색
-          </Button>
-        </div>
-        {/* 검색 결과가 있을 때만 접기/펴기 버튼을 표시합니다. */}
-        {results.length > 0 && (
-          <div className="border-t pt-1">
-            <Button
-              variant="ghost"
-              className="w-full h-6"
-              onClick={() => setIsResultsVisible(!isResultsVisible)}
-            >
-              {isResultsVisible ? (
-                <ChevronUp className="w-4 h-4 text-gray-500" />
-              ) : (
-                <ChevronDown className="w-4 h-4 text-gray-500" />
-              )}
-            </Button>
-          </div>
-        )}
-        {isResultsVisible && (
-          <>
-            <ul className="overflow-y-auto space-y-2 pt-2 max-h-[400px]">
-              {results.map((place) => (
-                <li
-                  key={place.id}
-                  className="p-2 rounded-md hover:bg-gray-100 cursor-pointer"
-                  onClick={() => onPlaceClick(place)}
-                >
-                  <div className="text-sm font-semibold truncate">
-                    {place.place_name}
-                  </div>
-                  <div className="text-xs text-gray-500 truncate">
-                    {place.road_address_name || place.address_name}
-                  </div>
-                </li>
-              ))}
-            </ul>
-            {pagination && results.length > 0 && (
-              <div className="flex justify-center items-center gap-3 pt-2 border-t">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => pagination.gotoPage(pagination.current - 1)}
-                  disabled={!pagination.hasPrevPage}
-                  className="h-7 px-2"
-                >
-                  이전
-                </Button>
-                <span className="text-xs">
-                  {pagination.current} / {Math.ceil(pagination.totalCount / 15)}
-                </span>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => pagination.gotoPage(pagination.current + 1)}
-                  disabled={!pagination.hasNextPage}
-                  className="h-7 px-2"
-                >
-                  다음
-                </Button>
-              </div>
-            )}
-          </>
-        )}
-      </div>
-    );
-  }
-
-  // MapUI 컴포넌트가 selectedLayer 상태와 상태 변경 함수를 props로 받도록 수정
-  function MapUI({
-    selectedLayer,
-    setSelectedLayer,
-  }: {
-    // 2. MapUI 컴포넌트의 props 타입도 동적으로 변경된 타입에 맞게 수정합니다.
-    selectedLayer: 'all' | string;
-    setSelectedLayer: React.Dispatch<React.SetStateAction<'all' | string>>;
-  }) {
-    return (
-      <>
-        {/* Layer Controls */}
-        <div className="absolute top-4 left-4 z-10 bg-white rounded-lg shadow-lg p-3 space-y-2 w-32">
-          <div className="flex items-center gap-2 mb-2">
-            <Layers className="w-4 h-4 text-gray-600" />
-            <span className="text-sm">레이어</span>
-          </div>
-          {UILayers.map((layer) => (
-            <button
-              key={layer.id}
-              onClick={() => setSelectedLayer(layer.id)}
-              className={`w-full px-3 py-2 rounded text-sm transition-colors ${
-                selectedLayer === layer.id
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              {layer.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Action Buttons */}
-        <div className="absolute bottom-4 right-4 z-10 flex flex-col gap-2">
-          <Button size="sm" className="gap-2 bg-blue-600 hover:bg-blue-700">
-            <Plus className="w-4 h-4" />
-            여행지 추가
-          </Button>
-          <Button size="sm" variant="outline" className="gap-2 bg-white">
-            <Maximize2 className="w-4 h-4" />
-            전체 화면
-          </Button>
-        </div>
-      </>
-    );
-  }
 
   // 선택된 레이어에 따라 표시할 마커들을 결정
   const markersToDisplay =
@@ -650,6 +652,7 @@ export function MapPanel({
         <MapUI
           selectedLayer={selectedLayer}
           setSelectedLayer={setSelectedLayer}
+          UILayers={UILayers}
         />
         <SearchPanel onPlaceClick={handlePlaceClick} />
         <ItineraryPanel itinerary={itinerary} dayLayers={dayLayers} />
