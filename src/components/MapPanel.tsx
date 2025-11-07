@@ -7,7 +7,7 @@ import {
   Polyline,
   CustomOverlayMap
 } from 'react-kakao-maps-sdk'; // prettier-ignore
-import { usePoiSocket, Poi, PoiConnection } from '../hooks/usePoiSocket';
+import { usePoiSocket, type Poi } from '../hooks/usePoiSocket';
 import { Input } from './ui/input';
 import { useDirections } from '../hooks/useDirections';
 
@@ -333,7 +333,10 @@ export function MapPanel({
   const handlePlaceClick = (place: KakaoPlace) => {
     const map = mapRef.current;
     if (!map) return;
-    const moveLatLon = new window.kakao.maps.LatLng(Number(place.y), Number(place.x));
+    const moveLatLon = new window.kakao.maps.LatLng(
+      Number(place.y),
+      Number(place.x)
+    );
     map.panTo(moveLatLon);
   };
 
@@ -433,7 +436,7 @@ export function MapPanel({
           );
         }}
       >
-        {markersToDisplay.map((marker, index) => (
+        {markersToDisplay.map((marker) => (
           <MapMarker
             key={`marker-${marker.id}`} // key는 고유해야 합니다.
             position={{ lat: marker.latitude, lng: marker.longitude }}
