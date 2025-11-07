@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Users,
   X,
@@ -57,7 +57,7 @@ export function Workspace({
   onEndTrip,
 }: WorkspaceProps) {
   const [showMembers, setShowMembers] = useState(false);
-  const [dayLayers, setDayLayers] = useState<DayLayer[]>(() =>
+  const [dayLayers] = useState<DayLayer[]>(() =>
     planDayDtos.map((day) => ({
       id: day.id,
       label: day.planDate,
