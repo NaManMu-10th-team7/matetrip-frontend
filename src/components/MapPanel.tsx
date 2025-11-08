@@ -604,7 +604,7 @@ export function MapPanel({
                 {
                   location: latlng, // 현재 클릭한 좌표를 중심으로
                   radius: 50, // 50미터 반경 내에서 검색합니다.
-                  sort: window.kakao.maps.services.SortBy.DISTANCE, // 거리순으로 정렬
+                  sort: window.kakao.maps.services.SortBy?.DISTANCE, // 거리순으로 정렬
                 }
               );
             }
