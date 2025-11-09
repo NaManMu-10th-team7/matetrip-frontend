@@ -142,6 +142,41 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
         });
 
         if (loginResponse.status === 200) {
+          // 📌메인페이지 가기 전에 임베딩 처리 하기 (matching-profile 에 내용넣기)
+
+          const userId =
+            signupResponse.data?.id || loginResponse.data?.user?.id;
+
+          if (userId) {
+            const syncPayload: {
+              //SyncMatchingProfileDto
+              //userId: string;
+              description: string;
+              // travelTendencyTypes?: string[];
+              // travelTendencies?: string[];
+            } = {
+              //userId,
+              description: formData.description || '',
+              // > 0이면 최소 한 개는 선택된 상태라는 뜻이고, 그럴 때만 해당 필드를 DTO에 포함
+              // ...(formData.travelStyles.length > 0 && {
+              //   travelTendencyTypes: formData.travelStyles,
+              // }),
+              // ...(formData.travelTendency.length > 0 && {
+              //   travelTendencies: formData.travelTendency,
+              // }),
+            };
+
+            try {
+              await client.post('/matching/profile/embedding', syncPayload); // summary 랑 embedding 호출
+            } catch (syncError) {
+              console.error('Matching profile embedding failed:', syncError);
+            }
+          } else {
+            console.warn(
+              'Unable to embedding matching profile: missing userId'
+            );
+          }
+
           // 로그인 성공 시 부모 컴포넌트의 onSignup 함수 호출 (상태 업데이트 및 페이지 이동)
           onSignup();
         }
