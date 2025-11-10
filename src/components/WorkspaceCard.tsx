@@ -29,6 +29,7 @@ export function WorkspaceCard({
     keywords,
     maxParticipants,
     participations, // 변경: participations 추가
+    status, // 게시글 상태 추가
   } = post;
 
   // 총 일수 계산
@@ -65,6 +66,16 @@ export function WorkspaceCard({
       className="bg-white rounded-2xl shadow-lg overflow-hidden mx-4 hover:shadow-xl transition-shadow cursor-pointer relative h-full flex flex-col"
       onClick={onClick}
     >
+      {/* 상태 배지 */}
+      {status && (
+        <Badge 
+          className="absolute top-4 right-4 z-10 px-3 py-1 text-sm font-semibold"
+          variant={status === '모집중' ? 'default' : 'secondary'} // 상태에 따라 배지 색상 변경
+        >
+          {status}
+        </Badge>
+      )}
+
       {/* 커버 이미지 */}
       <div className="h-48 overflow-hidden flex-shrink-0">
         <ImageWithFallback

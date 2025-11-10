@@ -6,6 +6,7 @@ import client from '../api/client';
 import { type Post } from '../types/post';
 import { MainPostCardSkeleton } from './MainPostCardSkeleton';
 import { WorkspaceCarousel } from './WorkspaceCarousel';
+import { useAuthStore } from '../store/authStore'; // Import useAuthStore
 
 interface MainPageProps {
   onSearch: (params: {
@@ -50,7 +51,7 @@ const REGION_CATEGORIES = [
     id: 1,
     name: '제주도',
     image:
-      'https://images.unsplash.com/photo-1614088459293-5669fadc3448?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0cmF2ZWwlMjBkZXN0aW5hdGlvbnxlbnwxfHx8fDE3NjE4NjQwNzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
+      'https://images.unsplash.com/photo-1614088459293-5669fadc3448?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHx0cmF2ZWwlMjBkZXN0aW5hdGlvbnxlbnwxfHx8fDE3NjE4NjQwNzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
     description: '힐링 여행의 성지',
   },
   {
@@ -78,14 +79,14 @@ const REGION_CATEGORIES = [
     id: 5,
     name: '강릉',
     image:
-      'https://images.unsplash.com/photo-1684042229029-8a899193a8e4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxnYW5nbmV1bmclMjBrb3JlYXxlbnwxfHx8fDE3NjE5ODI0MzV8MA&ixlib=rb-4.1.0&q=80&w=1080',
+      'https://images.unsplash.com/photo-1684042229029-8a99193a8e4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxnYW5nbmV1bmclMjBrb3JlYXxlbnwxfHx8fDE3NjE5ODI0MzV8MA&ixlib=rb-4.1.0&q=80&w=1080',
     description: '동해안의 낭만',
   },
   {
     id: 6,
     name: '전주',
     image:
-      'https://images.unsplash.com/photo-1520645521318-f03a712f0e67?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxjaXR5JTIwdHJhdmVsfGVufDF8fHx8MTc2MTkxMjEzMXww&ixlib=rb-4.1.0&q=80&w=1080',
+      'https://images.unsplash.com/photo-1520645521318-f03a12f0e67?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxjaXR5JTIwdHJhdmVsfGVufDF8fHx8MTc2MTkxMjEzMXww&ixlib=rb-4.1.0&q=80&w=1080',
     description: '맛집 투어의 메카',
   },
 ];
@@ -98,6 +99,9 @@ export function MainPage({
 }: MainPageProps) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [userPosts, setUserPosts] = useState<Post[]>([]); // New state for user's posts
+  const [userPostsLoading, setUserPostsLoading] = useState(true); // New state for user's posts loading
+  const { user } = useAuthStore(); // Get user from auth store
 
   useEffect(() => {
     const fetchInitialPosts = async () => {
@@ -118,17 +122,66 @@ export function MainPage({
         setIsLoading(false);
       }
     };
+
+    const fetchUserPosts = async () => {
+      if (!isLoggedIn || !user?.userId) {
+        setUserPostsLoading(false);
+        return;
+      }
+
+      setUserPostsLoading(true);
+      try {
+        const response = await client.get<Post[]>(`/posts/user/${user.userId}`);
+        const sortedUserPosts = response.data.sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        console.log(`${user.profile.nickname}님이 참여중인 여행`, sortedUserPosts);
+        setUserPosts(sortedUserPosts);
+      } catch (error) {
+        console.error('Failed to fetch user posts:', error);
+      } finally {
+        setUserPostsLoading(false);
+      }
+    };
+
     fetchInitialPosts();
-  }, []);
+    fetchUserPosts(); // Call the new fetch function
+  }, [isLoggedIn, user?.userId, user?.profile.nickname]); // Re-run when login status or user changes
 
   return (
-    <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-gray-50">
+      {/* --- User's Participating Trips Section --- */}
+      {isLoggedIn && user && (
+        <section className="mb-12">
+          <div className="flex items-center gap-2 mb-6">
+            <ClipboardList className="w-5 h-5 text-blue-600" />
+            <h2 className="text-xl font-bold text-gray-900">{user.profile.nickname}님이 참여중인 여행</h2>
+          </div>
+          {userPostsLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <MainPostCardSkeleton key={index} />
+              ))}
+            </div>
+          ) : userPosts.length === 0 ? (
+            <div className="text-center text-gray-500 py-10">
+              참여중인 게시글이 없습니다.
+            </div>
+          ) : (
+            <WorkspaceCarousel
+              posts={userPosts}
+              onCardClick={(post) => onViewPost(post.id)}
+            />
+          )}
+        </section>
+      )}
+
       {/* --- Recent Posts Section --- */}
-      {/* Recent Posts Section */}
       <section className="mb-12">
         <div className="flex items-center gap-2 mb-6">
           <ClipboardList className="w-5 h-5 text-blue-600" />
-          <h2 className="text-gray-900">최신 동행 모집</h2>
+          <h2 className="text-xl font-bold text-gray-900">최신 동행 모집</h2>
         </div>
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -149,11 +202,10 @@ export function MainPage({
       </section>
 
       {/* --- Region Categories Section --- */}
-      {/* Region Categories */}
       <section>
         <div className="flex items-center gap-2 mb-6">
           <MapPin className="w-5 h-5 text-blue-600" />
-          <h2 className="text-gray-900">인기 여행지</h2>
+          <h2 className="text-xl font-bold text-gray-900">인기 여행지</h2>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {REGION_CATEGORIES.map((region) => (
