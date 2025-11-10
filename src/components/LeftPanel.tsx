@@ -6,6 +6,9 @@ import {
   StickyNote,
   ListOrdered,
   GripVertical,
+  ChevronDown, // Added ChevronDown
+  ChevronUp, // Added ChevronUp
+  MapPin, // Added MapPin for Marker Storage
 } from 'lucide-react';
 import {
   SortableContext,
@@ -71,45 +74,64 @@ function PoiItem({ poi, color, index, onPoiClick }: { poi: Poi, color?: string, 
 
 function MarkerStorage({ pois, onPoiClick }: { pois: Poi[], onPoiClick: (poi: Poi) => void }) {
     const { setNodeRef } = useDroppable({ id: 'marker-storage' });
+    const [isCollapsed, setIsCollapsed] = useState(false); // State for collapse
 
     return (
         <div ref={setNodeRef} className="p-3 border-b">
-            <h3 className="text-sm font-semibold mb-2">마커 보관함</h3>
-            <SortableContext id="marker-storage-sortable" items={pois.map(p => p.id)} strategy={verticalListSortingStrategy}>
-                <ul className="space-y-2 min-h-[2rem]">
-                    {pois.length > 0 ? (
-                        pois.map((poi) => <PoiItem key={poi.id} poi={poi} onPoiClick={onPoiClick} />)
-                    ) : (
-                        <p className="text-xs text-gray-500 p-2">지도에 마커를 추가하여 보관하세요.</p>
-                    )}
-                </ul>
-            </SortableContext>
+            <div className="flex justify-between items-center mb-2">
+                <div className="flex items-center gap-2"> {/* Added div for icon and text */}
+                    <MapPin className="w-5 h-5 text-gray-600" /> {/* MapPin icon */}
+                    <h3 className="text-base font-bold">마커 보관함</h3> {/* Larger and bolder text */}
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => setIsCollapsed(!isCollapsed)}>
+                    {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+                </Button>
+            </div>
+            {!isCollapsed && ( // Conditionally render content
+                <SortableContext id="marker-storage-sortable" items={pois.map(p => p.id)} strategy={verticalListSortingStrategy}>
+                    <ul className="space-y-2 min-h-[2rem]">
+                        {pois.length > 0 ? (
+                            pois.map((poi) => <PoiItem key={poi.id} poi={poi} onPoiClick={onPoiClick} />)
+                        ) : (
+                            <p className="text-xs text-gray-500 p-2">지도에 마커를 추가하여 보관하세요.</p>
+                        )}
+                    </ul>
+                </SortableContext>
+            )}
         </div>
     );
 }
 
 function ItineraryDay({ layer, pois, onPoiClick }: { layer: DayLayer, pois: Poi[], onPoiClick: (poi: Poi) => void }) {
     const { setNodeRef } = useDroppable({ id: layer.id });
+    const [isCollapsed, setIsCollapsed] = useState(false); // State for collapse
     
     return (
         <div ref={setNodeRef}>
-            <h3
-                className="text-sm font-bold mb-2 pb-1 border-b"
-                style={{ borderBottomColor: layer.color }}
-            >
-                {layer.label}
-            </h3>
-            <SortableContext id={layer.id + '-sortable'} items={pois.map(p => p.id)} strategy={verticalListSortingStrategy}>
-                <ul className="space-y-2 min-h-[2rem]">
-                    {pois.length > 0 ? (
-                        pois.map((poi, index) => (
-                            <PoiItem key={poi.id} poi={poi} color={layer.color} index={index} onPoiClick={onPoiClick} />
-                        ))
-                    ) : (
-                        <p className="text-xs text-gray-500 p-2">마커를 드래그하여 추가하세요.</p>
-                    )}
-                </ul>
-            </SortableContext>
+            <div className="flex justify-between items-center mb-2">
+                <h3
+                    className="text-sm font-bold pb-1"
+                    style={{ borderBottomColor: layer.color }}
+                >
+                    {layer.label}
+                </h3>
+                <Button variant="ghost" size="icon" onClick={() => setIsCollapsed(!isCollapsed)}>
+                    {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+                </Button>
+            </div>
+            {!isCollapsed && ( // Conditionally render content
+                <SortableContext id={layer.id + '-sortable'} items={pois.map(p => p.id)} strategy={verticalListSortingStrategy}>
+                    <ul className="space-y-2 min-h-[2rem]">
+                        {pois.length > 0 ? (
+                            pois.map((poi, index) => (
+                                <PoiItem key={poi.id} poi={poi} color={layer.color} index={index} onPoiClick={onPoiClick} />
+                            ))
+                        ) : (
+                            <p className="text-xs text-gray-500 p-2">마커를 드래그하여 추가하세요.</p>
+                        )}
+                    </ul>
+                </SortableContext>
+            )}
         </div>
     );
 }
@@ -126,8 +148,8 @@ function ItineraryPanel({
   return (
     <div className="p-3 space-y-2 h-full overflow-y-auto">
       <div className="flex items-center gap-2 mb-2">
-        <ListOrdered className="w-4 h-4 text-gray-600" />
-        <span className="text-sm font-semibold">여행 일정</span>
+        <ListOrdered className="w-5 h-5 text-gray-600" /> {/* Larger icon */}
+        <span className="text-base font-bold">여행 일정</span> {/* Larger and bolder text */}
       </div>
       <div className="space-y-3">
         {dayLayers.map((layer) => (

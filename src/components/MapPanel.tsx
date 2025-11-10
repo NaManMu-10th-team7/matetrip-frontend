@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, memo } from 'react';
 import type { Poi, CreatePoiDto } from '../hooks/usePoiSocket';
+import { Map, MapMarker, CustomOverlayMap, Polyline } from 'react-kakao-maps-sdk';
 
 export interface KakaoPlace {
   id: string;
@@ -27,12 +28,110 @@ interface MapPanelProps {
   dayLayers: DayLayer[];
   pois: Poi[];
   isSyncing: boolean;
-  markPoi: (poiData: Omit<CreatePoiDto, 'workspaceId' | 'createdBy' | 'id'>) => void;
+  markPoi: (
+    poiData: Omit<CreatePoiDto, 'workspaceId' | 'createdBy' | 'id'>
+  ) => void;
   unmarkPoi: (poiId: string | number) => void;
   selectedPlace: KakaoPlace | null;
   mapRef: React.RefObject<kakao.maps.Map>;
   onPoiDragEnd: (poiId: string, lat: number, lng: number) => void; // New prop
 }
+
+interface PoiMarkerProps {
+  poi: Poi;
+  onPoiDragEnd: (poiId: string, lat: number, lng: number) => void;
+}
+
+const PoiMarker = memo(({ poi, onPoiDragEnd }: PoiMarkerProps) => {
+  const [isInfoWindowOpen, setIsInfoWindowOpen] = useState(false);
+  const infoWindowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleMouseOver = () => {
+    if (infoWindowTimeoutRef.current) {
+      clearTimeout(infoWindowTimeoutRef.current);
+      infoWindowTimeoutRef.current = null;
+    }
+    setIsInfoWindowOpen(true);
+  };
+
+  const handleMouseOut = () => {
+    infoWindowTimeoutRef.current = setTimeout(() => {
+      setIsInfoWindowOpen(false);
+    }, 100); // 100ms 지연
+  };
+
+  const handleClick = () => {
+    if (infoWindowTimeoutRef.current) {
+      clearTimeout(infoWindowTimeoutRef.current);
+      infoWindowTimeoutRef.current = null;
+    }
+    setIsInfoWindowOpen(true);
+  };
+
+  return (
+    <MapMarker
+      position={{ lat: poi.latitude, lng: poi.longitude }}
+      draggable={true}
+      onMouseOver={handleMouseOver}
+      onMouseOut={handleMouseOut}
+      onClick={handleClick}
+      onDragEnd={(marker) => {
+        const newPosition = marker.getPosition();
+        onPoiDragEnd(poi.id, newPosition.getLat(), newPosition.getLng());
+      }}
+    >
+      {isInfoWindowOpen && (
+        <CustomOverlayMap
+          position={{ lat: poi.latitude, lng: poi.longitude }}
+          xAnchor={0.5}
+          yAnchor={1.5}   // Changed from 1.2 to 1.5
+          zIndex={1}
+        >
+          <div
+            onMouseOver={handleMouseOver}
+            onMouseOut={handleMouseOut}
+            style={{
+              padding: '10px',
+              backgroundColor: '#fff',
+              borderRadius: '8px',
+              boxShadow: '0 6px 20px rgba(0, 0, 0, 0.3)',
+              minWidth: '180px',
+              maxWidth: '400px',
+              whiteSpace: 'normal',
+              lineHeight: '1.5',
+              textAlign: 'left',
+              boxSizing: 'border-box',
+              display: 'block',
+            }}
+          >
+            <div
+              style={{
+                fontWeight: 'bold',
+                fontSize: '16px',
+                marginBottom: '5px',
+                color: '#333',
+                textAlign: 'center',
+              }}
+            >
+              {poi.placeName}
+            </div>
+            <div
+              style={{
+                fontSize: '13px',
+                color: '#666',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {poi.address}
+            </div>
+          </div>
+        </CustomOverlayMap>
+      )}
+    </MapMarker>
+  );
+});
 
 export function MapPanel({
   itinerary,
@@ -45,156 +144,14 @@ export function MapPanel({
   mapRef,
   onPoiDragEnd, // Destructure new prop
 }: MapPanelProps) {
-  const [map, setMap] = useState<kakao.maps.Map | null>(null);
-  const [markers, setMarkers] = useState<kakao.maps.Marker[]>([]);
-  const [polylines, setPolylines] = useState<kakao.maps.Polyline[]>([]);
-  const [infoWindow, setInfoWindow] = useState<kakao.maps.InfoWindow | null>(null);
-
-  // 지도 초기화
-  useEffect(() => {
-    const container = document.getElementById('map');
-    if (container && !map) {
-      const options = {
-        center: new window.kakao.maps.LatLng(33.450701, 126.570667),
-        level: 3,
-      };
-      const newMap = new window.kakao.maps.Map(container, options);
-      if (mapRef) {
-        (mapRef as React.MutableRefObject<kakao.maps.Map>).current = newMap;
-      }
-      setMap(newMap);
-      setInfoWindow(new window.kakao.maps.InfoWindow({ zIndex: 1 }));
-    }
-  }, [map, mapRef]);
-
-  // 지도 클릭 이벤트 핸들러
-  useEffect(() => {
-    if (!map) return;
-
-    const clickListener = (mouseEvent: kakao.maps.event.MouseEvent) => {
-      const latlng = mouseEvent.latLng;
-      const geocoder = new window.kakao.maps.services.Geocoder();
-      const places = new window.kakao.maps.services.Places(); // Instantiate Places service
-
-      geocoder.coord2Address(latlng.getLng(), latlng.getLat(), (result, status) => {
-        if (status === window.kakao.maps.services.Status.OK) {
-          const address = result[0].road_address?.address_name || result[0].address.address_name;
-
-          // Perform a keyword search around the clicked location
-          places.keywordSearch(
-            address, // Use the address as the search keyword
-            (data, searchStatus) => {
-              let placeName = address; // Default to address if no place found
-              let categoryName: string | undefined = undefined;
-
-              if (searchStatus === window.kakao.maps.services.Status.OK && data.length > 0) {
-                const place = data[0];
-                placeName = place.place_name;
-                categoryName = place.category_name;
-              }
-
-              const poiData = {
-                latitude: latlng.getLat(),
-                longitude: latlng.getLng(),
-                address: address,
-                categoryName: categoryName,
-                placeName: placeName,
-              };
-              console.log('Map click event: Calling markPoi with data:', poiData); // Log added here
-              markPoi(poiData);
-            },
-            {
-              location: latlng,
-              radius: 50, // Search within a 50m radius
-              sort: window.kakao.maps.services.SortBy?.DISTANCE,
-            }
-          );
-        }
-      });
-    };
-
-    window.kakao.maps.event.addListener(map, 'click', clickListener);
-
-    return () => {
-      window.kakao.maps.event.removeListener(map, 'click', clickListener);
-    };
-  }, [map, markPoi]);
-
-  // 마커 및 폴리라인 업데이트
-  useEffect(() => {
-    if (!map || !infoWindow) return;
-
-    // 기존 마커/폴리라인 제거
-    markers.forEach((marker) => marker.setMap(null));
-    polylines.forEach((line) => line.setMap(null));
-
-    const newMarkers: kakao.maps.Marker[] = [];
-    const newPolylines: kakao.maps.Polyline[] = [];
-
-    // POI 마커 생성
-    pois.forEach((poi) => {
-      const position = new window.kakao.maps.LatLng(poi.latitude, poi.longitude);
-      const marker = new window.kakao.maps.Marker({
-        position,
-        draggable: true, // Make markers draggable
-      });
-      marker.setMap(map);
-      newMarkers.push(marker);
-
-      const content = `<div style="padding:5px;font-size:12px;">${poi.placeName}</div>`;
-      
-      // Add mouseover event to show info window
-      window.kakao.maps.event.addListener(marker, 'mouseover', () => {
-        infoWindow.setContent(content);
-        infoWindow.open(map, marker);
-      });
-
-      // Add mouseout event to close info window
-      window.kakao.maps.event.addListener(marker, 'mouseout', () => {
-        infoWindow.close();
-      });
-
-      // Keep click event for consistency or other actions
-      window.kakao.maps.event.addListener(marker, 'click', () => {
-        infoWindow.setContent(content);
-        infoWindow.open(map, marker);
-      });
-
-      // Add dragend event listener
-      window.kakao.maps.event.addListener(marker, 'dragend', () => {
-        const newPosition = marker.getPosition();
-        onPoiDragEnd(poi.id, newPosition.getLat(), newPosition.getLng());
-      });
-    });
-
-    // 일정 폴리라인 생성
-    dayLayers.forEach((layer) => {
-      const path = (itinerary[layer.id] || [])
-        .map((poi) => new window.kakao.maps.LatLng(poi.latitude, poi.longitude));
-      
-      if (path.length > 1) {
-        const polyline = new window.kakao.maps.Polyline({
-          path: path,
-          strokeWeight: 3,
-          strokeColor: layer.color,
-          strokeOpacity: 0.8,
-          strokeStyle: 'solid',
-        });
-        polyline.setMap(map);
-        newPolylines.push(polyline);
-      }
-    });
-
-    setMarkers(newMarkers);
-    setPolylines(newPolylines);
-
-  }, [map, pois, itinerary, dayLayers, infoWindow, onPoiDragEnd]); // Add onPoiDragEnd to dependencies
-
   // 선택된 장소 처리
   useEffect(() => {
-    if (selectedPlace && map) {
-      const position = new window.kakao.maps.LatLng(Number(selectedPlace.y), Number(selectedPlace.x));
-      map.panTo(position);
+    if (selectedPlace && mapRef.current) {
+      const position = new window.kakao.maps.LatLng(
+        Number(selectedPlace.y),
+        Number(selectedPlace.x)
+      );
+      mapRef.current.panTo(position);
       const poiData = {
         latitude: Number(selectedPlace.y),
         longitude: Number(selectedPlace.x),
@@ -202,15 +159,113 @@ export function MapPanel({
         placeName: selectedPlace.place_name,
         categoryName: selectedPlace.category_name,
       };
-      console.log('Selected place changed: Calling markPoi with data:', poiData); // Log added here
+      console.log(
+        'Selected place changed: Calling markPoi with data:',
+        poiData
+      );
       markPoi(poiData);
     }
-  }, [selectedPlace, map, markPoi]);
+  }, [selectedPlace, mapRef, markPoi]);
 
   return (
-    <div id="map" style={{ width: '100%', height: '100%' }}>
+    <div style={{ width: '100%', height: '100%' }}>
+      <Map
+        center={{ lat: 33.450701, lng: 126.570667 }} // Initial center
+        style={{ width: '100%', height: '100%' }}
+        level={3}
+        onLoad={(map) => {
+          if (mapRef) {
+            (mapRef as React.MutableRefObject<kakao.maps.Map>).current = map;
+          }
+        }}
+        onClick={(_map, mouseEvent) => {
+          const latlng = mouseEvent.latLng;
+          const geocoder = new window.kakao.maps.services.Geocoder();
+          const places = new window.kakao.maps.services.Places();
+
+          geocoder.coord2Address(
+            latlng.getLng(),
+            latlng.getLat(),
+            (result, status) => {
+              if (status === window.kakao.maps.services.Status.OK) {
+                const address =
+                  result[0].road_address?.address_name ||
+                  result[0].address.address_name;
+
+                places.keywordSearch(
+                  address,
+                  (data, searchStatus) => {
+                    let placeName = address;
+                    let categoryName: string | undefined = undefined;
+
+                    if (
+                      searchStatus === window.kakao.maps.services.Status.OK &&
+                      data.length > 0
+                    ) {
+                      const place = data[0];
+                      placeName = place.place_name;
+                      categoryName = place.category_name;
+                    }
+
+                    const poiData = {
+                      latitude: latlng.getLat(),
+                      longitude: latlng.getLng(),
+                      address: address,
+                      categoryName: categoryName,
+                      placeName: placeName,
+                    };
+                    console.log(
+                      'Map click event: Calling markPoi with data:',
+                      poiData
+                    );
+                    markPoi(poiData);
+                  },
+                  {
+                    location: latlng,
+                    radius: 50,
+                    sort: window.kakao.maps.services.SortBy?.DISTANCE,
+                  }
+                );
+              }
+            }
+          );
+        }}
+      >
+        {pois.map((poi) => (
+          <PoiMarker key={poi.id} poi={poi} onPoiDragEnd={onPoiDragEnd} />
+        ))}
+
+        {dayLayers.map((layer) => {
+          const path = (itinerary[layer.id] || []).map((poi) => ({
+            lat: poi.latitude,
+            lng: poi.longitude,
+          }));
+
+          return path.length > 1 ? (
+            <Polyline
+              key={layer.id}
+              path={path}
+              strokeWeight={3}
+              strokeColor={layer.color}
+              strokeOpacity={0.8}
+              strokeStyle={'solid'}
+            />
+          ) : null;
+        })}
+      </Map>
+
       {isSyncing && (
-        <div style={{ position: 'absolute', top: '10px', left: '10px', background: 'white', padding: '10px', borderRadius: '5px', zIndex: 2 }}>
+        <div
+          style={{
+            position: 'absolute',
+            top: '10px',
+            left: '10px',
+            background: 'white',
+            padding: '10px',
+            borderRadius: '5px',
+            zIndex: 2,
+          }}
+        >
           데이터 동기화 중...
         </div>
       )}
