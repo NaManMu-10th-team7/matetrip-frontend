@@ -49,15 +49,15 @@ export function WorkspaceCard({
   const displayParticipants = [
     {
       id: writer.id,
-      name: writer.profile.nickname,
-      profileImage: writer.profile.profileImage || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+      name: writer.profile?.nickname || '알 수 없음', // nullish coalescing operator 추가
+      profileImage: writer.profile?.profileImage || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80', // nullish coalescing operator 추가
     },
     ...(participations || [])
       .filter(p => p.status === '승인')
       .map((p) => ({
         id: p.requester.id,
-        name: p.requester.profile.nickname,
-        profileImage: p.requester.profile.profileImage || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+        name: p.requester.profile?.nickname || '알 수 없음', // nullish coalescing operator 추가
+        profileImage: p.requester.profile?.profileImage || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80', // nullish coalescing operator 추가
       })),
   ];
   

@@ -14,6 +14,7 @@ import { LeftPanel } from './LeftPanel';
 import { RightPanel } from './RightPanel';
 import { PlanRoomHeader } from './PlanRoomHeader';
 import { type Poi, usePoiSocket } from '../hooks/usePoiSocket.ts';
+import { useChatSocket, type ChatMessage } from '../hooks/useChatSocket'; // useChatSocket import 추가
 
 interface WorkspaceProps {
   workspaceId: string;
@@ -63,6 +64,7 @@ export function Workspace({
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
   
   const { pois, setPois, isSyncing, markPoi, unmarkPoi, addSchedule, removeSchedule, reorderPois } = usePoiSocket(workspaceId);
+  const { messages, sendMessage, isConnected: isChatConnected } = useChatSocket(workspaceId); // useChatSocket 훅 호출
   
   const [selectedPlace, setSelectedPlace] = useState<KakaoPlace | null>(null);
   const [activePoi, setActivePoi] = useState<Poi | null>(null);
@@ -271,7 +273,7 @@ export function Workspace({
           activeMembers={MOCK_MEMBERS}
         />
         
-        <div className="flex-1 flex overflow-y-auto relative">
+        <div className="flex-1 flex relative"> {/* overflow-y-auto 제거 */}
           <LeftPanel 
             isOpen={isLeftPanelOpen} 
             itinerary={itinerary}
@@ -320,6 +322,9 @@ export function Workspace({
 
           <RightPanel 
             isOpen={isRightPanelOpen} 
+            messages={messages} // messages prop 전달
+            sendMessage={sendMessage} // sendMessage prop 전달
+            isChatConnected={isChatConnected} // isChatConnected prop 전달
           />
         </div>
       </div>

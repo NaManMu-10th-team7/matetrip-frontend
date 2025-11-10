@@ -1,12 +1,16 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { MessageCircle, Bot } from 'lucide-react';
 import { ChatPanel } from './ChatPanel';
+import { type ChatMessage } from '../hooks/useChatSocket'; // ChatMessage 타입 import
 
 interface RightPanelProps {
   isOpen: boolean;
+  messages: ChatMessage[]; // messages prop 추가
+  sendMessage: (message: string) => void; // sendMessage prop 추가
+  isChatConnected: boolean; // isChatConnected prop 추가
 }
 
-export function RightPanel({ isOpen }: RightPanelProps) {
+export function RightPanel({ isOpen, messages, sendMessage, isChatConnected }: RightPanelProps) {
   if (!isOpen) {
     return null;
   }
@@ -25,7 +29,11 @@ export function RightPanel({ isOpen }: RightPanelProps) {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="chat" className="flex-1 overflow-auto m-0">
-          <ChatPanel />
+          <ChatPanel 
+            messages={messages} 
+            sendMessage={sendMessage} 
+            isChatConnected={isChatConnected} 
+          />
         </TabsContent>
         <TabsContent value="agent" className="h-full m-0 p-4">
           <div className="h-full flex items-center justify-center text-gray-500">
