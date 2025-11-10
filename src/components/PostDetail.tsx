@@ -118,7 +118,8 @@ export function PostDetail({
     }
   };
 
-  const handleAcceptRequest = async (participationId: string) => { // participationId 타입을 string으로 변경
+  const handleAcceptRequest = async (participationId: string) => {
+    // participationId 타입을 string으로 변경
     try {
       await client.patch(`/posts/${postId}/participations/${participationId}`, {
         status: '승인',
@@ -131,7 +132,8 @@ export function PostDetail({
     }
   };
 
-  const handleRejectRequest = async (participationId: string) => { // participationId 타입을 string으로 변경
+  const handleRejectRequest = async (participationId: string) => {
+    // participationId 타입을 string으로 변경
     try {
       await client.patch(`/posts/${postId}/participations/${participationId}`, {
         status: '거절',
@@ -151,7 +153,9 @@ export function PostDetail({
   const handleCancelApplication = async () => {
     if (!userParticipation) return;
     try {
-      await client.delete(`/posts/${postId}/participations/${userParticipation.id}`);
+      await client.delete(
+        `/post/${postId}/participations/${userParticipation.id}`
+      );
       alert('동행 신청이 취소되었습니다.');
       await fetchPostDetail();
     } catch (err) {
@@ -448,9 +452,7 @@ export function PostDetail({
                             size="sm"
                             variant="outline"
                             className="text-xs h-7 self-start flex-shrink-0"
-                            onClick={() =>
-                              handleViewProfile(p.requester.id)
-                            }
+                            onClick={() => handleViewProfile(p.requester.id)}
                           >
                             프로필 보기
                           </Button>
@@ -616,11 +618,7 @@ export function PostDetail({
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {post.keywords.map((keyword, index) => (
-                    <Badge
-                      key={index}
-                      variant="secondary"
-                      className="text-sm"
-                    >
+                    <Badge key={index} variant="secondary" className="text-sm">
                       {translateKeyword(keyword)}
                     </Badge>
                   ))}
