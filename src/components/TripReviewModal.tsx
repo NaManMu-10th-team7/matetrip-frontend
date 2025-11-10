@@ -22,7 +22,7 @@ interface Member {
 interface TripReviewModalProps {
   isOpen: boolean;
   onClose: () => void;
-  activeMembers: Member[];
+  membersToReview: Member[];
   workspaceId: string;
   onComplete?: () => void;
 }
@@ -38,27 +38,27 @@ const ratingTexts = [
 export function TripReviewModal({
   isOpen,
   onClose,
-  activeMembers,
+  membersToReview,
   workspaceId,
   onComplete,
 }: TripReviewModalProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [reviews, setReviews] = useState<
     Array<{ rating: number; comment: string }>
-  >(activeMembers.map(() => ({ rating: 0, comment: '' })));
+  >(membersToReview.map(() => ({ rating: 0, comment: '' })));
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false); // 에러 모달 상태
   const [errorMessage, setErrorMessage] = useState(''); // 에러 메시지 상태
 
-  // activeMembers가 변경될 때마다 reviews와 currentIndex를 리셋합니다.
+  // membersToReview가 변경될 때마다 reviews와 currentIndex를 리셋합니다.
   useEffect(() => {
     if (isOpen) {
-      setReviews(activeMembers.map(() => ({ rating: 0, comment: '' })));
+      setReviews(membersToReview.map(() => ({ rating: 0, comment: '' })));
       setCurrentIndex(0);
     }
-  }, [activeMembers, isOpen]);
+  }, [membersToReview, isOpen]);
 
-  const currentTraveler = activeMembers[currentIndex];
+  const currentTraveler = membersToReview[currentIndex];
   const currentReview = reviews[currentIndex];
 
   // currentTraveler 또는 currentReview가 아직 준비되지 않았으면 렌더링하지 않음
@@ -79,12 +79,12 @@ export function TripReviewModal({
   };
 
   const handleNext = async () => {
-    if (currentIndex < activeMembers.length - 1) {
+    if (currentIndex < membersToReview.length - 1) {
       setCurrentIndex(currentIndex + 1);
     } else {
       // 모든 리뷰 제출
       const reviewData = reviews.map((review, index) => ({
-        revieweeId: activeMembers[index].id,
+        revieweeId: membersToReview[index].id,
         rating: review.rating,
         content: review.comment,
       }));
@@ -143,12 +143,12 @@ export function TripReviewModal({
 
             {/* 진행 상황 */}
             <span className="text-gray-500 text-sm">
-              {currentIndex + 1} / {activeMembers.length}
+              {currentIndex + 1} / {membersToReview.length}
             </span>
 
             {/* 진행 표시바 */}
             <div className="flex gap-1 w-full max-w-[200px]">
-              {activeMembers.map((_, index) => (
+              {membersToReview.map((_, index) => (
                 <div
                   key={index}
                   className={`h-1 flex-1 rounded-full transition-colors ${
@@ -215,8 +215,8 @@ export function TripReviewModal({
               disabled={!isCurrentReviewValid}
               className="w-full bg-gradient-to-r from-gray-800 to-black hover:from-gray-900 hover:to-gray-950 text-white"
             >
-              {currentIndex < activeMembers.length - 1 ? '다음' : '완료'}
-              {currentIndex < activeMembers.length - 1 ? (
+              {currentIndex < membersToReview.length - 1 ? '다음' : '완료'}
+              {currentIndex < membersToReview.length - 1 ? (
                 <ChevronRight className="w-4 h-4 ml-2" />
               ) : (
                 <Send className="w-4 h-4 ml-2" />

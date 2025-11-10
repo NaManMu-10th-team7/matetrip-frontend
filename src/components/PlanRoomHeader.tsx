@@ -133,7 +133,7 @@ export function PlanRoomHeader({
         isOpen={isReviewModalOpen}
         onClose={() => setReviewModalOpen(false)}
         workspaceId={workspaceId}
-        activeMembers={membersToReview}
+        membersToReview={membersToReview}
         onComplete={onBack}
       />
     </div>
