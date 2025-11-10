@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { MapPanel, type KakaoPlace } from './MapPanel';
 import type { PlanDayDto } from '../types/workspace';
@@ -46,6 +46,7 @@ export function Workspace({
   const [itinerary, setItinerary] = useState<Record<string, Poi[]>>({});
   const { pois, isSyncing, markPoi, unmarkPoi, connections, connectPoi } = usePoiSocket(workspaceId);
   const [selectedPlace, setSelectedPlace] = useState<KakaoPlace | null>(null);
+  const mapRef = useRef<kakao.maps.Map>(null);
 
   const dayLayers = useMemo(
     () =>
@@ -59,6 +60,16 @@ export function Workspace({
 
   const startDate = planDayDtos.length > 0 ? planDayDtos[0].planDate : '';
   const endDate = planDayDtos.length > 0 ? planDayDtos[planDayDtos.length - 1].planDate : '';
+
+  const handlePoiClick = (poi: Poi) => {
+    const map = mapRef.current;
+    if (!map) return;
+    const moveLatLon = new window.kakao.maps.LatLng(
+      poi.latitude,
+      poi.longitude
+    );
+    map.panTo(moveLatLon);
+  };
 
   return (
     <div className="h-[calc(100vh-4.5rem)] flex flex-col bg-gray-50">
@@ -82,6 +93,7 @@ export function Workspace({
           dayLayers={dayLayers}
           unmarkPoi={unmarkPoi}
           onPlaceClick={setSelectedPlace}
+          onPoiClick={handlePoiClick}
         />
         
         <button
@@ -108,6 +120,8 @@ export function Workspace({
                 connectPoi={connectPoi}
                 selectedPlace={selectedPlace}
                 connections={connections}
+                onPoiClick={handlePoiClick}
+                mapRef={mapRef}
             />
         </div>
 

@@ -4,8 +4,8 @@ import {
   Calendar,
   Search,
   StickyNote,
+  ListOrdered,
 } from 'lucide-react';
-import { PlanPanel } from './PlanPanel';
 import type { Poi } from '../hooks/usePoiSocket';
 import type { DayLayer, KakaoPlace } from './MapPanel';
 import { Input } from './ui/input';
@@ -19,6 +19,58 @@ interface PageInfo {
   last: number;
   hasPrevPage: boolean;
   hasNextPage: boolean;
+}
+
+function ItineraryPanel({
+  itinerary,
+  dayLayers,
+  onPoiClick,
+}: {
+  itinerary: Record<string, Poi[]>;
+  dayLayers: DayLayer[];
+  onPoiClick: (poi: Poi) => void;
+}) {
+  return (
+    <div className="p-3 space-y-2 h-full overflow-y-auto">
+      <div className="flex items-center gap-2 mb-2">
+        <ListOrdered className="w-4 h-4 text-gray-600" />
+        <span className="text-sm font-semibold">여행 일정</span>
+      </div>
+      <div className="space-y-3">
+        {dayLayers.map((layer) => (
+          <div key={layer.id}>
+            <h3
+              className="text-sm font-bold mb-2 pb-1 border-b"
+              style={{ borderBottomColor: layer.color }}
+            >
+              {layer.label}
+            </h3>
+            <ul className="space-y-2">
+              {itinerary[layer.id] && itinerary[layer.id].length > 0 ? (
+                itinerary[layer.id].map((poi, index) => (
+                  <li
+                    key={poi.id}
+                    className="flex items-center gap-2 text-xs p-1 rounded-md cursor-pointer hover:bg-gray-100"
+                    onClick={() => onPoiClick(poi)}
+                  >
+                    <span
+                      className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full text-white text-xs"
+                      style={{ backgroundColor: layer.color }}
+                    >
+                      {index + 1}
+                    </span>
+                    <span className="truncate">{poi.placeName}</span>
+                  </li>
+                ))
+              ) : (
+                <p className="text-xs text-gray-500">추가된 장소가 없습니다.</p>
+              )}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function SearchPanel({
@@ -159,6 +211,7 @@ interface LeftPanelProps {
   dayLayers: DayLayer[];
   unmarkPoi: (poiId: number) => void;
   onPlaceClick: (place: KakaoPlace) => void;
+  onPoiClick: (poi: Poi) => void;
 }
 
 export function LeftPanel({
@@ -167,6 +220,7 @@ export function LeftPanel({
   dayLayers,
   unmarkPoi,
   onPlaceClick,
+  onPoiClick,
 }: LeftPanelProps) {
   if (!isOpen) {
     return null;
@@ -190,10 +244,10 @@ export function LeftPanel({
           </TabsTrigger>
         </TabsList>
         <TabsContent value="plan" className="flex-1 overflow-auto m-0">
-          <PlanPanel
+          <ItineraryPanel
             itinerary={itinerary}
             dayLayers={dayLayers}
-            unmarkPoi={unmarkPoi}
+            onPoiClick={onPoiClick}
           />
         </TabsContent>
         {/* 검색 탭: position-based layout으로 변경 */}

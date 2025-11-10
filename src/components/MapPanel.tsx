@@ -4,7 +4,6 @@ import {
   Plus,
   Maximize2,
   Layers,
-  ListOrdered,
   Loader2,
 } from 'lucide-react';
 import { Button } from './ui/button'; // prettier-ignore
@@ -32,59 +31,6 @@ export type DayLayer = {
 export type KakaoPlace = kakao.maps.services.PlacesSearchResultItem;
 
 const KAKAO_MAP_SERVICES_STATUS = window.kakao?.maps.services.Status;
-
-// 여행 일정 목록을 보여주는 새로운 컴포넌트
-function ItineraryPanel({
-  itinerary,
-  dayLayers,
-  onPoiClick,
-}: {
-  itinerary: Record<string, Poi[]>;
-  dayLayers: DayLayer[];
-  onPoiClick: (poi: Poi) => void;
-}) {
-  return (
-    <div className="absolute top-4 right-4 z-10 bg-white rounded-lg shadow-lg p-3 space-y-2 w-60 max-h-[calc(100vh-5rem)] overflow-y-auto">
-      <div className="flex items-center gap-2 mb-2">
-        <ListOrdered className="w-4 h-4 text-gray-600" />
-        <span className="text-sm font-semibold">여행 일정</span>
-      </div>
-      <div className="space-y-3">
-        {dayLayers.map((layer) => (
-          <div key={layer.id}>
-            <h3
-              className="text-sm font-bold mb-2 pb-1 border-b"
-              style={{ borderBottomColor: layer.color }}
-            >
-              {layer.label}
-            </h3>
-            <ul className="space-y-2">
-              {itinerary[layer.id] && itinerary[layer.id].length > 0 ? (
-                itinerary[layer.id].map((poi, index) => (
-                  <li
-                    key={poi.id}
-                    className="flex items-center gap-2 text-xs p-1 rounded-md cursor-pointer hover:bg-gray-100"
-                    onClick={() => onPoiClick(poi)}
-                  >
-                    <span
-                      className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full text-white text-xs"
-                      style={{ backgroundColor: layer.color }}
-                    >
-                      {index + 1}
-                    </span>
-                    <span className="truncate">{poi.placeName}</span>
-                  </li>
-                ))
-              ) : (
-                <p className="text-xs text-gray-500">추가된 장소가 없습니다.</p>
-              )}
-            </ul>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 // MapUI 컴포넌트가 selectedLayer 상태와 상태 변경 함수를 props로 받도록 수정
 function MapUI({
@@ -146,6 +92,8 @@ export function MapPanel({
   connectPoi,
   selectedPlace,
   connections,
+  onPoiClick,
+  mapRef
 }: {
   itinerary: Record<string, Poi[]>;
   setItinerary: React.Dispatch<React.SetStateAction<Record<string, Poi[]>>>;
@@ -161,6 +109,8 @@ export function MapPanel({
   ) => void;
   selectedPlace: KakaoPlace | null;
   connections: Record<string, PoiConnection[]>;
+  onPoiClick: (poi: Poi) => void;
+  mapRef: React.RefObject<kakao.maps.Map>;
 }) {
   // '전체' 레이어를 포함한 전체 UI용 레이어 목록
   const UILayers: { id: 'all' | DayLayer['id']; label: string }[] = [
@@ -303,8 +253,6 @@ export function MapPanel({
     null
   );
 
-  const mapRef = useRef<kakao.maps.Map>(null);
-
   useEffect(() => {
     if (selectedPlace && mapRef.current) {
       const moveLatLon = new window.kakao.maps.LatLng(
@@ -313,17 +261,7 @@ export function MapPanel({
       );
       mapRef.current.panTo(moveLatLon);
     }
-  }, [selectedPlace]);
-
-  const handlePoiClick = (poi: Poi) => {
-    const map = mapRef.current;
-    if (!map) return;
-    const moveLatLon = new window.kakao.maps.LatLng(
-      poi.latitude,
-      poi.longitude
-    );
-    map.panTo(moveLatLon);
-  };
+  }, [selectedPlace, mapRef]);
 
   return (
     <div className="h-full relative">
@@ -547,11 +485,6 @@ export function MapPanel({
           selectedLayer={selectedLayer}
           setSelectedLayer={setSelectedLayer}
           UILayers={UILayers}
-        />
-        <ItineraryPanel
-          itinerary={itinerary}
-          dayLayers={dayLayers}
-          onPoiClick={handlePoiClick}
         />
       </KakaoMap>
     </div>
