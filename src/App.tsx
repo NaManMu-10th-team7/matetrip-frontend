@@ -24,6 +24,8 @@ import client from './api/client';
 import type { CreateWorkspaceResponse } from './types/workspace';
 import type { Post } from './types/post';
 import { Toaster } from 'sonner';
+import { Dialog, DialogContent } from './components/ui/dialog';
+import { ProfileModal } from './components/ProfileModal';
 import PublicOnlyRoute from './components/PublicOnlyRoute';
 
 
@@ -65,9 +67,11 @@ function Layout({
 function MainPageWrapper({
   isLoggedIn,
   onCreatePost,
+  onViewPost,
 }: {
   isLoggedIn: boolean;
   onCreatePost: () => void;
+  onViewPost: (postId: string) => void;
 }) {
   const navigate = useNavigate();
   const { isLoggedIn: isLoggedInFromStore } = useAuthStore(); // 스토어에서 직접 가져오기
@@ -87,20 +91,10 @@ function MainPageWrapper({
     navigate(`/search?${searchParams.toString()}`);
   };
 
-  const handleViewPost = (postId: string) => {
-    navigate(`/post/${postId}`);
-  };
-
-  const handleUserClick = (userId: string) => {
-    // userId도 string일 가능성이 높으므로 함께 변경
-    navigate(`/profile/${userId}`);
-  };
-
   return (
     <MainPage
       onSearch={handleSearch}
-      onViewPost={handleViewPost}
-      onUserClick={handleUserClick}
+      onViewPost={onViewPost}
       isLoggedIn={finalIsLoggedIn}
       onCreatePost={onCreatePost}
     />
@@ -129,11 +123,13 @@ function SearchResultsWrapper() {
 function PostDetailWrapper({
   isLoggedIn,
   onEditPost,
+  onViewProfile,
 }: {
   // onEditPost prop의 postId 타입을 string으로 변경
   isLoggedIn: boolean;
   onEditPost: (post: Post) => void;
-}) {
+  onViewProfile: (userId: string) => void;
+}): React.ReactElement | null {
   const navigate = useNavigate();
   const location = useLocation();
   const postId = location.pathname.split('/').pop() || ''; // postId를 string으로 직접 추출
@@ -176,17 +172,18 @@ function PostDetailWrapper({
     createAndNavigate();
   };
 
-  const handleViewProfile = (userId: string) => {
-    navigate(`/profile/${userId}`);
-  };
-
   return (
     <PostDetail
       postId={postId}
-      isLoggedIn={isLoggedIn}
       onJoinWorkspace={handleJoinWorkspace}
       onEditPost={onEditPost} // onEditPost를 그대로 전달
       onViewProfile={handleViewProfile}
+      onOpenChange={(open) => {
+        if (!open) {
+          // 모달이 닫힐 때 이전 페이지로 이동하거나 홈페이지로 이동
+          navigate(-1);
+        }
+      }}
     />
   );
 }
@@ -208,36 +205,6 @@ function WorkspaceWrapper() {
       workspaceName={workspaceName}
       planDayDtos={planDayDtos}
       onEndTrip={handleEndTrip}
-    />
-  );
-}
-
-function ProfileWrapper({
-  isLoggedIn,
-  loggedInUserId,
-}: {
-  isLoggedIn: boolean;
-  loggedInUserId?: string;
-}) {
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  // 어떤 userId를 사용할지 결정합니다:
-  // 경로가 정확히 '/profile'인 경우, 로그인된 사용자의 ID (loggedInUserId)를 사용합니다.
-  // 그 외의 경우 (예: '/profile/:userId'), URL에서 userId를 파싱합니다.
-  const userIdFromUrl = location.pathname.split('/').pop() || ''; // userId를 string으로 직접 추출
-  const targetUserId =
-    location.pathname === '/profile' ? loggedInUserId : userIdFromUrl;
-
-  const handleViewPost = (postId: string) => {
-    navigate(`/post/${postId}`);
-  };
-
-  return (
-    <Profile
-      isLoggedIn={isLoggedIn}
-      onViewPost={handleViewPost}
-      userId={targetUserId}
     />
   );
 }
@@ -290,7 +257,15 @@ export default function App() {
   const [selectedPostForEdit, setSelectedPostForEdit] = useState<Post | null>(
     null
   );
+  const [profileModalState, setProfileModalState] = useState<{
+    open: boolean;
+    userId: string | null;
+  }>({ open: false, userId: null });
 
+  const [postDetailModalState, setPostDetailModalState] = useState<{
+    open: boolean;
+    postId: string | null;
+  }>({ open: false, postId: null });
   // 앱이 처음 로드될 때 쿠키를 통해 로그인 상태를 확인합니다.
   // checkAuth 함수는 Zustand 스토어에 의해 안정적으로 제공되므로 의존성 배열에 포함해도 안전합니다.
   useEffect(() => {
@@ -310,7 +285,10 @@ export default function App() {
   };
 
   const handleProfileClick = () => {
-    navigate('/profile');
+    if (user?.userId) {
+      // navigate('/profile');
+      setProfileModalState({ open: true, userId: user.userId });
+    }
   };
 
   const handleLogoClick = () => {
@@ -320,6 +298,14 @@ export default function App() {
   const handleSearch = (query: string) => {
     const searchParams = new URLSearchParams({ title: query });
     navigate(`/search?${searchParams.toString()}`);
+  };
+
+  const handleViewProfile = (userId: string) => {
+    setProfileModalState({ open: true, userId });
+  };
+
+  const handleViewPost = (postId: string) => {
+    setPostDetailModalState({ open: true, postId });
   };
 
   return (
@@ -359,6 +345,7 @@ export default function App() {
             element={
               <MainPageWrapper
                 isLoggedIn={isLoggedIn}
+                onViewPost={handleViewPost}
                 onCreatePost={() => setShowCreatePost(true)}
               />
             }
@@ -366,30 +353,9 @@ export default function App() {
           <Route path="/search" element={<SearchResultsWrapper />} />
           <Route
             path="/post/:id"
-            element={
-              <PostDetailWrapper
-                isLoggedIn={isLoggedIn}
-                onEditPost={(post) => {
-                  setSelectedPostForEdit(post);
-                  setShowEditPost(true);
-                }}
-              />
-            }
+            element={null} // 페이지 렌더링 대신 모달 사용
           />
           <Route path="/workspace/:id" element={<WorkspaceWrapper />} />
-          <Route
-            path="/profile"
-            element={
-              <ProfileWrapper
-                isLoggedIn={isLoggedIn}
-                loggedInUserId={user?.userId}
-              />
-            }
-          />
-          <Route
-            path="/profile/:userId"
-            element={<ProfileWrapper isLoggedIn={isLoggedIn} />} // userId는 URL에서 파싱
-          />
           <Route path="/review" element={<ReviewPageWrapper />} />
           <Route path="*" element={<NotFound />} />
         </Route>
@@ -406,9 +372,53 @@ export default function App() {
           onSuccess={() => {
             setShowEditPost(false); // 모달 닫기
             alert('게시물이 성공적으로 수정되었습니다.');
+            // PostDetail 모달이 열려있다면, 그 모달도 닫고 새로고침
+            if (postDetailModalState.open) {
+              setPostDetailModalState({ open: false, postId: null });
+            }
             navigate(0); // 현재 페이지 새로고침하여 데이터 갱신
           }}
         />
+      )}
+      <ProfileModal
+        open={profileModalState.open}
+        onOpenChange={(open) =>
+          setProfileModalState((prev) => ({ ...prev, open }))
+        }
+        userId={profileModalState.userId}
+        onViewPost={handleViewPost}
+      />
+
+      {postDetailModalState.open && postDetailModalState.postId && (
+        <Dialog
+          open={postDetailModalState.open}
+          onOpenChange={(open) => {
+            if (!open) {
+              setPostDetailModalState({ open: false, postId: null });
+            }
+          }}
+        >
+          <DialogContent className="w-full !max-w-[1100px] h-[90vh] p-0 flex flex-col [&>button]:hidden border-0 rounded-lg overflow-hidden">
+            <PostDetail
+              postId={postDetailModalState.postId}
+              onOpenChange={(open) => {
+                if (!open) {
+                  setPostDetailModalState({ open: false, postId: null });
+                }
+              }}
+              onViewProfile={handleViewProfile}
+              onEditPost={(post) => {
+                setPostDetailModalState({ open: false, postId: null });
+                setSelectedPostForEdit(post);
+                setShowEditPost(true);
+              }}
+              onJoinWorkspace={(postId, workspaceName) => {
+                // TODO: 워크스페이스 입장 로직 구현
+                console.log('Join workspace:', postId, workspaceName);
+              }}
+            />
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

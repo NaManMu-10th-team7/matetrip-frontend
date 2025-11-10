@@ -1,17 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Plus, MapPin, ClipboardList } from 'lucide-react';
+import { MapPin, ClipboardList } from 'lucide-react';
 import { Button } from './ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogClose,
-} from './ui/dialog';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import client from '../api/client';
 import { type Post } from '../types/post';
-import { PostDetail } from './PostDetail';
 import { MainPostCardSkeleton } from './MainPostCardSkeleton';
 import { WorkspaceCarousel } from './WorkspaceCarousel';
 
@@ -22,7 +14,7 @@ interface MainPageProps {
     location?: string;
     title?: string;
   }) => void;
-  onUserClick: (userId: string) => void;
+  onViewPost: (postId: string) => void;
   onCreatePost: () => void;
   isLoggedIn: boolean;
 }
@@ -100,13 +92,12 @@ const REGION_CATEGORIES = [
 
 export function MainPage({
   onSearch,
-  onUserClick,
+  onViewPost,
   onCreatePost,
   isLoggedIn,
 }: MainPageProps) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchInitialPosts = async () => {
@@ -130,14 +121,6 @@ export function MainPage({
     fetchInitialPosts();
   }, []);
 
-  const handleViewPost = (postId: string) => {
-    setSelectedPostId(postId);
-  };
-
-  const handleCloseModal = () => {
-    setSelectedPostId(null);
-  };
-
   return (
     <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* --- Recent Posts Section --- */}
@@ -160,7 +143,7 @@ export function MainPage({
         ) : (
           <WorkspaceCarousel
             posts={posts}
-            onCardClick={(post) => handleViewPost(post.id)}
+            onCardClick={(post) => onViewPost(post.id)}
           />
         )}
       </section>
@@ -194,29 +177,6 @@ export function MainPage({
         </div>
       </section>
 
-      {/* --- Floating Action Button --- */}
-      {isLoggedIn && (
-        <Button
-          onClick={onCreatePost}
-          className="fixed bottom-12 right-12 z-40 flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-8 text-base font-bold text-white shadow-xl transition-all duration-300 ease-in-out hover:-translate-y-1 hover:scale-105 hover:bg-blue-700 hover:shadow-2xl"
-          aria-label="게시물 작성"
-        >
-          <Plus className="h-5 w-5" />
-          여행 떠나기
-        </Button>
-      )}
-
-      {/* --- Post Detail Modal --- */}
-      <Dialog open={!!selectedPostId} onOpenChange={handleCloseModal}>
-        <DialogContent className="w-full !max-w-[1100px] h-[90vh] p-0 flex flex-col [&>button]:hidden border-0 rounded-lg overflow-hidden">
-          {selectedPostId && (
-            <PostDetail
-              postId={selectedPostId}
-              onOpenChange={handleCloseModal}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

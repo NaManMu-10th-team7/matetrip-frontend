@@ -40,16 +40,14 @@ import type { Participation } from '../types/participation.ts';
 
 interface PostDetailProps {
   postId: string;
-  isLoggedIn: boolean;
   onJoinWorkspace: (postId: string, workspaceName: string) => void;
   onViewProfile: (userId: string) => void;
-  onEditPost: (post: Post) => void;
+  onEditPost: (post: Post) => void; // 이 prop은 App.tsx에서 전달됩니다.
   onOpenChange: (open: boolean) => void;
 }
 
 export function PostDetail({
   postId,
-  // isLoggedIn, // useAuthStore에서 user 정보로 대체 가능
   onJoinWorkspace,
   onViewProfile,
   onEditPost,

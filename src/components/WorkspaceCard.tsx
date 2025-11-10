@@ -1,6 +1,7 @@
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { MapPin, Calendar, Users } from 'lucide-react';
 import { Badge } from './ui/badge';
+import { translateKeyword } from '../utils/keyword';
 import { Button } from './ui/button';
 import type { Post } from '../types/post';
 
@@ -42,13 +43,15 @@ export function WorkspaceCard({
   // API 응답에 커버 이미지가 없으므로 임시 플레이스홀더를 사용합니다.
   const coverImage = 'https://via.placeholder.com/400x300';
   
-  // writerProfile을 기반으로 참여자 목록을 구성합니다.
-  // 현재 API 응답에는 작성자 정보만 있으므로, 작성자만 목록에 추가합니다.
-  const displayParticipants = [
-    { id: writerProfile.id, name: writerProfile.nickname, profileImage: writerProfile.profileImage },
-  ];
-
-
+  // 참여자 목록을 구성합니다.
+  // 현재 API 응답에는 writerProfile만 있으므로, 작성자만 목록에 추가합니다.
+  // TODO: API 응답에 참여자 목록(participants)이 포함되면 해당 데이터를 사용하도록 수정해야 합니다.
+  const displayParticipants = writerProfile
+    ? [
+        { id: writerProfile.id, name: writerProfile.nickname, profileImage: writerProfile.profileImage },
+      ]
+    : [];
+  
   return (
     <div
       className="bg-white rounded-2xl shadow-lg overflow-hidden mx-4 hover:shadow-xl transition-shadow cursor-pointer relative h-full flex flex-col"
@@ -85,7 +88,7 @@ export function WorkspaceCard({
           <div className="flex flex-wrap gap-1.5 pt-2">
             {keywords.map((keyword, index) => (
               <Badge key={index} variant="secondary" className="text-xs">
-                #{keyword}
+                #{translateKeyword(keyword)}
               </Badge>
             ))}
           </div>
@@ -97,13 +100,15 @@ export function WorkspaceCard({
             <div className="flex items-center gap-3 flex-1 min-w-0">
               <div className="flex -space-x-2 flex-shrink-0">
                 {displayParticipants.slice(0, 3).map((participant, index) => (
-                  <ImageWithFallback
-                    key={participant.id}
-                    src={participant.profileImage}
-                    alt={participant.name}
-                    className="w-8 h-8 rounded-full object-cover border-2 border-white"
-                    style={{ zIndex: displayParticipants.length - index }}
-                  />
+                  participant && (
+                    <ImageWithFallback
+                      key={participant.id}
+                      src={participant.profileImage}
+                      alt={participant.name}
+                      className="w-8 h-8 rounded-full object-cover border-2 border-white"
+                      style={{ zIndex: displayParticipants.length - index }}
+                    />
+                  )
                 ))}
               </div>
               <div className="flex items-center gap-1 text-gray-500 text-sm">
