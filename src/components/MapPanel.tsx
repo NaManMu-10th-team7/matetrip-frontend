@@ -520,11 +520,6 @@ export function MapPanel({
         }}
         level={1}
         onClick={(_t, mouseEvent) => {
-          // '전체' 레이어에서는 마커 추가를 방지
-          if (selectedLayer === 'all') {
-            return;
-          }
-
           // Geocoder 라이브러리 로드 확인
           if (
             !window.kakao ||
@@ -593,7 +588,9 @@ export function MapPanel({
                   //    markPoi 함수를 호출하여 서버에 'mark' 이벤트를 보낸다.
                   //    id는 서버에서 생성되므로, 여기서는 제외한다.
                   markPoi({
-                    planDayId: selectedLayer, // 현재 선택된 레이어 ID 저장
+                    // '전체' 레이어일 경우 planDayId를 보내지 않고,
+                    // 특정 날짜 레이어일 경우에만 해당 ID를 저장합니다.
+                    planDayId: selectedLayer === 'all' ? undefined : selectedLayer,
                     latitude: latlng.getLat(),
                     longitude: latlng.getLng(),
                     address: address,

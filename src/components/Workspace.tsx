@@ -66,8 +66,7 @@ export function Workspace({
 
   // 소켓은 최상위 컴포넌트에서 한 번만 연결하고,
   // 모든 반환값을 하위 컴포넌트에 props로 전달합니다.
-  const { pois, connections, isSyncing, markPoi, unmarkPoi, connectPoi } =
-    usePoiSocket(workspaceId);
+  const { pois, isSyncing, markPoi, unmarkPoi } = usePoiSocket(workspaceId);
 
   // planDayDtos가 변경될 때마다 dayLayers를 다시 계산합니다.
   // useMemo를 사용하여 planDayDtos가 실제로 변경되었을 때만 map 함수가 실행되도록 최적화합니다.
@@ -157,11 +156,9 @@ export function Workspace({
                 setItinerary={setItinerary}
                 dayLayers={dayLayers}
                 pois={pois}
-                connections={connections}
                 isSyncing={isSyncing}
                 markPoi={markPoi}
                 unmarkPoi={unmarkPoi}
-                connectPoi={connectPoi}
               />
             </TabsContent>
 

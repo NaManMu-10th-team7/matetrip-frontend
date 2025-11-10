@@ -23,15 +23,18 @@ const PoiSocketEvent = {
 // 백엔드의 DTO와 타입을 맞춥니다.
 // 실제 프로젝트에서는 이 타입들을 공유하는 라이브러리로 분리하면 더 좋습니다.
 export type Poi = {
-  id: number | string; // 임시 ID는 string, 서버 ID는 number일 수 있음
+  id: string;
+  workspaceId: string;
+  createdBy: string;
   latitude: number;
   longitude: number;
   address: string;
   placeName?: string;
   planDayId?: string;
   categoryName?: string;
-  distance?: number;
-  duration?: number;
+  status: 'MARKED' | 'UNMARKED';
+  sequence: number;
+  isPersisted: boolean;
 };
 
 export type CreatePoiDto = {
@@ -47,39 +50,17 @@ export type CreatePoiDto = {
 
 type RemovePoiDto = { workspaceId: string; poiId: number | string };
 
-export type CreatePoiConnectionDto = {
-  workspaceId: string;
-  prevPoiId: number | string;
-  nextPoiId: number | string;
-  planDayId: string;
-  distance?: number; // 미터(m) 단위
-  duration?: number; // 초(s) 단위
-};
-
-// 백엔드에서 오는 Connection의 실제 타입
-export type PoiConnection = {
-  id: string;
-  prevPoiId: string | number;
-  nextPoiId: string | number;
-  planDayId: string;
-  distance?: number;
-  duration?: number;
-};
-
 // 서버와 동기화할 때 받는 데이터 타입
 type SyncPayload = {
   pois: Poi[];
-  connections: Record<string, PoiConnection[]>; // planDayId를 키로 가지는 객체
 };
 
 export function usePoiSocket(workspaceId: string) {
   // 소켓 인스턴스를 ref로 관리하여 리렌더링 시에도 연결을 유지합니다.
   const socketRef = useRef<Socket | null>(null);
   const [pois, setPois] = useState<Poi[]>([]);
+  // connections 상태는 더 이상 사용하지 않으므로 제거합니다.
   const { user } = useAuthStore();
-  const [connections, setConnections] = useState<
-    Record<string, PoiConnection[]>
-  >({});
   const [isSyncing, setIsSyncing] = useState(true);
 
   useEffect(() => {
@@ -113,7 +94,6 @@ export function usePoiSocket(workspaceId: string) {
       clearTimeout(syncTimeout); // SYNC 성공 시 타임아웃을 제거합니다.
       console.log('Syncing Data:', payload);
       setPois(payload.pois || []); // payload.pois가 없을 경우를 대비해 빈 배열을 기본값으로 설정
-      setConnections(payload.connections || {});
       setIsSyncing(false);
     });
 
@@ -127,33 +107,6 @@ export function usePoiSocket(workspaceId: string) {
     socket.on(PoiSocketEvent.UNMARKED, (data: { poiId: number | string }) => {
       console.log('POI Unmarked:', data);
       setPois((prevPois) => prevPois.filter((p) => p.id !== data.poiId));
-    });
-
-    // 6. 'connected' 이벤트: POI 연결 성공 시 서버로부터 받은 연결 정보를 콘솔에 출력합니다.
-    socket.on(PoiSocketEvent.CONNECTED, (connectionData: PoiConnection) => {
-      console.log('✅ POI Connection successful:', connectionData);
-      // 실시간으로 connections 상태를 업데이트합니다.
-      setConnections((prev) => {
-        const dayConnections = prev[connectionData.planDayId] || [];
-        return {
-          ...prev,
-          [connectionData.planDayId]: [...dayConnections, connectionData],
-        };
-      });
-
-      // itinerary 상태 업데이트를 위해 연결된 POI에 distance와 duration 추가
-      setPois((prevPois) =>
-        prevPois.map((poi) => {
-          if (poi.id === connectionData.nextPoiId) {
-            return {
-              ...poi,
-              distance: connectionData.distance,
-              duration: connectionData.duration,
-            };
-          }
-          return poi;
-        })
-      );
     });
 
     // 컴포넌트 언마운트 시 소켓 연결을 해제합니다.
@@ -180,26 +133,17 @@ export function usePoiSocket(workspaceId: string) {
       '[시뮬레이션] POI 테이블 저장 데이터 (MARK 이벤트 전송):',
       payload
     );
-    socketRef.current?.emit(PoiSocketEvent.MARK, payload);
+    // emit의 세 번째 인자로 서버의 응답을 처리하는 콜백(ack)을 추가합니다.
+    socketRef.current?.emit(PoiSocketEvent.MARK, payload, (response: any) => {
+      // 백엔드에서 MARK 이벤트에 대한 응답으로 보내주는 데이터를 콘솔에 출력합니다.
+      console.log('✅ MARK 이벤트에 대한 서버 응답:', response);
+    });
   };
 
   const unmarkPoi = (poiId: number | string) => {
     socketRef.current?.emit(PoiSocketEvent.UNMARK, { workspaceId, poiId });
   };
 
-  const connectPoi = (
-    connectionData: Omit<CreatePoiConnectionDto, 'workspaceId'>
-  ) => {
-    const payload = { ...connectionData, workspaceId };
-    console.log(
-      '[시뮬레이션] POI_Connection 테이블 저장 데이터 (POI_CONNECT 이벤트 전송):',
-      payload
-    );
-    socketRef.current?.emit(PoiSocketEvent.POI_CONNECT, payload);
-  };
-
-  // unmarkPoi와 마찬가지로 disconnectPoi 함수도 추가할 수 있습니다.
-  // const disconnectPoi = ( ... ) => { ... };
-
-  return { pois, connections, isSyncing, markPoi, unmarkPoi, connectPoi };
+  // connectPoi와 connections는 더 이상 사용하지 않으므로 반환 객체에서 제거합니다.
+  return { pois, isSyncing, markPoi, unmarkPoi };
 }
