@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { MapPin, ClipboardList, Plus } from 'lucide-react'; // Plus 아이콘 추가
+import { MapPin, ClipboardList, Plus } from 'lucide-react';
 import { Button } from './ui/button';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import client from '../api/client';
 import { type Post } from '../types/post';
 import { MainPostCardSkeleton } from './MainPostCardSkeleton';
 import { WorkspaceCarousel } from './WorkspaceCarousel';
-import { useAuthStore } from '../store/authStore'; // Import useAuthStore
+import { useAuthStore } from '../store/authStore';
 
 interface MainPageProps {
   onSearch: (params: {
@@ -98,29 +98,46 @@ export function MainPage({
   isLoggedIn,
 }: MainPageProps) {
   const [posts, setPosts] = useState<Post[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [userPosts, setUserPosts] = useState<Post[]>([]); // New state for user's posts
-  const [userPostsLoading, setUserPostsLoading] = useState(true); // New state for user's posts loading
+  const [userPosts, setUserPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState(true); // Single loading state for both sections
   const { user, isAuthLoading } = useAuthStore(); // Get user and isAuthLoading from auth store
 
   useEffect(() => {
     // isAuthLoading이 true일 때는 API 호출을 하지 않습니다.
+    // user 정보가 완전히 로드될 때까지 기다립니다.
     if (isAuthLoading) {
+      setIsLoading(true); // 인증 정보 로딩 중에는 전체 페이지 로딩 상태 유지
       return;
     }
 
-    const fetchInitialPosts = async () => {
+    const fetchAllPosts = async () => {
       setIsLoading(true);
       try {
-        const response = await client.get<Post[]>('/posts');
+        const [initialPostsResponse, userPostsResponse] = await Promise.all([
+          client.get<Post[]>('/posts'),
+          isLoggedIn && user?.userId
+            ? client.get<Post[]>(`/posts/user/${user.userId}`)
+            : Promise.resolve({ data: [] }), // If not logged in or userId not available, resolve with empty array
+        ]);
+
         // 최신 글이 위로 오도록 생성일(createdAt) 기준으로 정렬합니다.
-        const sortedPosts = response.data.sort(
+        const sortedInitialPosts = initialPostsResponse.data.sort(
           (a, b) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
+        setPosts(sortedInitialPosts);
+        console.log(`최신 동행 글 목록`, sortedInitialPosts);
 
-        console.log(`최신 동행 글 목록`, sortedPosts);
-        setPosts(sortedPosts);
+        if (isLoggedIn && user?.userId) {
+          const sortedUserPosts = userPostsResponse.data.sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+          setUserPosts(sortedUserPosts);
+          console.log(`${user.profile.nickname}님이 참여중인 여행`, sortedUserPosts);
+        } else {
+          setUserPosts([]);
+        }
       } catch (error) {
         console.error('Failed to fetch posts:', error);
       } finally {
@@ -128,44 +145,28 @@ export function MainPage({
       }
     };
 
-    const fetchUserPosts = async () => {
-      if (!isLoggedIn || !user?.userId) {
-        setUserPostsLoading(false);
-        return;
-      }
-
-      setUserPostsLoading(true);
-      try {
-        const response = await client.get<Post[]>(`/posts/user/${user.userId}`);
-        const sortedUserPosts = response.data.sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-        console.log(`${user.profile.nickname}님이 참여중인 여행`, sortedUserPosts);
-        setUserPosts(sortedUserPosts);
-      } catch (error) {
-        console.error('Failed to fetch user posts:', error);
-      } finally {
-        setUserPostsLoading(false);
-      }
-    };
-
-    fetchInitialPosts();
-    fetchUserPosts(); // Call the new fetch function
+    fetchAllPosts();
   }, [isLoggedIn, user?.userId, user?.profile.nickname, isAuthLoading]); // Add isAuthLoading to dependency array
 
   return (
     <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-gray-50">
       {/* --- User's Participating Trips Section --- */}
-      {isLoggedIn && user && (
+      {isLoggedIn && (
         <section className="mb-12">
           <div className="flex items-center gap-2 mb-6">
             <ClipboardList className="w-5 h-5 text-blue-600" />
-            <h2 className="text-xl font-bold text-gray-900">{user.profile.nickname}님이 참여중인 여행</h2>
+            <h2 className="text-xl font-bold text-gray-900">
+              {isLoading ? (
+                <div className="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>
+              ) : (
+                // user?.profile.nickname은 isLoading이 false일 때 안전하게 접근 가능
+                `${user?.profile.nickname}님이 참여중인 여행`
+              )}
+            </h2>
           </div>
-          {userPostsLoading ? (
+          {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {Array.from({ length: 6 }).map((_, index) => (
+              {Array.from({ length: 3 }).map((_, index) => (
                 <MainPostCardSkeleton key={index} />
               ))}
             </div>
@@ -186,11 +187,17 @@ export function MainPage({
       <section className="mb-12">
         <div className="flex items-center gap-2 mb-6">
           <ClipboardList className="w-5 h-5 text-blue-600" />
-          <h2 className="text-xl font-bold text-gray-900">최신 동행 모집</h2>
+          <h2 className="text-xl font-bold text-gray-900">
+            {isLoading ? (
+              <div className="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>
+            ) : (
+              '최신 동행 모집'
+            )}
+          </h2>
         </div>
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: 6 }).map((_, index) => (
+            {Array.from({ length: 3 }).map((_, index) => (
               <MainPostCardSkeleton key={index} />
             ))}
           </div>
