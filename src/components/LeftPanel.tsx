@@ -5,12 +5,19 @@ import {
   Search,
   StickyNote,
   ListOrdered,
+  GripVertical,
 } from 'lucide-react';
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { useDroppable } from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
 import type { Poi } from '../hooks/usePoiSocket';
 import type { DayLayer, KakaoPlace } from './MapPanel';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import MarkerStorage from './MarkerStorage';
 
 const KAKAO_MAP_SERVICES_STATUS = window.kakao?.maps.services.Status;
 type KakaoPagination = kakao.maps.Pagination;
@@ -20,6 +27,91 @@ interface PageInfo {
   last: number;
   hasPrevPage: boolean;
   hasNextPage: boolean;
+}
+
+function PoiItem({ poi, color, index, onPoiClick }: { poi: Poi, color?: string, index?: number, onPoiClick?: (poi: Poi) => void }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: poi.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 10 : undefined,
+    opacity: isDragging ? 0 : 1, // 드래그 중인 원본 아이템 숨기기
+  };
+
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-2 text-xs p-1 rounded-md cursor-pointer hover:bg-gray-100"
+      onClick={() => onPoiClick?.(poi)} // onClick 핸들러 추가
+    >
+      <div {...attributes} {...listeners} className="cursor-grab touch-none p-1">
+        <GripVertical className="w-4 h-4 text-gray-400" />
+      </div>
+      {color && index !== undefined && (
+        <span
+          className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full text-white text-xs"
+          style={{ backgroundColor: color }}
+        >
+          {index + 1}
+        </span>
+      )}
+      <span className="truncate">{poi.placeName}</span>
+    </li>
+  );
+}
+
+function MarkerStorage({ pois, onPoiClick }: { pois: Poi[], onPoiClick: (poi: Poi) => void }) {
+    const { setNodeRef } = useDroppable({ id: 'marker-storage' });
+
+    return (
+        <div ref={setNodeRef} className="p-3 border-b">
+            <h3 className="text-sm font-semibold mb-2">마커 보관함</h3>
+            <SortableContext items={pois.map(p => p.id)} strategy={verticalListSortingStrategy}>
+                <ul className="space-y-2 min-h-[2rem]">
+                    {pois.length > 0 ? (
+                        pois.map((poi) => <PoiItem key={poi.id} poi={poi} onPoiClick={onPoiClick} />)
+                    ) : (
+                        <p className="text-xs text-gray-500 p-2">지도에 마커를 추가하여 보관하세요.</p>
+                    )}
+                </ul>
+            </SortableContext>
+        </div>
+    );
+}
+
+function ItineraryDay({ layer, pois, onPoiClick }: { layer: DayLayer, pois: Poi[], onPoiClick: (poi: Poi) => void }) {
+    const { setNodeRef } = useDroppable({ id: layer.id });
+    
+    return (
+        <div ref={setNodeRef}>
+            <h3
+                className="text-sm font-bold mb-2 pb-1 border-b"
+                style={{ borderBottomColor: layer.color }}
+            >
+                {layer.label}
+            </h3>
+            <SortableContext items={pois.map(p => p.id)} strategy={verticalListSortingStrategy}>
+                <ul className="space-y-2 min-h-[2rem]">
+                    {pois.length > 0 ? (
+                        pois.map((poi, index) => (
+                            <PoiItem key={poi.id} poi={poi} color={layer.color} index={index} onPoiClick={onPoiClick} />
+                        ))
+                    ) : (
+                        <p className="text-xs text-gray-500 p-2">마커를 드래그하여 추가하세요.</p>
+                    )}
+                </ul>
+            </SortableContext>
+        </div>
+    );
 }
 
 function ItineraryPanel({
@@ -39,35 +131,7 @@ function ItineraryPanel({
       </div>
       <div className="space-y-3">
         {dayLayers.map((layer) => (
-          <div key={layer.id}>
-            <h3
-              className="text-sm font-bold mb-2 pb-1 border-b"
-              style={{ borderBottomColor: layer.color }}
-            >
-              {layer.label}
-            </h3>
-            <ul className="space-y-2">
-              {itinerary[layer.id] && itinerary[layer.id].length > 0 ? (
-                itinerary[layer.id].map((poi, index) => (
-                  <li
-                    key={poi.id}
-                    className="flex items-center gap-2 text-xs p-1 rounded-md cursor-pointer hover:bg-gray-100"
-                    onClick={() => onPoiClick(poi)}
-                  >
-                    <span
-                      className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full text-white text-xs"
-                      style={{ backgroundColor: layer.color }}
-                    >
-                      {index + 1}
-                    </span>
-                    <span className="truncate">{poi.placeName}</span>
-                  </li>
-                ))
-              ) : (
-                <p className="text-xs text-gray-500">추가된 장소가 없습니다.</p>
-              )}
-            </ul>
-          </div>
+          <ItineraryDay key={layer.id} layer={layer} pois={itinerary[layer.id] || []} onPoiClick={onPoiClick} />
         ))}
       </div>
     </div>
@@ -110,31 +174,18 @@ function SearchPanel({
       } else {
         setResults([]);
         setPageInfo(null);
-        if (status === KAKAO_MAP_SERVICES_STATUS.ZERO_RESULT) {
-          // UI에 메시지를 표시하므로 alert는 제거
-        } else {
-          alert('검색 중 오류가 발생했습니다.');
-        }
       }
     },
     []
   );
 
   const handleSearch = useCallback(() => {
-    if (!keyword.trim()) {
-      alert('검색어를 입력해주세요.');
-      return;
-    }
-    if (!placesRef.current) {
-      alert('카카오 지도 서비스가 아직 로드되지 않았습니다.');
-      return;
-    }
+    if (!keyword.trim() || !placesRef.current) return;
     placesRef.current.keywordSearch(keyword, searchCallback, { page: 1 });
   }, [keyword, searchCallback]);
 
   return (
     <div className="p-4 h-full flex flex-col gap-4">
-      {/* 1. 검색 바 */}
       <div className="flex-shrink-0 flex gap-2">
         <Input
           type="text"
@@ -148,10 +199,7 @@ function SearchPanel({
           검색
         </Button>
       </div>
-
-      {/* 2. 결과 및 페이징 컨테이너 */}
       <div className="flex-1 flex flex-col min-h-0 border-t pt-4">
-        {/* 2a. 스크롤 가능한 결과 목록 */}
         <ul className="flex-1 overflow-y-auto space-y-2 pr-2">
           {results.length > 0 ? (
             results.map((place) => (
@@ -174,8 +222,6 @@ function SearchPanel({
             </div>
           )}
         </ul>
-
-        {/* 2b. 페이징 컨트롤 */}
         {pageInfo && results.length > 0 && (
           <div className="flex-shrink-0 flex justify-center items-center gap-3 pt-2 mt-2 border-t">
             <Button
@@ -183,19 +229,15 @@ function SearchPanel({
               variant="ghost"
               onClick={() => paginationRef.current?.gotoPage(pageInfo.current - 1)}
               disabled={!pageInfo.hasPrevPage}
-              className="h-7 px-2"
             >
               이전
             </Button>
-            <span className="text-xs">
-              {pageInfo.current} / {pageInfo.last}
-            </span>
+            <span>{pageInfo.current} / {pageInfo.last}</span>
             <Button
               size="sm"
               variant="ghost"
               onClick={() => paginationRef.current?.gotoPage(pageInfo.current + 1)}
               disabled={!pageInfo.hasNextPage}
-              className="h-7 px-2"
             >
               다음
             </Button>
@@ -210,8 +252,8 @@ interface LeftPanelProps {
   isOpen: boolean;
   itinerary: Record<string, Poi[]>;
   dayLayers: DayLayer[];
-  pois: Poi[];
-  unmarkPoi: (poiId: number) => void;
+  markedPois: Poi[];
+  unmarkPoi: (poiId: string | number) => void;
   onPlaceClick: (place: KakaoPlace) => void;
   onPoiClick: (poi: Poi) => void;
 }
@@ -220,16 +262,13 @@ export function LeftPanel({
   isOpen,
   itinerary,
   dayLayers,
-  pois,
-  unmarkPoi,
+  markedPois,
   onPlaceClick,
-  onPoiClick,
+  onPoiClick, // onPoiClick prop 추가
 }: LeftPanelProps) {
   if (!isOpen) {
     return null;
   }
-
-  const markedPois = pois.filter((poi) => poi.status === 'MARKED');
 
   return (
     <div className="w-80 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out">
@@ -249,16 +288,13 @@ export function LeftPanel({
           </TabsTrigger>
         </TabsList>
         <TabsContent value="plan" className="flex-1 overflow-auto m-0">
-          <div className="p-3">
-            <MarkerStorage pois={markedPois} />
-          </div>
+          <MarkerStorage pois={markedPois} onPoiClick={onPoiClick} /> {/* onPoiClick 전달 */}
           <ItineraryPanel
             itinerary={itinerary}
             dayLayers={dayLayers}
-            onPoiClick={onPoiClick}
+            onPoiClick={onPoiClick} // onPoiClick 전달
           />
         </TabsContent>
-        {/* 검색 탭: position-based layout으로 변경 */}
         <TabsContent value="search" className="flex-1 relative m-0">
           <div className="absolute inset-0">
             <SearchPanel onPlaceClick={onPlaceClick} />
