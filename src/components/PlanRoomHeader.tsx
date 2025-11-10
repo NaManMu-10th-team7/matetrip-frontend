@@ -48,7 +48,7 @@ export function PlanRoomHeader({
   const [isReviewModalOpen, setReviewModalOpen] = useState(false);
 
   return (
-    <div className="border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50 px-6 py-3 flex items-center justify-between flex-shrink-0">
+    <div className="border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50 px-6 py-3 flex items-center justify-between flex-shrink-0 h-18">
       {/* 왼쪽 영역: 뒤로가기 버튼, 제목 */}
       <div className="flex items-center gap-4">
         <button

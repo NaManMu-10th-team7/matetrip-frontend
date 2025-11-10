@@ -26,7 +26,7 @@ export function Header({
   const { user } = useAuthStore();
 
   return (
-    <header className="w-full border-b bg-white shadow-sm sticky top-0 z-50">
+    <header className="w-full border-b bg-white shadow-sm sticky top-0 z-50 h-18">
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between gap-6">
           <button

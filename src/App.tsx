@@ -49,7 +49,7 @@ function Layout({
   onSearch: (query: string) => void;
 }) {
   return (
-    <>
+    <div className="flex flex-col h-screen"> {/* flex-col과 h-screen 유지 */}
       <Header
         isLoggedIn={isLoggedIn}
         isAuthLoading={isAuthLoading}
@@ -60,8 +60,10 @@ function Layout({
         onLogoClick={onLogoClick}
         onSearch={onSearch}
       />
-      <Outlet />
-    </>
+      <div className="flex-1 overflow-y-auto"> {/* overflow-hidden 대신 overflow-y-auto 추가 */}
+        <Outlet />
+      </div>
+    </div>
   );
 }
 
@@ -253,7 +255,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="h-screen bg-gray-50"> {/* h-screen 유지 */}
       <Toaster position="top-right" />
       {isLoggedIn && <NotificationListener />}
       <Routes>

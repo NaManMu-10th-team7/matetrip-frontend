@@ -259,7 +259,7 @@ export function Workspace({
         onDragEnd={handleDragEnd} 
         collisionDetection={closestCenter}
     >
-      <div className="h-[calc(100vh-4.5rem)] flex flex-col bg-gray-50">
+      <div className="h-full flex flex-col bg-gray-50">
         <PlanRoomHeader
           title={workspaceName}
           startDate={startDate}
@@ -272,8 +272,8 @@ export function Workspace({
           isOwner={true}
           activeMembers={MOCK_MEMBERS}
         />
-        
-        <div className="flex-1 flex relative"> {/* overflow-y-auto 제거 */}
+
+        <div className="flex-1 flex relative overflow-hidden">
           <LeftPanel 
             isOpen={isLeftPanelOpen} 
             itinerary={itinerary}

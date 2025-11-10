@@ -17,7 +17,7 @@ export function RightPanel({ isOpen, messages, sendMessage, isChatConnected }: R
 
   return (
     <div className="w-80 bg-white border-l border-gray-200 flex flex-col transition-all duration-300 ease-in-out">
-      <Tabs defaultValue="chat" className="flex-1 flex flex-col">
+      <Tabs defaultValue="chat" className="flex-1 flex flex-col h-full">
         <TabsList className="w-full justify-around rounded-none bg-gray-50 border-b">
           <TabsTrigger value="chat" className="flex-1 gap-2">
             <MessageCircle className="w-4 h-4" />
