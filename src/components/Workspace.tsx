@@ -1,19 +1,10 @@
-import { useState, useMemo, useEffect } from 'react';
-import {
-  Users,
-  X,
-  Map as MapIcon,
-  MessageCircle,
-  Search,
-  Calendar,
-} from 'lucide-react';
-import { Button } from './ui/button';
-import { Badge } from './ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { MapPanel, type DayLayer } from './MapPanel';
+import { useState, useMemo } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { MapPanel, type KakaoPlace } from './MapPanel';
 import type { PlanDayDto } from '../types/workspace';
-import { ChatPanel } from './ChatPanel';
-import { PlanPanel } from './PlanPanel';
+import { LeftPanel } from './LeftPanel';
+import { RightPanel } from './RightPanel';
+import { PlanRoomHeader } from './PlanRoomHeader';
 import { type Poi, usePoiSocket } from '../hooks/usePoiSocket.ts';
 
 interface WorkspaceProps {
@@ -24,30 +15,21 @@ interface WorkspaceProps {
 }
 
 const MOCK_MEMBERS = [
-  { id: 1, name: '여행러버', isAuthor: true },
-  { id: 2, name: '바다조아', isAuthor: false },
-  { id: 3, name: '제주사랑', isAuthor: false },
+  { id: 1, name: '여행러버', isAuthor: true, avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtYW4lMjBwb3J0cmFpdHxlbnwxfHx8fDE3NjI2MDg1MDN8MA&ixlib=rb-4.1.0&q=80&w=1080' },
+  { id: 2, name: '바다조아', isAuthor: false, avatar: 'https://images.unsplash.com/photo-1557053910-d9eadeed1c58?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3b21hbiUyMHBvcnRyYWl0fGVufDF8fHx8MTc2MjU4NzQzM3ww&ixlib=rb-4.1.0&q=80&w=1080' },
+  { id: 3, name: '제주사랑', isAuthor: false, avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBwb3J0cmFpdHxlbnwxfHx8fDE3NjI1NTU3MDJ8MA&ixlib=rb-4.1.0&q=80&w=1080' },
 ];
 
-/**
- * 주어진 문자열(예: day.id)을 기반으로 일관된 색상을 생성합니다.
- * @param str - 색상을 생성할 기반이 되는 문자열
- * @returns 16진수 색상 코드 (e.g., '#RRGGBB')
- */
 const generateColorFromString = (str: string) => {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
-    // 간단한 해시 함수(djb2)를 사용하여 문자열을 숫자로 변환합니다.
     hash = str.charCodeAt(i) + ((hash << 5) - hash);
   }
 
   let color = '#';
   for (let i = 0; i < 3; i++) {
-    // 해시 값을 사용하여 RGB 각 채널의 색상 값을 생성합니다.
     const value = (hash >> (i * 8)) & 0xff;
-    // 값을 128-255 범위로 조정하여 너무 어두운 색상을 방지합니다.
     const brightValue = Math.floor(value / 2) + 128;
-    // 값을 16진수로 변환하고, 한 자리 수일 경우 앞에 '0'을 붙여 두 자리로 만듭니다.
     color += brightValue.toString(16).padStart(2, '0');
   }
   return color.toUpperCase();
@@ -59,17 +41,12 @@ export function Workspace({
   planDayDtos,
   onEndTrip,
 }: WorkspaceProps) {
-  const [showMembers, setShowMembers] = useState(false);
-
-  // MapPanel과 PlanPanel이 공유할 일정 상태를 Workspace 컴포넌트로 이동
+  const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
+  const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
   const [itinerary, setItinerary] = useState<Record<string, Poi[]>>({});
+  const { pois, isSyncing, markPoi, unmarkPoi, connections, connectPoi } = usePoiSocket(workspaceId);
+  const [selectedPlace, setSelectedPlace] = useState<KakaoPlace | null>(null);
 
-  // 소켓은 최상위 컴포넌트에서 한 번만 연결하고,
-  // 모든 반환값을 하위 컴포넌트에 props로 전달합니다.
-  const { pois, isSyncing, markPoi, unmarkPoi } = usePoiSocket(workspaceId);
-
-  // planDayDtos가 변경될 때마다 dayLayers를 다시 계산합니다.
-  // useMemo를 사용하여 planDayDtos가 실제로 변경되었을 때만 map 함수가 실행되도록 최적화합니다.
   const dayLayers = useMemo(
     () =>
       planDayDtos.map((day) => ({
@@ -80,78 +57,47 @@ export function Workspace({
     [planDayDtos]
   );
 
+  const startDate = planDayDtos.length > 0 ? planDayDtos[0].planDate : '';
+  const endDate = planDayDtos.length > 0 ? planDayDtos[planDayDtos.length - 1].planDate : '';
+
   return (
     <div className="h-screen flex flex-col bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h2 className="text-gray-900">{workspaceName}</h2>
-          <button
-            onClick={() => setShowMembers(!showMembers)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-          >
-            <Users className="w-4 h-4" />
-            <span className="text-sm">{MOCK_MEMBERS.length}명</span>
-          </button>
-        </div>
-
-        <Button variant="destructive" size="sm" onClick={onEndTrip}>
-          여행 종료하기
-        </Button>
-      </div>
-
-      {/* Members Sidebar */}
-      {showMembers && (
-        <div className="absolute top-16 left-4 z-10 bg-white rounded-lg shadow-lg border p-4 w-64">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-gray-900">참여 인원</h3>
-            <button onClick={() => setShowMembers(false)}>
-              <X className="w-4 h-4 text-gray-500" />
-            </button>
-          </div>
-          <div className="space-y-2">
-            {MOCK_MEMBERS.map((member) => (
-              <div key={member.id} className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full" />
-                <div className="flex-1">
-                  <div className="text-sm text-gray-900">{member.name}</div>
-                </div>
-                {member.isAuthor && (
-                  <Badge variant="secondary" className="text-xs">
-                    방장
-                  </Badge>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Main Content with Tabs */}
-      <div className="flex-1 overflow-hidden">
-        <Tabs defaultValue="map" className="h-full flex flex-col">
-          <TabsList className="bg-white border-b rounded-none w-full justify-start px-4">
-            <TabsTrigger value="map" className="gap-2">
-              <MapIcon className="w-4 h-4" />
-              지도
-            </TabsTrigger>
-            <TabsTrigger value="chat" className="gap-2">
-              <MessageCircle className="w-4 h-4" />
-              채팅
-            </TabsTrigger>
-            <TabsTrigger value="search" className="gap-2">
-              <Search className="w-4 h-4" />
-              검색
-            </TabsTrigger>
-            <TabsTrigger value="plan" className="gap-2">
-              <Calendar className="w-4 h-4" />
-              일정
-            </TabsTrigger>
-          </TabsList>
-
-          <div className="flex-1 overflow-hidden">
-            <TabsContent value="map" className="h-full m-0">
-              <MapPanel
+      <PlanRoomHeader
+        title={workspaceName}
+        startDate={startDate}
+        endDate={endDate}
+        totalDays={planDayDtos.length}
+        currentMembers={MOCK_MEMBERS.length}
+        maxMembers={4} // Assuming a max of 4 for now
+        onExit={onEndTrip}
+        onBack={onEndTrip}
+        isOwner={true} // Assuming the user is the owner
+        activeMembers={MOCK_MEMBERS}
+      />
+      
+      <div className="flex-1 flex overflow-hidden relative">
+        <LeftPanel 
+          isOpen={isLeftPanelOpen} 
+          itinerary={itinerary}
+          dayLayers={dayLayers}
+          unmarkPoi={unmarkPoi}
+          onPlaceClick={setSelectedPlace}
+        />
+        
+        <button
+          onClick={() => setIsLeftPanelOpen(!isLeftPanelOpen)}
+          className="absolute top-1/2 -translate-y-1/2 z-20 w-6 h-12 bg-white hover:bg-gray-100 transition-colors flex items-center justify-center border border-gray-300 rounded-r-md shadow-md"
+          style={{ left: isLeftPanelOpen ? '320px' : '0' }}
+        >
+          {isLeftPanelOpen ? (
+            <ChevronLeft className="w-4 h-4 text-gray-600" />
+          ) : (
+            <ChevronRight className="w-4 h-4 text-gray-600" />
+          )}
+        </button>
+        
+        <div className="flex-1 bg-gray-100 flex items-center justify-center">
+            <MapPanel
                 itinerary={itinerary}
                 setItinerary={setItinerary}
                 dayLayers={dayLayers}
@@ -159,28 +105,27 @@ export function Workspace({
                 isSyncing={isSyncing}
                 markPoi={markPoi}
                 unmarkPoi={unmarkPoi}
-              />
-            </TabsContent>
+                connectPoi={connectPoi}
+                selectedPlace={selectedPlace}
+                connections={connections}
+            />
+        </div>
 
-            <TabsContent value="chat" className="h-full m-0">
-              <ChatPanel />
-            </TabsContent>
+        <button
+          onClick={() => setIsRightPanelOpen(!isRightPanelOpen)}
+          className="absolute top-1/2 -translate-y-1/2 z-20 w-6 h-12 bg-white hover:bg-gray-100 transition-colors flex items-center justify-center border border-gray-300 rounded-l-md shadow-md"
+          style={{ right: isRightPanelOpen ? '320px' : '0' }}
+        >
+          {isRightPanelOpen ? (
+            <ChevronRight className="w-4 h-4 text-gray-600" />
+          ) : (
+            <ChevronLeft className="w-4 h-4 text-gray-600" />
+          )}
+        </button>
 
-            <TabsContent value="search" className="h-full m-0 p-4">
-              <div className="h-full flex items-center justify-center text-gray-500">
-                검색 기능 (개발 예정)
-              </div>
-            </TabsContent>
-
-            <TabsContent value="plan" className="h-full m-0">
-              <PlanPanel
-                itinerary={itinerary}
-                dayLayers={dayLayers}
-                unmarkPoi={unmarkPoi}
-              />
-            </TabsContent>
-          </div>
-        </Tabs>
+        <RightPanel 
+          isOpen={isRightPanelOpen} 
+        />
       </div>
     </div>
   );
