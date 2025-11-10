@@ -10,6 +10,7 @@ import type { Poi } from '../hooks/usePoiSocket';
 import type { DayLayer, KakaoPlace } from './MapPanel';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
+import MarkerStorage from './MarkerStorage';
 
 const KAKAO_MAP_SERVICES_STATUS = window.kakao?.maps.services.Status;
 type KakaoPagination = kakao.maps.Pagination;
@@ -209,6 +210,7 @@ interface LeftPanelProps {
   isOpen: boolean;
   itinerary: Record<string, Poi[]>;
   dayLayers: DayLayer[];
+  pois: Poi[];
   unmarkPoi: (poiId: number) => void;
   onPlaceClick: (place: KakaoPlace) => void;
   onPoiClick: (poi: Poi) => void;
@@ -218,6 +220,7 @@ export function LeftPanel({
   isOpen,
   itinerary,
   dayLayers,
+  pois,
   unmarkPoi,
   onPlaceClick,
   onPoiClick,
@@ -225,6 +228,8 @@ export function LeftPanel({
   if (!isOpen) {
     return null;
   }
+
+  const markedPois = pois.filter((poi) => poi.status === 'MARKED');
 
   return (
     <div className="w-80 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out">
@@ -244,6 +249,9 @@ export function LeftPanel({
           </TabsTrigger>
         </TabsList>
         <TabsContent value="plan" className="flex-1 overflow-auto m-0">
+          <div className="p-3">
+            <MarkerStorage pois={markedPois} />
+          </div>
           <ItineraryPanel
             itinerary={itinerary}
             dayLayers={dayLayers}

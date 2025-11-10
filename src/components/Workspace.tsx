@@ -44,7 +44,7 @@ export function Workspace({
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
   const [itinerary, setItinerary] = useState<Record<string, Poi[]>>({});
-  const { pois, isSyncing, markPoi, unmarkPoi, connections, connectPoi } = usePoiSocket(workspaceId);
+  const { pois, isSyncing, markPoi, unmarkPoi } = usePoiSocket(workspaceId);
   const [selectedPlace, setSelectedPlace] = useState<KakaoPlace | null>(null);
   const mapRef = useRef<kakao.maps.Map>(null);
 
@@ -91,6 +91,7 @@ export function Workspace({
           isOpen={isLeftPanelOpen} 
           itinerary={itinerary}
           dayLayers={dayLayers}
+          pois={pois}
           unmarkPoi={unmarkPoi}
           onPlaceClick={setSelectedPlace}
           onPoiClick={handlePoiClick}
@@ -117,10 +118,7 @@ export function Workspace({
                 isSyncing={isSyncing}
                 markPoi={markPoi}
                 unmarkPoi={unmarkPoi}
-                connectPoi={connectPoi}
                 selectedPlace={selectedPlace}
-                connections={connections}
-                onPoiClick={handlePoiClick}
                 mapRef={mapRef}
             />
         </div>

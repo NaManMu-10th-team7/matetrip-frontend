@@ -1,5 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect } from 'react';
 import {
   Plus,
   Maximize2,
@@ -15,8 +14,7 @@ import {
 } from 'react-kakao-maps-sdk'; // prettier-ignore
 import {
   type Poi,
-  type PoiConnection,
-  type CreatePoiConnectionDto,
+  type CreatePoiDto,
 } from '../hooks/usePoiSocket';
 import { KAKAO_REST_API_KEY } from '../constants';
 import { useDirections } from '../hooks/useDirections';
@@ -89,10 +87,7 @@ export function MapPanel({
   isSyncing,
   markPoi,
   unmarkPoi,
-  connectPoi,
   selectedPlace,
-  connections,
-  onPoiClick,
   mapRef
 }: {
   itinerary: Record<string, Poi[]>;
@@ -104,12 +99,7 @@ export function MapPanel({
     poiData: Omit<CreatePoiDto, 'workspaceId' | 'createdBy' | 'id'>
   ) => void;
   unmarkPoi: (poiId: string | number) => void;
-  connectPoi: (
-    connectionData: Omit<CreatePoiConnectionDto, 'workspaceId'>
-  ) => void;
   selectedPlace: KakaoPlace | null;
-  connections: Record<string, PoiConnection[]>;
-  onPoiClick: (poi: Poi) => void;
   mapRef: React.RefObject<kakao.maps.Map>;
 }) {
   // '전체' 레이어를 포함한 전체 UI용 레이어 목록
@@ -126,55 +116,13 @@ export function MapPanel({
       {}
     );
 
-    if (!pois || pois.length === 0 || !connections) {
+    if (!pois || pois.length === 0) {
       setItinerary(newItinerary);
       return;
     }
-
-    const poiMap = new Map(pois.map((p) => [p.id, p]));
-
-    for (const dayId in connections) {
-      if (!newItinerary[dayId]) {
-        continue;
-      }
-
-      const dayConnections = connections[dayId] || [];
-      if (dayConnections.length === 0) continue;
-
-      const allNextPoiIds = new Set(dayConnections.map((c) => c.nextPoiId));
-      const allPrevPoiIds = new Set(dayConnections.map((c) => c.prevPoiId));
-
-      const startNodeIds = [...allPrevPoiIds].filter(
-        (id) => !allNextPoiIds.has(id)
-      );
-
-      const visited = new Set();
-
-      for (const startId of startNodeIds) {
-        let currentPoiId: string | number | undefined = startId;
-        while (currentPoiId && !visited.has(currentPoiId)) {
-          visited.add(currentPoiId);
-          const nextConnection = dayConnections.find(
-            (c) => c.prevPoiId === currentPoiId
-          );
-          const poi = poiMap.get(currentPoiId);
-
-          if (poi) {
-            const inboundConnection = dayConnections.find(
-              (c) => c.nextPoiId === currentPoiId
-            );
-            newItinerary[dayId].push({
-              ...poi,
-              distance: inboundConnection?.distance,
-              duration: inboundConnection?.duration,
-            });
-          }
-          currentPoiId = nextConnection?.nextPoiId;
-        }
-      }
-    }
+    // connections 관련 로직 제거
     setItinerary(newItinerary);
-  }, [pois, connections, dayLayers, setItinerary]);
+  }, [pois, dayLayers, setItinerary]);
 
   const { routePaths } = useDirections(itinerary);
 
@@ -198,46 +146,6 @@ export function MapPanel({
     if (!targetDayId) {
       alert('이 장소는 특정 날짜에 속해있지 않아 일정에 추가할 수 없습니다.');
       return;
-    }
-
-    const currentDayItinerary = itinerary[targetDayId] || [];
-    const lastPoiInDay = currentDayItinerary[currentDayItinerary.length - 1];
-
-    if (lastPoiInDay) {
-      let distance: number | undefined;
-      let duration: number | undefined;
-
-      try {
-        const response = await axios.get(
-          'https://apis-navi.kakaomobility.com/v1/directions',
-          {
-            headers: {
-              Authorization: `KakaoAK ${KAKAO_REST_API_KEY}`,
-              'Content-Type': 'application/json',
-            },
-            params: {
-              origin: `${lastPoiInDay.longitude},${lastPoiInDay.latitude}`,
-              destination: `${markerToAdd.longitude},${markerToAdd.latitude}`,
-            },
-          }
-        );
-
-        const route = response.data.routes[0];
-        if (route) {
-          distance = route.summary.distance;
-          duration = route.summary.duration;
-        }
-      } catch (error) {
-        console.error('경로 거리/시간 계산 중 오류 발생:', error);
-      }
-
-      connectPoi({
-        prevPoiId: lastPoiInDay.id,
-        nextPoiId: markerToAdd.id,
-        planDayId: targetDayId,
-        distance,
-        duration,
-      });
     }
 
     const newItineraryForDay = [...(itinerary[targetDayId] || []), markerToAdd];
@@ -397,7 +305,7 @@ export function MapPanel({
                         }`}
                         onClick={(e) => {
                           e.stopPropagation();
-                          addToItinerary(marker);
+                          void addToItinerary(marker);
                         }}
                         disabled={Object.values(itinerary)
                           .flat()
