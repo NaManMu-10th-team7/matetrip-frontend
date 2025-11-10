@@ -49,7 +49,9 @@ function Layout({
   onSearch: (query: string) => void;
 }) {
   return (
-    <div className="flex flex-col h-screen"> {/* flex-col과 h-screen 유지 */}
+    <div className="flex flex-col h-screen">
+      {' '}
+      {/* flex-col과 h-screen 유지 */}
       <Header
         isLoggedIn={isLoggedIn}
         isAuthLoading={isAuthLoading}
@@ -60,7 +62,9 @@ function Layout({
         onLogoClick={onLogoClick}
         onSearch={onSearch}
       />
-      <div className="flex-1 overflow-y-auto"> {/* overflow-hidden 대신 overflow-y-auto 추가 */}
+      <div className="flex-1 overflow-y-auto">
+        {' '}
+        {/* overflow-hidden 대신 overflow-y-auto 추가 */}
         <Outlet />
       </div>
     </div>
@@ -223,7 +227,7 @@ export default function App() {
 
   const handleLogout = async () => {
     await storeLogout(); // Zustand 스토어의 logout 액션을 호출하여 상태를 업데이트합니다.
-    navigate('/');
+    navigate('/login');
   };
 
   const handleProfileClick = () => {
@@ -255,7 +259,9 @@ export default function App() {
   };
 
   return (
-    <div className="h-screen bg-gray-50"> {/* h-screen 유지 */}
+    <div className="h-screen bg-gray-50">
+      {' '}
+      {/* h-screen 유지 */}
       <Toaster position="top-right" />
       {isLoggedIn && <NotificationListener />}
       <Routes>
@@ -307,7 +313,6 @@ export default function App() {
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
-
       {/* Modals */}
       {showCreatePost && (
         <CreatePostModal
@@ -340,7 +345,6 @@ export default function App() {
         userId={profileModalState.userId}
         onViewPost={handleViewPost}
       />
-
       {postDetailModalState.open && postDetailModalState.postId && (
         <Dialog
           open={postDetailModalState.open}
@@ -382,13 +386,8 @@ export default function App() {
                       },
                     });
                   } catch (error) {
-                    console.error(
-                      'Failed to create or join workspace:',
-                      error
-                    );
-                    alert(
-                      '워크스페이스에 입장하는 중 오류가 발생했습니다.'
-                    );
+                    console.error('Failed to create or join workspace:', error);
+                    alert('워크스페이스에 입장하는 중 오류가 발생했습니다.');
                   }
                 };
                 createAndNavigate();
