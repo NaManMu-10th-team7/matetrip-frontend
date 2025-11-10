@@ -108,7 +108,7 @@ export function Workspace({
           )}
         </button>
         
-        <div className="flex-1 bg-gray-100 flex items-center justify-center">
+        <div className="flex-1 bg-gray-100">
             <MapPanel
                 itinerary={itinerary}
                 setItinerary={setItinerary}
