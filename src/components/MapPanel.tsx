@@ -149,36 +149,13 @@ export function MapPanel({
   const [mapInstance, setMapInstance] = useState<kakao.maps.Map | null>(null);
   const pendingSelectedPlaceRef = useRef<KakaoPlace | null>(null);
 
-  if (typeof window !== 'undefined' && window.kakao && window.kakao.maps) {
-    console.log('MapPanel: window.kakao.maps is available during render.');
-  } else {
-    console.log('MapPanel: window.kakao.maps is NOT available during render.');
-  }
-
-  console.log('MapPanel render cycle. selectedPlace prop:', selectedPlace, 'mapInstance state:', mapInstance);
-
-  // mapRef effect는 onCreate에서 직접 mapInstance를 설정하므로 제거합니다.
-  // useEffect(() => {
-  //   console.log('MapPanel: mapRef effect triggered. mapRef.current:', mapRef.current);
-  //   if (mapRef.current) {
-  //     setMapInstance(mapRef.current);
-  //     console.log('MapPanel: mapRef.current available, setting mapInstance state from ref.');
-  //   }
-  // }, [mapRef]);
-
   useEffect(() => {
-    console.log('MapPanel: selectedPlace/mapInstance effect triggered.');
-    console.log('Current selectedPlace in effect:', selectedPlace);
-    console.log('Current mapInstance in effect:', mapInstance);
-
     if (selectedPlace && mapInstance) {
-      console.log('MapPanel: Both selectedPlace and mapInstance are available. Processing.');
       const position = new window.kakao.maps.LatLng(
         Number(selectedPlace.y),
         Number(selectedPlace.x)
       );
       mapInstance.panTo(position);
-      console.log('MapPanel: Map panned successfully to:', selectedPlace.place_name);
 
       const poiData = {
         latitude: Number(selectedPlace.y),
@@ -187,22 +164,15 @@ export function MapPanel({
         placeName: selectedPlace.place_name,
         categoryName: selectedPlace.category_name,
       };
-      console.log('MapPanel: Calling markPoi with data:', poiData);
       markPoi(poiData);
       setSelectedPlace(null);
     } else if (selectedPlace && !mapInstance) {
-      console.warn('MapPanel: selectedPlace is available, but mapInstance is null. Storing in ref.');
       pendingSelectedPlaceRef.current = selectedPlace;
     }
   }, [selectedPlace, mapInstance, markPoi, setSelectedPlace]);
 
   useEffect(() => {
-    console.log('MapPanel: pendingSelectedPlace effect triggered.');
-    console.log('Current mapInstance in pending effect:', mapInstance);
-    console.log('Current pendingSelectedPlaceRef.current:', pendingSelectedPlaceRef.current);
-
     if (mapInstance && pendingSelectedPlaceRef.current) {
-      console.log('MapPanel: mapInstance is ready and pendingSelectedPlace found. Processing pending place.');
       const placeToProcess = pendingSelectedPlaceRef.current;
       pendingSelectedPlaceRef.current = null;
 
@@ -211,7 +181,6 @@ export function MapPanel({
         Number(placeToProcess.x)
       );
       mapInstance.panTo(position);
-      console.log('MapPanel: Map panned successfully to pending place:', placeToProcess.place_name);
 
       const poiData = {
         latitude: Number(placeToProcess.y),
@@ -220,7 +189,6 @@ export function MapPanel({
         placeName: placeToProcess.place_name,
         categoryName: placeToProcess.category_name,
       };
-      console.log('MapPanel: Calling markPoi for pending place with data:', poiData);
       markPoi(poiData);
       setSelectedPlace(null);
     }
@@ -233,15 +201,10 @@ export function MapPanel({
         style={{ width: '100%', height: '100%' }}
         level={3}
         onCreate={(map) => {
-          console.log('MapPanel: Map onCreate callback FIRED! Map object:', map);
           if (mapRef) {
             (mapRef as React.MutableRefObject<kakao.maps.Map>).current = map;
-            setMapInstance(map); // onCreate에서 mapInstance 설정
-            console.log('MapPanel: Map created and mapRef.current set. mapInstance state updated to:', map);
+            setMapInstance(map);
           }
-        }}
-        onLoad={(map) => {
-          console.log('MapPanel: Map onLoad callback FIRED! Map object:', map); // 이 로그는 여전히 출력되지 않을 수 있음
         }}
         onClick={(_map, mouseEvent) => {
           const latlng = mouseEvent.latLng;
@@ -279,10 +242,6 @@ export function MapPanel({
                       categoryName: categoryName,
                       placeName: placeName,
                     };
-                    console.log(
-                      'Map click event: Calling markPoi with data:',
-                      poiData
-                    );
                     markPoi(poiData);
                   },
                   {
