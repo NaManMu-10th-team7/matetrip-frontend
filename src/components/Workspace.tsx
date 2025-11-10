@@ -15,6 +15,7 @@ import { RightPanel } from './RightPanel';
 import { PlanRoomHeader } from './PlanRoomHeader';
 import { type Poi, usePoiSocket } from '../hooks/usePoiSocket.ts';
 import { useChatSocket, type ChatMessage } from '../hooks/useChatSocket'; // useChatSocket import 추가
+import { useWorkspaceMembers } from '../hooks/useWorkspaceMembers.ts'; // useWorkspaceMembers 훅 import
 
 interface WorkspaceProps {
   workspaceId: string;
@@ -22,13 +23,6 @@ interface WorkspaceProps {
   planDayDtos: PlanDayDto[];
   onEndTrip: () => void;
 }
-
-// ... (MOCK_MEMBERS, generateColorFromString는 이전과 동일)
-const MOCK_MEMBERS = [
-  { id: 1, name: '여행러버', isAuthor: true, avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtYW4lMjBwb3J0cmFpdHxlbnwxfHx8fDE3NjI2MDg1MDN8MA&ixlib=rb-4.1.0&q=80&w=1080' },
-  { id: 2, name: '바다조아', isAuthor: false, avatar: 'https://images.unsplash.com/photo-1557053910-d9eadeed1c58?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHx3b21hbiUyMHBvcnRyYWl0fHxlbnMHx8fDE3NjI1ODc0MzN8MHw&ixlib=rb-4.1.0&q=80&w=1080' },
-  { id: 3, name: '제주사랑', isAuthor: false, avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxwcm9mZXNzaW9uYWwlMjBwb3J0cmFpdHxlbnwxfHx8fDE3NjI1NTU3MDJ8MHw&ixlib=rb-4.1.0&q=80&w=1080' },
-];
 
 const generateColorFromString = (str: string) => {
   let hash = 0;
@@ -65,6 +59,7 @@ export function Workspace({
   
   const { pois, setPois, isSyncing, markPoi, unmarkPoi, addSchedule, removeSchedule, reorderPois } = usePoiSocket(workspaceId);
   const { messages, sendMessage, isConnected: isChatConnected } = useChatSocket(workspaceId); // useChatSocket 훅 호출
+  const { members, isLoading: isMembersLoading, error: membersError } = useWorkspaceMembers(workspaceId);
   
   const [selectedPlace, setSelectedPlace] = useState<KakaoPlace | null>(null);
   const [activePoi, setActivePoi] = useState<Poi | null>(null);
@@ -73,6 +68,20 @@ export function Workspace({
 
   // MapPanel에서 전달받을 경로 세그먼트 정보를 저장할 상태 추가
   const [routeSegmentsByDay, setRouteSegmentsByDay] = useState<Record<string, RouteSegment[]>>({});
+
+  // PlanRoomHeader에 전달할 activeMembers 데이터 형식으로 변환
+  const activeMembersForHeader = useMemo(() => {
+    return members.map(member => ({
+      id: member.id, // PlanRoomHeader의 id 타입이 string이어야 함
+      name: member.profile.nickname,
+      // TODO: 백엔드 응답에 profileImageId가 포함되면 실제 이미지 URL을 구성해야 합니다.
+      // 현재는 임시 플레이스홀더를 사용합니다.
+      avatar: member.profile.profileImageId
+        ? `http://localhost:3000/binary-content/${member.profile.profileImageId}/presigned-url` // 예시 URL 구조
+        : `https://ui-avatars.com/api/?name=${member.profile.nickname}&background=random`,
+    }));
+  }, [members]);
+
 
   const dayLayers = useMemo(
     () =>
@@ -265,12 +274,12 @@ export function Workspace({
           startDate={startDate}
           endDate={endDate}
           totalDays={planDayDtos.length}
-          currentMembers={MOCK_MEMBERS.length}
+          currentMembers={activeMembersForHeader.length}
           maxMembers={4}
           onExit={onEndTrip}
           onBack={onEndTrip}
           isOwner={true}
-          activeMembers={MOCK_MEMBERS}
+          activeMembers={activeMembersForHeader}
         />
 
         <div className="flex-1 flex relative overflow-hidden">

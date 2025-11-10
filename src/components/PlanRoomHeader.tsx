@@ -15,9 +15,10 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import { TripReviewModal } from './TripReviewModal';
+import { useAuthStore } from '../store/authStore';
 
 interface Member {
-  id: number;
+  id: string;
   name: string;
   avatar: string;
 }
@@ -46,6 +47,12 @@ export function PlanRoomHeader({
   activeMembers = [],
 }: PlanRoomHeaderProps) {
   const [isReviewModalOpen, setReviewModalOpen] = useState(false);
+  const { user } = useAuthStore();
+
+  // 리뷰 대상에서 자기 자신을 제외합니다.
+  const membersToReview = activeMembers.filter(
+    (member) => member.id !== user?.userId
+  );
 
   return (
     <div className="border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50 px-6 py-3 flex items-center justify-between flex-shrink-0 h-18">
@@ -123,7 +130,7 @@ export function PlanRoomHeader({
       <TripReviewModal
         isOpen={isReviewModalOpen}
         onClose={() => setReviewModalOpen(false)}
-        activeMembers={activeMembers}
+        activeMembers={membersToReview}
         onComplete={onBack}
       />
     </div>

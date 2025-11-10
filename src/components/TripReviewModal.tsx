@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from './ui/dialog';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
@@ -7,7 +7,7 @@ import { Award, Star, ThumbsUp, Send, ChevronRight } from 'lucide-react';
 import { ReviewCompleteModal } from './ReviewCompleteModal';
 
 interface Member {
-  id: number;
+  id: string;
   name: string;
   avatar: string;
 }
@@ -33,8 +33,23 @@ export function TripReviewModal({
   );
   const [showCompleteModal, setShowCompleteModal] = useState(false);
 
+  // activeMembers가 변경될 때마다 reviews와 currentIndex를 리셋합니다.
+  useEffect(() => {
+    if (isOpen) {
+      setReviews(
+        activeMembers.map(() => ({ rating: 0, comment: '' }))
+      );
+      setCurrentIndex(0);
+    }
+  }, [activeMembers, isOpen]);
+
   const currentTraveler = activeMembers[currentIndex];
   const currentReview = reviews[currentIndex];
+
+  // currentTraveler 또는 currentReview가 아직 준비되지 않았으면 렌더링하지 않음
+  if (!currentTraveler || !currentReview) {
+    return null; // 또는 로딩 스피너를 보여줄 수 있습니다.
+  }
 
   const handleRatingChange = (rating: number) => {
     const newReviews = [...reviews];
