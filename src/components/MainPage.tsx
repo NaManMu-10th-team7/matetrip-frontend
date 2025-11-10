@@ -58,7 +58,7 @@ const REGION_CATEGORIES = [
     id: 2,
     name: '부산',
     image:
-      'https://images.unsplash.com/photo-1665231342828-229205867d94?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxiZWFjaCUyMHBhcmFkaXNlfGVufDF8fHx8MTc2MTg4Mzg2MHww&ixlib=rb-4.1.0&q=80&w=1080',
+      'https://images.unsplash.com/photo-1665231342828-229205867d94?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxiZWFjaCUyMHBhcmFhZGlzZfGVufDF8fHx8MTc2MTg4Mzg2MHww&ixlib=rb-4.1.0&q=80&w=1080',
     description: '바다와 도시의 조화',
   },
   {
@@ -101,9 +101,14 @@ export function MainPage({
   const [isLoading, setIsLoading] = useState(true);
   const [userPosts, setUserPosts] = useState<Post[]>([]); // New state for user's posts
   const [userPostsLoading, setUserPostsLoading] = useState(true); // New state for user's posts loading
-  const { user } = useAuthStore(); // Get user from auth store
+  const { user, isAuthLoading } = useAuthStore(); // Get user and isAuthLoading from auth store
 
   useEffect(() => {
+    // isAuthLoading이 true일 때는 API 호출을 하지 않습니다.
+    if (isAuthLoading) {
+      return;
+    }
+
     const fetchInitialPosts = async () => {
       setIsLoading(true);
       try {
@@ -147,7 +152,7 @@ export function MainPage({
 
     fetchInitialPosts();
     fetchUserPosts(); // Call the new fetch function
-  }, [isLoggedIn, user?.userId, user?.profile.nickname]); // Re-run when login status or user changes
+  }, [isLoggedIn, user?.userId, user?.profile.nickname, isAuthLoading]); // Add isAuthLoading to dependency array
 
   return (
     <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-gray-50">
