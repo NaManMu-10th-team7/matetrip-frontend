@@ -25,7 +25,7 @@ interface WorkspaceProps {
 // ... (MOCK_MEMBERS, generateColorFromString는 이전과 동일)
 const MOCK_MEMBERS = [
   { id: 1, name: '여행러버', isAuthor: true, avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtYW4lMjBwb3J0cmFpdHxlbnwxfHx8fDE3NjI2MDg1MDN8MA&ixlib=rb-4.1.0&q=80&w=1080' },
-  { id: 2, name: '바다조아', isAuthor: false, avatar: 'https://images.unsplash.com/photo-1557053910-d9eadeed1c58?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHwzNzg4Nzd8MHwxfHNlYXJjaHwxfHx3b21hbiUyMHBvcnRyYWl0fGVufDF8fHx8MTc2MjU4NzQzM3ww&ixlib=rb-4.1.0&q=80&w=1080' },
+  { id: 2, name: '바다조아', isAuthor: false, avatar: 'https://images.unsplash.com/photo-1557053910-d9eadeed1c58?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3b21hbiUyMHBvcnRyYWl0fGVufDF8fHx8MTc2MjU4NzQzM3ww&ixlib=rb-4.1.0&q=80&w=1080' },
   { id: 3, name: '제주사랑', isAuthor: false, avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBwb3J0cmFpdHxlbnwxfHx8fDE3NjI1NTU3MDJ8MA&ixlib=rb-4.1.0&q=80&w=1080' },
 ];
 
@@ -113,23 +113,49 @@ export function Workspace({
   };
 
   const handleDragEnd = useCallback((event: DragEndEvent) => {
+    console.log('handleDragEnd called.');
     setActivePoi(null);
     const { active, over } = event;
-    if (!over) return;
+    
+    if (!over) {
+      console.log('Drag ended outside of any droppable area.');
+      return;
+    }
 
     const activeId = String(active.id);
-    const overId = String(over.id);
+    const activeSortableContainerId = active.data.current?.sortable?.containerId; // 드래그 시작된 SortableContext의 ID
 
-    const activeContainer = active.data.current?.sortable.containerId;
-    const overContainer = over.data.current?.sortable.containerId;
+    let targetDroppableId: string | undefined; // 최종적으로 마커가 드롭된 Droppable 컨테이너의 ID
+    let targetSortableContainerId: string | undefined; // 최종적으로 마커가 드롭된 SortableContext의 ID (아이템 위일 경우)
 
-    if (!activeContainer || !overContainer || !activeId) return;
+    if (over.data.current?.sortable) {
+        // 드롭된 대상이 Sortable 아이템인 경우 (예: 이미 일정에 있는 다른 마커 위)
+        targetSortableContainerId = String(over.data.current.sortable.containerId);
+        // Sortable 아이템이 속한 Droppable 컨테이너의 ID를 유추
+        targetDroppableId = targetSortableContainerId.replace('-sortable', '');
+    } else {
+        // 드롭된 대상이 Droppable 컨테이너인 경우 (예: 비어있는 날짜 컨테이너 또는 마커 보관함)
+        targetDroppableId = String(over.id);
+        // 이 경우 SortableContext ID는 Droppable ID에 '-sortable'을 붙인 형태일 수 있음
+        targetSortableContainerId = targetDroppableId === 'marker-storage' ? 'marker-storage-sortable' : targetDroppableId + '-sortable';
+    }
 
-    if (activeContainer === overContainer) {
-      if (activeContainer === 'marker-storage') {
+    console.log(`Drag event: activeId=${activeId}, overId=${over.id}, activeSortableContainerId=${activeSortableContainerId}, targetDroppableId=${targetDroppableId}, targetSortableContainerId=${targetSortableContainerId}`);
+
+    if (!activeSortableContainerId || !activeId || !targetDroppableId) {
+      console.log('Missing activeSortableContainerId, activeId, or targetDroppableId information.');
+      return;
+    }
+
+    // 드래그 시작된 컨테이너와 드롭된 컨테이너가 같은 논리적 컨테이너인 경우 (내부에서 순서 변경)
+    const isSameLogicalContainer = activeSortableContainerId === targetSortableContainerId;
+
+    if (isSameLogicalContainer) {
+      console.log(`Reordering within container: ${targetDroppableId}`);
+      if (targetDroppableId === 'marker-storage') {
         const items = markedPois;
         const oldIndex = items.findIndex((item) => item.id === activeId);
-        const newIndex = items.findIndex((item) => item.id === overId);
+        const newIndex = items.findIndex((item) => item.id === over.id);
 
         if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
             const newItems = arrayMove(items, oldIndex, newIndex);
@@ -139,46 +165,74 @@ export function Workspace({
                 return [...otherPois, ...updatedContainerPois];
             });
         }
-      } else {
-        const items = itinerary[activeContainer];
+      } else { // 여행 일정 날짜 컨테이너
+        const dayId = targetDroppableId;
+        const items = itinerary[dayId];
         if (!items) return;
         const oldIndex = items.findIndex((item) => item.id === activeId);
-        const newIndex = items.findIndex((item) => item.id === overId);
+        const newIndex = items.findIndex((item) => item.id === over.id);
 
         if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
             const newItems = arrayMove(items, oldIndex, newIndex);
             const newPoiIds = newItems.map(poi => poi.id);
             setPois(currentPois => {
-                const otherPois = currentPois.filter(p => p.planDayId !== activeContainer);
+                const otherPois = currentPois.filter(p => p.planDayId !== dayId);
                 const updatedContainerPois = newItems.map((poi, index) => ({ ...poi, sequence: index }));
                 return [...otherPois, ...updatedContainerPois];
             });
-            reorderPois(activeContainer, newPoiIds);
+            reorderPois(dayId, newPoiIds);
         }
       }
-    } else {
+    } else { // 컨테이너 간 이동 (마커 보관함 <-> 여행 일정)
+      console.log(`Moving POI between containers: from ${activeSortableContainerId} to ${targetDroppableId}`);
       const activePoi = pois.find(p => p.id === activeId);
-      if (!activePoi) return;
+      if (!activePoi) {
+        console.log(`Active POI with ID ${activeId} not found.`);
+        return;
+      }
+      
+      const isDroppingToMarkerStorage = targetDroppableId === 'marker-storage';
+      const isDroppingToItineraryDay = dayLayers.some(layer => layer.id === targetDroppableId);
+
       setPois(currentPois => {
         return currentPois.map(p => {
           if (p.id === activeId) {
-            if (overContainer === 'marker-storage') {
+            if (isDroppingToMarkerStorage) {
               return { ...p, status: 'MARKED', planDayId: undefined, sequence: 0 };
+            } else if (isDroppingToItineraryDay) {
+              const dayId = targetDroppableId;
+              return { ...p, status: 'SCHEDULED', planDayId: dayId, sequence: 999 };
             }
-            return { ...p, status: 'SCHEDULED', planDayId: overContainer, sequence: 999 };
           }
           return p;
         });
       });
-      if (overContainer === 'marker-storage') {
-        if (activePoi.planDayId) {
-          removeSchedule(activeId, activePoi.planDayId);
-        }
-      } else {
-        addSchedule(activeId, overContainer);
+
+      if (activePoi.planDayId) {
+        console.log(`Removing POI ${activeId} from previous schedule day ${activePoi.planDayId}`);
+        removeSchedule(activeId, activePoi.planDayId);
+      }
+
+      if (isDroppingToItineraryDay) {
+        const dayId = targetDroppableId;
+        console.log(`ADD_SCHEDULE event: Adding POI ${activeId} to schedule day ${dayId}`);
+        addSchedule(activeId, dayId);
+      } else if (isDroppingToMarkerStorage) {
+        console.log(`POI ${activeId} moved to marker-storage. No ADD_SCHEDULE event.`);
       }
     }
-  }, [markedPois, itinerary, pois, setPois, reorderPois, removeSchedule, addSchedule]);
+  }, [markedPois, itinerary, pois, setPois, reorderPois, removeSchedule, addSchedule, dayLayers]);
+
+  const handleMapPoiDragEnd = useCallback((poiId: string, lat: number, lng: number) => {
+    setPois(currentPois =>
+      currentPois.map(poi =>
+        poi.id === poiId ? { ...poi, latitude: lat, longitude: lng } : poi
+      )
+    );
+    // TODO: Call a socket event to persist the new coordinates
+    // For now, only local state is updated.
+    console.log(`POI ${poiId} dragged to Lat: ${lat}, Lng: ${lng}`);
+  }, [setPois]);
 
   return (
     <DndContext 
@@ -229,6 +283,7 @@ export function Workspace({
                   unmarkPoi={unmarkPoi}
                   selectedPlace={selectedPlace}
                   mapRef={mapRef}
+                  onPoiDragEnd={handleMapPoiDragEnd} // Pass the new handler
               />
           </div>
 

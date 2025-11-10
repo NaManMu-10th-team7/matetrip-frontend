@@ -75,7 +75,7 @@ function MarkerStorage({ pois, onPoiClick }: { pois: Poi[], onPoiClick: (poi: Po
     return (
         <div ref={setNodeRef} className="p-3 border-b">
             <h3 className="text-sm font-semibold mb-2">마커 보관함</h3>
-            <SortableContext items={pois.map(p => p.id)} strategy={verticalListSortingStrategy}>
+            <SortableContext id="marker-storage-sortable" items={pois.map(p => p.id)} strategy={verticalListSortingStrategy}>
                 <ul className="space-y-2 min-h-[2rem]">
                     {pois.length > 0 ? (
                         pois.map((poi) => <PoiItem key={poi.id} poi={poi} onPoiClick={onPoiClick} />)
@@ -99,7 +99,7 @@ function ItineraryDay({ layer, pois, onPoiClick }: { layer: DayLayer, pois: Poi[
             >
                 {layer.label}
             </h3>
-            <SortableContext items={pois.map(p => p.id)} strategy={verticalListSortingStrategy}>
+            <SortableContext id={layer.id + '-sortable'} items={pois.map(p => p.id)} strategy={verticalListSortingStrategy}>
                 <ul className="space-y-2 min-h-[2rem]">
                     {pois.length > 0 ? (
                         pois.map((poi, index) => (

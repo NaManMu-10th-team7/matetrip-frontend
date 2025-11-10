@@ -31,6 +31,7 @@ interface MapPanelProps {
   unmarkPoi: (poiId: string | number) => void;
   selectedPlace: KakaoPlace | null;
   mapRef: React.RefObject<kakao.maps.Map>;
+  onPoiDragEnd: (poiId: string, lat: number, lng: number) => void; // New prop
 }
 
 export function MapPanel({
@@ -42,6 +43,7 @@ export function MapPanel({
   unmarkPoi,
   selectedPlace,
   mapRef,
+  onPoiDragEnd, // Destructure new prop
 }: MapPanelProps) {
   const [map, setMap] = useState<kakao.maps.Map | null>(null);
   const [markers, setMarkers] = useState<kakao.maps.Marker[]>([]);
@@ -91,13 +93,15 @@ export function MapPanel({
                 categoryName = place.category_name;
               }
 
-              markPoi({
+              const poiData = {
                 latitude: latlng.getLat(),
                 longitude: latlng.getLng(),
                 address: address,
                 categoryName: categoryName,
                 placeName: placeName,
-              });
+              };
+              console.log('Map click event: Calling markPoi with data:', poiData); // Log added here
+              markPoi(poiData);
             },
             {
               location: latlng,
@@ -130,7 +134,10 @@ export function MapPanel({
     // POI 마커 생성
     pois.forEach((poi) => {
       const position = new window.kakao.maps.LatLng(poi.latitude, poi.longitude);
-      const marker = new window.kakao.maps.Marker({ position });
+      const marker = new window.kakao.maps.Marker({
+        position,
+        draggable: true, // Make markers draggable
+      });
       marker.setMap(map);
       newMarkers.push(marker);
 
@@ -151,6 +158,12 @@ export function MapPanel({
       window.kakao.maps.event.addListener(marker, 'click', () => {
         infoWindow.setContent(content);
         infoWindow.open(map, marker);
+      });
+
+      // Add dragend event listener
+      window.kakao.maps.event.addListener(marker, 'dragend', () => {
+        const newPosition = marker.getPosition();
+        onPoiDragEnd(poi.id, newPosition.getLat(), newPosition.getLng());
       });
     });
 
@@ -175,20 +188,22 @@ export function MapPanel({
     setMarkers(newMarkers);
     setPolylines(newPolylines);
 
-  }, [map, pois, itinerary, dayLayers, infoWindow]);
+  }, [map, pois, itinerary, dayLayers, infoWindow, onPoiDragEnd]); // Add onPoiDragEnd to dependencies
 
   // 선택된 장소 처리
   useEffect(() => {
     if (selectedPlace && map) {
       const position = new window.kakao.maps.LatLng(Number(selectedPlace.y), Number(selectedPlace.x));
       map.panTo(position);
-      markPoi({
+      const poiData = {
         latitude: Number(selectedPlace.y),
         longitude: Number(selectedPlace.x),
         address: selectedPlace.road_address_name || selectedPlace.address_name,
         placeName: selectedPlace.place_name,
         categoryName: selectedPlace.category_name,
-      });
+      };
+      console.log('Selected place changed: Calling markPoi with data:', poiData); // Log added here
+      markPoi(poiData);
     }
   }, [selectedPlace, map, markPoi]);
 
