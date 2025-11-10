@@ -1,19 +1,10 @@
 import { useState, useEffect } from 'react';
 import {
-  ArrowLeft,
-  X,
-  Search,
   Plus,
-  Calendar,
   MapPin,
-  TrendingUp,
-  Sparkles,
-  FileText,
   ClipboardList,
 } from 'lucide-react';
-import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { Card } from './ui/card';
 import {
   Dialog,
   DialogContent,
@@ -21,7 +12,6 @@ import {
   DialogTitle,
   DialogClose,
 } from './ui/dialog';
-import { Badge } from './ui/badge';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import client from '../api/client';
 import { type Post } from '../types/post';
@@ -118,11 +108,6 @@ export function MainPage({
   onCreatePost,
   isLoggedIn,
 }: MainPageProps) {
-  const [searchStartDate, setSearchStartDate] = useState('');
-  const [searchEndDate, setSearchEndDate] = useState('');
-  const [searchLocation, setSearchLocation] = useState('');
-  const [searchTitle, setSearchTitle] = useState('');
-
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
@@ -147,16 +132,6 @@ export function MainPage({
     fetchInitialPosts();
   }, []);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e?.preventDefault();
-    onSearch({
-      startDate: searchStartDate,
-      endDate: searchEndDate,
-      location: searchLocation,
-      title: searchTitle,
-    });
-  };
-
   const handleViewPost = (postId: string) => {
     setSelectedPostId(postId);
   };
@@ -167,65 +142,6 @@ export function MainPage({
 
   return (
     <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* --- Search Section --- */}
-      {/* Hero Section with Search */}
-      <div className="text-center mb-12">
-        {/* Search Box */}
-        <Card className="mx-auto p-6">
-          <form onSubmit={handleSearch}>
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <Input
-                  type="date"
-                  aria-label="여행 시작일"
-                  value={searchStartDate}
-                  onChange={(e) => setSearchStartDate(e.target.value)}
-                  className="pl-10 w-full"
-                />
-              </div>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <Input
-                  type="date"
-                  aria-label="여행 종료일"
-                  value={searchEndDate}
-                  onChange={(e) => setSearchEndDate(e.target.value)}
-                  className="pl-10 w-full"
-                />
-              </div>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <Input
-                  placeholder="여행지"
-                  aria-label="여행지"
-                  value={searchLocation}
-                  onChange={(e) => setSearchLocation(e.target.value)}
-                  className="pl-10 w-full"
-                />
-              </div>
-              <div className="relative flex-1">
-                <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <Input
-                  placeholder="게시글 제목"
-                  aria-label="게시글 제목"
-                  value={searchTitle}
-                  onChange={(e) => setSearchTitle(e.target.value)}
-                  className="pl-10 w-full"
-                />
-              </div>
-              <Button
-                type="submit"
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 gap-2 flex-shrink-0"
-              >
-                <Search className="w-4 h-4" />
-                검색
-              </Button>
-            </div>
-          </form>
-        </Card>
-      </div>
-
       {/* --- Recent Posts Section --- */}
       {/* Recent Posts Section */}
       <section className="mb-12">
