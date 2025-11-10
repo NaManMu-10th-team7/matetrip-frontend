@@ -261,6 +261,7 @@ export function Workspace({
             dayLayers={dayLayers}
             markedPois={markedPois}
             unmarkPoi={unmarkPoi}
+            removeSchedule={removeSchedule} // 이 줄을 추가합니다.
             onPlaceClick={setSelectedPlace}
             onPoiClick={handlePoiClick}
           />

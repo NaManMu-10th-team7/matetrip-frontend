@@ -39,9 +39,10 @@ interface PoiItemProps {
   index?: number;
   onPoiClick?: (poi: Poi) => void;
   unmarkPoi: (poiId: string | number) => void;
+  removeSchedule: (poiId: string, planDayId: string) => void; // 추가
 }
 
-function PoiItem({ poi, color, index, onPoiClick, unmarkPoi }: PoiItemProps) {
+function PoiItem({ poi, color, index, onPoiClick, unmarkPoi, removeSchedule }: PoiItemProps) {
   const {
     attributes,
     listeners,
@@ -60,7 +61,11 @@ function PoiItem({ poi, color, index, onPoiClick, unmarkPoi }: PoiItemProps) {
 
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    unmarkPoi(poi.id);
+    if (poi.status === 'SCHEDULED' && poi.planDayId) {
+      removeSchedule(poi.id, poi.planDayId);
+    } else {
+      unmarkPoi(poi.id);
+    }
   };
 
   return (
@@ -94,7 +99,7 @@ function PoiItem({ poi, color, index, onPoiClick, unmarkPoi }: PoiItemProps) {
   );
 }
 
-function MarkerStorage({ pois, onPoiClick, unmarkPoi }: { pois: Poi[], onPoiClick: (poi: Poi) => void, unmarkPoi: (poiId: string | number) => void }) {
+function MarkerStorage({ pois, onPoiClick, unmarkPoi, removeSchedule }: { pois: Poi[], onPoiClick: (poi: Poi) => void, unmarkPoi: (poiId: string | number) => void, removeSchedule: (poiId: string, planDayId: string) => void }) {
     const { setNodeRef } = useDroppable({ id: 'marker-storage' });
     const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -113,7 +118,7 @@ function MarkerStorage({ pois, onPoiClick, unmarkPoi }: { pois: Poi[], onPoiClic
                 <SortableContext id="marker-storage-sortable" items={pois.map(p => p.id)} strategy={verticalListSortingStrategy}>
                     <ul className="space-y-2 min-h-[2rem]">
                         {pois.length > 0 ? (
-                            pois.map((poi) => <PoiItem key={poi.id} poi={poi} onPoiClick={onPoiClick} unmarkPoi={unmarkPoi} />)
+                            pois.map((poi) => <PoiItem key={poi.id} poi={poi} onPoiClick={onPoiClick} unmarkPoi={unmarkPoi} removeSchedule={removeSchedule} />)
                         ) : (
                             <p className="text-xs text-gray-500 p-2">지도에 마커를 추가하여 보관하세요.</p>
                         )}
@@ -124,7 +129,7 @@ function MarkerStorage({ pois, onPoiClick, unmarkPoi }: { pois: Poi[], onPoiClic
     );
 }
 
-function ItineraryDay({ layer, pois, onPoiClick, unmarkPoi }: { layer: DayLayer, pois: Poi[], onPoiClick: (poi: Poi) => void, unmarkPoi: (poiId: string | number) => void }) {
+function ItineraryDay({ layer, pois, onPoiClick, unmarkPoi, removeSchedule }: { layer: DayLayer, pois: Poi[], onPoiClick: (poi: Poi) => void, unmarkPoi: (poiId: string | number) => void, removeSchedule: (poiId: string, planDayId: string) => void }) {
     const { setNodeRef } = useDroppable({ id: layer.id });
     const [isCollapsed, setIsCollapsed] = useState(false);
     
@@ -146,7 +151,7 @@ function ItineraryDay({ layer, pois, onPoiClick, unmarkPoi }: { layer: DayLayer,
                     <ul className="space-y-2 min-h-[2rem]">
                         {pois.length > 0 ? (
                             pois.map((poi, index) => (
-                                <PoiItem key={poi.id} poi={poi} color={layer.color} index={index} onPoiClick={onPoiClick} unmarkPoi={unmarkPoi} />
+                                <PoiItem key={poi.id} poi={poi} color={layer.color} index={index} onPoiClick={onPoiClick} unmarkPoi={unmarkPoi} removeSchedule={removeSchedule} />
                             ))
                         ) : (
                             <p className="text-xs text-gray-500 p-2">마커를 드래그하여 추가하세요.</p>
@@ -163,11 +168,13 @@ function ItineraryPanel({
   dayLayers,
   onPoiClick,
   unmarkPoi,
+  removeSchedule, // 추가
 }: {
   itinerary: Record<string, Poi[]>;
   dayLayers: DayLayer[];
   onPoiClick: (poi: Poi) => void;
   unmarkPoi: (poiId: string | number) => void;
+  removeSchedule: (poiId: string, planDayId: string) => void; // 추가
 }) {
   return (
     <div className="p-3 space-y-2 h-full overflow-y-auto">
@@ -177,7 +184,7 @@ function ItineraryPanel({
       </div>
       <div className="space-y-3">
         {dayLayers.map((layer) => (
-          <ItineraryDay key={layer.id} layer={layer} pois={itinerary[layer.id] || []} onPoiClick={onPoiClick} unmarkPoi={unmarkPoi} />
+          <ItineraryDay key={layer.id} layer={layer} pois={itinerary[layer.id] || []} onPoiClick={onPoiClick} unmarkPoi={unmarkPoi} removeSchedule={removeSchedule} />
         ))}
       </div>
     </div>
@@ -304,6 +311,7 @@ interface LeftPanelProps {
   dayLayers: DayLayer[];
   markedPois: Poi[];
   unmarkPoi: (poiId: string | number) => void;
+  removeSchedule: (poiId: string, planDayId: string) => void; // 추가
   onPlaceClick: (place: KakaoPlace) => void;
   onPoiClick: (poi: Poi) => void;
   // onMoveMapToPlace prop 제거
@@ -315,6 +323,7 @@ export function LeftPanel({
   dayLayers,
   markedPois,
   unmarkPoi,
+  removeSchedule, // 추가
   onPlaceClick,
   onPoiClick,
   // onMoveMapToPlace prop 제거
@@ -341,12 +350,13 @@ export function LeftPanel({
           </TabsTrigger>
         </TabsList>
         <TabsContent value="plan" className="flex-1 overflow-auto m-0">
-          <MarkerStorage pois={markedPois} onPoiClick={onPoiClick} unmarkPoi={unmarkPoi} />
+          <MarkerStorage pois={markedPois} onPoiClick={onPoiClick} unmarkPoi={unmarkPoi} removeSchedule={removeSchedule} />
           <ItineraryPanel
             itinerary={itinerary}
             dayLayers={dayLayers}
             onPoiClick={onPoiClick}
             unmarkPoi={unmarkPoi}
+            removeSchedule={removeSchedule} // 추가
           />
         </TabsContent>
         <TabsContent value="search" className="flex-1 relative m-0">
