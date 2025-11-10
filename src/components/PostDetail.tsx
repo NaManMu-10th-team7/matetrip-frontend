@@ -6,7 +6,6 @@ import {
   Calendar,
   Users,
   Thermometer,
-  Edit,
   Trash2,
   MoreVertical,
   Pencil,
@@ -16,14 +15,21 @@ import {
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { Card } from './ui/card';
-import { Separator } from './ui/separator';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogTitle,
 } from './ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from './ui/alert-dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,18 +38,17 @@ import {
 } from './ui/dropdown-menu';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import client from '../api/client';
-import { type Post, type Participation } from '../types/post'; // PostCard 대신 types/post에서 Post와 Participation 가져옴
+import { type Post, type Participation } from '../types/post';
 import { translateKeyword } from '../utils/keyword';
-
 import { useAuthStore } from '../store/authStore';
-// import type { Participation } from '../types/participation.ts'; // types/post에서 가져오므로 주석 처리
 
 interface PostDetailProps {
   postId: string;
   onJoinWorkspace: (postId: string, workspaceName: string) => void;
   onViewProfile: (userId: string) => void;
-  onEditPost: (post: Post) => void; // 이 prop은 App.tsx에서 전달됩니다.
+  onEditPost: (post: Post) => void;
   onOpenChange: (open: boolean) => void;
+  onDeleteSuccess: () => void; // 삭제 성공 시 호출될 콜백
 }
 
 export function PostDetail({
@@ -52,6 +57,7 @@ export function PostDetail({
   onViewProfile,
   onEditPost,
   onOpenChange,
+  onDeleteSuccess,
 }: PostDetailProps) {
   const { user } = useAuthStore();
   const [post, setPost] = useState<Post | null>(null);
@@ -63,6 +69,8 @@ export function PostDetail({
     Participation[]
   >([]);
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [showDeleteSuccessAlert, setShowDeleteSuccessAlert] = useState(false);
 
   const fetchPostDetail = useCallback(async () => {
     if (!postId) return;
@@ -75,7 +83,6 @@ export function PostDetail({
 
       const allParticipations = fetchedPost.participations || [];
       setParticipations(allParticipations);
-      // 참여자 목록을 상태별로 분리합니다.
       setApprovedParticipants(
         allParticipations.filter((p) => p.status === '승인')
       );
@@ -94,14 +101,9 @@ export function PostDetail({
     fetchPostDetail();
   }, [fetchPostDetail]);
 
-  // 현재 로그인한 사용자가 게시글 작성자인지 확인
-  const isAuthor = user && post ? user.userId === post.writer.id : false; // writerId 대신 post.writer.id 사용
+  const isAuthor = user && post ? user.userId === post.writer.id : false;
   const isLoggedIn = !!user;
-  // console.log(`isAuthor: ${isAuthor}`);
-  // console.log(user);
-  // console.log(post);
 
-  // 현재 로그인한 사용자의 참여 정보 확인
   const userParticipation = user
     ? participations.find((p) => p.requester.id === user.userId)
     : undefined;
@@ -110,7 +112,6 @@ export function PostDetail({
     try {
       await client.post(`/posts/${postId}/participations`);
       alert('동행 신청이 완료되었습니다.');
-      // 참여 목록을 다시 불러와 상태를 갱신합니다.
       await fetchPostDetail();
     } catch (err) {
       console.error('Failed to apply for post:', err);
@@ -119,13 +120,12 @@ export function PostDetail({
   };
 
   const handleAcceptRequest = async (participationId: string) => {
-    // participationId 타입을 string으로 변경
     try {
       await client.patch(`/posts/${postId}/participations/${participationId}`, {
         status: '승인',
       });
       alert('신청을 수락했습니다.');
-      await fetchPostDetail(); // 데이터를 새로고침하여 UI를 업데이트합니다.
+      await fetchPostDetail();
     } catch (err) {
       console.error('Failed to accept request:', err);
       alert('요청 수락 중 오류가 발생했습니다.');
@@ -133,13 +133,12 @@ export function PostDetail({
   };
 
   const handleRejectRequest = async (participationId: string) => {
-    // participationId 타입을 string으로 변경
     try {
       await client.patch(`/posts/${postId}/participations/${participationId}`, {
         status: '거절',
       });
       alert('신청을 거절했습니다.');
-      await fetchPostDetail(); // 데이터를 새로고침하여 UI를 업데이트합니다.
+      await fetchPostDetail();
     } catch (err) {
       console.error('Failed to reject request:', err);
       alert('요청 거절 중 오류가 발생했습니다.');
@@ -166,11 +165,23 @@ export function PostDetail({
     }
   };
 
-  // TODO: 매너온도 기능 구현 시 실제 데이터와 연동 필요
-  const getTempColor = (temp: number) => {
-    if (temp >= 38) return 'text-green-600';
-    if (temp >= 37) return 'text-blue-600';
-    return 'text-gray-600';
+  const handleDeletePost = async () => {
+    if (!post) return;
+    try {
+      await client.delete(`/posts/${post.id}`);
+      setDeleteModalOpen(false);
+      setShowDeleteSuccessAlert(true); // 삭제 성공 알림 표시
+    } catch (err) {
+      console.error('Failed to delete post:', err);
+      alert('게시글 삭제 중 오류가 발생했습니다.');
+      setDeleteModalOpen(false);
+    }
+  };
+
+  const handleCloseSuccessAlert = () => {
+    setShowDeleteSuccessAlert(false);
+    onOpenChange(false); // PostDetail 모달 닫기
+    onDeleteSuccess(); // 부모 컴포넌트에 알림
   };
 
   if (isLoading) {
@@ -189,10 +200,8 @@ export function PostDetail({
     return <div className="text-center py-16">게시글을 찾을 수 없습니다.</div>;
   }
 
-  // 모집 인원이 다 찼는지 확인 (작성자 포함)
   const isFull = approvedParticipants.length + 1 >= post.maxParticipants;
 
-  // 버튼 설정 로직
   let buttonConfig = {
     text: '로그인 후 신청 가능',
     disabled: true,
@@ -264,7 +273,6 @@ export function PostDetail({
         {post.location} 여행 상세 정보
       </DialogDescription>
 
-      {/* 뒤로 가기 헤더 */}
       <div className="px-6 py-4 border-b bg-white flex-shrink-0 flex items-center justify-between">
         <button
           onClick={() => onOpenChange(false)}
@@ -282,14 +290,10 @@ export function PostDetail({
         </button>
       </div>
 
-      {/* 메인 콘텐츠 영역 */}
       <div className="flex flex-1 min-h-0">
-        {/* 왼쪽 스크롤 영역 */}
         <div className="flex-1 overflow-y-auto bg-gray-50">
           <div className="p-6 pb-20">
-            {/* 상단 영역: 제목/작성자 정보 + 이미지 */}
             <div className="space-y-4 mb-6">
-              {/* 제목, 뱃지, ... 버튼 */}
               <div className="flex items-center gap-3">
                 <h2 className="text-gray-900 text-3xl font-bold flex-1 min-w-0 truncate">
                   {post.title}
@@ -320,7 +324,10 @@ export function PostDetail({
                         <Pencil className="w-4 h-4 mr-2" />
                         수정하기
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="cursor-pointer text-red-600 focus:text-red-600">
+                      <DropdownMenuItem
+                        className="cursor-pointer text-red-600 focus:text-red-600"
+                        onClick={() => setDeleteModalOpen(true)}
+                      >
                         <Trash2 className="w-4 h-4 mr-2" />
                         삭제하기
                       </DropdownMenuItem>
@@ -333,9 +340,7 @@ export function PostDetail({
                 )}
               </div>
 
-              {/* 작성자 정보 + 이미지 */}
               <div className="flex gap-4">
-                {/* 작성자 정보 */}
                 <div className="flex-1">
                   <div className="flex items-start gap-4 p-4 bg-white rounded-xl border h-full">
                     <ImageWithFallback
@@ -377,12 +382,10 @@ export function PostDetail({
                   </div>
                 </div>
 
-                {/* 커버 이미지 */}
                 <div className="flex-1">
                   <div className="relative w-full h-full max-h-[200px] rounded-xl overflow-hidden bg-gray-100">
                     <ImageWithFallback
                       src={
-                        // post.image는 Post 타입에 없으므로, 임시로 placeholder 사용
                         'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=800&q=80'
                       }
                       alt={post.title}
@@ -393,7 +396,6 @@ export function PostDetail({
               </div>
             </div>
 
-            {/* 여행 소개 */}
             <div className="mb-6 bg-white rounded-xl border p-6">
               <h3 className="text-gray-900 mb-4">여행 소개</h3>
               <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
@@ -402,9 +404,7 @@ export function PostDetail({
               </p>
             </div>
 
-            {/* 확정된 동행과 대기중인 동행 */}
             <div className="grid grid-cols-2 gap-8">
-              {/* 확정된 동행 */}
               <div>
                 <h3 className="text-gray-900 mb-4">
                   확정된 동행 ({approvedParticipants.length}명)
@@ -467,7 +467,6 @@ export function PostDetail({
                 </div>
               </div>
 
-              {/* 대기중인 동행 */}
               <div>
                 <h3 className="text-gray-900 mb-4">
                   대기중인 동행 ({pendingRequests.length}명)
@@ -567,17 +566,14 @@ export function PostDetail({
           </div>
         </div>
 
-        {/* 오른쪽 정보 패널 */}
         <div className="w-96 border-l bg-white p-8 overflow-y-auto flex-shrink-0">
           <div className="space-y-6">
-            {/* 여행 정보 카드 */}
             <div className="bg-gray-50 rounded-xl p-6 shadow-sm space-y-4">
               <h3 className="text-gray-900 pb-2 border-b font-bold">
                 여행 정보
               </h3>
 
               <div className="space-y-3">
-                {/* 여행 일정 */}
                 <div>
                   <div className="flex items-center gap-2 text-gray-500 text-sm mb-1">
                     <Calendar className="w-4 h-4" />
@@ -588,7 +584,6 @@ export function PostDetail({
                   </p>
                 </div>
 
-                {/* 여행지 */}
                 <div>
                   <div className="flex items-center gap-2 text-gray-500 text-sm mb-1">
                     <MapPin className="w-4 h-4" />
@@ -597,7 +592,6 @@ export function PostDetail({
                   <p className="text-gray-900 ml-6">{post.location}</p>
                 </div>
 
-                {/* 모집 인원 */}
                 <div>
                   <div className="flex items-center gap-2 text-gray-500 text-sm mb-1">
                     <Users className="w-4 h-4" />
@@ -610,7 +604,6 @@ export function PostDetail({
               </div>
             </div>
 
-            {/* 여행 키워드 */}
             {post.keywords && post.keywords.length > 0 && (
               <div className="bg-gray-50 rounded-xl p-6 shadow-sm space-y-4">
                 <h3 className="text-gray-900 pb-2 border-b font-bold">
@@ -626,7 +619,6 @@ export function PostDetail({
               </div>
             )}
 
-            {/* 입장하기 버튼 */}
             <Button
               className={buttonConfig.className}
               disabled={buttonConfig.disabled}
@@ -638,7 +630,6 @@ export function PostDetail({
         </div>
       </div>
 
-      {/* 동행 신청 취소 확인 모달 */}
       <Dialog open={cancelModalOpen} onOpenChange={setCancelModalOpen}>
         <DialogContent className="max-w-md">
           <DialogTitle className="text-gray-900">동행 신청 취소</DialogTitle>
@@ -663,6 +654,50 @@ export function PostDetail({
           </div>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogTitle className="text-gray-900">게시글 삭제</DialogTitle>
+          <DialogDescription>
+            정말로 이 게시글을 삭제하시겠습니까?
+            <br />이 작업은 되돌릴 수 없습니다.
+          </DialogDescription>
+          <div className="flex gap-3 mt-6">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setDeleteModalOpen(false)}
+            >
+              아니오
+            </Button>
+            <Button
+              className="flex-1 bg-red-600 hover:bg-red-700"
+              onClick={handleDeletePost}
+            >
+              예, 삭제합니다
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={showDeleteSuccessAlert}
+        onOpenChange={setShowDeleteSuccessAlert}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>삭제 완료</AlertDialogTitle>
+            <AlertDialogDescription>
+              게시글이 성공적으로 삭제되었습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={handleCloseSuccessAlert}>
+              확인
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

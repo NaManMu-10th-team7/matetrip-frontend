@@ -18,6 +18,7 @@ interface MainPageProps {
   onViewPost: (postId: string) => void;
   onCreatePost: () => void;
   isLoggedIn: boolean;
+  fetchTrigger: number;
 }
 
 // TODO: 백엔드 연동 시 API에서 추천 사용자 목록 가져오기
@@ -96,6 +97,7 @@ export function MainPage({
   onViewPost,
   onCreatePost,
   isLoggedIn,
+  fetchTrigger,
 }: MainPageProps) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [userPosts, setUserPosts] = useState<Post[]>([]);
@@ -146,7 +148,13 @@ export function MainPage({
     };
 
     fetchAllPosts();
-  }, [isLoggedIn, user?.userId, user?.profile.nickname, isAuthLoading]); // Add isAuthLoading to dependency array
+  }, [
+    isLoggedIn,
+    user?.userId,
+    user?.profile.nickname,
+    isAuthLoading,
+    fetchTrigger,
+  ]); // Add fetchTrigger to dependency array
 
   return (
     <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-gray-50">

@@ -28,7 +28,6 @@ import { Dialog, DialogContent } from './components/ui/dialog';
 import { ProfileModal } from './components/ProfileModal';
 import PublicOnlyRoute from './components/PublicOnlyRoute';
 
-
 // Layout component for pages with Header
 function Layout({
   isLoggedIn,
@@ -38,6 +37,7 @@ function Layout({
   onProfileClick,
   onCreatePost,
   onLogoClick,
+  onSearch,
 }: {
   isLoggedIn: boolean;
   isAuthLoading: boolean;
@@ -46,6 +46,7 @@ function Layout({
   onProfileClick: () => void;
   onCreatePost: () => void;
   onLogoClick: () => void;
+  onSearch: (query: string) => void;
 }) {
   return (
     <>
@@ -57,6 +58,7 @@ function Layout({
         onProfileClick={onProfileClick}
         onCreatePost={onCreatePost}
         onLogoClick={onLogoClick}
+        onSearch={onSearch}
       />
       <Outlet />
     </>
@@ -68,10 +70,12 @@ function MainPageWrapper({
   isLoggedIn,
   onCreatePost,
   onViewPost,
+  fetchTrigger,
 }: {
   isLoggedIn: boolean;
   onCreatePost: () => void;
   onViewPost: (postId: string) => void;
+  fetchTrigger: number;
 }) {
   const navigate = useNavigate();
   const { isLoggedIn: isLoggedInFromStore } = useAuthStore(); // 스토어에서 직접 가져오기
@@ -97,6 +101,7 @@ function MainPageWrapper({
       onViewPost={onViewPost}
       isLoggedIn={finalIsLoggedIn}
       onCreatePost={onCreatePost}
+      fetchTrigger={fetchTrigger}
     />
   );
 }
@@ -118,74 +123,6 @@ function SearchResultsWrapper() {
   };
 
   return <SearchResults searchParams={params} onViewPost={handleViewPost} />;
-}
-
-function PostDetailWrapper({
-  isLoggedIn,
-  onEditPost,
-  onViewProfile,
-}: {
-  // onEditPost prop의 postId 타입을 string으로 변경
-  isLoggedIn: boolean;
-  onEditPost: (post: Post) => void;
-  onViewProfile: (userId: string) => void;
-}): React.ReactElement | null {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const postId = location.pathname.split('/').pop() || ''; // postId를 string으로 직접 추출
-
-  const handleJoinWorkspace = (postId: string, workspaceName: string) => {
-    // TODO : 워크스페이스 생성 API를 호출해서 생성된 id 를 반환해야 함.
-    const createAndNavigate = async () => {
-      // 디버깅용 로그
-      console.log(`postId`, postId);
-      console.log(`workspaceName`, workspaceName);
-
-      try {
-        // API 응답 데이터 구조에 맞게 타입과 변수명 수정
-        const response = await client.post<CreateWorkspaceResponse>(
-          '/workspace',
-          { postId, workspaceName }
-        );
-
-        // 디버깅용 로그
-        console.log(`=== POST /workspace 응답 ===`);
-        console.log(response.data);
-
-        const { planDayDtos, workspaceResDto } = response.data;
-        const { id, workspaceName: resWorkspaceName } = workspaceResDto;
-
-        // 디버깅용 로그
-        console.log(`id`, id);
-        console.log(`workspaceName`, resWorkspaceName);
-        console.log(`planDayDtos`, planDayDtos);
-
-        // navigate의 state를 사용하여 워크스페이스 이름을 전달합니다.
-        navigate(`/workspace/${id}`, {
-          state: { workspaceName: resWorkspaceName, planDayDtos },
-        });
-      } catch (error) {
-        console.error('Failed to create or join workspace:', error);
-        alert('워크스페이스에 입장하는 중 오류가 발생했습니다.');
-      }
-    };
-    createAndNavigate();
-  };
-
-  return (
-    <PostDetail
-      postId={postId}
-      onJoinWorkspace={handleJoinWorkspace}
-      onEditPost={onEditPost} // onEditPost를 그대로 전달
-      onViewProfile={handleViewProfile}
-      onOpenChange={(open) => {
-        if (!open) {
-          // 모달이 닫힐 때 이전 페이지로 이동하거나 홈페이지로 이동
-          navigate(-1);
-        }
-      }}
-    />
-  );
 }
 
 function WorkspaceWrapper() {
@@ -266,6 +203,9 @@ export default function App() {
     open: boolean;
     postId: string | null;
   }>({ open: false, postId: null });
+
+  const [fetchTrigger, setFetchTrigger] = useState(0);
+
   // 앱이 처음 로드될 때 쿠키를 통해 로그인 상태를 확인합니다.
   // checkAuth 함수는 Zustand 스토어에 의해 안정적으로 제공되므로 의존성 배열에 포함해도 안전합니다.
   useEffect(() => {
@@ -308,6 +248,10 @@ export default function App() {
     setPostDetailModalState({ open: true, postId });
   };
 
+  const handleDeleteSuccess = () => {
+    setFetchTrigger((prev) => prev + 1); // fetch 트리거 상태 변경
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Toaster position="top-right" />
@@ -347,6 +291,7 @@ export default function App() {
                 isLoggedIn={isLoggedIn}
                 onViewPost={handleViewPost}
                 onCreatePost={() => setShowCreatePost(true)}
+                fetchTrigger={fetchTrigger}
               />
             }
           />
@@ -363,7 +308,13 @@ export default function App() {
 
       {/* Modals */}
       {showCreatePost && (
-        <CreatePostModal onClose={() => setShowCreatePost(false)} />
+        <CreatePostModal
+          onClose={() => setShowCreatePost(false)}
+          onSuccess={() => {
+            setShowCreatePost(false);
+            handleDeleteSuccess(); // 재사용
+          }}
+        />
       )}
       {showEditPost && selectedPostForEdit && (
         <EditPostModal
@@ -371,12 +322,11 @@ export default function App() {
           onClose={() => setShowEditPost(false)} // 사용자가 X 버튼이나 취소 버튼을 눌렀을 때
           onSuccess={() => {
             setShowEditPost(false); // 모달 닫기
-            alert('게시물이 성공적으로 수정되었습니다.');
             // PostDetail 모달이 열려있다면, 그 모달도 닫고 새로고침
             if (postDetailModalState.open) {
               setPostDetailModalState({ open: false, postId: null });
             }
-            navigate(0); // 현재 페이지 새로고침하여 데이터 갱신
+            handleDeleteSuccess(); // 재사용
           }}
         />
       )}
@@ -413,9 +363,34 @@ export default function App() {
                 setShowEditPost(true);
               }}
               onJoinWorkspace={(postId, workspaceName) => {
-                // TODO: 워크스페이스 입장 로직 구현
-                console.log('Join workspace:', postId, workspaceName);
+                const createAndNavigate = async () => {
+                  try {
+                    const response = await client.post<CreateWorkspaceResponse>(
+                      '/workspace',
+                      { postId, workspaceName }
+                    );
+                    const { planDayDtos, workspaceResDto } = response.data;
+                    const { id, workspaceName: resWorkspaceName } =
+                      workspaceResDto;
+                    navigate(`/workspace/${id}`, {
+                      state: {
+                        workspaceName: resWorkspaceName,
+                        planDayDtos,
+                      },
+                    });
+                  } catch (error) {
+                    console.error(
+                      'Failed to create or join workspace:',
+                      error
+                    );
+                    alert(
+                      '워크스페이스에 입장하는 중 오류가 발생했습니다.'
+                    );
+                  }
+                };
+                createAndNavigate();
               }}
+              onDeleteSuccess={handleDeleteSuccess}
             />
           </DialogContent>
         </Dialog>
