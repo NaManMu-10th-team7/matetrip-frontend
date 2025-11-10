@@ -25,8 +25,8 @@ interface WorkspaceProps {
 // ... (MOCK_MEMBERS, generateColorFromString는 이전과 동일)
 const MOCK_MEMBERS = [
   { id: 1, name: '여행러버', isAuthor: true, avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtYW4lMjBwb3J0cmFpdHxlbnwxfHx8fDE3NjI2MDg1MDN8MA&ixlib=rb-4.1.0&q=80&w=1080' },
-  { id: 2, name: '바다조아', isAuthor: false, avatar: 'https://images.unsplash.com/photo-1557053910-d9eadeed1c58?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHx3b21hbiUyMHBvcnRyYWl0fGVuMHx8fDE3NjI1ODc0MzN8MHw&ixlib=rb-4.1.0&q=80&w=1080' },
-  { id: 3, name: '제주사랑', isAuthor: false, avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxwcm9mZXNzaW9uYWwlMjBwb3J0cmFpdHxlbnwxfHx8fDE3NjI1NTU3MDJ8MA&ixlib=rb-4.1.0&q=80&w=1080' },
+  { id: 2, name: '바다조아', isAuthor: false, avatar: 'https://images.unsplash.com/photo-1557053910-d9eadeed1c58?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHx3b21hbiUyMHBvcnRyYWl0fHxlbnMHx8fDE3NjI1ODc0MzN8MHw&ixlib=rb-4.1.0&q=80&w=1080' },
+  { id: 3, name: '제주사랑', isAuthor: false, avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxwcm9mZXNzaW9uYWwlMjBwb3J0cmFpdHxlbnwxfHx8fDE3NjI1NTU3MDJ8MHw&ixlib=rb-4.1.0&q=80&w=1080' },
 ];
 
 const generateColorFromString = (str: string) => {
@@ -66,6 +66,7 @@ export function Workspace({
   
   const [selectedPlace, setSelectedPlace] = useState<KakaoPlace | null>(null);
   const [activePoi, setActivePoi] = useState<Poi | null>(null);
+  const [hoveredPoi, setHoveredPoi] = useState<Poi | null>(null); // hoveredPoi 상태 추가
   const mapRef = useRef<kakao.maps.Map>(null);
 
   const dayLayers = useMemo(
@@ -103,6 +104,14 @@ export function Workspace({
     );
     map.panTo(moveLatLon);
   };
+
+  const handlePoiHover = useCallback((poi: Poi) => {
+    setHoveredPoi(poi);
+  }, []);
+
+  const handlePoiLeave = useCallback(() => {
+    setHoveredPoi(null);
+  }, []);
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
@@ -229,7 +238,7 @@ export function Workspace({
         poi.id === poiId ? { ...poi, latitude: lat, longitude: lng } : poi
       )
     );
-    // TODO: Call a socket event to persist the new coordinates
+    // TODO: Call a socket event to persist the new coordinates.
     // For now, only local state is updated.
     console.log(`POI ${poiId} dragged to Lat: ${lat}, Lng: ${lng}`);
   }, [setPois]);
@@ -261,9 +270,11 @@ export function Workspace({
             dayLayers={dayLayers}
             markedPois={markedPois}
             unmarkPoi={unmarkPoi}
-            removeSchedule={removeSchedule} // 이 줄을 추가합니다.
+            removeSchedule={removeSchedule}
             onPlaceClick={setSelectedPlace}
             onPoiClick={handlePoiClick}
+            onPoiHover={handlePoiHover} // LeftPanel에 hover 핸들러 전달
+            onPoiLeave={handlePoiLeave} // LeftPanel에 leave 핸들러 전달
           />
           
           <button
@@ -285,7 +296,9 @@ export function Workspace({
                   selectedPlace={selectedPlace}
                   mapRef={mapRef}
                   onPoiDragEnd={handleMapPoiDragEnd}
-                  setSelectedPlace={setSelectedPlace} // Pass setSelectedPlace to MapPanel
+                  setSelectedPlace={setSelectedPlace}
+                  onPoiHover={handlePoiHover} // MapPanel에 hover 핸들러 전달
+                  onPoiLeave={handlePoiLeave} // MapPanel에 leave 핸들러 전달
               />
           </div>
 
