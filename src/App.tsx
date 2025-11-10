@@ -62,8 +62,16 @@ function Layout({
 }
 
 // Wrapper components for route handling
-function MainPageWrapper() {
+function MainPageWrapper({
+  isLoggedIn,
+  onCreatePost,
+}: {
+  isLoggedIn: boolean;
+  onCreatePost: () => void;
+}) {
   const navigate = useNavigate();
+  const { isLoggedIn: isLoggedInFromStore } = useAuthStore(); // 스토어에서 직접 가져오기
+  const finalIsLoggedIn = isLoggedIn ?? isLoggedInFromStore;
 
   const handleSearch = (params: {
     startDate?: string;
@@ -93,6 +101,8 @@ function MainPageWrapper() {
       onSearch={handleSearch}
       onViewPost={handleViewPost}
       onUserClick={handleUserClick}
+      isLoggedIn={finalIsLoggedIn}
+      onCreatePost={onCreatePost}
     />
   );
 }
@@ -338,7 +348,15 @@ export default function App() {
             />
           }
         >
-          <Route path="/" element={<MainPageWrapper />} />
+          <Route
+            path="/"
+            element={
+              <MainPageWrapper
+                isLoggedIn={isLoggedIn}
+                onCreatePost={() => setShowCreatePost(true)}
+              />
+            }
+          />
           <Route path="/search" element={<SearchResultsWrapper />} />
           <Route
             path="/post/:id"

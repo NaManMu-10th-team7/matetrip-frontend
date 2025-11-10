@@ -9,7 +9,6 @@ interface HeaderProps {
   onLoginClick: () => void;
   onLogoutClick: () => void;
   onProfileClick: () => void;
-  onCreatePost: () => void;
   onLogoClick: () => void;
 }
 
@@ -19,7 +18,6 @@ export function Header({
   onLoginClick,
   onLogoutClick,
   onProfileClick,
-  onCreatePost,
   onLogoClick,
 }: HeaderProps) {
   const { user } = useAuthStore();
@@ -48,14 +46,6 @@ export function Header({
             ) : isLoggedIn ? (
               <>
                 <NotificationPopover />
-
-                <Button
-                  onClick={onCreatePost}
-                  className="gap-2 bg-blue-600 hover:bg-blue-700"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span className="hidden sm:inline">게시물 작성</span>
-                </Button>
 
                 <div className="flex items-center gap-2">
                   <button

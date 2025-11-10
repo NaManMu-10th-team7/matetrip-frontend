@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   Search,
+  Plus,
   Calendar,
   MapPin,
   TrendingUp,
@@ -27,6 +28,8 @@ interface MainPageProps {
   }) => void;
   onViewPost: (postId: string) => void;
   onUserClick: (userId: string) => void;
+  onCreatePost: () => void;
+  isLoggedIn: boolean;
 }
 
 // TODO: 백엔드 연동 시 API에서 추천 사용자 목록 가져오기
@@ -100,7 +103,13 @@ const REGION_CATEGORIES = [
   },
 ];
 
-export function MainPage({ onSearch, onViewPost, onUserClick }: MainPageProps) {
+export function MainPage({
+  onSearch,
+  onViewPost,
+  onUserClick,
+  onCreatePost,
+  isLoggedIn,
+}: MainPageProps) {
   const [searchStartDate, setSearchStartDate] = useState('');
   const [searchEndDate, setSearchEndDate] = useState('');
   const [searchLocation, setSearchLocation] = useState('');
@@ -140,7 +149,7 @@ export function MainPage({ onSearch, onViewPost, onUserClick }: MainPageProps) {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Hero Section with Search */}
       <div className="text-center mb-12">
         {/* Search Box */}
@@ -296,6 +305,17 @@ export function MainPage({ onSearch, onViewPost, onUserClick }: MainPageProps) {
           ))}
         </div>
       </section>
+
+      {isLoggedIn && (
+        <Button
+          onClick={onCreatePost}
+          className="fixed bottom-12 right-12 z-40 flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-8 text-base font-bold text-white shadow-xl transition-all duration-300 ease-in-out hover:-translate-y-1 hover:scale-105 hover:bg-blue-700 hover:shadow-2xl"
+          aria-label="게시물 작성"
+        >
+          <Plus className="h-5 w-5" />
+          여행 떠나기
+        </Button>
+      )}
     </div>
   );
 }
