@@ -1,9 +1,5 @@
 import { useState, useEffect } from 'react';
-import {
-  Plus,
-  MapPin,
-  ClipboardList,
-} from 'lucide-react';
+import { Plus, MapPin, ClipboardList } from 'lucide-react';
 import { Button } from './ui/button';
 import {
   Dialog,
@@ -16,8 +12,8 @@ import { ImageWithFallback } from './figma/ImageWithFallback';
 import client from '../api/client';
 import { type Post } from '../types/post';
 import { PostDetail } from './PostDetail';
-import { MainPostCard } from './MainPostCard';
 import { MainPostCardSkeleton } from './MainPostCardSkeleton';
+import { WorkspaceCarousel } from './WorkspaceCarousel';
 
 interface MainPageProps {
   onSearch: (params: {
@@ -122,6 +118,8 @@ export function MainPage({
           (a, b) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
+
+        console.log(`최신 동행 글 목록`, sortedPosts);
         setPosts(sortedPosts);
       } catch (error) {
         console.error('Failed to fetch posts:', error);
@@ -160,16 +158,10 @@ export function MainPage({
             최신 게시글이 없습니다.
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* 최신 6개의 게시글만 보여줍니다. */}
-            {posts.slice(0, 6).map((post) => (
-              <MainPostCard
-                key={post.id}
-                post={post}
-                onClick={() => handleViewPost(post.id)}
-              />
-            ))}
-          </div>
+          <WorkspaceCarousel
+            posts={posts}
+            onCardClick={(post) => handleViewPost(post.id)}
+          />
         )}
       </section>
 
