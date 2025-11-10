@@ -25,9 +25,10 @@ export function WorkspaceCard({
     location,
     startDate,
     endDate,
-    writerProfile,
+    writer, // 변경: writerProfile 대신 writer 사용
     keywords,
     maxParticipants,
+    participations, // 변경: participations 추가
   } = post;
 
   // 총 일수 계산
@@ -43,14 +44,21 @@ export function WorkspaceCard({
   // API 응답에 커버 이미지가 없으므로 임시 플레이스홀더를 사용합니다.
   const coverImage = 'https://via.placeholder.com/400x300';
   
-  // 참여자 목록을 구성합니다.
-  // 현재 API 응답에는 writerProfile만 있으므로, 작성자만 목록에 추가합니다.
-  // TODO: API 응답에 참여자 목록(participants)이 포함되면 해당 데이터를 사용하도록 수정해야 합니다.
-  const displayParticipants = writerProfile
-    ? [
-        { id: writerProfile.id, name: writerProfile.nickname, profileImage: writerProfile.profileImage },
-      ]
-    : [];
+  // 참여자 목록을 구성합니다. writer와 participations를 사용합니다.
+  const displayParticipants = [
+    {
+      id: writer.id,
+      name: writer.profile.nickname,
+      profileImage: writer.profile.profileImage || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+    },
+    ...(participations || [])
+      .filter(p => p.status === '승인')
+      .map((p) => ({
+        id: p.requester.id,
+        name: p.requester.profile.nickname,
+        profileImage: p.requester.profile.profileImage || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+      })),
+  ];
   
   return (
     <div

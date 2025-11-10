@@ -32,11 +32,11 @@ import {
 } from './ui/dropdown-menu';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import client from '../api/client';
-import { type Post } from './PostCard';
+import { type Post, type Participation } from '../types/post'; // PostCard 대신 types/post에서 Post와 Participation 가져옴
 import { translateKeyword } from '../utils/keyword';
 
 import { useAuthStore } from '../store/authStore';
-import type { Participation } from '../types/participation.ts';
+// import type { Participation } from '../types/participation.ts'; // types/post에서 가져오므로 주석 처리
 
 interface PostDetailProps {
   postId: string;
@@ -69,13 +69,11 @@ export function PostDetail({
     setIsLoading(true);
     setError(null);
     try {
-      const [postResponse, participationsResponse] = await Promise.all([
-        client.get<Post>(`/post/${postId}`),
-        client.get<Participation[]>(`/posts/${postId}/participations`),
-      ]);
+      const postResponse = await client.get<Post>(`/post/${postId}`);
+      const fetchedPost = postResponse.data;
+      setPost(fetchedPost);
 
-      setPost(postResponse.data);
-      const allParticipations = participationsResponse.data;
+      const allParticipations = fetchedPost.participations || [];
       setParticipations(allParticipations);
       // 참여자 목록을 상태별로 분리합니다.
       setApprovedParticipants(
@@ -97,7 +95,7 @@ export function PostDetail({
   }, [fetchPostDetail]);
 
   // 현재 로그인한 사용자가 게시글 작성자인지 확인
-  const isAuthor = user && post ? user.userId === post.writerId : false;
+  const isAuthor = user && post ? user.userId === post.writer.id : false; // writerId 대신 post.writer.id 사용
   const isLoggedIn = !!user;
   // console.log(`isAuthor: ${isAuthor}`);
   // console.log(user);
@@ -120,7 +118,7 @@ export function PostDetail({
     }
   };
 
-  const handleAcceptRequest = async (participationId: number) => {
+  const handleAcceptRequest = async (participationId: string) => { // participationId 타입을 string으로 변경
     try {
       await client.patch(`/posts/${postId}/participations/${participationId}`, {
         status: '승인',
@@ -133,7 +131,7 @@ export function PostDetail({
     }
   };
 
-  const handleRejectRequest = async (participationId: number) => {
+  const handleRejectRequest = async (participationId: string) => { // participationId 타입을 string으로 변경
     try {
       await client.patch(`/posts/${postId}/participations/${participationId}`, {
         status: '거절',
@@ -338,22 +336,22 @@ export function PostDetail({
                   <div className="flex items-start gap-4 p-4 bg-white rounded-xl border h-full">
                     <ImageWithFallback
                       src={
-                        post.writerProfile.profileImage ||
+                        post.writer.profile.profileImage ||
                         'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'
                       }
-                      alt={post.writerProfile.nickname}
+                      alt={post.writer.profile.nickname}
                       className="w-12 h-12 rounded-full object-cover flex-shrink-0"
                     />
                     <div className="flex-1 min-w-0">
                       <p className="text-gray-900 mb-2">
-                        {post.writerProfile.nickname}
+                        {post.writer.profile.nickname}
                       </p>
                       <div className="flex items-center gap-2 mb-2">
                         <Thermometer className="w-4 h-4 text-blue-600" />
                         <span className="text-sm text-blue-600">36.5°C</span>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        {post.writerProfile.travelStyles?.map((style) => (
+                        {post.writer.profile.travelStyles?.map((style) => (
                           <Badge
                             key={style}
                             variant="secondary"
@@ -368,7 +366,7 @@ export function PostDetail({
                       size="sm"
                       variant="outline"
                       className="flex-shrink-0 self-start whitespace-nowrap"
-                      onClick={() => handleViewProfile(post.writerId)}
+                      onClick={() => handleViewProfile(post.writer.id)}
                     >
                       프로필 보기
                     </Button>
@@ -380,7 +378,7 @@ export function PostDetail({
                   <div className="relative w-full h-full max-h-[200px] rounded-xl overflow-hidden bg-gray-100">
                     <ImageWithFallback
                       src={
-                        post.image ||
+                        // post.image는 Post 타입에 없으므로, 임시로 placeholder 사용
                         'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=800&q=80'
                       }
                       alt={post.title}
@@ -451,7 +449,7 @@ export function PostDetail({
                             variant="outline"
                             className="text-xs h-7 self-start flex-shrink-0"
                             onClick={() =>
-                              handleViewProfile(String(p.requester.id))
+                              handleViewProfile(p.requester.id)
                             }
                           >
                             프로필 보기
@@ -516,7 +514,7 @@ export function PostDetail({
                             variant="outline"
                             className="text-xs h-7 self-start flex-shrink-0"
                             onClick={() =>
-                              handleViewProfile(String(request.requester.id))
+                              handleViewProfile(request.requester.id)
                             }
                           >
                             프로필 보기

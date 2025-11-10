@@ -16,7 +16,7 @@ import { Badge } from './ui/badge';
 import client from '../api/client'; // prettier-ignore
 import { useAuthStore } from '../store/authStore';
 import { type Post } from '../types/post';
-import { type UserProfile as UserProfileType } from '../types/user';
+import { type UserProfile } from '../types/user';
 import { translateKeyword } from '../utils/keyword';
 import { WorkspaceCard } from './WorkspaceCard';
 
@@ -25,11 +25,6 @@ interface ProfileModalProps {
   onOpenChange: (open: boolean) => void;
   userId: string | null;
   onViewPost: (postId: string) => void;
-}
-
-interface UserProfile extends UserProfileType {
-  profileImageId?: string | null;
-  profileImage?: string | null;
 }
 
 interface Review {
@@ -76,11 +71,14 @@ export function ProfileModal({
         // client.get(`/users/${userId}/reviews`),
       ]);
 
+      // [디버그용] 참여한 동행 데이터 확인
+      console.log('GET /users/{userId}/participations 응답:', participatedPostsRes.data);
+
       setProfile(profileRes.data);
 
       // 작성한 동행과 참여한 동행 목록을 합치고 중복을 제거합니다.
       const written = writtenPostsRes.data || [];
-      const participated = participatedPostsRes.data || [];
+      const participated = Array.isArray(participatedPostsRes.data) ? participatedPostsRes.data : [];
       const combinedPosts = [...written, ...participated];
 
       // ID를 기준으로 중복을 제거하고, 최신순(createdAt)으로 정렬합니다.
