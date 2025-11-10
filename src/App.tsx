@@ -317,6 +317,11 @@ export default function App() {
     navigate('/');
   };
 
+  const handleSearch = (query: string) => {
+    const searchParams = new URLSearchParams({ title: query });
+    navigate(`/search?${searchParams.toString()}`);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Toaster position="top-right" />
@@ -345,6 +350,7 @@ export default function App() {
               onProfileClick={handleProfileClick}
               onCreatePost={() => setShowCreatePost(true)}
               onLogoClick={handleLogoClick}
+              onSearch={handleSearch}
             />
           }
         >
