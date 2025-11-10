@@ -270,6 +270,7 @@ export function Workspace({
     >
       <div className="h-full flex flex-col bg-gray-50">
         <PlanRoomHeader
+          workspaceId={workspaceId}
           title={workspaceName}
           startDate={startDate}
           endDate={endDate}

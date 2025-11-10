@@ -1,10 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from './ui/dialog';
+import axios from 'axios';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from './ui/dialog';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Award, Star, ThumbsUp, Send, ChevronRight } from 'lucide-react';
 import { ReviewCompleteModal } from './ReviewCompleteModal';
+import { AlertDialog } from './AlertDialog'; // AlertDialog 컴포넌트 import
 
 interface Member {
   id: string;
@@ -16,29 +23,37 @@ interface TripReviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   activeMembers: Member[];
+  workspaceId: string;
   onComplete?: () => void;
 }
 
-const ratingTexts = ['최악이에요 😢', '별로에요 😕', '괜찮아요 😊', '좋아요 😄', '최고에요! 🎉'];
+const ratingTexts = [
+  '최악이에요 😢',
+  '별로에요 😕',
+  '괜찮아요 😊',
+  '좋아요 😄',
+  '최고에요! 🎉',
+];
 
 export function TripReviewModal({
   isOpen,
   onClose,
   activeMembers,
-  onComplete
+  workspaceId,
+  onComplete,
 }: TripReviewModalProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [reviews, setReviews] = useState<Array<{ rating: number; comment: string }>>(
-    activeMembers.map(() => ({ rating: 0, comment: '' }))
-  );
+  const [reviews, setReviews] = useState<
+    Array<{ rating: number; comment: string }>
+  >(activeMembers.map(() => ({ rating: 0, comment: '' })));
   const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false); // 에러 모달 상태
+  const [errorMessage, setErrorMessage] = useState(''); // 에러 메시지 상태
 
   // activeMembers가 변경될 때마다 reviews와 currentIndex를 리셋합니다.
   useEffect(() => {
     if (isOpen) {
-      setReviews(
-        activeMembers.map(() => ({ rating: 0, comment: '' }))
-      );
+      setReviews(activeMembers.map(() => ({ rating: 0, comment: '' })));
       setCurrentIndex(0);
     }
   }, [activeMembers, isOpen]);
@@ -63,18 +78,48 @@ export function TripReviewModal({
     setReviews(newReviews);
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentIndex < activeMembers.length - 1) {
       setCurrentIndex(currentIndex + 1);
     } else {
       // 모든 리뷰 제출
-      console.log('리뷰 제출:', reviews);
-      onClose(); // 리뷰 모달 닫기
-      setShowCompleteModal(true); // 감사 모달 열기
+      const reviewData = reviews.map((review, index) => ({
+        revieweeId: activeMembers[index].id,
+        rating: review.rating,
+        content: review.comment,
+      }));
+
+      try {
+        const response = await axios.post(
+          `http://localhost:3000/workspace/${workspaceId}/reviews`,
+          reviewData,
+          { withCredentials: true } // 인증 쿠키를 보내기 위해 추가
+        );
+
+        console.log('Reviews submitted successfully:', response.data); // 성공 시 완료 모달 표시
+        onClose(); // 리뷰 모달 닫기
+        setShowCompleteModal(true); // 감사 모달 열기
+      } catch (error) {
+        console.error('Error submitting reviews:', error);
+        if (axios.isAxiosError(error) && error.response?.status === 409) {
+          // 409 Conflict 에러 처리
+          setErrorMessage(
+            '이미 해당 동행에 대한 리뷰를 작성했습니다. 중복 작성은 불가능합니다.'
+          );
+          setShowErrorModal(true);
+        } else {
+          // 그 외 에러 처리
+          setErrorMessage(
+            '리뷰 제출 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+          );
+          setShowErrorModal(true);
+        }
+      }
     }
   };
 
-  const isCurrentReviewValid = currentReview.rating > 0 && currentReview.comment.trim().length > 0;
+  const isCurrentReviewValid =
+    currentReview.rating > 0 && currentReview.comment.trim().length > 0;
 
   return (
     <>
@@ -87,7 +132,9 @@ export function TripReviewModal({
             </div>
 
             {/* 제목 */}
-            <DialogTitle className="text-gray-900 text-xl">여행 리뷰 작성</DialogTitle>
+            <DialogTitle className="text-gray-900 text-xl">
+              여행 리뷰 작성
+            </DialogTitle>
 
             {/* 설명 */}
             <DialogDescription className="text-gray-600 text-sm text-center">
@@ -115,7 +162,9 @@ export function TripReviewModal({
             <div className="flex flex-col items-center gap-1.5">
               <Avatar className="w-20 h-20">
                 <AvatarImage src={currentTraveler?.avatar} />
-                <AvatarFallback className="text-white bg-gradient-to-br from-gray-600 to-gray-800">{currentTraveler?.name.charAt(0)}</AvatarFallback>
+                <AvatarFallback className="text-white bg-gradient-to-br from-gray-600 to-gray-800">
+                  {currentTraveler?.name.charAt(0)}
+                </AvatarFallback>
               </Avatar>
               <span className="text-gray-900">{currentTraveler?.name}</span>
             </div>
@@ -149,7 +198,9 @@ export function TripReviewModal({
 
             {/* 리뷰 작성 */}
             <div className="w-full space-y-1.5">
-              <label className="text-gray-900 text-sm">자세한 리뷰를 남겨주세요 (필수)</label>
+              <label className="text-gray-900 text-sm">
+                자세한 리뷰를 남겨주세요 (필수)
+              </label>
               <Textarea
                 value={currentReview.comment}
                 onChange={(e) => handleCommentChange(e.target.value)}
@@ -173,9 +224,9 @@ export function TripReviewModal({
             </Button>
 
             {/* 안내 문구 */}
-            <p className="text-gray-600 text-xs text-center">
+            <span className="text-gray-600 text-xs text-center">
               솔직한 리뷰는 다른 여행자들에게 큰 도움이 됩니다
-            </p>
+            </span>
           </div>
         </DialogContent>
       </Dialog>
@@ -183,6 +234,16 @@ export function TripReviewModal({
         isOpen={showCompleteModal}
         onClose={() => setShowCompleteModal(false)}
         onConfirm={onComplete || (() => {})}
+      />
+      <AlertDialog
+        isOpen={showErrorModal}
+        onClose={() => setShowErrorModal(false)}
+        title="오류 발생"
+        description={errorMessage}
+        onConfirm={() => {
+          setShowErrorModal(false);
+          onClose(); // 확인 버튼 클릭 시 리뷰 모달도 닫기
+        }}
       />
     </>
   );

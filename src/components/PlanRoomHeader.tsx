@@ -24,6 +24,7 @@ interface Member {
 }
 
 interface PlanRoomHeaderProps {
+  workspaceId: string;
   title: string;
   startDate: string;
   endDate: string;
@@ -37,6 +38,7 @@ interface PlanRoomHeaderProps {
 }
 
 export function PlanRoomHeader({
+  workspaceId,
   title,
   startDate,
   endDate,
@@ -130,6 +132,7 @@ export function PlanRoomHeader({
       <TripReviewModal
         isOpen={isReviewModalOpen}
         onClose={() => setReviewModalOpen(false)}
+        workspaceId={workspaceId}
         activeMembers={membersToReview}
         onComplete={onBack}
       />
