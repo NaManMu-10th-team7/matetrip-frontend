@@ -10,7 +10,12 @@ interface RightPanelProps {
   isChatConnected: boolean; // isChatConnected prop 추가
 }
 
-export function RightPanel({ isOpen, messages, sendMessage, isChatConnected }: RightPanelProps) {
+export function RightPanel({
+  isOpen,
+  messages,
+  sendMessage,
+  isChatConnected,
+}: RightPanelProps) {
   if (!isOpen) {
     return null;
   }
@@ -21,25 +26,25 @@ export function RightPanel({ isOpen, messages, sendMessage, isChatConnected }: R
         <TabsList className="w-full justify-around rounded-none bg-gray-50 border-b">
           <TabsTrigger value="chat" className="flex-1 gap-2">
             <MessageCircle className="w-4 h-4" />
-            <span>채팅</span>
+            <span>채팅 with AI Agent</span>
           </TabsTrigger>
-          <TabsTrigger value="agent" className="flex-1 gap-2">
-            <Bot className="w-4 h-4" />
-            <span>AI Agent</span>
-          </TabsTrigger>
+          {/* <TabsTrigger value="agent" className="flex-1 gap-2"> */}
+          {/*   <Bot className="w-4 h-4" /> */}
+          {/*   <span>AI Agent</span> */}
+          {/* </TabsTrigger> */}
         </TabsList>
         <TabsContent value="chat" className="flex-1 overflow-auto m-0">
-          <ChatPanel 
-            messages={messages} 
-            sendMessage={sendMessage} 
-            isChatConnected={isChatConnected} 
+          <ChatPanel
+            messages={messages}
+            sendMessage={sendMessage}
+            isChatConnected={isChatConnected}
           />
         </TabsContent>
-        <TabsContent value="agent" className="h-full m-0 p-4">
-          <div className="h-full flex items-center justify-center text-gray-500">
-            AI Agent (개발 예정)
-          </div>
-        </TabsContent>
+        {/* <TabsContent value="agent" className="h-full m-0 p-4"> */}
+        {/*   <div className="h-full flex items-center justify-center text-gray-500"> */}
+        {/*     AI Agent (개발 예정) */}
+        {/*   </div> */}
+        {/* </TabsContent> */}
       </Tabs>
     </div>
   );
