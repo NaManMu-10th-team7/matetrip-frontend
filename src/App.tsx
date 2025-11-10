@@ -372,6 +372,7 @@ export default function App() {
                     const { planDayDtos, workspaceResDto } = response.data;
                     const { id, workspaceName: resWorkspaceName } =
                       workspaceResDto;
+                    setPostDetailModalState({ open: false, postId: null });
                     navigate(`/workspace/${id}`, {
                       state: {
                         workspaceName: resWorkspaceName,
