@@ -16,7 +16,7 @@ import { Badge } from './ui/badge';
 import client from '../api/client'; // prettier-ignore
 import { useAuthStore } from '../store/authStore';
 import { type Post } from '../types/post';
-import { type UserProfile } from '../types/user';
+import { type UserProfile as UserProfileType } from '../types/user';
 import { translateKeyword } from '../utils/keyword';
 import { WorkspaceCard } from './WorkspaceCard';
 
@@ -25,6 +25,11 @@ interface ProfileModalProps {
   onOpenChange: (open: boolean) => void;
   userId: string | null;
   onViewPost: (postId: string) => void;
+}
+
+interface UserProfile extends UserProfileType {
+  profileImageId?: string | null;
+  profileImage?: string | null;
 }
 
 interface Review {
@@ -178,7 +183,7 @@ export function ProfileModal({
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-6">
                   <ImageWithFallback
-                    src={
+                    src={ // TODO: profileImageId를 presigned-url로 변환하는 로직 필요
                       profile.profileImage ||
                       'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'
                     }
@@ -263,22 +268,23 @@ export function ProfileModal({
                 <div className="space-y-6">
                   <div>
                     <h4 className="text-gray-900 mb-2 font-bold">한줄 소개</h4>
-                    <p className="text-gray-700">
-                      {profile.introduction ||
+                    <p className="text-gray-700 whitespace-pre-wrap">
+                      {profile.intro ||
                         '아직 한줄 소개가 작성되지 않았습니다.'}
                     </p>
                   </div>
                   <div>
                     <h4 className="text-gray-900 mb-2 font-bold">상세 소개</h4>
-                    <p
+                    <div
                       className={`text-gray-700 leading-relaxed whitespace-pre-wrap ${
                         !isBioExpanded && 'line-clamp-3'
                       }`}
                     >
-                      {profile.bio || '아직 상세 소개가 작성되지 않았습니다.'}
-                    </p>
-                    {(profile.bio?.split('\n').length > 3 ||
-                      <button
+                      {profile.description || '아직 상세 소개가 작성되지 않았습니다.'}
+                    </div>
+                    {(profile.description?.split('\n').length > 3 ||
+                      (profile.description && profile.description.length > 150)) && (
+                      <button // 더보기/접기 버튼 조건 수정
                         onClick={() => setIsBioExpanded(!isBioExpanded)}
                         className="w-full mt-3 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center justify-center gap-1"
                       >
