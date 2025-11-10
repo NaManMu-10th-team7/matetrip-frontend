@@ -6,9 +6,10 @@ import {
   StickyNote,
   ListOrdered,
   GripVertical,
-  ChevronDown, // Added ChevronDown
-  ChevronUp, // Added ChevronUp
-  MapPin, // Added MapPin for Marker Storage
+  ChevronDown,
+  ChevronUp,
+  MapPin,
+  X,
 } from 'lucide-react';
 import {
   SortableContext,
@@ -32,7 +33,15 @@ interface PageInfo {
   hasNextPage: boolean;
 }
 
-function PoiItem({ poi, color, index, onPoiClick }: { poi: Poi, color?: string, index?: number, onPoiClick?: (poi: Poi) => void }) {
+interface PoiItemProps {
+  poi: Poi;
+  color?: string;
+  index?: number;
+  onPoiClick?: (poi: Poi) => void;
+  unmarkPoi: (poiId: string | number) => void;
+}
+
+function PoiItem({ poi, color, index, onPoiClick, unmarkPoi }: PoiItemProps) {
   const {
     attributes,
     listeners,
@@ -46,7 +55,12 @@ function PoiItem({ poi, color, index, onPoiClick }: { poi: Poi, color?: string, 
     transform: CSS.Transform.toString(transform),
     transition,
     zIndex: isDragging ? 10 : undefined,
-    opacity: isDragging ? 0 : 1, // 드래그 중인 원본 아이템 숨기기
+    opacity: isDragging ? 0 : 1,
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    unmarkPoi(poi.id);
   };
 
   return (
@@ -54,7 +68,7 @@ function PoiItem({ poi, color, index, onPoiClick }: { poi: Poi, color?: string, 
       ref={setNodeRef}
       style={style}
       className="flex items-center gap-2 text-xs p-1 rounded-md cursor-pointer hover:bg-gray-100"
-      onClick={() => onPoiClick?.(poi)} // onClick 핸들러 추가
+      onClick={() => onPoiClick?.(poi)}
     >
       <div {...attributes} {...listeners} className="cursor-grab touch-none p-1">
         <GripVertical className="w-4 h-4 text-gray-400" />
@@ -67,31 +81,39 @@ function PoiItem({ poi, color, index, onPoiClick }: { poi: Poi, color?: string, 
           {index + 1}
         </span>
       )}
-      <span className="truncate">{poi.placeName}</span>
+      <span className="truncate flex-grow">{poi.placeName}</span>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={handleDeleteClick}
+        className="w-6 h-6 p-0 flex-shrink-0"
+      >
+        <X className="w-3 h-3 text-gray-500" />
+      </Button>
     </li>
   );
 }
 
-function MarkerStorage({ pois, onPoiClick }: { pois: Poi[], onPoiClick: (poi: Poi) => void }) {
+function MarkerStorage({ pois, onPoiClick, unmarkPoi }: { pois: Poi[], onPoiClick: (poi: Poi) => void, unmarkPoi: (poiId: string | number) => void }) {
     const { setNodeRef } = useDroppable({ id: 'marker-storage' });
-    const [isCollapsed, setIsCollapsed] = useState(false); // State for collapse
+    const [isCollapsed, setIsCollapsed] = useState(false);
 
     return (
         <div ref={setNodeRef} className="p-3 border-b">
             <div className="flex justify-between items-center mb-2">
-                <div className="flex items-center gap-2"> {/* Added div for icon and text */}
-                    <MapPin className="w-5 h-5 text-gray-600" /> {/* MapPin icon */}
-                    <h3 className="text-base font-bold">마커 보관함</h3> {/* Larger and bolder text */}
+                <div className="flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-gray-600" />
+                    <h3 className="text-base font-bold">마커 보관함</h3>
                 </div>
                 <Button variant="ghost" size="icon" onClick={() => setIsCollapsed(!isCollapsed)}>
                     {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
                 </Button>
             </div>
-            {!isCollapsed && ( // Conditionally render content
+            {!isCollapsed && (
                 <SortableContext id="marker-storage-sortable" items={pois.map(p => p.id)} strategy={verticalListSortingStrategy}>
                     <ul className="space-y-2 min-h-[2rem]">
                         {pois.length > 0 ? (
-                            pois.map((poi) => <PoiItem key={poi.id} poi={poi} onPoiClick={onPoiClick} />)
+                            pois.map((poi) => <PoiItem key={poi.id} poi={poi} onPoiClick={onPoiClick} unmarkPoi={unmarkPoi} />)
                         ) : (
                             <p className="text-xs text-gray-500 p-2">지도에 마커를 추가하여 보관하세요.</p>
                         )}
@@ -102,9 +124,9 @@ function MarkerStorage({ pois, onPoiClick }: { pois: Poi[], onPoiClick: (poi: Po
     );
 }
 
-function ItineraryDay({ layer, pois, onPoiClick }: { layer: DayLayer, pois: Poi[], onPoiClick: (poi: Poi) => void }) {
+function ItineraryDay({ layer, pois, onPoiClick, unmarkPoi }: { layer: DayLayer, pois: Poi[], onPoiClick: (poi: Poi) => void, unmarkPoi: (poiId: string | number) => void }) {
     const { setNodeRef } = useDroppable({ id: layer.id });
-    const [isCollapsed, setIsCollapsed] = useState(false); // State for collapse
+    const [isCollapsed, setIsCollapsed] = useState(false);
     
     return (
         <div ref={setNodeRef}>
@@ -119,12 +141,12 @@ function ItineraryDay({ layer, pois, onPoiClick }: { layer: DayLayer, pois: Poi[
                     {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
                 </Button>
             </div>
-            {!isCollapsed && ( // Conditionally render content
+            {!isCollapsed && (
                 <SortableContext id={layer.id + '-sortable'} items={pois.map(p => p.id)} strategy={verticalListSortingStrategy}>
                     <ul className="space-y-2 min-h-[2rem]">
                         {pois.length > 0 ? (
                             pois.map((poi, index) => (
-                                <PoiItem key={poi.id} poi={poi} color={layer.color} index={index} onPoiClick={onPoiClick} />
+                                <PoiItem key={poi.id} poi={poi} color={layer.color} index={index} onPoiClick={onPoiClick} unmarkPoi={unmarkPoi} />
                             ))
                         ) : (
                             <p className="text-xs text-gray-500 p-2">마커를 드래그하여 추가하세요.</p>
@@ -140,31 +162,37 @@ function ItineraryPanel({
   itinerary,
   dayLayers,
   onPoiClick,
+  unmarkPoi,
 }: {
   itinerary: Record<string, Poi[]>;
   dayLayers: DayLayer[];
   onPoiClick: (poi: Poi) => void;
+  unmarkPoi: (poiId: string | number) => void;
 }) {
   return (
     <div className="p-3 space-y-2 h-full overflow-y-auto">
       <div className="flex items-center gap-2 mb-2">
-        <ListOrdered className="w-5 h-5 text-gray-600" /> {/* Larger icon */}
-        <span className="text-base font-bold">여행 일정</span> {/* Larger and bolder text */}
+        <ListOrdered className="w-5 h-5 text-gray-600" />
+        <span className="text-base font-bold">여행 일정</span>
       </div>
       <div className="space-y-3">
         {dayLayers.map((layer) => (
-          <ItineraryDay key={layer.id} layer={layer} pois={itinerary[layer.id] || []} onPoiClick={onPoiClick} />
+          <ItineraryDay key={layer.id} layer={layer} pois={itinerary[layer.id] || []} onPoiClick={onPoiClick} unmarkPoi={unmarkPoi} />
         ))}
       </div>
     </div>
   );
 }
 
+interface SearchPanelProps {
+  onPlaceClick: (place: KakaoPlace) => void;
+  // onMoveMapToPlace prop 제거
+}
+
 function SearchPanel({
   onPlaceClick,
-}: {
-  onPlaceClick: (place: KakaoPlace) => void;
-}) {
+  // onMoveMapToPlace prop 제거
+}: SearchPanelProps) {
   const [keyword, setKeyword] = useState('');
   const [results, setResults] = useState<KakaoPlace[]>([]);
   const [pageInfo, setPageInfo] = useState<PageInfo | null>(null);
@@ -278,6 +306,7 @@ interface LeftPanelProps {
   unmarkPoi: (poiId: string | number) => void;
   onPlaceClick: (place: KakaoPlace) => void;
   onPoiClick: (poi: Poi) => void;
+  // onMoveMapToPlace prop 제거
 }
 
 export function LeftPanel({
@@ -285,8 +314,10 @@ export function LeftPanel({
   itinerary,
   dayLayers,
   markedPois,
+  unmarkPoi,
   onPlaceClick,
-  onPoiClick, // onPoiClick prop 추가
+  onPoiClick,
+  // onMoveMapToPlace prop 제거
 }: LeftPanelProps) {
   if (!isOpen) {
     return null;
@@ -310,16 +341,17 @@ export function LeftPanel({
           </TabsTrigger>
         </TabsList>
         <TabsContent value="plan" className="flex-1 overflow-auto m-0">
-          <MarkerStorage pois={markedPois} onPoiClick={onPoiClick} /> {/* onPoiClick 전달 */}
+          <MarkerStorage pois={markedPois} onPoiClick={onPoiClick} unmarkPoi={unmarkPoi} />
           <ItineraryPanel
             itinerary={itinerary}
             dayLayers={dayLayers}
-            onPoiClick={onPoiClick} // onPoiClick 전달
+            onPoiClick={onPoiClick}
+            unmarkPoi={unmarkPoi}
           />
         </TabsContent>
         <TabsContent value="search" className="flex-1 relative m-0">
           <div className="absolute inset-0">
-            <SearchPanel onPlaceClick={onPlaceClick} />
+            <SearchPanel onPlaceClick={onPlaceClick} /> {/* onMoveMapToPlace prop 제거 */}
           </div>
         </TabsContent>
         <TabsContent value="memo" className="h-full m-0 p-4">

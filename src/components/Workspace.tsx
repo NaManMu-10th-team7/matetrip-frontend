@@ -25,8 +25,8 @@ interface WorkspaceProps {
 // ... (MOCK_MEMBERS, generateColorFromString는 이전과 동일)
 const MOCK_MEMBERS = [
   { id: 1, name: '여행러버', isAuthor: true, avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtYW4lMjBwb3J0cmFpdHxlbnwxfHx8fDE3NjI2MDg1MDN8MA&ixlib=rb-4.1.0&q=80&w=1080' },
-  { id: 2, name: '바다조아', isAuthor: false, avatar: 'https://images.unsplash.com/photo-1557053910-d9eadeed1c58?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3b21hbiUyMHBvcnRyYWl0fGVufDF8fHx8MTc2MjU4NzQzM3ww&ixlib=rb-4.1.0&q=80&w=1080' },
-  { id: 3, name: '제주사랑', isAuthor: false, avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBwb3J0cmFpdHxlbnwxfHx8fDE3NjI1NTU3MDJ8MA&ixlib=rb-4.1.0&q=80&w=1080' },
+  { id: 2, name: '바다조아', isAuthor: false, avatar: 'https://images.unsplash.com/photo-1557053910-d9eadeed1c58?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHx3b21hbiUyMHBvcnRyYWl0fGVuMHx8fDE3NjI1ODc0MzN8MHw&ixlib=rb-4.1.0&q=80&w=1080' },
+  { id: 3, name: '제주사랑', isAuthor: false, avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxwcm9mZXNzaW9uYWwlMjBwb3J0cmFpdHxlbnwxfHx8fDE3NjI1NTU3MDJ8MA&ixlib=rb-4.1.0&q=80&w=1080' },
 ];
 
 const generateColorFromString = (str: string) => {
@@ -283,7 +283,8 @@ export function Workspace({
                   unmarkPoi={unmarkPoi}
                   selectedPlace={selectedPlace}
                   mapRef={mapRef}
-                  onPoiDragEnd={handleMapPoiDragEnd} // Pass the new handler
+                  onPoiDragEnd={handleMapPoiDragEnd}
+                  setSelectedPlace={setSelectedPlace} // Pass setSelectedPlace to MapPanel
               />
           </div>
 

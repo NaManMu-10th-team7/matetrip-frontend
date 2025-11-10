@@ -75,10 +75,10 @@ export function usePoiSocket(workspaceId: string) {
       }
     };
 
-    const handleUnmarked = (data: { poiId: string | number }) => {
-      console.log('[Event] UNMARKED 수신:', data);
-      if (data && data.poiId) {
-        setPois((prevPois) => prevPois.filter((p) => p.id !== data.poiId));
+    const handleUnmarked = (poiId: string) => { // data 객체 대신 poiId 문자열을 직접 받도록 변경
+      console.log('[Event] UNMARKED 수신:', poiId);
+      if (poiId) { // poiId가 유효한지 확인
+        setPois((prevPois) => prevPois.filter((p) => p.id !== poiId));
       }
     };
 
