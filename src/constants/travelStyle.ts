@@ -1,20 +1,32 @@
-// 백엔드 enum 값과 동일하게 맞춰둔 상수 맵
+// 백엔드 enum과 동일한 문자열 값을 갖는 상수 맵
 export const TRAVEL_STYLE_TYPES = {
-  RELAXED: 'RELAXED',
-  ACTIVE: 'ACTIVE',
-  CULTURAL: 'CULTURAL',
-  FOODIE: 'FOODIE',
-  NATURE: 'NATURE',
+  //   RELAXED: 'RELAXED',
+  // ACTIVE: 'ACTIVE',
+  // CULTURAL: 'CULTURAL',
+  // FOODIE: 'FOODIE',
+  // NATURE: 'NATURE',
+  ADVENTUROUS: '모험적',
+  SPONTANEOUS: '즉흥적',
+  METICULOUS: '계획적',
+  RELAXED: '느긋한',
+  EFFICIENT: '효율적',
+  EXTROVERTED: '외향적',
+  INTROVERTED: '내향적',
+  ACTIVE: '활동적',
+  SOCIABLE: '사교적',
+  INDEPENDENT: '독립적',
+  PROACTIVE: '주도적',
+  ROMANTIC: '낭만',
+  BUDGET_FRIENDLY: '가성비',
+  EMOTIONAL: '감성적',
+  RATIONAL: '이성적',
+  HEALING: '힐링',
 } as const;
 
-// 위 상수 맵을 바탕으로 value(문자열 리터럴)만 추출해 만든 타입
-// → 새 항목을 추가하면 타입도 자동으로 확장되므로 값/타입이 항상 동기화됨
 export type TravelStyleType =
   (typeof TRAVEL_STYLE_TYPES)[keyof typeof TRAVEL_STYLE_TYPES];
 
-// UI에서 쓸 한글 라벨과 실제 값(value)을 묶은 옵션 리스트
-// 실제 값은 TRAVEL_STYLE_TYPES를 참조해서 오타 없이 재사용한다
-
+// UI에서 사용할 옵션 리스트 (value/label 동일)
 export const TRAVEL_STYLE_OPTIONS: ReadonlyArray<{
   value: TravelStyleType;
   label: string;
