@@ -1,4 +1,10 @@
-import { ArrowLeft, MoreVertical, Calendar, Users, CheckCircle, DoorOpen } from 'lucide-react';
+import {
+  ArrowLeft,
+  MoreVertical,
+  Calendar,
+  CheckCircle,
+  DoorOpen,
+} from 'lucide-react';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useState } from 'react';
@@ -34,8 +40,6 @@ export function PlanRoomHeader({
   startDate,
   endDate,
   totalDays,
-  currentMembers,
-  maxMembers,
   onExit,
   onBack,
   isOwner = false,
@@ -60,13 +64,16 @@ export function PlanRoomHeader({
       <div className="flex items-center gap-3 text-gray-700">
         <div className="flex items-center gap-2">
           <Calendar className="w-4 h-4 text-indigo-600" />
-          <span>{startDate} ~ {endDate} ({totalDays}일)</span>
+          <span>
+            {startDate} ~ {endDate} ({totalDays}일)
+          </span>
         </div>
-        <span className="text-gray-400">|</span>
-        <div className="flex items-center gap-2">
-          <Users className="w-4 h-4 text-purple-600" />
-          <span>{currentMembers}/{maxMembers}명</span>
-        </div>
+        {/* // TODO: 나중에 추가 */}
+        {/* <span className="text-gray-400">|</span> */}
+        {/* <div className="flex items-center gap-2"> */}
+        {/*   <Users className="w-4 h-4 text-purple-600" /> */}
+        {/*   <span>{currentMembers}/{maxMembers}명</span> */}
+        {/* </div> */}
       </div>
 
       {/* 오른쪽 영역: 접속 중인 멤버 아바타 + 메뉴 버튼 */}
@@ -78,7 +85,10 @@ export function PlanRoomHeader({
               <Avatar
                 key={member.id}
                 className="w-8 h-8 border-2 border-white"
-                style={{ marginLeft: index > 0 ? '-8px' : '0', zIndex: activeMembers.length - index }}
+                style={{
+                  marginLeft: index > 0 ? '-8px' : '0',
+                  zIndex: activeMembers.length - index,
+                }}
               >
                 <AvatarImage src={member.avatar} alt={member.name} />
                 <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
