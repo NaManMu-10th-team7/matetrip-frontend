@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MapPin, ClipboardList } from 'lucide-react';
+import { MapPin, ClipboardList, Plus } from 'lucide-react'; // Plus 아이콘 추가
 import { Button } from './ui/button';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import client from '../api/client';
@@ -72,7 +72,7 @@ const REGION_CATEGORIES = [
     id: 4,
     name: '경주',
     image:
-      'https://images.unsplash.com/photo-1668850443435-c01eec56c4e5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxnYnllb25namUlMjBrb3JlYXxlbnwxfHx8fDE3NjE5ODI0MzR8MA&ixlib=rb-4.1.0&q=80&w=1080',
+      'https://images.unsplash.com/photo-1668850443435-c01eec56c4e5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxnYnllb25namUlMjBrb3JlYXxlbnwxfHx8fDE3NjE5ODI0MzR8MA&ixlib=rb-4.1.0&q=80&w=1080',
     description: '역사 문화 탐방',
   },
   {
@@ -229,6 +229,15 @@ export function MainPage({
         </div>
       </section>
 
+      {isLoggedIn && (
+        <Button
+          onClick={onCreatePost}
+          className="fixed bottom-8 right-8 w-14 h-14 rounded-full shadow-lg bg-blue-600 hover:bg-blue-700 transition-all flex items-center justify-center z-40"
+          aria-label="게시글 작성"
+        >
+          <Plus className="w-6 h-6 text-white" />
+        </Button>
+      )}
     </div>
   );
 }
