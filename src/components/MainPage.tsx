@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
+  ArrowLeft,
+  X,
   Search,
   Plus,
   Calendar,
@@ -12,10 +14,18 @@ import {
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from './ui/dialog';
 import { Badge } from './ui/badge';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import client from '../api/client';
 import { type Post } from '../types/post';
+import { PostDetail } from './PostDetail';
 import { MainPostCard } from './MainPostCard';
 import { MainPostCardSkeleton } from './MainPostCardSkeleton';
 
@@ -26,7 +36,6 @@ interface MainPageProps {
     location?: string;
     title?: string;
   }) => void;
-  onViewPost: (postId: string) => void;
   onUserClick: (userId: string) => void;
   onCreatePost: () => void;
   isLoggedIn: boolean;
@@ -105,7 +114,6 @@ const REGION_CATEGORIES = [
 
 export function MainPage({
   onSearch,
-  onViewPost,
   onUserClick,
   onCreatePost,
   isLoggedIn,
@@ -117,6 +125,7 @@ export function MainPage({
 
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchInitialPosts = async () => {
@@ -148,8 +157,17 @@ export function MainPage({
     });
   };
 
+  const handleViewPost = (postId: string) => {
+    setSelectedPostId(postId);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedPostId(null);
+  };
+
   return (
     <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* --- Search Section --- */}
       {/* Hero Section with Search */}
       <div className="text-center mb-12">
         {/* Search Box */}
@@ -208,46 +226,7 @@ export function MainPage({
         </Card>
       </div>
 
-      {/* Recommended Users Section */}
-      <section className="mb-12">
-        <div className="flex items-center gap-2 mb-6">
-          <Sparkles className="w-5 h-5 text-purple-600" />
-          <h2 className="text-gray-900">당신과 잘 맞는 동행</h2>
-          <Badge variant="secondary" className="ml-2">
-            AI 추천
-          </Badge>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {RECOMMENDED_USERS.map((user) => (
-            <Card
-              key={user.id}
-              className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
-              onClick={() => {
-                onUserClick(user.id);
-              }}
-            >
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full" />
-                <div className="flex-1">
-                  <h3 className="text-gray-900 mb-1">{user.name}</h3>
-                  <div className="flex items-center gap-1 text-sm text-purple-600">
-                    <TrendingUp className="w-4 h-4" />
-                    <span>{user.matchRate}% 매칭</span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {user.travelStyle.map((style) => (
-                  <Badge key={style} variant="secondary" className="text-xs">
-                    {style}
-                  </Badge>
-                ))}
-              </div>
-            </Card>
-          ))}
-        </div>
-      </section>
-
+      {/* --- Recent Posts Section --- */}
       {/* Recent Posts Section */}
       <section className="mb-12">
         <div className="flex items-center gap-2 mb-6">
@@ -271,13 +250,14 @@ export function MainPage({
               <MainPostCard
                 key={post.id}
                 post={post}
-                onClick={() => onViewPost(post.id)}
+                onClick={() => handleViewPost(post.id)}
               />
             ))}
           </div>
         )}
       </section>
 
+      {/* --- Region Categories Section --- */}
       {/* Region Categories */}
       <section>
         <div className="flex items-center gap-2 mb-6">
@@ -306,6 +286,7 @@ export function MainPage({
         </div>
       </section>
 
+      {/* --- Floating Action Button --- */}
       {isLoggedIn && (
         <Button
           onClick={onCreatePost}
@@ -316,6 +297,18 @@ export function MainPage({
           여행 떠나기
         </Button>
       )}
+
+      {/* --- Post Detail Modal --- */}
+      <Dialog open={!!selectedPostId} onOpenChange={handleCloseModal}>
+        <DialogContent className="w-full !max-w-[1100px] h-[90vh] p-0 flex flex-col [&>button]:hidden border-0 rounded-lg overflow-hidden">
+          {selectedPostId && (
+            <PostDetail
+              postId={selectedPostId}
+              onOpenChange={handleCloseModal}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
