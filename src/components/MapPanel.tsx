@@ -6,6 +6,7 @@ import {
   CustomOverlayMap,
   Polyline,
 } from 'react-kakao-maps-sdk';
+import { KAKAO_REST_API_KEY } from '../constants'; // KAKAO_REST_API_KEY import 추가
 
 export interface KakaoPlace {
   id: string;
@@ -28,6 +29,14 @@ export interface DayLayer {
   color: string;
 }
 
+interface RouteSegment {
+  fromPoiId: string;
+  toPoiId: string;
+  duration: number; // seconds
+  distance: number; // meters
+  path: { lat: number; lng: number }[];
+}
+
 interface MapPanelProps {
   itinerary: Record<string, Poi[]>;
   dayLayers: DayLayer[];
@@ -41,6 +50,7 @@ interface MapPanelProps {
   mapRef: React.RefObject<kakao.maps.Map>;
   onPoiDragEnd: (poiId: string, lat: number, lng: number) => void;
   setSelectedPlace: (place: KakaoPlace | null) => void;
+  onRouteInfoUpdate?: (routeInfo: Record<string, RouteSegment[]>) => void; // 추가된 prop
 }
 
 interface PoiMarkerProps {
@@ -170,6 +180,7 @@ const PoiMarker = memo(
   }
 );
 
+
 export function MapPanel({
   itinerary,
   dayLayers,
@@ -181,9 +192,14 @@ export function MapPanel({
   mapRef,
   onPoiDragEnd,
   setSelectedPlace,
+  onRouteInfoUpdate, // 추가된 prop
 }: MapPanelProps) {
   const [mapInstance, setMapInstance] = useState<kakao.maps.Map | null>(null);
   const pendingSelectedPlaceRef = useRef<KakaoPlace | null>(null);
+  // 일자별 경로 세그먼트 정보를 저장할 상태 추가
+  const [dailyRouteInfo, setDailyRouteInfo] = useState<
+    Record<string, RouteSegment[]>
+  >({});
 
   useEffect(() => {
     if (selectedPlace && mapInstance) {
@@ -230,6 +246,119 @@ export function MapPanel({
       setSelectedPlace(null);
     }
   }, [mapInstance, markPoi, setSelectedPlace]);
+
+  // Kakao 길찾기 API 호출 및 경로 정보 업데이트 useEffect 추가
+  useEffect(() => {
+    console.log('useEffect for fetching daily routes triggered.');
+    console.log('Current itinerary:', itinerary);
+    console.log('Current dayLayers:', dayLayers);
+
+    const fetchDailyRoutes = async () => {
+      const newDailyRouteInfo: Record<string, RouteSegment[]> = {};
+
+      for (const dayLayer of dayLayers) {
+        const dayPois = itinerary[dayLayer.id];
+        if (dayPois && dayPois.length >= 2) {
+          const origin = `${dayPois[0].longitude},${dayPois[0].latitude}`;
+          const destination = `${dayPois[dayPois.length - 1].longitude},${
+            dayPois[dayPois.length - 1].latitude
+          }`;
+          // 경유지는 두 번째 POI부터 마지막 POI 직전까지
+          const waypoints = dayPois
+            .slice(1, dayPois.length - 1)
+            .map((poi) => `${poi.longitude},${poi.latitude}`)
+            .join('|');
+
+          console.log(`Fetching route for day ${dayLayer.id}:`);
+          console.log(`  Origin: ${origin}`);
+          console.log(`  Destination: ${destination}`);
+          console.log(`  Waypoints: ${waypoints || 'None'}`);
+
+          try {
+            const response = await fetch(
+              `https://apis-navi.kakaomobility.com/v1/directions?origin=${origin}&destination=${destination}${
+                waypoints ? `&waypoints=${waypoints}` : ''
+              }`,
+              {
+                method: 'GET',
+                headers: {
+                  Authorization: `KakaoAK ${KAKAO_REST_API_KEY}`,
+                },
+              }
+            );
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              throw new Error(
+                `HTTP error! status: ${response.status}, message: ${errorText}`
+              );
+            }
+
+            const data = await response.json();
+            console.log(`API response for day ${dayLayer.id}:`, data);
+
+            if (data.routes && data.routes.length > 0) {
+              const route = data.routes[0];
+              const segments: RouteSegment[] = [];
+
+              // Kakao API 응답의 sections 배열을 순회하며 각 세그먼트 정보 추출
+              route.sections.forEach((section: any, index: number) => {
+                const detailedPath: { lat: number; lng: number }[] = [];
+                section.roads.forEach((road: any) => {
+                  for (let i = 0; i < road.vertexes.length; i += 2) {
+                    detailedPath.push({
+                      lng: road.vertexes[i],
+                      lat: road.vertexes[i + 1],
+                    });
+                  }
+                });
+
+                // 이 섹션이 연결하는 POI를 식별
+                const fromPoi = dayPois[index];
+                const toPoi = dayPois[index + 1];
+
+                if (fromPoi && toPoi) {
+                  segments.push({
+                    fromPoiId: fromPoi.id,
+                    toPoiId: toPoi.id,
+                    duration: section.duration,
+                    distance: section.distance,
+                    path: detailedPath,
+                  });
+                }
+              });
+              newDailyRouteInfo[dayLayer.id] = segments;
+            } else {
+              console.warn(
+                `No routes found for day ${dayLayer.id} with data:`,
+                data
+              );
+            }
+          } catch (error) {
+            console.error(
+              `Error fetching directions for day ${dayLayer.id}:`,
+              error
+            );
+          }
+        } else {
+          console.log(
+            `Skipping route fetch for day ${dayLayer.id}: not enough POIs (${
+              dayPois ? dayPois.length : 0
+            })`
+          );
+        }
+      }
+
+      console.log('New daily route info before setting state:', newDailyRouteInfo);
+      setDailyRouteInfo(newDailyRouteInfo);
+      // 경로 정보 업데이트 시 부모 컴포넌트로 전달
+      if (onRouteInfoUpdate) {
+        onRouteInfoUpdate(newDailyRouteInfo);
+      }
+    };
+
+    fetchDailyRoutes();
+  }, [itinerary, dayLayers, onRouteInfoUpdate]); // onRouteInfoUpdate를 의존성 배열에 추가
 
   const scheduledPoiData = new Map<
     string,
@@ -330,12 +459,26 @@ export function MapPanel({
           );
         })}
 
+        {/* 각 세그먼트별 Polyline 렌더링 */}
         {dayLayers.map((layer) => {
+          const segments = dailyRouteInfo[layer.id];
+          if (segments && segments.length > 0) {
+            return segments.map((segment, index) => (
+              <Polyline
+                key={`${layer.id}-segment-${index}`} // 각 세그먼트별 고유 키
+                path={segment.path}
+                strokeWeight={3}
+                strokeColor={layer.color}
+                strokeOpacity={0.8}
+                strokeStyle={'solid'}
+              />
+            ));
+          }
+          // 상세 경로 정보가 없으면 기존처럼 POI를 직접 연결
           const path = (itinerary[layer.id] || []).map((poi) => ({
             lat: poi.latitude,
             lng: poi.longitude,
           }));
-
           return path.length > 1 ? (
             <Polyline
               key={layer.id}
@@ -346,6 +489,49 @@ export function MapPanel({
               strokeStyle={'solid'}
             />
           ) : null;
+        })}
+
+        {/* 각 세그먼트별 경로 정보 표시 CustomOverlayMap 추가 */}
+        {dayLayers.map((layer) => {
+          const segments = dailyRouteInfo[layer.id];
+
+          if (segments && segments.length > 0) {
+            return segments.map((segment, index) => {
+              // 세그먼트의 상세 경로가 없거나 길이가 0이면 오버레이를 표시하지 않음
+              if (!segment.path || segment.path.length === 0) return null;
+
+              // 경로의 중간 지점 계산
+              const midPointIndex = Math.floor(segment.path.length / 2);
+              const midPoint = segment.path[midPointIndex];
+
+              const totalMinutes = Math.ceil(segment.duration / 60); // 초를 분으로 변환 (올림)
+              const totalKilometers = (segment.distance / 1000).toFixed(1); // 미터를 킬로미터로 변환 (소수점 첫째 자리)
+
+              return (
+                <CustomOverlayMap
+                  key={`route-info-${layer.id}-${index}`}
+                  position={{ lat: midPoint.lat, lng: midPoint.lng }} // 중간 지점 사용
+                  yAnchor={1.5} // 경로 위에 표시되도록 조정
+                >
+                  <div
+                    style={{
+                      padding: '5px 10px',
+                      backgroundColor: 'white',
+                      borderRadius: '5px',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      color: '#333',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {`${totalMinutes}분, ${totalKilometers}km`}
+                  </div>
+                </CustomOverlayMap>
+              );
+            });
+          }
+          return null;
         })}
       </KakaoMap>
 

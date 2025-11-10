@@ -8,7 +8,7 @@ import {
   closestCenter,
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
-import { MapPanel, type KakaoPlace } from './MapPanel';
+import { MapPanel, type KakaoPlace, type RouteSegment } from './MapPanel'; // RouteSegment import 추가
 import type { PlanDayDto } from '../types/workspace';
 import { LeftPanel } from './LeftPanel';
 import { RightPanel } from './RightPanel';
@@ -68,6 +68,9 @@ export function Workspace({
   const [activePoi, setActivePoi] = useState<Poi | null>(null);
   const [hoveredPoi, setHoveredPoi] = useState<Poi | null>(null); // hoveredPoi 상태 추가
   const mapRef = useRef<kakao.maps.Map>(null);
+
+  // MapPanel에서 전달받을 경로 세그먼트 정보를 저장할 상태 추가
+  const [routeSegmentsByDay, setRouteSegmentsByDay] = useState<Record<string, RouteSegment[]>>({});
 
   const dayLayers = useMemo(
     () =>
@@ -243,6 +246,11 @@ export function Workspace({
     console.log(`POI ${poiId} dragged to Lat: ${lat}, Lng: ${lng}`);
   }, [setPois]);
 
+  // MapPanel로부터 경로 정보를 받아 상태를 업데이트하는 콜백 함수
+  const handleRouteInfoUpdate = useCallback((newRouteInfo: Record<string, RouteSegment[]>) => {
+    setRouteSegmentsByDay(newRouteInfo);
+  }, []);
+
   return (
     <DndContext 
         onDragStart={handleDragStart}
@@ -275,6 +283,7 @@ export function Workspace({
             onPoiClick={handlePoiClick}
             onPoiHover={handlePoiHover} // LeftPanel에 hover 핸들러 전달
             onPoiLeave={handlePoiLeave} // LeftPanel에 leave 핸들러 전달
+            routeSegmentsByDay={routeSegmentsByDay} // LeftPanel에 경로 정보 전달
           />
           
           <button
@@ -297,8 +306,7 @@ export function Workspace({
                   mapRef={mapRef}
                   onPoiDragEnd={handleMapPoiDragEnd}
                   setSelectedPlace={setSelectedPlace}
-                  onPoiHover={handlePoiHover} // MapPanel에 hover 핸들러 전달
-                  onPoiLeave={handlePoiLeave} // MapPanel에 leave 핸들러 전달
+                  onRouteInfoUpdate={handleRouteInfoUpdate} // MapPanel에 콜백 함수 전달
               />
           </div>
 

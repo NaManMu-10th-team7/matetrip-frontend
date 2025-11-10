@@ -10,6 +10,8 @@ import {
   ChevronUp,
   MapPin,
   X,
+  Clock, // Clock 아이콘 임포트
+  Car, // Car 아이콘 임포트
 } from 'lucide-react';
 import {
   SortableContext,
@@ -19,9 +21,10 @@ import {
 import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import type { Poi } from '../hooks/usePoiSocket';
-import type { DayLayer, KakaoPlace } from './MapPanel';
+import type { DayLayer, KakaoPlace, RouteSegment } from './MapPanel';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
+import React from 'react'; // React Fragment 사용을 위해 import
 
 const KAKAO_MAP_SERVICES_STATUS = window.kakao?.maps.services.Status;
 type KakaoPagination = kakao.maps.Pagination;
@@ -38,10 +41,10 @@ interface PoiItemProps {
   color?: string;
   index?: number;
   onPoiClick?: (poi: Poi) => void;
-  onPoiHover?: (poi: Poi) => void; // 추가
-  onPoiLeave?: () => void; // 추가
+  onPoiHover?: (poi: Poi) => void;
+  onPoiLeave?: () => void;
   unmarkPoi: (poiId: string | number) => void;
-  removeSchedule: (poiId: string, planDayId: string) => void; // 추가
+  removeSchedule: (poiId: string, planDayId: string) => void;
 }
 
 function PoiItem({ poi, color, index, onPoiClick, onPoiHover, onPoiLeave, unmarkPoi, removeSchedule }: PoiItemProps) {
@@ -74,22 +77,25 @@ function PoiItem({ poi, color, index, onPoiClick, onPoiHover, onPoiLeave, unmark
     <li
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-2 text-xs p-1 rounded-md cursor-pointer hover:bg-gray-100"
+      className="flex items-center text-xs p-1 rounded-md cursor-pointer hover:bg-gray-100" // gap-2 제거
       onClick={() => onPoiClick?.(poi)}
-      onMouseEnter={() => onPoiHover?.(poi)} // 추가
-      onMouseLeave={() => onPoiLeave?.()} // 추가
+      onMouseEnter={() => onPoiHover?.(poi)}
+      onMouseLeave={() => onPoiLeave?.()}
     >
-      <div {...attributes} {...listeners} className="cursor-grab touch-none p-1">
-        <GripVertical className="w-4 h-4 text-gray-400" />
+      {/* 고정 너비 컨테이너 추가 */}
+      <div className="flex items-center w-16 flex-shrink-0">
+        <div {...attributes} {...listeners} className="cursor-grab touch-none p-1">
+          <GripVertical className="w-4 h-4 text-gray-400" />
+        </div>
+        {color && index !== undefined && (
+          <span
+            className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full text-white text-xs ml-2" // ml-2 추가
+            style={{ backgroundColor: color }}
+          >
+            {index + 1}
+          </span>
+        )}
       </div>
-      {color && index !== undefined && (
-        <span
-          className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full text-white text-xs"
-          style={{ backgroundColor: color }}
-        >
-          {index + 1}
-        </span>
-      )}
       <span className="truncate flex-grow">{poi.placeName}</span>
       <Button
         variant="ghost"
@@ -133,10 +139,12 @@ function MarkerStorage({ pois, onPoiClick, onPoiHover, onPoiLeave, unmarkPoi, re
     );
 }
 
-function ItineraryDay({ layer, pois, onPoiClick, onPoiHover, onPoiLeave, unmarkPoi, removeSchedule }: { layer: DayLayer, pois: Poi[], onPoiClick: (poi: Poi) => void, onPoiHover?: (poi: Poi) => void, onPoiLeave?: () => void, unmarkPoi: (poiId: string | number) => void, removeSchedule: (poiId: string, planDayId: string) => void }) {
+function ItineraryDay({ layer, pois, onPoiClick, onPoiHover, onPoiLeave, unmarkPoi, removeSchedule, routeSegmentsByDay }: { layer: DayLayer, pois: Poi[], onPoiClick: (poi: Poi) => void, onPoiHover?: (poi: Poi) => void, onPoiLeave?: () => void, unmarkPoi: (poiId: string | number) => void, removeSchedule: (poiId: string, planDayId: string) => void, routeSegmentsByDay: Record<string, RouteSegment[]> }) {
     const { setNodeRef } = useDroppable({ id: layer.id });
     const [isCollapsed, setIsCollapsed] = useState(false);
     
+    const segmentsForThisDay = routeSegmentsByDay[layer.id] || [];
+
     return (
         <div ref={setNodeRef}>
             <div className="flex justify-between items-center mb-2">
@@ -155,7 +163,39 @@ function ItineraryDay({ layer, pois, onPoiClick, onPoiHover, onPoiLeave, unmarkP
                     <ul className="space-y-2 min-h-[2rem]">
                         {pois.length > 0 ? (
                             pois.map((poi, index) => (
-                                <PoiItem key={poi.id} poi={poi} color={layer.color} index={index} onPoiClick={onPoiClick} onPoiHover={onPoiHover} onPoiLeave={onPoiLeave} unmarkPoi={unmarkPoi} removeSchedule={removeSchedule} />
+                                <React.Fragment key={poi.id}>
+                                    <PoiItem poi={poi} color={layer.color} index={index} onPoiClick={onPoiClick} onPoiHover={onPoiHover} onPoiLeave={onPoiLeave} unmarkPoi={unmarkPoi} removeSchedule={removeSchedule} />
+                                    {/* Display route segment info and vertical line between POIs */}
+                                    {index < pois.length - 1 && (() => {
+                                        const nextPoi = pois[index + 1];
+                                        const segment = segmentsForThisDay.find(
+                                            s => s.fromPoiId === poi.id && s.toPoiId === nextPoi.id
+                                        );
+
+                                        if (segment) {
+                                            const totalMinutes = Math.ceil(segment.duration / 60);
+                                            const totalKilometers = (segment.distance / 1000).toFixed(1);
+                                            return (
+                                                <div className="relative flex items-center h-8"> {/* relative 및 h-8 추가 */}
+                                                    {/* Vertical line */}
+                                                    <div className="absolute left-4 w-0.5 h-full bg-gray-300"></div> {/* left-4 (16px)로 조정 */}
+                                                    {/* Route info, adjusted for alignment */}
+                                                    <div className="flex items-center text-xs text-gray-600 ml-17"> {/* ml-17 (68px)로 조정 */}
+                                                        <span className="mr-2 flex items-center">
+                                                            <Clock className="w-3 h-3 mr-1" />
+                                                            {`${totalMinutes}분`}
+                                                        </span>
+                                                        <span className="flex items-center">
+                                                            <Car className="w-3 h-3 mr-1" />
+                                                            {`${totalKilometers}km`}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+                                        return null;
+                                    })()}
+                                </React.Fragment>
                             ))
                         ) : (
                             <p className="text-xs text-gray-500 p-2">마커를 드래그하여 추가하세요.</p>
@@ -171,18 +211,20 @@ function ItineraryPanel({
   itinerary,
   dayLayers,
   onPoiClick,
-  onPoiHover, // 추가
-  onPoiLeave, // 추가
+  onPoiHover,
+  onPoiLeave,
   unmarkPoi,
-  removeSchedule, // 추가
+  removeSchedule,
+  routeSegmentsByDay,
 }: {
   itinerary: Record<string, Poi[]>;
   dayLayers: DayLayer[];
   onPoiClick: (poi: Poi) => void;
-  onPoiHover?: (poi: Poi) => void; // 추가
-  onPoiLeave?: () => void; // 추가
+  onPoiHover?: (poi: Poi) => void;
+  onPoiLeave?: () => void;
   unmarkPoi: (poiId: string | number) => void;
-  removeSchedule: (poiId: string, planDayId: string) => void; // 추가
+  removeSchedule: (poiId: string, planDayId: string) => void;
+  routeSegmentsByDay: Record<string, RouteSegment[]>;
 }) {
   return (
     <div className="p-3 space-y-2 h-full overflow-y-auto">
@@ -192,7 +234,17 @@ function ItineraryPanel({
       </div>
       <div className="space-y-3">
         {dayLayers.map((layer) => (
-          <ItineraryDay key={layer.id} layer={layer} pois={itinerary[layer.id] || []} onPoiClick={onPoiClick} onPoiHover={onPoiHover} onPoiLeave={onPoiLeave} unmarkPoi={unmarkPoi} removeSchedule={removeSchedule} />
+          <ItineraryDay
+            key={layer.id}
+            layer={layer}
+            pois={itinerary[layer.id] || []}
+            onPoiClick={onPoiClick}
+            onPoiHover={onPoiHover}
+            onPoiLeave={onPoiLeave}
+            unmarkPoi={unmarkPoi}
+            removeSchedule={removeSchedule}
+            routeSegmentsByDay={routeSegmentsByDay}
+          />
         ))}
       </div>
     </div>
@@ -201,12 +253,10 @@ function ItineraryPanel({
 
 interface SearchPanelProps {
   onPlaceClick: (place: KakaoPlace) => void;
-  // onMoveMapToPlace prop 제거
 }
 
 function SearchPanel({
   onPlaceClick,
-  // onMoveMapToPlace prop 제거
 }: SearchPanelProps) {
   const [keyword, setKeyword] = useState('');
   const [results, setResults] = useState<KakaoPlace[]>([]);
@@ -319,12 +369,12 @@ interface LeftPanelProps {
   dayLayers: DayLayer[];
   markedPois: Poi[];
   unmarkPoi: (poiId: string | number) => void;
-  removeSchedule: (poiId: string, planDayId: string) => void; // 추가
+  removeSchedule: (poiId: string, planDayId: string) => void;
   onPlaceClick: (place: KakaoPlace) => void;
   onPoiClick: (poi: Poi) => void;
-  onPoiHover?: (poi: Poi) => void; // 추가
-  onPoiLeave?: () => void; // 추가
-  // onMoveMapToPlace prop 제거
+  onPoiHover?: (poi: Poi) => void;
+  onPoiLeave?: () => void;
+  routeSegmentsByDay: Record<string, RouteSegment[]>;
 }
 
 export function LeftPanel({
@@ -333,12 +383,12 @@ export function LeftPanel({
   dayLayers,
   markedPois,
   unmarkPoi,
-  removeSchedule, // 추가
+  removeSchedule,
   onPlaceClick,
   onPoiClick,
-  onPoiHover, // 추가
-  onPoiLeave, // 추가
-  // onMoveMapToPlace prop 제거
+  onPoiHover,
+  onPoiLeave,
+  routeSegmentsByDay,
 }: LeftPanelProps) {
   if (!isOpen) {
     return null;
@@ -367,15 +417,16 @@ export function LeftPanel({
             itinerary={itinerary}
             dayLayers={dayLayers}
             onPoiClick={onPoiClick}
-            onPoiHover={onPoiHover} // 추가
-            onPoiLeave={onPoiLeave} // 추가
+            onPoiHover={onPoiHover}
+            onPoiLeave={onPoiLeave}
             unmarkPoi={unmarkPoi}
-            removeSchedule={removeSchedule} // 추가
+            removeSchedule={removeSchedule}
+            routeSegmentsByDay={routeSegmentsByDay}
           />
         </TabsContent>
         <TabsContent value="search" className="flex-1 relative m-0">
           <div className="absolute inset-0">
-            <SearchPanel onPlaceClick={onPlaceClick} /> {/* onMoveMapToPlace prop 제거 */}
+            <SearchPanel onPlaceClick={onPlaceClick} />
           </div>
         </TabsContent>
         <TabsContent value="memo" className="h-full m-0 p-4">
