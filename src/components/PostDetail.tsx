@@ -69,7 +69,7 @@ export function PostDetail({
     setIsLoading(true);
     setError(null);
     try {
-      const postResponse = await client.get<Post>(`/post/${postId}`);
+      const postResponse = await client.get<Post>(`/posts/${postId}`);
       const fetchedPost = postResponse.data;
       setPost(fetchedPost);
 
@@ -154,7 +154,7 @@ export function PostDetail({
     if (!userParticipation) return;
     try {
       await client.delete(
-        `/post/${postId}/participations/${userParticipation.id}`
+        `/posts/${postId}/participations/${userParticipation.id}`
       );
       alert('동행 신청이 취소되었습니다.');
       await fetchPostDetail();

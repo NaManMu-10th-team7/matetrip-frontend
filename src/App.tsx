@@ -114,7 +114,7 @@ function SearchResultsWrapper() {
   };
 
   const handleViewPost = (postId: string) => {
-    navigate(`/post/${postId}`);
+    navigate(`/posts/${postId}`);
   };
 
   return <SearchResults searchParams={params} onViewPost={handleViewPost} />;
@@ -352,7 +352,7 @@ export default function App() {
           />
           <Route path="/search" element={<SearchResultsWrapper />} />
           <Route
-            path="/post/:id"
+            path="/posts/:id"
             element={null} // 페이지 렌더링 대신 모달 사용
           />
           <Route path="/workspace/:id" element={<WorkspaceWrapper />} />

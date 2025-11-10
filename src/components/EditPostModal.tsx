@@ -76,7 +76,7 @@ export function EditPostModal({
     const updatedPostData = { ...formData, keywords: keywordsForApi };
 
     try {
-      await client.patch(`/post/${post.id}`, updatedPostData);
+      await client.patch(`/posts/${post.id}`, updatedPostData);
       // alert('게시물이 성공적으로 수정되었습니다.'); // App.tsx에서 처리하도록 변경
       onSuccess(); // 성공 콜백 호출
     } catch (error) {

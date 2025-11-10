@@ -89,7 +89,7 @@ export function SearchResults({
           {} as Record<string, string>
         );
         const query = new URLSearchParams(filteredParams).toString();
-        const endpoint = query ? `/post/search?${query}` : '/post';
+        const endpoint = query ? `/posts/search?${query}` : '/posts';
         const response = await client.get<Post[]>(endpoint);
 
         // TODO: 매칭률순 정렬은 백엔드 API 구현 후 적용 필요
