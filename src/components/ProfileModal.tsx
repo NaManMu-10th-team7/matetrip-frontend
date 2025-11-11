@@ -29,14 +29,29 @@ interface ProfileModalProps {
 }
 
 interface Review {
-  id: number;
+  id: string;
   reviewer: {
     id: string;
-    nickname: string;
-    profileImage: string;
+    createdAt: string;
+    updatedAt: string | null;
+    email: string;
+    profile: {
+      id: string;
+      createdAt: string;
+      updatedAt: string | null;
+      nickname: string;
+      gender: string;
+      intro: string;
+      description: string;
+      travelStyles: string[];
+      travelTendency: string[];
+      mbtiTypes: string;
+    };
   };
   rating: number;
-  comment: string;
+  // comment: string;
+  // API 응답 필드명인 content로 변경
+  content: string;
   createdAt: string;
 }
 
@@ -61,17 +76,14 @@ export function ProfileModal({
     if (!userId) return;
     setIsLoading(true);
     try {
-      const [
-        profileRes,
-        writtenPostsRes,
-        participatedPostsRes,
-        // reviewsRes, // TODO: 리뷰 API 연동
-      ] = await Promise.all([
-        client.get<UserProfile>(`/users/${userId}/profile`),
-        client.get<Post[]>(`/users/${userId}/posts`),
-        client.get<Post[]>(`/users/${userId}/participations`),
-        // client.get(`/users/${userId}/reviews`),
-      ]);
+      const [profileRes, writtenPostsRes, participatedPostsRes, reviewsRes] =
+        await Promise.all([
+          client.get<UserProfile>(`/users/${userId}/profile`),
+          client.get<Post[]>(`/users/${userId}/posts`),
+          client.get<Post[]>(`/users/${userId}/participations`),
+          // API 응답이 POST가 아닌 GET으로 추정됩니다.
+          client.get<Review[]>(`/reviews/user/${userId}`),
+        ]);
 
       // [디버그용] 참여한 동행 데이터 확인
       console.log(
@@ -97,36 +109,7 @@ export function ProfileModal({
       );
 
       setTravelHistory(uniquePosts);
-      // setReviews(reviewsRes.data);
-
-      // --- Mock Review Data ---
-      setReviews([
-        {
-          id: 1,
-          reviewer: {
-            id: '2',
-            nickname: '김민수',
-            profileImage:
-              'https://images.unsplash.com/photo-1500648767791-00dcc994a43e',
-          },
-          rating: 5,
-          comment: '매우 친절하고 계획적인 여행 메이트였습니다!',
-          createdAt: '2024-03-20',
-        },
-        {
-          id: 2,
-          reviewer: {
-            id: '3',
-            nickname: '이지은',
-            profileImage:
-              'https://images.unsplash.com/photo-1557053910-d9eadeed1c58',
-          },
-          rating: 4,
-          comment: '함께 여행하기 좋은 분이었어요.',
-          createdAt: '2024-04-25',
-        },
-      ]);
-      // --- End Mock Data ---
+      setReviews(reviewsRes.data);
     } catch (error) {
       console.error('Failed to fetch profile data:', error);
     } finally {
@@ -340,13 +323,15 @@ export function ProfileModal({
                           <div className="flex justify-between items-start mb-2">
                             <div className="flex items-center gap-3">
                               <ImageWithFallback
-                                src={review.reviewer.profileImage}
-                                alt={review.reviewer.nickname}
+                                // TODO: UserProfile에 profileImageId가 추가되면 해당 필드를 사용해야 합니다.
+                                // 현재는 닉네임 기반의 fallback 이미지만 사용합니다.
+                                src={`https://ui-avatars.com/api/?name=${review.reviewer.profile?.nickname}&background=random`}
+                                alt={review.reviewer.profile?.nickname}
                                 className="w-10 h-10 rounded-full object-cover"
                               />
                               <div>
                                 <span className="text-gray-900 font-medium">
-                                  {review.reviewer.nickname}
+                                  {review.reviewer.profile?.nickname}
                                 </span>
                                 <div className="flex mt-1">
                                   {[...Array(5)].map((_, i) => (
@@ -367,7 +352,7 @@ export function ProfileModal({
                             </span>
                           </div>
                           <p className="text-gray-600 text-sm ml-13">
-                            {review.comment}
+                            {review.content}
                           </p>
                         </div>
                       ))
