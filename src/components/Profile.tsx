@@ -68,7 +68,7 @@ interface ProfileData {
   //mannerTemp: number;
   //totalTrips: number;
   //badges: string[];
-  travelTendency: TravelTendencyType[];
+  tendency: TravelTendencyType[];
   travelStyles: TravelStyleType[];
   reviews: Review[];
   trips: Trip[];
@@ -84,7 +84,7 @@ const EMPTY_PROFILE: ProfileData = {
   mbtiTypes: 'ENFP',
   smoking: false,
   driverLicense: false,
-  travelTendency: [],
+  tendency: [],
   travelStyles: [],
   reviews: [],
   trips: [],
@@ -231,12 +231,12 @@ export function Profile({
 
   const handleTravelTendencyToggle = (tendency: TravelTendencyType) => {
     setDraft((prev) => {
-      const alreadySelected = prev.travelTendency.includes(tendency);
+      const alreadySelected = prev.tendency.includes(tendency);
       return {
         ...prev,
-        travelTendency: alreadySelected
-          ? prev.travelTendency.filter((item) => item !== tendency)
-          : [...prev.travelTendency, tendency],
+        tendency: alreadySelected
+          ? prev.tendency.filter((item) => item !== tendency)
+          : [...prev.tendency, tendency],
       };
     });
   };
@@ -250,7 +250,7 @@ export function Profile({
     description: dto.description ?? prev.description,
     gender: dto.gender ?? prev.gender,
     mbtiTypes: dto.mbtiTypes ?? prev.mbtiTypes,
-    travelTendency: dto.travelTendency ?? prev.travelTendency,
+    tendency: dto.tendency ?? prev.tendency,
     travelStyles: dto.travelStyles ?? prev.travelStyles,
     profileImageId: dto.profileImageId ?? prev.profileImageId,
   });
@@ -420,7 +420,7 @@ export function Profile({
         gender: draft.gender,
         mbtiTypes: draft.mbtiTypes,
         travelStyles: draft.travelStyles,
-        travelTendency: draft.travelTendency,
+        tendency: draft.tendency,
         profileImageId,
       };
 
@@ -508,7 +508,7 @@ export function Profile({
                   {canEditProfile && isEditing ? (
                     <div className="flex flex-wrap gap-2">
                       {TENDENCY_OPTIONS.map(({ value, label }) => {
-                        const selected = draft.travelTendency.includes(value);
+                        const selected = draft.tendency.includes(value);
                         return (
                           <button
                             type="button"
@@ -527,8 +527,8 @@ export function Profile({
                     </div>
                   ) : (
                     <div className="flex flex-wrap gap-2">
-                      {viewData.travelTendency.length > 0 ? (
-                        viewData.travelTendency.map((tendency) => {
+                      {viewData.tendency.length > 0 ? (
+                        viewData.tendency.map((tendency) => {
                           const label =
                             TENDENCY_OPTIONS.find(
                               (option) => option.value === tendency

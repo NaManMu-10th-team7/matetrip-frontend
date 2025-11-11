@@ -22,22 +22,19 @@ import { Progress } from './ui/progress';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import axios from 'axios';
 import client from '../api/client';
+import {
+  TRAVEL_STYLE_OPTIONS,
+  type TravelStyleType,
+} from '../constants/travelStyle';
+import {
+  TENDENCY_OPTIONS,
+  type TravelTendencyType,
+} from '../constants/travelTendencyType';
 
 interface SignupProps {
   onSignup: () => void;
   onLoginClick: () => void;
 }
-
-const TRAVEL_STYLES = ['RELAXED', 'ACTIVE', 'CULTURAL', 'FOODIE', 'NATURE'];
-
-const TRAVEL_TENDENCIES = [
-  // { value: 'planned', label: '계획적', emoji: '📋' },
-  // { value: 'spontaneous', label: '즉흥적', emoji: '✨' },
-  { value: '내향적', label: '내향적', emoji: '⚡' },
-  { value: '외향적', label: '외향적', emoji: '🌿' },
-  // { value: 'social', label: '사교적', emoji: '👥' },
-  // { value: 'quiet', label: '조용한', emoji: '🤫' },
-];
 
 const MBTI_TYPES = [
   'ISTJ',
@@ -72,8 +69,8 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
     gender: '',
     phone: '',
     mbti: '',
-    travelStyles: [] as string[],
-    travelTendency: [] as string[],
+    travelStyles: [] as TravelStyleType[],
+    tendency: [] as TravelTendencyType[],
     intro: '',
     description: '',
   });
@@ -84,7 +81,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const toggleTravelStyle = (style: string) => {
+  const toggleTravelStyle = (style: TravelStyleType) => {
     setFormData((prev) => ({
       ...prev,
       travelStyles: prev.travelStyles.includes(style)
@@ -93,12 +90,12 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
     }));
   };
 
-  const toggleTravelTendency = (travelTendency: string) => {
+  const toggleTravelTendency = (travelTendency: TravelTendencyType) => {
     setFormData((prev) => ({
       ...prev,
-      travelTendency: prev.travelTendency.includes(travelTendency)
-        ? prev.travelTendency.filter((p) => p !== travelTendency)
-        : [...prev.travelTendency, travelTendency],
+      tendency: prev.tendency.includes(travelTendency)
+        ? prev.tendency.filter((p) => p !== travelTendency)
+        : [...prev.tendency, travelTendency],
     }));
   };
 
@@ -126,7 +123,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
           gender: formData.gender,
           mbtiTypes: formData.mbti,
           travelStyles: formData.travelStyles,
-          travelTendency: formData.travelTendency,
+          tendency: formData.tendency,
           intro: formData.intro,
           description: formData.description,
         },
@@ -142,40 +139,24 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
         });
 
         if (loginResponse.status === 200) {
-          // 📌메인페이지 가기 전에 임베딩 처리 하기 (matching-profile 에 내용넣기)
+          // // 📌메인페이지 가기 전에 임베딩 처리 하기 (matching-profile 에 내용넣기)
 
-          const userId =
-            signupResponse.data?.id || loginResponse.data?.user?.id;
+          // const userId =
+          //   signupResponse.data?.id || loginResponse.data?.user?.id;
 
-          if (userId) {
-            const syncPayload: {
-              //SyncMatchingProfileDto
-              //userId: string;
-              description: string;
-              // travelTendencyTypes?: string[];
-              // travelTendencies?: string[];
-            } = {
-              //userId,
-              description: formData.description || '',
-              // > 0이면 최소 한 개는 선택된 상태라는 뜻이고, 그럴 때만 해당 필드를 DTO에 포함
-              // ...(formData.travelStyles.length > 0 && {
-              //   travelTendencyTypes: formData.travelStyles,
-              // }),
-              // ...(formData.travelTendency.length > 0 && {
-              //   travelTendencies: formData.travelTendency,
-              // }),
-            };
+          // if (userId) {
+          //   const syncPayload = {
+          //     //userId,
+          //     description: formData.description || '',
+          //     // 필요하면 travelStyles / tendency도 추가
+          //   };
+          //   await client.post('/matching/profile/embedding', syncPayload);
+          //   console.log('임베딩 완료!');
+          // } else {
+          //   throw new Error('Unable to determine userId after signup/login');
+          // }
 
-            try {
-              await client.post('/matching/profile/embedding', syncPayload); // summary 랑 embedding 호출
-            } catch (syncError) {
-              console.error('Matching profile embedding failed:', syncError);
-            }
-          } else {
-            console.warn(
-              'Unable to embedding matching profile: missing userId'
-            );
-          }
+          // summary 랑 embedding 호출
 
           // 로그인 성공 시 부모 컴포넌트의 onSignup 함수 호출 (상태 업데이트 및 페이지 이동)
           onSignup();
@@ -466,22 +447,22 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                   <div>
                     <Label>여행 스타일</Label>
                     <div className="flex flex-wrap gap-2 mt-3">
-                      {TRAVEL_STYLES.map((style) => (
+                      {TRAVEL_STYLE_OPTIONS.map(({ value, label }) => (
                         <Badge
-                          key={style}
+                          key={value}
                           variant={
-                            formData.travelStyles.includes(style)
+                            formData.travelStyles.includes(value)
                               ? 'default'
                               : 'outline'
                           }
                           className={`cursor-pointer transition-colors ${
-                            formData.travelStyles.includes(style)
+                            formData.travelStyles.includes(value)
                               ? 'bg-blue-600 hover:bg-blue-700'
                               : 'hover:bg-gray-100'
                           }`}
-                          onClick={() => toggleTravelStyle(style)}
+                          onClick={() => toggleTravelStyle(value)}
                         >
-                          {style}
+                          {label}
                         </Badge>
                       ))}
                     </div>
@@ -490,21 +471,18 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                   <div>
                     <Label>여행 성향</Label>
                     <div className="grid grid-cols-2 gap-3 mt-3">
-                      {TRAVEL_TENDENCIES.map((type) => (
+                      {TENDENCY_OPTIONS.map(({ value, label }) => (
                         <button
-                          key={type.value}
+                          key={value}
                           type="button"
-                          onClick={() => toggleTravelTendency(type.value)}
+                          onClick={() => toggleTravelTendency(value)}
                           className={`p-4 rounded-lg border-2 transition-all ${
-                            formData.travelTendency.includes(type.value)
+                            formData.tendency.includes(value)
                               ? 'border-blue-600 bg-blue-50'
                               : 'border-gray-200 hover:border-gray-300'
                           }`}
                         >
-                          <div className="text-2xl mb-1">{type.emoji}</div>
-                          <div className="text-sm text-gray-900">
-                            {type.label}
-                          </div>
+                          <div className="text-sm text-gray-900">{label}</div>
                         </button>
                       ))}
                     </div>

@@ -132,19 +132,22 @@ export function MainPage({ onSearch, onViewPost, onUserClick }: MainPageProps) {
   }, []);
 
   //matching 유사도로 내용 받아오기.. dto 안에 있는 내용중 선별해서 받아오면 됨. setmatches 안에 넣어놈
-  useEffect(() => {
-    const fetchMatches = async () => {
-      try {
-        const res = await client.post<MatchResponseDto>('/matching/search', {
-          limit: 20,
-        });
-        setMatches(res.data.matches ?? []);
-      } catch (err) {
-        console.error('Failed to fetch matches', err);
-      }
-    };
-    fetchMatches();
-  }, []);
+  //TODO:: 나중에 매칭 로직 확정될떄 불러오기
+  // useEffect(() => {
+  //   const fetchMatches = async () => {
+  //     try {
+  //       const res = await client.post<MatchResponseDto>('/matching/search', {
+  //         limit: 5,
+  //       });
+  //       console.log('match response', res.data.matches);
+  //       setMatches(res.data.matches ?? []);
+  //     } catch (err) {
+  //       console.error('Failed to fetch matches', err);
+  //     }
+  //   };
+  //   fetchMatches();
+  //   console.log('search 완료!');
+  // }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e?.preventDefault();
