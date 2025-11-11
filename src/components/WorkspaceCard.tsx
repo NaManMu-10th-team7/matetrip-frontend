@@ -44,23 +44,27 @@ export function WorkspaceCard({
 
   // API 응답에 커버 이미지가 없으므로 임시 플레이스홀더를 사용합니다.
   const coverImage = 'https://via.placeholder.com/400x300';
-  
+
   // 참여자 목록을 구성합니다. writer와 participations를 사용합니다.
   const displayParticipants = [
     {
       id: writer.id,
       name: writer.profile?.nickname || '알 수 없음', // nullish coalescing operator 추가
-      profileImage: writer.profile?.profileImage || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80', // nullish coalescing operator 추가
+      profileImage:
+        writer.profile?.profileImageId ||
+        `https://ui-avatars.com/api/?name=${writer.profile?.nickname}&background=random`,
     },
     ...(participations || [])
-      .filter(p => p.status === '승인')
+      .filter((p) => p.status === '승인')
       .map((p) => ({
         id: p.requester.id,
         name: p.requester.profile?.nickname || '알 수 없음', // nullish coalescing operator 추가
-        profileImage: p.requester.profile?.profileImage || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80', // nullish coalescing operator 추가
+        profileImage:
+          p.requester.profile?.profileImageId ||
+          `https://ui-avatars.com/api/?name=${p.requester.profile?.nickname}&background=random`,
       })),
   ];
-  
+
   return (
     <div
       className="bg-white rounded-2xl shadow-lg overflow-hidden mx-4 hover:shadow-xl transition-shadow cursor-pointer relative h-full flex flex-col"
@@ -68,7 +72,7 @@ export function WorkspaceCard({
     >
       {/* 상태 배지 */}
       {status && (
-        <Badge 
+        <Badge
           className="absolute top-4 right-4 z-10 px-3 py-1 text-sm font-semibold"
           variant={status === '모집중' ? 'default' : 'secondary'} // 상태에 따라 배지 색상 변경
         >
@@ -99,7 +103,9 @@ export function WorkspaceCard({
         {/* 여행 기간 */}
         <div className="flex items-center gap-2 text-gray-600">
           <Calendar className="w-4 h-4" />
-          <span>{startDate} ~ {endDate} ({calculateDays()}일)</span>
+          <span>
+            {startDate} ~ {endDate} ({calculateDays()}일)
+          </span>
         </div>
 
         {/* 여행 키워드 */}
@@ -118,17 +124,20 @@ export function WorkspaceCard({
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 flex-1 min-w-0">
               <div className="flex -space-x-2 flex-shrink-0">
-                {displayParticipants.slice(0, 3).map((participant, index) => (
-                  participant && (
-                    <ImageWithFallback
-                      key={participant.id}
-                      src={participant.profileImage}
-                      alt={participant.name}
-                      className="w-8 h-8 rounded-full object-cover border-2 border-white"
-                      style={{ zIndex: displayParticipants.length - index }}
-                    />
-                  )
-                ))}
+                {displayParticipants
+                  .slice(0, 3)
+                  .map(
+                    (participant, index) =>
+                      participant && (
+                        <ImageWithFallback
+                          key={participant.id}
+                          src={participant.profileImage}
+                          alt={participant.name}
+                          className="w-8 h-8 rounded-full object-cover border-2 border-white"
+                          style={{ zIndex: displayParticipants.length - index }}
+                        />
+                      )
+                  )}
               </div>
               <div className="flex items-center gap-1 text-gray-500 text-sm">
                 <Users className="w-3.5 h-3.5 flex-shrink-0" />

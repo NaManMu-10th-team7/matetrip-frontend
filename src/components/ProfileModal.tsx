@@ -74,13 +74,18 @@ export function ProfileModal({
       ]);
 
       // [디버그용] 참여한 동행 데이터 확인
-      console.log('GET /users/{userId}/participations 응답:', participatedPostsRes.data);
+      console.log(
+        'GET /users/{userId}/participations 응답:',
+        participatedPostsRes.data
+      );
 
       setProfile(profileRes.data);
 
       // 작성한 동행과 참여한 동행 목록을 합치고 중복을 제거합니다.
       const written = writtenPostsRes.data || [];
-      const participated = Array.isArray(participatedPostsRes.data) ? participatedPostsRes.data : [];
+      const participated = Array.isArray(participatedPostsRes.data)
+        ? participatedPostsRes.data
+        : [];
       const combinedPosts = [...written, ...participated];
 
       // ID를 기준으로 중복을 제거하고, 최신순(createdAt)으로 정렬합니다.
@@ -183,9 +188,10 @@ export function ProfileModal({
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-6">
                     <ImageWithFallback
-                      src={ // TODO: profileImageId를 presigned-url로 변환하는 로직 필요
-                        profile.profileImage ||
-                        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'
+                      src={
+                        // TODO: profileImageId를 presigned-url로 변환하는 로직 필요
+                        profile.profileImageId ||
+                        `https://ui-avatars.com/api/?name=${profile?.nickname}&background=random`
                       }
                       alt={profile.nickname}
                       className="w-24 h-24 rounded-full object-cover ring-2 ring-gray-100"
@@ -266,23 +272,29 @@ export function ProfileModal({
                 {activeTab === 'overview' && (
                   <div className="space-y-6">
                     <div>
-                      <h4 className="text-gray-900 mb-2 font-bold">한줄 소개</h4>
+                      <h4 className="text-gray-900 mb-2 font-bold">
+                        한줄 소개
+                      </h4>
                       <p className="text-gray-700 whitespace-pre-wrap">
                         {profile.intro ||
                           '아직 한줄 소개가 작성되지 않았습니다.'}
                       </p>
                     </div>
                     <div>
-                      <h4 className="text-gray-900 mb-2 font-bold">상세 소개</h4>
+                      <h4 className="text-gray-900 mb-2 font-bold">
+                        상세 소개
+                      </h4>
                       <div
                         className={`text-gray-700 leading-relaxed whitespace-pre-wrap ${
                           !isBioExpanded && 'line-clamp-3'
                         }`}
                       >
-                        {profile.description || '아직 상세 소개가 작성되지 않았습니다.'}
+                        {profile.description ||
+                          '아직 상세 소개가 작성되지 않았습니다.'}
                       </div>
                       {(profile.description?.split('\n').length > 3 ||
-                        (profile.description && profile.description.length > 150)) && (
+                        (profile.description &&
+                          profile.description.length > 150)) && (
                         <button // 더보기/접기 버튼 조건 수정
                           onClick={() => setIsBioExpanded(!isBioExpanded)}
                           className="w-full mt-3 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center justify-center gap-1"
@@ -380,7 +392,9 @@ export function ProfileModal({
             id: profile.id,
             name: profile.nickname,
             email: loggedInUser?.email, // Assuming email is available in loggedInUser
-            profileImage: profile.profileImage || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+            profileImage:
+              profile.profileImageId ||
+              'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
             intro: profile.intro || '', // profile.intro를 intro로 직접 전달
             description: profile.description || '', // profile.description을 description으로 직접 전달
             travelStyles: profile.travelStyles || [],

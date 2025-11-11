@@ -345,22 +345,22 @@ export function PostDetail({
                   <div className="flex items-start gap-4 p-4 bg-white rounded-xl border h-full">
                     <ImageWithFallback
                       src={
-                        post.writer.profile.profileImage ||
-                        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'
+                        post.writer.profile?.profileImageId ??
+                        `https://ui-avatars.com/api/?name=${post.writer.profile?.nickname}&background=random`
                       }
-                      alt={post.writer.profile.nickname}
+                      alt={post.writer.profile?.nickname}
                       className="w-12 h-12 rounded-full object-cover flex-shrink-0"
                     />
                     <div className="flex-1 min-w-0">
                       <p className="text-gray-900 mb-2">
-                        {post.writer.profile.nickname}
+                        {post.writer.profile?.nickname}
                       </p>
                       <div className="flex items-center gap-2 mb-2">
                         <Thermometer className="w-4 h-4 text-blue-600" />
                         <span className="text-sm text-blue-600">36.5°C</span>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        {post.writer.profile.travelStyles?.map((style) => (
+                        {post.writer?.profile?.travelStyles?.map((style) => (
                           <Badge
                             key={style}
                             variant="secondary"
@@ -419,8 +419,8 @@ export function PostDetail({
                         <div className="flex items-start gap-3">
                           <ImageWithFallback
                             src={
-                              p.requester.profile.profileImage ||
-                              `https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=200&q=80&seed=${p.requester.id}`
+                              p.requester.profile.profileImageId ??
+                              `https://ui-avatars.com/api/?name=${p.requester.profile.nickname}&background=random`
                             }
                             alt={p.requester.profile.nickname}
                             className="w-12 h-12 rounded-full object-cover"
@@ -481,8 +481,8 @@ export function PostDetail({
                         <div className="flex items-start gap-3">
                           <ImageWithFallback
                             src={
-                              request.requester.profile.profileImage ||
-                              `https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80&seed=${request.requester.id}`
+                              request.requester.profile.profileImageId ??
+                              `https://ui-avatars.com/api/?name=${request.requester.profile.nickname}&background=random`
                             }
                             alt={request.requester.profile.nickname}
                             className="w-12 h-12 rounded-full object-cover"

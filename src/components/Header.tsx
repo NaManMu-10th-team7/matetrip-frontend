@@ -36,7 +36,9 @@ export function Header({
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
               <Map className="logo w-5 h-5 text-white" />
             </div>
-            <span className="text-xl text-gray-900 hidden sm:inline">MateTrip</span>
+            <span className="text-xl text-gray-900 hidden sm:inline">
+              MateTrip
+            </span>
           </button>
 
           {/* 중앙: 검색창 */}
@@ -62,10 +64,20 @@ export function Header({
                   onClick={onProfileClick}
                   className="w-10 h-10 rounded-full overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all"
                 >
-                  {user?.profile.profileImage ? (
-                    <img src={user.profile.profileImage} alt="profile" className="w-full h-full object-cover" />
+                  {user?.profile?.profileImageId ? (
+                    <img
+                      src={
+                        user.profile.profileImageId
+                      }
+                      alt="profile"
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500" />
+                    <img
+                      src={`https://ui-avatars.com/api/?name=${user?.profile?.nickname}&background=random`}
+                      alt="profile"
+                      className="w-full h-full object-cover"
+                    />
                   )}
                 </button>
                 <div className="flex items-center gap-2">
@@ -75,7 +87,7 @@ export function Header({
                     </span>
                   )}
                 </div>
-                
+
                 <Button
                   variant="outline"
                   size="sm"
