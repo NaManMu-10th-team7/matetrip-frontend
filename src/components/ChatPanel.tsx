@@ -123,7 +123,8 @@ export function ChatPanel({ messages, sendMessage, isChatConnected }: ChatPanelP
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((msg, index) => {
           // msg.userId와 currentUserId를 비교하여 자신의 메시지인지 판단
-          const isMe = msg.userId === currentUserId;
+          const isMe =
+            currentUserId != null && msg.userId === currentUserId;
           const isSystem = msg.username === 'System';
 
           return (
