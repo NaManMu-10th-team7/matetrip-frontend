@@ -69,6 +69,7 @@ export function ProfileModal({
   const [activeTab, setActiveTab] = useState('overview');
   const [isBioExpanded, setIsBioExpanded] = useState(false);
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false); // State for EditProfileModal
+  const [error, setError] = useState<unknown>(null);
 
   const isCurrentUser = loggedInUser?.userId === userId;
 
@@ -92,6 +93,7 @@ export function ProfileModal({
       );
 
       setProfile(profileRes.data);
+      setError(null);
 
       // 작성한 동행과 참여한 동행 목록을 합치고 중복을 제거합니다.
       const written = writtenPostsRes.data || [];
@@ -111,6 +113,7 @@ export function ProfileModal({
       setTravelHistory(uniquePosts);
       setReviews(reviewsRes.data);
     } catch (error) {
+      setError(error);
       console.error('Failed to fetch profile data:', error);
     } finally {
       setIsLoading(false);
@@ -130,6 +133,21 @@ export function ProfileModal({
   const handleCardClick = (post: Post) => {
     onViewPost(post.id); // 게시글 상세 보기로 이동
   };
+
+  if (error) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-4xl h-[80vh]">
+          <div className="h-full flex flex-col items-center justify-center space-y-4 text-center">
+            <p className="text-gray-700">
+              프로필 정보를 불러오는 중 오류가 발생했습니다.
+            </p>
+            <Button onClick={() => fetchProfileData()}>다시 시도</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   if (isLoading || !profile) {
     return (
@@ -390,7 +408,13 @@ export function ProfileModal({
       {profile && (
         <EditProfileModal
           open={isEditProfileModalOpen}
-          onOpenChange={setIsEditProfileModalOpen}
+          onOpenChange={(open) => {
+            if (!open) {
+              // 모달이 닫힐 때 프로필 데이터를 다시 불러옵니다.
+              fetchProfileData();
+            }
+            setIsEditProfileModalOpen(open);
+          }}
           user={{
             id: profile.id,
             name: profile.nickname,
