@@ -129,7 +129,8 @@ export function Workspace({
         </div>
       )}
       <div className="flex justify-center">
-        <VideoChat workspaceId={workspaceId} />
+        {/* 📌화상 주석 처리 
+        <VideoChat workspaceId={workspaceId} /> */}
       </div>
       {/* Main Content with Tabs */}
       <div className="flex-1 overflow-hidden">
