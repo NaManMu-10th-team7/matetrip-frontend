@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  User,
   ArrowLeft,
   MapPin,
   Calendar,
@@ -101,7 +100,7 @@ export function PostDetail({
     fetchPostDetail();
   }, [fetchPostDetail]);
 
-  const isAuthor = user && post ? user.userId === post.writer.id : false;
+  const isAuthor = user && post ? user.userId === post?.writer?.id : false;
   const isLoggedIn = !!user;
 
   const userParticipation = user
@@ -345,15 +344,15 @@ export function PostDetail({
                   <div className="flex items-start gap-4 p-4 bg-white rounded-xl border h-full">
                     <ImageWithFallback
                       src={
-                        post.writer.profile?.profileImageId ??
-                        `https://ui-avatars.com/api/?name=${post.writer.profile?.nickname}&background=random`
+                        post.writer?.profile?.profileImageId ??
+                        `https://ui-avatars.com/api/?name=${post.writer?.profile?.nickname}&background=random`
                       }
-                      alt={post.writer.profile?.nickname}
+                      alt={post.writer?.profile?.nickname}
                       className="w-12 h-12 rounded-full object-cover flex-shrink-0"
                     />
                     <div className="flex-1 min-w-0">
                       <p className="text-gray-900 mb-2">
-                        {post.writer.profile?.nickname}
+                        {post.writer?.profile?.nickname}
                       </p>
                       <div className="flex items-center gap-2 mb-2">
                         <Thermometer className="w-4 h-4 text-blue-600" />
@@ -375,7 +374,9 @@ export function PostDetail({
                       size="sm"
                       variant="outline"
                       className="flex-shrink-0 self-start whitespace-nowrap"
-                      onClick={() => handleViewProfile(post.writer.id)}
+                      onClick={() =>
+                        post.writer?.id && handleViewProfile(post.writer.id)
+                      }
                     >
                       프로필 보기
                     </Button>

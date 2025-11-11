@@ -18,7 +18,13 @@ interface WorkspaceCarouselProps {
   buttonText?: string;
 }
 
-export function WorkspaceCarousel({ posts, onCardClick, onEnterClick, showEnterButton, buttonText }: WorkspaceCarouselProps) {
+export function WorkspaceCarousel({
+  posts,
+  onCardClick,
+  // onEnterClick,
+  // showEnterButton,
+  // buttonText,
+}: WorkspaceCarouselProps) {
   const [api, setApi] = useState<CarouselApi>();
   const autoScrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -26,7 +32,7 @@ export function WorkspaceCarousel({ posts, onCardClick, onEnterClick, showEnterB
     if (autoScrollIntervalRef.current) {
       clearInterval(autoScrollIntervalRef.current);
     }
-    
+
     autoScrollIntervalRef.current = setInterval(() => {
       if (api) {
         api.scrollNext();
@@ -63,7 +69,10 @@ export function WorkspaceCarousel({ posts, onCardClick, onEnterClick, showEnterB
     >
       <CarouselContent className="-ml-6">
         {posts.map((post) => (
-          <CarouselItem key={post.id} className="pl-6 md:basis-1/2 lg:basis-[40%]">
+          <CarouselItem
+            key={post.id}
+            className="pl-6 md:basis-1/2 lg:basis-[40%]"
+          >
             <WorkspaceCard post={post} onClick={() => onCardClick?.(post)} />
           </CarouselItem>
         ))}

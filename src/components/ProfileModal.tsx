@@ -7,7 +7,6 @@ import {
   Thermometer,
   Car,
   Pencil,
-  Award,
   Star,
   ChevronDown,
   ChevronUp,

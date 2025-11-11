@@ -3,7 +3,6 @@ import {
   Star,
   MapPin,
   Calendar,
-  Award,
   Thermometer,
   Edit,
   Car,
@@ -37,7 +36,8 @@ import {
 } from '../constants/travelTendencyType';
 import type { UpdateProfileDto } from '../types/updateprofiledto';
 import { useAuthStore } from '../store/authStore';
-import { Post } from '../types/post'; // Import Post type
+import { type Post } from '../types/post';
+import { API_BASE_URL } from '../api/client.ts'; // Import Post type
 
 interface Review {
   id: number;
@@ -112,19 +112,16 @@ export function Profile({
 
   const handleInput =
     <K extends keyof ProfileData>(key: K) =>
-      (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const value =
-          event.target.type === 'checkbox'
-            ? (event.target as HTMLInputElement).checked
-            : event.target.value;
-        setDraft((prev) => ({
-          ...prev,
-          [key]:
-            key === 'age'
-              ? Number(value)
-              : (value as ProfileData[K]),
-        }));
-      };
+    (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const value =
+        event.target.type === 'checkbox'
+          ? (event.target as HTMLInputElement).checked
+          : event.target.value;
+      setDraft((prev) => ({
+        ...prev,
+        [key]: key === 'age' ? Number(value) : (value as ProfileData[K]),
+      }));
+    };
 
   const handleGenderChange = (value: GenderType) => {
     setDraft((prev) => ({ ...prev, gender: value }));
@@ -179,7 +176,7 @@ export function Profile({
 
     const fetchProfileData = async () => {
       try {
-        const res = await fetch('http://localhost:3000/profile/my', {
+        const res = await fetch(`${API_BASE_URL}/profile/my`, {
           method: 'GET',
           credentials: 'include',
         });
@@ -216,7 +213,7 @@ export function Profile({
       if (!targetUserId) return;
 
       try {
-        const res = await fetch(`http://localhost:3000/posts/user/${targetUserId}`, {
+        const res = await fetch(`${API_BASE_URL}/posts/user/${targetUserId}`, {
           method: 'GET',
           credentials: 'include',
         });
@@ -271,7 +268,7 @@ export function Profile({
     (async () => {
       try {
         const res = await fetch(
-          `http://localhost:3000/binary-content/${viewData.profileImageId}/presigned-url`,
+          `${API_BASE_URL}/binary-content/${viewData.profileImageId}/presigned-url`,
           { credentials: 'include' }
         );
         if (!res.ok) throw new Error('presigned GET 요청 실패');
@@ -325,7 +322,7 @@ export function Profile({
         const safeFileType = file.type || 'application/octet-stream';
 
         const presignResponse = await fetch(
-          'http://localhost:3000/binary-content/presigned-url',
+          `${API_BASE_URL}/binary-content/presigned-url`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -358,7 +355,7 @@ export function Profile({
         profileImageId,
       };
 
-      const res = await fetch('http://localhost:3000/profile/my', {
+      const res = await fetch(`${API_BASE_URL}/profile/my`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

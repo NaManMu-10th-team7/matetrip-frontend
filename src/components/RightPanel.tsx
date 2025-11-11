@@ -1,20 +1,23 @@
+import { memo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { MessageCircle, Bot } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
 import { ChatPanel } from './ChatPanel';
-import { type ChatMessage } from '../hooks/useChatSocket'; // ChatMessage 타입 import
+import { type ChatMessage } from '../hooks/useChatSocket';
 
 interface RightPanelProps {
   isOpen: boolean;
-  messages: ChatMessage[]; // messages prop 추가
-  sendMessage: (message: string) => void; // sendMessage prop 추가
-  isChatConnected: boolean; // isChatConnected prop 추가
+  messages: ChatMessage[];
+  sendMessage: (message: string) => void;
+  isChatConnected: boolean;
+  workspaceId: string;
 }
 
-export function RightPanel({
+export const RightPanel = memo(function RightPanel({
   isOpen,
   messages,
   sendMessage,
   isChatConnected,
+  workspaceId,
 }: RightPanelProps) {
   if (!isOpen) {
     return null;
@@ -28,24 +31,16 @@ export function RightPanel({
             <MessageCircle className="w-4 h-4" />
             <span>채팅 with AI Agent</span>
           </TabsTrigger>
-          {/* <TabsTrigger value="agent" className="flex-1 gap-2"> */}
-          {/*   <Bot className="w-4 h-4" /> */}
-          {/*   <span>AI Agent</span> */}
-          {/* </TabsTrigger> */}
         </TabsList>
         <TabsContent value="chat" className="flex-1 overflow-auto m-0">
           <ChatPanel
             messages={messages}
             sendMessage={sendMessage}
             isChatConnected={isChatConnected}
+            workspaceId={workspaceId}
           />
         </TabsContent>
-        {/* <TabsContent value="agent" className="h-full m-0 p-4"> */}
-        {/*   <div className="h-full flex items-center justify-center text-gray-500"> */}
-        {/*     AI Agent (개발 예정) */}
-        {/*   </div> */}
-        {/* </TabsContent> */}
       </Tabs>
     </div>
   );
-}
+});

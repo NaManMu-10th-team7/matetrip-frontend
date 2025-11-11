@@ -29,7 +29,7 @@ export interface DayLayer {
   color: string;
 }
 
-interface RouteSegment {
+export interface RouteSegment {
   fromPoiId: string;
   toPoiId: string;
   duration: number; // seconds
@@ -45,9 +45,10 @@ interface MapPanelProps {
   markPoi: (
     poiData: Omit<CreatePoiDto, 'workspaceId' | 'createdBy' | 'id'>
   ) => void;
-  unmarkPoi: (poiId: string | number) => void;
   selectedPlace: KakaoPlace | null;
-  mapRef: React.RefObject<kakao.maps.Map>;
+  mapRef: React.RefObject<kakao.maps.Map | null>;
+  hoveredPoi: Poi | null;
+  unmarkPoi: (poiId: string) => void;
   onPoiDragEnd: (poiId: string, lat: number, lng: number) => void;
   setSelectedPlace: (place: KakaoPlace | null) => void;
   onRouteInfoUpdate?: (routeInfo: Record<string, RouteSegment[]>) => void; // 추가된 prop
@@ -58,10 +59,17 @@ interface PoiMarkerProps {
   onPoiDragEnd: (poiId: string, lat: number, lng: number) => void;
   sequenceNumber?: number;
   markerColor?: string;
+  isHovered: boolean;
 }
 
 const PoiMarker = memo(
-  ({ poi, onPoiDragEnd, sequenceNumber, markerColor }: PoiMarkerProps) => {
+  ({
+    poi,
+    onPoiDragEnd,
+    sequenceNumber,
+    markerColor,
+    isHovered,
+  }: PoiMarkerProps) => {
     const [isInfoWindowOpen, setIsInfoWindowOpen] = useState(false);
     const infoWindowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -86,6 +94,10 @@ const PoiMarker = memo(
       }
       setIsInfoWindowOpen(true);
     };
+
+    useEffect(() => {
+      setIsInfoWindowOpen(isHovered);
+    }, [isHovered]);
 
     return (
       <MapMarker
@@ -187,9 +199,9 @@ export function MapPanel({
   pois,
   isSyncing,
   markPoi,
-  unmarkPoi,
   selectedPlace,
   mapRef,
+  hoveredPoi,
   onPoiDragEnd,
   setSelectedPlace,
   onRouteInfoUpdate, // 추가된 prop
@@ -455,6 +467,7 @@ export function MapPanel({
               onPoiDragEnd={onPoiDragEnd}
               sequenceNumber={sequenceNumber}
               markerColor={markerColor}
+              isHovered={hoveredPoi?.id === poi.id}
             />
           );
         })}
