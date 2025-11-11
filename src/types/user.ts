@@ -6,7 +6,7 @@ export interface UserProfile {
   intro: string;
   mbtiTypes: string;
   travelStyles: string[];
-  travelTendency: string[];
+  tendency: string[];
   profileImageId?: string;
 }
 
