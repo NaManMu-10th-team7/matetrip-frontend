@@ -1,5 +1,6 @@
 import type { TravelStyleType } from '../constants/travelStyle';
 import type { TravelTendencyType } from '../constants/travelTendencyType';
+import type { KeywordValue } from '../utils/keyword';
 
 export type KeywordType = string;
 
@@ -10,7 +11,7 @@ export interface MatchRecruitingPostDto {
   startDate: string | null;
   endDate: string | null;
   maxParticipants: number;
-  keywords: KeywordType[];
+  keywords: KeywordValue[];
 }
 
 export interface MatchCandidateDto {
