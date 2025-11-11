@@ -291,6 +291,24 @@ export function ProfileModal({
                         </button>
                       )}
                     </div>
+                    <div>
+                      <h4 className="text-gray-900 mb-2 font-bold">
+                        여행 성향
+                      </h4>
+                      {profile.travelTendency?.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {profile.travelTendency.map((tendency) => (
+                            <Badge key={tendency} variant="secondary">
+                              {translateKeyword(tendency)}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-gray-500">
+                          선택한 여행 성향이 없습니다.
+                        </p>
+                      )}
+                    </div>
                   </div>
                 )}
 
@@ -376,7 +394,7 @@ export function ProfileModal({
           user={{
             id: profile.id,
             name: profile.nickname,
-            email: loggedInUser?.email, // Assuming email is available in loggedInUser
+            email: loggedInUser?.profile?.email, // Assuming email is available in loggedInUser
             profileImage:
               profile.profileImageId ||
               'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
