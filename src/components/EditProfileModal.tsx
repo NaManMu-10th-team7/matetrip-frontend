@@ -23,14 +23,14 @@ interface EditProfileModalProps {
 }
 
 export function EditProfileModal({ open, onOpenChange, user }: EditProfileModalProps) {
-  if (!user) return null;
-
   const [activeTab, setActiveTab] = useState('edit');
-  const [profileImage, setProfileImage] = useState(user.profileImage);
-  const [nickname, setNickname] = useState(user.name);
-  const [shortBio, setShortBio] = useState(user.intro); // user.intro로 초기화
-  const [detailedBio, setDetailedBio] = useState(user.description); // user.description으로 초기화
-  const [selectedTravelStyles, setSelectedTravelStyles] = useState<string[]>(user.travelStyles);
+  const [profileImage, setProfileImage] = useState(user?.profileImage || '');
+  const [nickname, setNickname] = useState(user?.name || '');
+  const [shortBio, setShortBio] = useState(user?.intro || ''); // user.intro로 초기화
+  const [detailedBio, setDetailedBio] = useState(user?.description || ''); // user.description으로 초기화
+  const [selectedTravelStyles, setSelectedTravelStyles] = useState<string[]>(
+    user?.travelStyles || []
+  );
   const [selectedTravelPreferences, setSelectedTravelPreferences] = useState<string[]>(['액티브', '문화탐방', '#미식가']);
   const [isTagModalOpen, setIsTagModalOpen] = useState(false);
   const [isStyleModalOpen, setIsStyleModalOpen] = useState(false);
@@ -38,6 +38,8 @@ export function EditProfileModal({ open, onOpenChange, user }: EditProfileModalP
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+
+  if (!user) return null;
 
   // 사용 가능한 모든 여행 성향 태그
   const allTags = [
