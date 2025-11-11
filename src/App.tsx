@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Routes,
   Route,
   useNavigate,
   useLocation,
   Outlet,
+  useParams,
 } from 'react-router-dom';
 import { Header } from './components/Header';
 import { MainPage } from './components/MainPage';
@@ -182,6 +183,27 @@ function ReviewPageWrapper() {
   return <ReviewPage onComplete={handleComplete} />;
 }
 
+/**
+ * URL 경로에 따라 PostDetail 모달을 열어주는 트리거 컴포넌트입니다.
+ * /posts/:id 경로로 직접 진입하거나 새로고침 시 모달이 열리도록 합니다.
+ */
+function PostDetailModalTrigger({
+  onViewPost,
+}: {
+  onViewPost: (postId: string) => void;
+}) {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (id) {
+      onViewPost(id);
+    }
+  }, [id, onViewPost]);
+
+  return null; // 이 컴포넌트는 UI를 렌더링하지 않습니다.
+}
+
 export default function App() {
   const navigate = useNavigate();
 
@@ -250,9 +272,13 @@ export default function App() {
     setProfileModalState({ open: true, userId });
   };
 
-  const handleViewPost = (postId: string) => {
-    setPostDetailModalState({ open: true, postId });
-  };
+  const handleViewPost = useCallback(
+    (postId: string) => {
+      setPostDetailModalState({ open: true, postId });
+      navigate(`/posts/${postId}`, { replace: true });
+    },
+    [navigate]
+  );
 
   const handleDeleteSuccess = () => {
     setFetchTrigger((prev) => prev + 1); // fetch 트리거 상태 변경
@@ -306,7 +332,13 @@ export default function App() {
           <Route path="/search" element={<SearchResultsWrapper />} />
           <Route
             path="/posts/:id"
-            element={null} // 페이지 렌더링 대신 모달 사용
+            element={
+              <>
+                {/* 배경으로 메인 페이지를 렌더링합니다. */}
+                <MainPageWrapper isLoggedIn={isLoggedIn} onViewPost={handleViewPost} onCreatePost={() => setShowCreatePost(true)} fetchTrigger={fetchTrigger} />
+                <PostDetailModalTrigger onViewPost={handleViewPost} />
+              </>
+            }
           />
           <Route path="/workspace/:id" element={<WorkspaceWrapper />} />
           <Route path="/review" element={<ReviewPageWrapper />} />
@@ -351,6 +383,7 @@ export default function App() {
           onOpenChange={(open) => {
             if (!open) {
               setPostDetailModalState({ open: false, postId: null });
+              navigate('/', { replace: true }); // 모달이 닫히면 URL을 메인으로 변경
             }
           }}
         >
@@ -360,6 +393,7 @@ export default function App() {
               onOpenChange={(open) => {
                 if (!open) {
                   setPostDetailModalState({ open: false, postId: null });
+                  navigate('/', { replace: true }); // 모달이 닫히면 URL을 메인으로 변경
                 }
               }}
               onViewProfile={handleViewProfile}
