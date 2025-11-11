@@ -177,6 +177,10 @@ export function Login({ onLogin, onSignupClick }: LoginProps) {
                 </div>
               </div>
 
+              {errorMessage && (
+                <p className="text-red-500 text-sm text-center">{errorMessage}</p>
+              )}
+
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Checkbox

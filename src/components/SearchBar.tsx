@@ -6,6 +6,26 @@ interface SearchBarProps {
   onSearch?: (query: string) => void;
 }
 
+// 각 제안 항목의 데이터 타입을 정의합니다.
+interface SuggestionPlace {
+  id: string;
+  name: string;
+  type: string;
+}
+
+interface SuggestionTrip {
+  id: string;
+  title: string;
+  members?: string;
+  author?: string;
+}
+
+interface SuggestionUser {
+  id: string;
+  name: string;
+  nickname: string;
+}
+
 export function SearchBar({ onSearch }: SearchBarProps) {
   const [query, setQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
@@ -14,6 +34,13 @@ export function SearchBar({ onSearch }: SearchBarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  // 모든 제안 항목을 포함하는 discriminated union 타입을 정의합니다.
+  type SearchItem =
+    | { type: 'recent'; data: string; index: number }
+    | { type: 'place'; data: SuggestionPlace; index: number }
+    | { type: 'trip'; data: SuggestionTrip; index: number }
+    | { type: 'user'; data: SuggestionUser; index: number };
 
   // 검색 제안 데이터
   const suggestions = {
@@ -24,15 +51,17 @@ export function SearchBar({ onSearch }: SearchBarProps) {
     ],
     trips: [
       { id: '1', title: '[동행] 부산 2박 3일 힐링/맛집', members: '3/4명' },
-      { id: '2', title: '[일정] 완벽한 부산 1박 2일 코스', author: 'by. 이수호' },
+      {
+        id: '2',
+        title: '[일정] 완벽한 부산 1박 2일 코스',
+        author: 'by. 이수호',
+      },
     ],
-    users: [
-      { id: '1', name: '부산사는 최유나', nickname: '닉네임' },
-    ],
+    users: [{ id: '1', name: '부산사는 최유나', nickname: '닉네임' }],
   };
 
   // 현재 표시되는 모든 항목들
-  const getAllItems = () => {
+  const getAllItems = (): SearchItem[] => {
     if (!query) {
       return recentSearches.map((search, idx) => ({
         type: 'recent',
@@ -41,14 +70,14 @@ export function SearchBar({ onSearch }: SearchBarProps) {
       }));
     }
 
-    const items: any[] = [];
-    suggestions.places.forEach((place, idx) => {
+    const items: SearchItem[] = [];
+    suggestions.places.forEach((place) => {
       items.push({ type: 'place', data: place, index: items.length });
     });
-    suggestions.trips.forEach((trip, idx) => {
+    suggestions.trips.forEach((trip) => {
       items.push({ type: 'trip', data: trip, index: items.length });
     });
-    suggestions.users.forEach((user, idx) => {
+    suggestions.users.forEach((user) => {
       items.push({ type: 'user', data: user, index: items.length });
     });
     return items;
@@ -73,7 +102,10 @@ export function SearchBar({ onSearch }: SearchBarProps) {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
         setIsFocused(false);
       }
     };
@@ -89,7 +121,7 @@ export function SearchBar({ onSearch }: SearchBarProps) {
     }
   };
 
-  const handleItemClick = (item: any) => {
+  const handleItemClick = (item: SearchItem) => {
     if (item.type === 'recent' || item.type === 'place') {
       setQuery(item.type === 'recent' ? item.data : item.data.name);
       inputRef.current?.focus();
@@ -116,7 +148,9 @@ export function SearchBar({ onSearch }: SearchBarProps) {
       setSelectedIndex((prev) => (prev + 1) % allItems.length);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setSelectedIndex((prev) => (prev - 1 + allItems.length) % allItems.length);
+      setSelectedIndex(
+        (prev) => (prev - 1 + allItems.length) % allItems.length
+      );
     } else if (e.key === 'Enter') {
       e.preventDefault();
       if (selectedIndex >= 0 && selectedIndex < allItems.length) {
@@ -178,7 +212,9 @@ export function SearchBar({ onSearch }: SearchBarProps) {
                 {recentSearches.map((search, index) => (
                   <button
                     key={index}
-                    ref={(el) => (itemRefs.current[index] = el)}
+                    ref={(el) => {
+                      itemRefs.current[index] = el;
+                    }}
                     onClick={() => handleRecentSearchClick(search)}
                     className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
                       selectedIndex === index
@@ -203,14 +239,17 @@ export function SearchBar({ onSearch }: SearchBarProps) {
                   <span className="text-sm">장소</span>
                 </div>
                 <div className="space-y-1">
-                  {suggestions.places.map((place, idx) => {
+                  {suggestions.places.map((place) => {
                     const itemIndex = allItems.findIndex(
-                      (item) => item.type === 'place' && item.data.id === place.id
+                      (item) =>
+                        item.type === 'place' && item.data.id === place.id
                     );
                     return (
                       <button
                         key={place.id}
-                        ref={(el) => (itemRefs.current[itemIndex] = el)}
+                        ref={(el) => {
+                          itemRefs.current[itemIndex] = el;
+                        }}
                         onClick={() => handleRecentSearchClick(place.name)}
                         className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
                           selectedIndex === itemIndex
@@ -232,14 +271,16 @@ export function SearchBar({ onSearch }: SearchBarProps) {
                   <span className="text-sm">여행 일정/동행</span>
                 </div>
                 <div className="space-y-1">
-                  {suggestions.trips.map((trip, idx) => {
+                  {suggestions.trips.map((trip) => {
                     const itemIndex = allItems.findIndex(
                       (item) => item.type === 'trip' && item.data.id === trip.id
                     );
                     return (
                       <button
                         key={trip.id}
-                        ref={(el) => (itemRefs.current[itemIndex] = el)}
+                        ref={(el) => {
+                          itemRefs.current[itemIndex] = el;
+                        }}
                         onClick={() => handleItemClick(allItems[itemIndex])}
                         className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
                           selectedIndex === itemIndex
@@ -264,14 +305,16 @@ export function SearchBar({ onSearch }: SearchBarProps) {
                   <span className="text-sm">사용자</span>
                 </div>
                 <div className="space-y-1">
-                  {suggestions.users.map((user, idx) => {
+                  {suggestions.users.map((user) => {
                     const itemIndex = allItems.findIndex(
                       (item) => item.type === 'user' && item.data.id === user.id
                     );
                     return (
                       <button
                         key={user.id}
-                        ref={(el) => (itemRefs.current[itemIndex] = el)}
+                        ref={(el) => {
+                          itemRefs.current[itemIndex] = el;
+                        }}
                         onClick={() => handleItemClick(allItems[itemIndex])}
                         className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
                           selectedIndex === itemIndex
@@ -280,7 +323,9 @@ export function SearchBar({ onSearch }: SearchBarProps) {
                         }`}
                       >
                         <div>{user.name}</div>
-                        <div className="text-sm text-gray-500">{user.nickname}</div>
+                        <div className="text-sm text-gray-500">
+                          {user.nickname}
+                        </div>
                       </button>
                     );
                   })}

@@ -7,7 +7,6 @@ import {
   Thermometer,
   Car,
   Pencil,
-  Award,
   Star,
   ChevronDown,
   ChevronUp,
@@ -91,6 +90,8 @@ export function ProfileModal({
         'GET /users/{userId}/participations 응답:',
         participatedPostsRes.data
       );
+
+      console.log('GET /users/{userId}profile 응답', profileRes.data);
 
       setProfile(profileRes.data);
       setError(null);
@@ -313,9 +314,9 @@ export function ProfileModal({
                       <h4 className="text-gray-900 mb-2 font-bold">
                         여행 성향
                       </h4>
-                      {profile.travelTendency?.length > 0 ? (
+                      {profile.tendency?.length > 0 ? (
                         <div className="flex flex-wrap gap-2">
-                          {profile.travelTendency.map((tendency) => (
+                          {profile.tendency.map((tendency) => (
                             <Badge key={tendency} variant="secondary">
                               {translateKeyword(tendency)}
                             </Badge>
@@ -425,6 +426,7 @@ export function ProfileModal({
             intro: profile.intro || '', // profile.intro를 intro로 직접 전달
             description: profile.description || '', // profile.description을 description으로 직접 전달
             travelStyles: profile.travelStyles || [],
+            tendency: profile.tendency || [],
           }}
         />
       )}

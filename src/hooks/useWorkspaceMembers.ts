@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { WorkspaceMember } from '../types/member';
+import { API_BASE_URL } from '../api/client.ts';
 
 interface UseWorkspaceMembersReturn {
   members: WorkspaceMember[];
@@ -30,7 +31,7 @@ export function useWorkspaceMembers(
       try {
         // TODO: API 주소를 환경 변수 등으로 관리하는 것을 권장합니다.
         const response = await fetch(
-          `http://localhost:3000/posts/workspace/${workspaceId}/members`
+          `${API_BASE_URL}/posts/workspace/${workspaceId}/members`
         );
 
         if (!response.ok) {
@@ -40,7 +41,9 @@ export function useWorkspaceMembers(
         const data: WorkspaceMember[] = await response.json();
         setMembers(data);
       } catch (e) {
-        setError(e instanceof Error ? e : new Error('An unknown error occurred'));
+        setError(
+          e instanceof Error ? e : new Error('An unknown error occurred')
+        );
       } finally {
         setIsLoading(false);
       }

@@ -2,10 +2,10 @@ import { useState, useMemo, useRef, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, GripVertical } from 'lucide-react';
 import {
   DndContext,
-  DragEndEvent,
-  DragStartEvent,
   DragOverlay,
   closestCenter,
+  type DragStartEvent,
+  type DragEndEvent,
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import { MapPanel, type KakaoPlace, type RouteSegment } from './MapPanel'; // RouteSegment import 추가
@@ -14,9 +14,9 @@ import { LeftPanel } from './LeftPanel';
 import { RightPanel } from './RightPanel';
 import { PlanRoomHeader } from './PlanRoomHeader';
 import { type Poi, usePoiSocket } from '../hooks/usePoiSocket.ts';
-import { useChatSocket, type ChatMessage } from '../hooks/useChatSocket'; // useChatSocket import 추가
-import { useWorkspaceMembers } from '../hooks/useWorkspaceMembers.ts'; // useWorkspaceMembers 훅 import
-import { VideoChat } from './VideoChat';
+import { useChatSocket } from '../hooks/useChatSocket'; // useChatSocket import 추가
+import { useWorkspaceMembers } from '../hooks/useWorkspaceMembers.ts';
+import { API_BASE_URL } from '../api/client.ts'; // useWorkspaceMembers 훅 import
 
 interface WorkspaceProps {
   workspaceId: string;
@@ -73,11 +73,7 @@ export function Workspace({
     sendMessage,
     isConnected: isChatConnected,
   } = useChatSocket(workspaceId); // useChatSocket 훅 호출
-  const {
-    members,
-    isLoading: isMembersLoading,
-    error: membersError,
-  } = useWorkspaceMembers(workspaceId);
+  const { members } = useWorkspaceMembers(workspaceId);
 
   const [selectedPlace, setSelectedPlace] = useState<KakaoPlace | null>(null);
   const [activePoi, setActivePoi] = useState<Poi | null>(null);
@@ -97,7 +93,7 @@ export function Workspace({
       // TODO: 백엔드 응답에 profileImageId가 포함되면 실제 이미지 URL을 구성해야 합니다.
       // 현재는 임시 플레이스홀더를 사용합니다.
       avatar: member.profile.profileImageId
-        ? `http://localhost:3000/binary-content/${member.profile.profileImageId}/presigned-url` // 예시 URL 구조
+        ? `${API_BASE_URL}/binary-content/${member.profile.profileImageId}/presigned-url` // 예시 URL 구조
         : `https://ui-avatars.com/api/?name=${member.profile.nickname}&background=random`,
     }));
   }, [members]);
@@ -220,7 +216,7 @@ export function Workspace({
               );
               const updatedContainerPois = newItems.map((poi, index) => ({
                 ...poi,
-                status: 'MARKED',
+                status: 'MARKED' as const,
                 planDayId: undefined,
                 sequence: index,
               }));
@@ -407,6 +403,7 @@ export function Workspace({
               onPoiDragEnd={handleMapPoiDragEnd}
               setSelectedPlace={setSelectedPlace}
               onRouteInfoUpdate={handleRouteInfoUpdate} // MapPanel에 콜백 함수 전달
+              hoveredPoi={hoveredPoi}
             />
           </div>
 
@@ -424,15 +421,12 @@ export function Workspace({
 
           <RightPanel
             isOpen={isRightPanelOpen}
-            messages={messages} // messages prop 전달
-            sendMessage={sendMessage} // sendMessage prop 전달
-            isChatConnected={isChatConnected} // isChatConnected prop 전달
+            messages={messages}
+            sendMessage={sendMessage}
+            isChatConnected={isChatConnected}
+            workspaceId={workspaceId}
           />
         </div>
-      </div>
-      <div className="flex justify-center">
-        {/* 📌화상 주석 처리 */}
-        <VideoChat workspaceId={workspaceId} />
       </div>
       <DragOverlay>
         {activePoi ? <DraggablePoiItem poi={activePoi} /> : null}

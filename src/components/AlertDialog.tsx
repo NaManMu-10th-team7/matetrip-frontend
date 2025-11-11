@@ -1,7 +1,6 @@
 import {
   AlertDialog as RadixAlertDialog,
   AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,

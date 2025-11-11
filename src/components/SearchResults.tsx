@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, SlidersHorizontal, TrendingUp, Search } from 'lucide-react';
+import { ArrowLeft, SlidersHorizontal, Search } from 'lucide-react';
 import { Button } from './ui/button';
-import { Badge } from './ui/badge';
 import { PostCard } from './PostCard';
 import client from '../api/client';
 import { type Post } from '../types/post';
@@ -15,57 +14,6 @@ interface SearchResultsProps {
   };
   onViewPost: (postId: string) => void;
 }
-
-const MOCK_SEARCH_RESULTS = [
-  {
-    id: 1,
-    title: '제주도 힐링 여행 같이 가실 분 🌊',
-    author: '여행러버',
-    authorTemp: 36.5,
-    image:
-      'https://images.unsplash.com/photo-1614088459293-5669fadc3448?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0cmF2ZWwlMjBkZXN0aW5hdGlvbnxlbnwxfHx8fDE3NjE4NjQwNzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    date: '2025.11.15 - 11.18',
-    location: '제주도',
-    participants: 3,
-    maxParticipants: 4,
-    keywords: ['힐링', '자연', '맛집투어'],
-    status: '모집중' as const,
-    description: '제주도에서 여유롭게 힐링하면서 맛집도 탐방할 분들 구합니다!',
-    matchRate: 95,
-  },
-  {
-    id: 2,
-    title: '제주도 우도 & 성산일출봉 투어',
-    author: '제주사랑',
-    authorTemp: 38.0,
-    image:
-      'https://images.unsplash.com/photo-1614088459293-5669fadc3448?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0cmF2ZWwlMjBkZXN0aW5hdGlvbnxlbnwxfHx8fDE3NjE4NjQwNzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    date: '2025.11.20 - 11.23',
-    location: '제주도',
-    participants: 2,
-    maxParticipants: 5,
-    keywords: ['자연', '액티브', '사진'],
-    status: '모집중' as const,
-    description: '우도 자전거 타고 성산일출봉에서 일출 보실 분!',
-    matchRate: 87,
-  },
-  {
-    id: 3,
-    title: '제주 카페투어 & 드라이브 🚗',
-    author: '카페러',
-    authorTemp: 37.2,
-    image:
-      'https://images.unsplash.com/photo-1614088459293-5669fadc3448?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0cmF2ZWwlMjBkZXN0aW5hdGlvbnxlbnwxfHx8fDE3NjE4NjQwNzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    date: '2025.11.10 - 11.12',
-    location: '제주도',
-    participants: 3,
-    maxParticipants: 4,
-    keywords: ['카페', '드라이브', '사진'],
-    status: '모집중' as const,
-    description: '제주 핫플 카페 투어하면서 예쁜 사진도 남겨요',
-    matchRate: 82,
-  },
-];
 
 export function SearchResults({
   searchParams,
@@ -175,17 +123,13 @@ export function SearchResults({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {results.map((post) => (
             <div key={post.id} className="relative">
-              {sortBy === 'match' && post.matchRate && (
-                <Badge className="absolute -top-2 -right-2 z-10 bg-purple-600 gap-1">
-                  <TrendingUp className="w-3 h-3" />
-                  {post.matchRate}% 매칭
-                </Badge>
-              )}
               <PostCard
                 post={post}
                 onClick={() => onViewPost(post.id)}
                 // post.image가 없을 경우 기본 이미지 URL을 전달합니다.
-                image={post.image || 'https://images.unsplash.com/photo-1533106418989-87423dec6922?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0cmF2ZWx8ZW58MXx8fHwxNzIxNzE2MDMwfDA&ixlib=rb-4.1.0&q=80&w=1080'}
+                image={
+                  'https://images.unsplash.com/photo-1533106418989-87423dec6922?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0cmF2ZWx8ZW58MXx8fHwxNzIxNzE2MDMwfDA&ixlib=rb-4.1.0&q=80&w=1080'
+                }
               />
             </div>
           ))}

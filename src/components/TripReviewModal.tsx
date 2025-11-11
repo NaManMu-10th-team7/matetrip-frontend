@@ -9,9 +9,10 @@ import {
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { Award, Star, ThumbsUp, Send, ChevronRight } from 'lucide-react';
+import { Award, Star, Send, ChevronRight } from 'lucide-react';
 import { ReviewCompleteModal } from './ReviewCompleteModal';
-import { AlertDialog } from './AlertDialog'; // AlertDialog 컴포넌트 import
+import { AlertDialog } from './AlertDialog';
+import { API_BASE_URL } from '../api/client.ts'; // AlertDialog 컴포넌트 import
 
 interface Member {
   id: string;
@@ -91,7 +92,7 @@ export function TripReviewModal({
 
       try {
         const response = await axios.post(
-          `http://localhost:3000/workspace/${workspaceId}/reviews`,
+          `${API_BASE_URL}/workspace/${workspaceId}/reviews`,
           reviewData,
           { withCredentials: true } // 인증 쿠키를 보내기 위해 추가
         );
