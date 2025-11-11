@@ -57,20 +57,20 @@ export function ChatPanel({ messages, sendMessage, isChatConnected }: ChatPanelP
   return (
     <div className="h-full flex flex-col bg-white"> {/* h-full 다시 추가 */}
       {/* Header */}
-      <div className="border-b p-4 flex items-center justify-between">
-        <h3 className="text-gray-900">채팅</h3>
-        <div className="flex gap-2">
+      <div className="border-b p-3 flex items-center justify-between">
+        <h3 className="text-gray-900 font-semibold">채팅</h3>
+        <div className="flex items-center gap-3">
           <Badge variant={isChatConnected ? "default" : "destructive"}>
             {isChatConnected ? "연결됨" : "연결 끊김"}
           </Badge>
-          {/* <Button size="sm" variant="outline" className="gap-2">
-            <Phone className="w-4 h-4" />
-            음성통화
-          </Button>
-          <Button size="sm" variant="outline" className="gap-2">
-            <Video className="w-4 h-4" />
-            화상통화
-          </Button> */}
+          <div className="flex gap-1">
+            <Button size="icon" variant="ghost" className="w-8 h-8">
+              <Phone className="w-4 h-4 text-gray-600" />
+            </Button>
+            <Button size="icon" variant="ghost" className="w-8 h-8">
+              <Video className="w-4 h-4 text-gray-600" />
+            </Button>
+          </div>
         </div>
       </div>
 
