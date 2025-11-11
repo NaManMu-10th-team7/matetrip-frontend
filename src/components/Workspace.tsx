@@ -15,6 +15,7 @@ import type { PlanDayDto } from '../types/workspace';
 import { ChatPanel } from './ChatPanel';
 import { PlanPanel } from './PlanPanel';
 import { type Poi, usePoiSocket } from '../hooks/usePoiSocket.ts';
+import { VideoChat } from './VideoChat';
 
 interface WorkspaceProps {
   workspaceId: string;
@@ -127,7 +128,10 @@ export function Workspace({
           </div>
         </div>
       )}
-
+      <div className="flex justify-center">
+        {/* 📌화상 주석 처리 
+        <VideoChat workspaceId={workspaceId} /> */}
+      </div>
       {/* Main Content with Tabs */}
       <div className="flex-1 overflow-hidden">
         <Tabs defaultValue="map" className="h-full flex flex-col">

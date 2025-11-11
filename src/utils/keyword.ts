@@ -1,6 +1,6 @@
 // 백엔드에서 받은 영문 키워드를 한글로 변환하기 위한 맵
 // TODO: 추후 백엔드와 협의하여 정확한 값으로 변경해야 합니다.
-const KEYWORD_MAP: { [key: string]: string } = {
+export const KEYWORD_TYPES = {
   // 여행 키워드 (백엔드 enum 기반)
   CITY_NIGHT_VIBE: '도심/야경 위주',
   NATURE_VIBE: '자연 위주',
@@ -25,7 +25,23 @@ const KEYWORD_MAP: { [key: string]: string } = {
   // 힐링: '힐링',
   // 자연: '자연',
   // 맛집투어: '맛집투어',
-};
+} as const;
 
-export const translateKeyword = (keyword: string) =>
-  KEYWORD_MAP[keyword.toUpperCase()] || keyword;
+export type KeywordKey = keyof typeof KEYWORD_TYPES;
+export type KeywordValue = (typeof KEYWORD_TYPES)[KeywordKey];
+
+export const KEYWORD_OPTIONS: ReadonlyArray<{
+  value: KeywordValue;
+  label: KeywordValue;
+}> = (Object.values(KEYWORD_TYPES) as KeywordValue[]).map((label) => ({
+  value: label,
+  label,
+}));
+
+export const translateKeyword = (keyword: string) => {
+  const upperKey = keyword.toUpperCase();
+  if (upperKey in KEYWORD_TYPES) {
+    return KEYWORD_TYPES[upperKey as KeywordKey];
+  }
+  return keyword;
+};

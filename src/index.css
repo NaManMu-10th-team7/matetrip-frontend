@@ -1180,6 +1180,14 @@
     border-bottom-width: 1px;
   }
 
+  .border-black {
+    border-color: var(--color-black);
+  }
+
+  .border-blue-400 {
+    border-color: var(--color-blue-400);
+  }
+
   .border-blue-600 {
     border-color: var(--color-blue-600);
   }
