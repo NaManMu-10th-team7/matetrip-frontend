@@ -7,7 +7,7 @@ import { Label } from './ui/label';
 import { Badge } from './ui/badge';
 import type { Post } from './PostCard';
 import client from '../api/client';
-import { translateKeyword } from '../utils/keyword';
+import { KEYWORD_OPTIONS, type KeywordValue } from '../utils/keyword';
 
 interface EditPostModalProps {
   onClose: () => void;
@@ -22,20 +22,8 @@ interface PostData {
   endDate: string;
   location: string;
   maxParticipants: number;
-  keywords: string[];
+  keywords: KeywordValue[];
 }
-
-const KEYWORD_OPTIONS = [
-  { key: 'FOOD', label: '음식' },
-  { key: 'ACCOMMODATION', label: '숙박' },
-  { key: 'ACTIVITY', label: '액티비티' },
-  { key: 'TRANSPORT', label: '교통' },
-];
-
-// API 전송을 위해 레이블을 key로 변환하기 위한 맵
-const KEYWORD_LABEL_TO_KEY_MAP = Object.fromEntries(
-  KEYWORD_OPTIONS.map((opt) => [opt.label, opt.key])
-);
 
 export function EditPostModal({
   post,
@@ -50,17 +38,16 @@ export function EditPostModal({
     location: post.location,
     maxParticipants: post.maxParticipants,
   });
-  // post.keywords는 ['FOOD'] 형태이므로, 화면 표시를 위해 한글 레이블로 변환합니다.
-  const [selectedKeywordLabels, setSelectedKeywordLabels] = useState<string[]>(
-    post.keywords.map(translateKeyword)
-  );
+  const initialKeywords = (post.keywords ?? []) as KeywordValue[];
+  const [selectedKeywords, setSelectedKeywords] =
+    useState<KeywordValue[]>(initialKeywords);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const toggleKeyword = (keywordLabel: string) => {
-    setSelectedKeywordLabels((prev) =>
-      prev.includes(keywordLabel)
-        ? prev.filter((k) => k !== keywordLabel)
-        : [...prev, keywordLabel]
+  const toggleKeyword = (keyword: KeywordValue) => {
+    setSelectedKeywords((prev) =>
+      prev.includes(keyword)
+        ? prev.filter((k) => k !== keyword)
+        : [...prev, keyword]
     );
   };
 
@@ -68,12 +55,7 @@ export function EditPostModal({
     e.preventDefault();
     setIsSubmitting(true);
 
-    // API 전송을 위해 선택된 한글 레이블을 영문 key로 변환합니다.
-    const keywordsForApi = selectedKeywordLabels.map(
-      (label) => KEYWORD_LABEL_TO_KEY_MAP[label]
-    );
-
-    const updatedPostData = { ...formData, keywords: keywordsForApi };
+    const updatedPostData = { ...formData, keywords: selectedKeywords };
 
     try {
       await client.patch(`/posts/${post.id}`, updatedPostData);
@@ -225,18 +207,18 @@ export function EditPostModal({
             <div className="flex flex-wrap gap-2">
               {KEYWORD_OPTIONS.map((keyword) => (
                 <Badge
-                  key={keyword.key}
+                  key={keyword.value}
                   variant={
-                    selectedKeywordLabels.includes(keyword.label)
+                    selectedKeywords.includes(keyword.value)
                       ? 'default'
                       : 'outline'
                   }
                   className={`cursor-pointer transition-colors ${
-                    selectedKeywordLabels.includes(keyword.label)
+                    selectedKeywords.includes(keyword.value)
                       ? 'bg-blue-600 hover:bg-blue-700'
                       : 'hover:bg-gray-100'
                   }`}
-                  onClick={() => toggleKeyword(keyword.label)}
+                  onClick={() => toggleKeyword(keyword.value)}
                 >
                   {keyword.label}
                 </Badge>

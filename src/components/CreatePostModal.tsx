@@ -7,6 +7,7 @@ import { Label } from './ui/label';
 import { Badge } from './ui/badge';
 import { useAuthStore } from '../store/authStore';
 import client from '../api/client';
+import { KEYWORD_OPTIONS, type KeywordValue } from '../utils/keyword';
 
 interface CreatePostModalProps {
   onClose: () => void;
@@ -19,15 +20,8 @@ interface PostData {
   endDate: string;
   location: string;
   maxParticipants: number;
-  keywords: string[];
+  keywords: KeywordValue[];
 }
-
-const KEYWORD_OPTIONS = [
-  { key: 'FOOD', label: '음식' },
-  { key: 'ACCOMMODATION', label: '숙박' },
-  { key: 'ACTIVITY', label: '액티비티' },
-  { key: 'TRANSPORT', label: '교통' },
-];
 
 /**
  * 동행 모집 게시글을 생성하는 API를 호출
@@ -51,9 +45,9 @@ export function CreatePostModal({ onClose }: CreatePostModalProps) {
     maxParticipants: 2,
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedKeywords, setSelectedKeywords] = useState<string[]>([]);
+  const [selectedKeywords, setSelectedKeywords] = useState<KeywordValue[]>([]);
 
-  const toggleKeyword = (keyword: string) => {
+  const toggleKeyword = (keyword: KeywordValue) => {
     setSelectedKeywords((prev) =>
       prev.includes(keyword)
         ? prev.filter((k) => k !== keyword)
@@ -247,18 +241,18 @@ export function CreatePostModal({ onClose }: CreatePostModalProps) {
             <div className="flex flex-wrap gap-2">
               {KEYWORD_OPTIONS.map((option) => (
                 <Badge
-                  key={option.key}
+                  key={option.value}
                   variant={
-                    selectedKeywords.includes(option.key)
+                    selectedKeywords.includes(option.value)
                       ? 'default'
                       : 'outline'
                   }
                   className={`cursor-pointer transition-colors ${
-                    selectedKeywords.includes(option.key)
+                    selectedKeywords.includes(option.value)
                       ? 'bg-blue-600 hover:bg-blue-700'
                       : 'hover:bg-gray-100'
                   }`}
-                  onClick={() => toggleKeyword(option.key)}
+                  onClick={() => toggleKeyword(option.value)}
                 >
                   {option.label}
                 </Badge>

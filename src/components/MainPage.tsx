@@ -7,6 +7,7 @@ import { type Post } from '../types/post';
 import { MainPostCardSkeleton } from './MainPostCardSkeleton';
 import { WorkspaceCarousel } from './WorkspaceCarousel';
 import { useAuthStore } from '../store/authStore';
+import type { MatchCandidateDto, MatchResponseDto } from '../types/matching';
 
 interface MainPageProps {
   onSearch: (params: {
@@ -103,6 +104,7 @@ export function MainPage({
   const [userPosts, setUserPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true); // Single loading state for both sections
   const { user, isAuthLoading } = useAuthStore(); // Get user and isAuthLoading from auth store
+  const [matches, setMatches] = useState<MatchCandidateDto[]>([]);
 
   useEffect(() => {
     // isAuthLoading이 true일 때는 API 호출을 하지 않습니다.
@@ -147,6 +149,7 @@ export function MainPage({
       }
     };
 
+
     fetchAllPosts();
   }, [
     isLoggedIn,
@@ -155,6 +158,34 @@ export function MainPage({
     isAuthLoading,
     fetchTrigger,
   ]); // Add fetchTrigger to dependency array
+  
+  //matching 유사도로 내용 받아오기.. dto 안에 있는 내용중 선별해서 받아오면 됨. setmatches 안에 넣어놈
+  //TODO:: 나중에 매칭 로직 확정될떄 불러오기
+  // useEffect(() => {
+  //   const fetchMatches = async () => {
+  //     try {
+  //       const res = await client.post<MatchResponseDto>('/matching/search', {
+  //         limit: 5,
+  //       });
+  //       console.log('match response', res.data.matches);
+  //       setMatches(res.data.matches ?? []);
+  //     } catch (err) {
+  //       console.error('Failed to fetch matches', err);
+  //     }
+  //   };
+  //   fetchMatches();
+  //   console.log('search 완료!');
+  // }, []);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e?.preventDefault();
+    onSearch({
+      startDate: searchStartDate,
+      endDate: searchEndDate,
+      location: searchLocation,
+      title: searchTitle,
+    });
+  };
 
   return (
     <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-gray-50">
