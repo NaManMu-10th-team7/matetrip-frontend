@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Routes,
   Route,
   useNavigate,
   useLocation,
   Outlet,
+  useParams,
 } from 'react-router-dom';
 import { Header } from './components/Header';
 import { MainPage } from './components/MainPage';
@@ -24,8 +25,9 @@ import client from './api/client';
 import type { CreateWorkspaceResponse } from './types/workspace';
 import type { Post } from './types/post';
 import { Toaster } from 'sonner';
+import { Dialog, DialogContent } from './components/ui/dialog';
+import { ProfileModal } from './components/ProfileModal';
 import PublicOnlyRoute from './components/PublicOnlyRoute';
-
 
 // Layout component for pages with Header
 function Layout({
@@ -36,6 +38,7 @@ function Layout({
   onProfileClick,
   onCreatePost,
   onLogoClick,
+  onSearch,
 }: {
   isLoggedIn: boolean;
   isAuthLoading: boolean;
@@ -44,9 +47,12 @@ function Layout({
   onProfileClick: () => void;
   onCreatePost: () => void;
   onLogoClick: () => void;
+  onSearch: (query: string) => void;
 }) {
   return (
-    <>
+    <div className="flex flex-col h-screen">
+      {' '}
+      {/* flex-col과 h-screen 유지 */}
       <Header
         isLoggedIn={isLoggedIn}
         isAuthLoading={isAuthLoading}
@@ -55,15 +61,32 @@ function Layout({
         onProfileClick={onProfileClick}
         onCreatePost={onCreatePost}
         onLogoClick={onLogoClick}
+        onSearch={onSearch}
       />
-      <Outlet />
-    </>
+      <div className="flex-1 overflow-y-auto">
+        {' '}
+        {/* overflow-hidden 대신 overflow-y-auto 추가 */}
+        <Outlet />
+      </div>
+    </div>
   );
 }
 
 // Wrapper components for route handling
-function MainPageWrapper() {
+function MainPageWrapper({
+  isLoggedIn,
+  onCreatePost,
+  onViewPost,
+  fetchTrigger,
+}: {
+  isLoggedIn: boolean;
+  onCreatePost: () => void;
+  onViewPost: (postId: string) => void;
+  fetchTrigger: number;
+}) {
   const navigate = useNavigate();
+  const { isLoggedIn: isLoggedInFromStore } = useAuthStore(); // 스토어에서 직접 가져오기
+  const finalIsLoggedIn = isLoggedIn ?? isLoggedInFromStore;
 
   const handleSearch = (params: {
     startDate?: string;
@@ -79,20 +102,13 @@ function MainPageWrapper() {
     navigate(`/search?${searchParams.toString()}`);
   };
 
-  const handleViewPost = (postId: string) => {
-    navigate(`/post/${postId}`);
-  };
-
-  const handleUserClick = (userId: string) => {
-    // userId도 string일 가능성이 높으므로 함께 변경
-    navigate(`/profile/${userId}`);
-  };
-
   return (
     <MainPage
       onSearch={handleSearch}
-      onViewPost={handleViewPost}
-      onUserClick={handleUserClick}
+      onViewPost={onViewPost}
+      isLoggedIn={finalIsLoggedIn}
+      onCreatePost={onCreatePost}
+      fetchTrigger={fetchTrigger}
     />
   );
 }
@@ -110,75 +126,10 @@ function SearchResultsWrapper() {
   };
 
   const handleViewPost = (postId: string) => {
-    navigate(`/post/${postId}`);
+    navigate(`/posts/${postId}`);
   };
 
   return <SearchResults searchParams={params} onViewPost={handleViewPost} />;
-}
-
-function PostDetailWrapper({
-  isLoggedIn,
-  onEditPost,
-}: {
-  // onEditPost prop의 postId 타입을 string으로 변경
-  isLoggedIn: boolean;
-  onEditPost: (post: Post) => void;
-}) {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const postId = location.pathname.split('/').pop() || ''; // postId를 string으로 직접 추출
-
-  const handleJoinWorkspace = (postId: string, workspaceName: string) => {
-    // TODO : 워크스페이스 생성 API를 호출해서 생성된 id 를 반환해야 함.
-    const createAndNavigate = async () => {
-      // 디버깅용 로그
-      console.log(`postId`, postId);
-      console.log(`workspaceName`, workspaceName);
-
-      try {
-        // API 응답 데이터 구조에 맞게 타입과 변수명 수정
-        const response = await client.post<CreateWorkspaceResponse>(
-          '/workspace',
-          { postId, workspaceName }
-        );
-
-        // 디버깅용 로그
-        console.log(`=== POST /workspace 응답 ===`);
-        console.log(response.data);
-
-        const { planDayDtos, workspaceResDto } = response.data;
-        const { id, workspaceName: resWorkspaceName } = workspaceResDto;
-
-        // 디버깅용 로그
-        console.log(`id`, id);
-        console.log(`workspaceName`, resWorkspaceName);
-        console.log(`planDayDtos`, planDayDtos);
-
-        // navigate의 state를 사용하여 워크스페이스 이름을 전달합니다.
-        navigate(`/workspace/${id}`, {
-          state: { workspaceName: resWorkspaceName, planDayDtos },
-        });
-      } catch (error) {
-        console.error('Failed to create or join workspace:', error);
-        alert('워크스페이스에 입장하는 중 오류가 발생했습니다.');
-      }
-    };
-    createAndNavigate();
-  };
-
-  const handleViewProfile = (userId: string) => {
-    navigate(`/profile/${userId}`);
-  };
-
-  return (
-    <PostDetail
-      postId={postId}
-      isLoggedIn={isLoggedIn}
-      onJoinWorkspace={handleJoinWorkspace}
-      onEditPost={onEditPost} // onEditPost를 그대로 전달
-      onViewProfile={handleViewProfile}
-    />
-  );
 }
 
 function WorkspaceWrapper() {
@@ -198,36 +149,6 @@ function WorkspaceWrapper() {
       workspaceName={workspaceName}
       planDayDtos={planDayDtos}
       onEndTrip={handleEndTrip}
-    />
-  );
-}
-
-function ProfileWrapper({
-  isLoggedIn,
-  loggedInUserId,
-}: {
-  isLoggedIn: boolean;
-  loggedInUserId?: string;
-}) {
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  // 어떤 userId를 사용할지 결정합니다:
-  // 경로가 정확히 '/profile'인 경우, 로그인된 사용자의 ID (loggedInUserId)를 사용합니다.
-  // 그 외의 경우 (예: '/profile/:userId'), URL에서 userId를 파싱합니다.
-  const userIdFromUrl = location.pathname.split('/').pop() || ''; // userId를 string으로 직접 추출
-  const targetUserId =
-    location.pathname === '/profile' ? loggedInUserId : userIdFromUrl;
-
-  const handleViewPost = (postId: string) => {
-    navigate(`/post/${postId}`);
-  };
-
-  return (
-    <Profile
-      isLoggedIn={isLoggedIn}
-      onViewPost={handleViewPost}
-      userId={targetUserId}
     />
   );
 }
@@ -262,6 +183,27 @@ function ReviewPageWrapper() {
   return <ReviewPage onComplete={handleComplete} />;
 }
 
+/**
+ * URL 경로에 따라 PostDetail 모달을 열어주는 트리거 컴포넌트입니다.
+ * /posts/:id 경로로 직접 진입하거나 새로고침 시 모달이 열리도록 합니다.
+ */
+function PostDetailModalTrigger({
+  onViewPost,
+}: {
+  onViewPost: (postId: string) => void;
+}) {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (id) {
+      onViewPost(id);
+    }
+  }, [id, onViewPost]);
+
+  return null; // 이 컴포넌트는 UI를 렌더링하지 않습니다.
+}
+
 export default function App() {
   const navigate = useNavigate();
 
@@ -280,6 +222,17 @@ export default function App() {
   const [selectedPostForEdit, setSelectedPostForEdit] = useState<Post | null>(
     null
   );
+  const [profileModalState, setProfileModalState] = useState<{
+    open: boolean;
+    userId: string | null;
+  }>({ open: false, userId: null });
+
+  const [postDetailModalState, setPostDetailModalState] = useState<{
+    open: boolean;
+    postId: string | null;
+  }>({ open: false, postId: null });
+
+  const [fetchTrigger, setFetchTrigger] = useState(0);
 
   // 앱이 처음 로드될 때 쿠키를 통해 로그인 상태를 확인합니다.
   // checkAuth 함수는 Zustand 스토어에 의해 안정적으로 제공되므로 의존성 배열에 포함해도 안전합니다.
@@ -296,19 +249,45 @@ export default function App() {
 
   const handleLogout = async () => {
     await storeLogout(); // Zustand 스토어의 logout 액션을 호출하여 상태를 업데이트합니다.
-    navigate('/');
+    navigate('/login');
   };
 
   const handleProfileClick = () => {
-    navigate('/profile');
+    if (user?.userId) {
+      // navigate('/profile');
+      setProfileModalState({ open: true, userId: user.userId });
+    }
   };
 
   const handleLogoClick = () => {
     navigate('/');
   };
 
+  const handleSearch = (query: string) => {
+    const searchParams = new URLSearchParams({ title: query });
+    navigate(`/search?${searchParams.toString()}`);
+  };
+
+  const handleViewProfile = (userId: string) => {
+    setProfileModalState({ open: true, userId });
+  };
+
+  const handleViewPost = useCallback(
+    (postId: string) => {
+      setPostDetailModalState({ open: true, postId });
+      navigate(`/posts/${postId}`, { replace: true });
+    },
+    [navigate]
+  );
+
+  const handleDeleteSuccess = () => {
+    setFetchTrigger((prev) => prev + 1); // fetch 트리거 상태 변경
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="h-screen bg-gray-50">
+      {' '}
+      {/* h-screen 유지 */}
       <Toaster position="top-right" />
       {isLoggedIn && <NotificationListener />}
       <Routes>
@@ -335,45 +314,46 @@ export default function App() {
               onProfileClick={handleProfileClick}
               onCreatePost={() => setShowCreatePost(true)}
               onLogoClick={handleLogoClick}
+              onSearch={handleSearch}
             />
           }
         >
-          <Route path="/" element={<MainPageWrapper />} />
+          <Route
+            path="/"
+            element={
+              <MainPageWrapper
+                isLoggedIn={isLoggedIn}
+                onViewPost={handleViewPost}
+                onCreatePost={() => setShowCreatePost(true)}
+                fetchTrigger={fetchTrigger}
+              />
+            }
+          />
           <Route path="/search" element={<SearchResultsWrapper />} />
           <Route
-            path="/post/:id"
+            path="/posts/:id"
             element={
-              <PostDetailWrapper
-                isLoggedIn={isLoggedIn}
-                onEditPost={(post) => {
-                  setSelectedPostForEdit(post);
-                  setShowEditPost(true);
-                }}
-              />
+              <>
+                {/* 배경으로 메인 페이지를 렌더링합니다. */}
+                <MainPageWrapper isLoggedIn={isLoggedIn} onViewPost={handleViewPost} onCreatePost={() => setShowCreatePost(true)} fetchTrigger={fetchTrigger} />
+                <PostDetailModalTrigger onViewPost={handleViewPost} />
+              </>
             }
           />
           <Route path="/workspace/:id" element={<WorkspaceWrapper />} />
-          <Route
-            path="/profile"
-            element={
-              <ProfileWrapper
-                isLoggedIn={isLoggedIn}
-                loggedInUserId={user?.userId}
-              />
-            }
-          />
-          <Route
-            path="/profile/:userId"
-            element={<ProfileWrapper isLoggedIn={isLoggedIn} />} // userId는 URL에서 파싱
-          />
           <Route path="/review" element={<ReviewPageWrapper />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
-
       {/* Modals */}
       {showCreatePost && (
-        <CreatePostModal onClose={() => setShowCreatePost(false)} />
+        <CreatePostModal
+          onClose={() => setShowCreatePost(false)}
+          onSuccess={() => {
+            setShowCreatePost(false);
+            handleDeleteSuccess(); // 재사용
+          }}
+        />
       )}
       {showEditPost && selectedPostForEdit && (
         <EditPostModal
@@ -381,10 +361,75 @@ export default function App() {
           onClose={() => setShowEditPost(false)} // 사용자가 X 버튼이나 취소 버튼을 눌렀을 때
           onSuccess={() => {
             setShowEditPost(false); // 모달 닫기
-            alert('게시물이 성공적으로 수정되었습니다.');
-            navigate(0); // 현재 페이지 새로고침하여 데이터 갱신
+            // PostDetail 모달이 열려있다면, 그 모달도 닫고 새로고침
+            if (postDetailModalState.open) {
+              setPostDetailModalState({ open: false, postId: null });
+            }
+            handleDeleteSuccess(); // 재사용
           }}
         />
+      )}
+      <ProfileModal
+        open={profileModalState.open}
+        onOpenChange={(open) =>
+          setProfileModalState((prev) => ({ ...prev, open }))
+        }
+        userId={profileModalState.userId}
+        onViewPost={handleViewPost}
+      />
+      {postDetailModalState.open && postDetailModalState.postId && (
+        <Dialog
+          open={postDetailModalState.open}
+          onOpenChange={(open) => {
+            if (!open) {
+              setPostDetailModalState({ open: false, postId: null });
+              navigate('/', { replace: true }); // 모달이 닫히면 URL을 메인으로 변경
+            }
+          }}
+        >
+          <DialogContent className="w-full !max-w-[1100px] h-[90vh] p-0 flex flex-col [&>button]:hidden border-0 rounded-lg overflow-hidden">
+            <PostDetail
+              postId={postDetailModalState.postId}
+              onOpenChange={(open) => {
+                if (!open) {
+                  setPostDetailModalState({ open: false, postId: null });
+                  navigate('/', { replace: true }); // 모달이 닫히면 URL을 메인으로 변경
+                }
+              }}
+              onViewProfile={handleViewProfile}
+              onEditPost={(post) => {
+                setPostDetailModalState({ open: false, postId: null });
+                setSelectedPostForEdit(post);
+                setShowEditPost(true);
+              }}
+              onJoinWorkspace={(postId, workspaceName) => {
+                const createAndNavigate = async () => {
+                  try {
+                    const response = await client.post<CreateWorkspaceResponse>(
+                      '/workspace',
+                      { postId, workspaceName }
+                    );
+                    const { planDayDtos, workspaceResDto } = response.data;
+                    const { id, workspaceName: resWorkspaceName } =
+                      workspaceResDto;
+                    setPostDetailModalState({ open: false, postId: null });
+                    navigate(`/workspace/${id}`, {
+                      state: {
+                        workspaceName: resWorkspaceName,
+                        planDayDtos,
+                      },
+                    });
+                  } catch (error) {
+                    console.error('Failed to create or join workspace:', error);
+                    alert('워크스페이스에 입장하는 중 오류가 발생했습니다.');
+                  }
+                };
+                createAndNavigate();
+              }}
+              onDeleteSuccess={handleDeleteSuccess}
+            />
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

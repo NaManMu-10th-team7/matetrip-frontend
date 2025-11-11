@@ -1,0 +1,53 @@
+import { useState, useEffect } from 'react';
+import type { WorkspaceMember } from '../types/member';
+
+interface UseWorkspaceMembersReturn {
+  members: WorkspaceMember[];
+  isLoading: boolean;
+  error: Error | null;
+}
+
+/**
+ * 특정 워크스페이스의 멤버 목록을 가져오는 커스텀 훅
+ * @param workspaceId - 워크스페이스 ID
+ */
+export function useWorkspaceMembers(
+  workspaceId: string | null
+): UseWorkspaceMembersReturn {
+  const [members, setMembers] = useState<WorkspaceMember[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    if (!workspaceId) {
+      setIsLoading(false);
+      return;
+    }
+
+    const fetchMembers = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        // TODO: API 주소를 환경 변수 등으로 관리하는 것을 권장합니다.
+        const response = await fetch(
+          `http://localhost:3000/posts/workspace/${workspaceId}/members`
+        );
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch members: ${response.statusText}`);
+        }
+
+        const data: WorkspaceMember[] = await response.json();
+        setMembers(data);
+      } catch (e) {
+        setError(e instanceof Error ? e : new Error('An unknown error occurred'));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMembers();
+  }, [workspaceId]);
+
+  return { members, isLoading, error };
+}

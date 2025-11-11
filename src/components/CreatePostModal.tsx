@@ -30,7 +30,7 @@ interface PostData {
 async function createPost(postData: PostData) {
   // HttpOnly 쿠키 인증을 위해 기존 fetch 대신 client(axios instance)를 사용합니다.
   // withCredentials: true 설정 덕분에 쿠키가 자동으로 요청에 포함됩니다.
-  const response = await client.post('/post', postData);
+  const response = await client.post('/posts', postData);
   return response.data;
 }
 

@@ -2432,6 +2432,15 @@
     }
   }
 
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+
   .dark\:border-input:is(.dark *) {
     border-color: var(--input);
   }

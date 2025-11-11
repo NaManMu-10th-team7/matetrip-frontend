@@ -1,22 +1,12 @@
 import { useState, useEffect } from 'react';
-import {
-  Search,
-  Calendar,
-  MapPin,
-  TrendingUp,
-  Sparkles,
-  FileText,
-  ClipboardList,
-} from 'lucide-react';
-import { Input } from './ui/input';
+import { MapPin, ClipboardList, Plus } from 'lucide-react';
 import { Button } from './ui/button';
-import { Card } from './ui/card';
-import { Badge } from './ui/badge';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import client from '../api/client';
 import { type Post } from '../types/post';
-import { MainPostCard } from './MainPostCard';
 import { MainPostCardSkeleton } from './MainPostCardSkeleton';
+import { WorkspaceCarousel } from './WorkspaceCarousel';
+import { useAuthStore } from '../store/authStore';
 import type { MatchCandidateDto, MatchResponseDto } from '../types/matching';
 
 interface MainPageProps {
@@ -27,7 +17,9 @@ interface MainPageProps {
     title?: string;
   }) => void;
   onViewPost: (postId: string) => void;
-  onUserClick: (userId: string) => void;
+  onCreatePost: () => void;
+  isLoggedIn: boolean;
+  fetchTrigger: number;
 }
 
 // TODO: 백엔드 연동 시 API에서 추천 사용자 목록 가져오기
@@ -61,76 +53,112 @@ const REGION_CATEGORIES = [
     id: 1,
     name: '제주도',
     image:
-      'https://images.unsplash.com/photo-1614088459293-5669fadc3448?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0cmF2ZWwlMjBkZXN0aW5hdGlvbnxlbnwxfHx8fDE3NjE4NjQwNzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
+      'https://images.unsplash.com/photo-1614088459293-5669fadc3448?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHx0cmF2ZWwlMjBkZXN0aW5hdGlvbnxlbnwxfHx8fDE3NjE4NjQwNzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
     description: '힐링 여행의 성지',
   },
   {
     id: 2,
     name: '부산',
     image:
-      'https://images.unsplash.com/photo-1665231342828-229205867d94?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxiZWFjaCUyMHBhcmFkaXNlfGVufDF8fHx8MTc2MTg4Mzg2MHww&ixlib=rb-4.1.0&q=80&w=1080',
+      'https://images.unsplash.com/photo-1665231342828-229205867d94?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxiZWFjaCUyMHBhcmFhZGlzZfGVufDF8fHx8MTc2MTg4Mzg2MHww&ixlib=rb-4.1.0&q=80&w=1080',
     description: '바다와 도시의 조화',
   },
   {
     id: 3,
     name: '서울',
     image:
-      'https://images.unsplash.com/photo-1597552661064-af143a5f3bee?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzZW91bCUyMGtvcmVhfGVufDF8fHx8MTc2MTk4MjQzNHww&ixlib=rb-4.1.0&q=80&w=1080',
+      'https://images.unsplash.com/photo-1597552661064-af143a5f3bee?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxzZW91bCUyMGtvcmVhfGVufDF8fHx8MTc2MTk4MjQzNHww&ixlib=rb-4.1.0&q=80&w=1080',
     description: '트렌디한 도심 여행',
   },
   {
     id: 4,
     name: '경주',
     image:
-      'https://images.unsplash.com/photo-1668850443435-c01eec56c4e5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxneWVvbmdqdSUyMGtvcmVhfGVufDF8fHx8MTc2MTk4MjQzNHww&ixlib=rb-4.1.0&q=80&w=1080',
+      'https://images.unsplash.com/photo-1668850443435-c01eec56c4e5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxnYnllb25namUlMjBrb3JlYXxlbnwxfHx8fDE3NjE5ODI0MzR8MA&ixlib=rb-4.1.0&q=80&w=1080',
     description: '역사 문화 탐방',
   },
   {
     id: 5,
     name: '강릉',
     image:
-      'https://images.unsplash.com/photo-1684042229029-8a899193a8e4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxnYW5nbmV1bmclMjBrb3JlYXxlbnwxfHx8fDE3NjE5ODI0MzV8MA&ixlib=rb-4.1.0&q=80&w=1080',
+      'https://images.unsplash.com/photo-1684042229029-8a99193a8e4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxnYW5nbmV1bmclMjBrb3JlYXxlbnwxfHx8fDE3NjE5ODI0MzV8MA&ixlib=rb-4.1.0&q=80&w=1080',
     description: '동해안의 낭만',
   },
   {
     id: 6,
     name: '전주',
     image:
-      'https://images.unsplash.com/photo-1520645521318-f03a712f0e67?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjaXR5JTIwdHJhdmVsfGVufDF8fHx8MTc2MTkxMjEzMXww&ixlib=rb-4.1.0&q=80&w=1080',
+      'https://images.unsplash.com/photo-1520645521318-f03a12f0e67?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxjaXR5JTIwdHJhdmVsfGVufDF8fHx8MTc2MTkxMjEzMXww&ixlib=rb-4.1.0&q=80&w=1080',
     description: '맛집 투어의 메카',
   },
 ];
 
-export function MainPage({ onSearch, onViewPost, onUserClick }: MainPageProps) {
-  const [searchStartDate, setSearchStartDate] = useState('');
-  const [searchEndDate, setSearchEndDate] = useState('');
-  const [searchLocation, setSearchLocation] = useState('');
-  const [searchTitle, setSearchTitle] = useState('');
-
+export function MainPage({
+  onSearch,
+  onViewPost,
+  onCreatePost,
+  isLoggedIn,
+  fetchTrigger,
+}: MainPageProps) {
   const [posts, setPosts] = useState<Post[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [userPosts, setUserPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState(true); // Single loading state for both sections
+  const { user, isAuthLoading } = useAuthStore(); // Get user and isAuthLoading from auth store
   const [matches, setMatches] = useState<MatchCandidateDto[]>([]);
 
   useEffect(() => {
-    const fetchInitialPosts = async () => {
+    // isAuthLoading이 true일 때는 API 호출을 하지 않습니다.
+    // user 정보가 완전히 로드될 때까지 기다립니다.
+    if (isAuthLoading) {
+      setIsLoading(true); // 인증 정보 로딩 중에는 전체 페이지 로딩 상태 유지
+      return;
+    }
+
+    const fetchAllPosts = async () => {
       setIsLoading(true);
       try {
-        const response = await client.get<Post[]>('/post');
+        const [initialPostsResponse, userPostsResponse] = await Promise.all([
+          client.get<Post[]>('/posts'),
+          isLoggedIn && user?.userId
+            ? client.get<Post[]>(`/posts/user/${user.userId}`)
+            : Promise.resolve({ data: [] }), // If not logged in or userId not available, resolve with empty array
+        ]);
+
         // 최신 글이 위로 오도록 생성일(createdAt) 기준으로 정렬합니다.
-        const sortedPosts = response.data.sort(
+        const sortedInitialPosts = initialPostsResponse.data.sort(
           (a, b) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
-        setPosts(sortedPosts);
+        setPosts(sortedInitialPosts);
+        console.log(`최신 동행 글 목록`, sortedInitialPosts);
+
+        if (isLoggedIn && user?.userId) {
+          const sortedUserPosts = userPostsResponse.data.sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+          setUserPosts(sortedUserPosts);
+          console.log(`${user.profile.nickname}님이 참여중인 여행`, sortedUserPosts);
+        } else {
+          setUserPosts([]);
+        }
       } catch (error) {
         console.error('Failed to fetch posts:', error);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchInitialPosts();
-  }, []);
 
+
+    fetchAllPosts();
+  }, [
+    isLoggedIn,
+    user?.userId,
+    user?.profile.nickname,
+    isAuthLoading,
+    fetchTrigger,
+  ]); // Add fetchTrigger to dependency array
+  
   //matching 유사도로 내용 받아오기.. dto 안에 있는 내용중 선별해서 받아오면 됨. setmatches 안에 넣어놈
   //TODO:: 나중에 매칭 로직 확정될떄 불러오기
   // useEffect(() => {
@@ -160,114 +188,55 @@ export function MainPage({ onSearch, onViewPost, onUserClick }: MainPageProps) {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Hero Section with Search */}
-      <div className="text-center mb-12">
-        {/* Search Box */}
-        <Card className="mx-auto p-6">
-          <form onSubmit={handleSearch}>
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <Input
-                  type="date"
-                  aria-label="여행 시작일"
-                  value={searchStartDate}
-                  onChange={(e) => setSearchStartDate(e.target.value)}
-                  className="pl-10 w-full"
-                />
-              </div>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <Input
-                  type="date"
-                  aria-label="여행 종료일"
-                  value={searchEndDate}
-                  onChange={(e) => setSearchEndDate(e.target.value)}
-                  className="pl-10 w-full"
-                />
-              </div>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <Input
-                  placeholder="여행지"
-                  aria-label="여행지"
-                  value={searchLocation}
-                  onChange={(e) => setSearchLocation(e.target.value)}
-                  className="pl-10 w-full"
-                />
-              </div>
-              <div className="relative flex-1">
-                <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <Input
-                  placeholder="게시글 제목"
-                  aria-label="게시글 제목"
-                  value={searchTitle}
-                  onChange={(e) => setSearchTitle(e.target.value)}
-                  className="pl-10 w-full"
-                />
-              </div>
-              <Button
-                type="submit"
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 gap-2 flex-shrink-0"
-              >
-                <Search className="w-4 h-4" />
-                검색
-              </Button>
+    <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-gray-50">
+      {/* --- User's Participating Trips Section --- */}
+      {isLoggedIn && (
+        <section className="mb-12">
+          <div className="flex items-center gap-2 mb-6">
+            <ClipboardList className="w-5 h-5 text-blue-600" />
+            <h2 className="text-xl font-bold text-gray-900">
+              {isLoading ? (
+                <div className="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>
+              ) : (
+                // user?.profile.nickname은 isLoading이 false일 때 안전하게 접근 가능
+                `${user?.profile.nickname}님이 참여중인 여행`
+              )}
+            </h2>
+          </div>
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <MainPostCardSkeleton key={index} />
+              ))}
             </div>
-          </form>
-        </Card>
-      </div>
+          ) : userPosts.length === 0 ? (
+            <div className="text-center text-gray-500 py-10">
+              참여중인 게시글이 없습니다.
+            </div>
+          ) : (
+            <WorkspaceCarousel
+              posts={userPosts}
+              onCardClick={(post) => onViewPost(post.id)}
+            />
+          )}
+        </section>
+      )}
 
-      {/* Recommended Users Section */}
-      <section className="mb-12">
-        <div className="flex items-center gap-2 mb-6">
-          <Sparkles className="w-5 h-5 text-purple-600" />
-          <h2 className="text-gray-900">당신과 잘 맞는 동행</h2>
-          <Badge variant="secondary" className="ml-2">
-            AI 추천
-          </Badge>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {RECOMMENDED_USERS.map((user) => (
-            <Card
-              key={user.id}
-              className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
-              onClick={() => {
-                onUserClick(user.id);
-              }}
-            >
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full" />
-                <div className="flex-1">
-                  <h3 className="text-gray-900 mb-1">{user.name}</h3>
-                  <div className="flex items-center gap-1 text-sm text-purple-600">
-                    <TrendingUp className="w-4 h-4" />
-                    <span>{user.matchRate}% 매칭</span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {user.travelStyle.map((style) => (
-                  <Badge key={style} variant="secondary" className="text-xs">
-                    {style}
-                  </Badge>
-                ))}
-              </div>
-            </Card>
-          ))}
-        </div>
-      </section>
-
-      {/* Recent Posts Section */}
+      {/* --- Recent Posts Section --- */}
       <section className="mb-12">
         <div className="flex items-center gap-2 mb-6">
           <ClipboardList className="w-5 h-5 text-blue-600" />
-          <h2 className="text-gray-900">최신 동행 모집</h2>
+          <h2 className="text-xl font-bold text-gray-900">
+            {isLoading ? (
+              <div className="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>
+            ) : (
+              '최신 동행 모집'
+            )}
+          </h2>
         </div>
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: 6 }).map((_, index) => (
+            {Array.from({ length: 3 }).map((_, index) => (
               <MainPostCardSkeleton key={index} />
             ))}
           </div>
@@ -276,24 +245,18 @@ export function MainPage({ onSearch, onViewPost, onUserClick }: MainPageProps) {
             최신 게시글이 없습니다.
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* 최신 6개의 게시글만 보여줍니다. */}
-            {posts.slice(0, 6).map((post) => (
-              <MainPostCard
-                key={post.id}
-                post={post}
-                onClick={() => onViewPost(post.id)}
-              />
-            ))}
-          </div>
+          <WorkspaceCarousel
+            posts={posts}
+            onCardClick={(post) => onViewPost(post.id)}
+          />
         )}
       </section>
 
-      {/* Region Categories */}
+      {/* --- Region Categories Section --- */}
       <section>
         <div className="flex items-center gap-2 mb-6">
           <MapPin className="w-5 h-5 text-blue-600" />
-          <h2 className="text-gray-900">인기 여행지</h2>
+          <h2 className="text-xl font-bold text-gray-900">인기 여행지</h2>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {REGION_CATEGORIES.map((region) => (
@@ -316,6 +279,16 @@ export function MainPage({ onSearch, onViewPost, onUserClick }: MainPageProps) {
           ))}
         </div>
       </section>
+
+      {isLoggedIn && (
+        <Button
+          onClick={onCreatePost}
+          className="fixed bottom-8 right-8 w-14 h-14 rounded-full shadow-lg bg-blue-600 hover:bg-blue-700 transition-all flex items-center justify-center z-40"
+          aria-label="게시글 작성"
+        >
+          <Plus className="w-6 h-6 text-white" />
+        </Button>
+      )}
     </div>
   );
 }

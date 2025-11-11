@@ -13,19 +13,19 @@ export function MainPostCardSkeleton() {
         <div className="mb-3">
           <div className="flex justify-between items-start mb-2">
             {/* Title Skeleton */}
-            <Skeleton className="h-6 w-3/4" style={{ animationDelay: '0.1s' }} />
+            <Skeleton className="h-6 w-3/4" />
             {/* Status Badge Skeleton */}
-            <Skeleton className="h-6 w-16" style={{ animationDelay: '0.2s' }} />
+            <Skeleton className="h-6 w-16" />
           </div>
           {/* Writer Nickname Skeleton */}
-          <Skeleton className="h-4 w-1/3" style={{ animationDelay: '0.3s' }} />
+          <Skeleton className="h-4 w-1/3" />
         </div>
 
         <div className="space-y-2 text-sm text-gray-600 mb-4">
           {/* Location Skeleton */}
-          <Skeleton className="h-4 w-1/2" style={{ animationDelay: '0.4s' }} />
+          <Skeleton className="h-4 w-1/2" />
           {/* Date Skeleton */}
-          <Skeleton className="h-4 w-2/3" style={{ animationDelay: '0.5s' }} />
+          <Skeleton className="h-4 w-2/3" />
         </div>
       </div>
 
@@ -33,11 +33,9 @@ export function MainPostCardSkeleton() {
         {/* Keyword Badges Skeleton */}
         <Skeleton
           className="h-6 w-20 rounded-full"
-          style={{ animationDelay: '0.6s' }}
         />
         <Skeleton
           className="h-6 w-24 rounded-full"
-          style={{ animationDelay: '0.7s' }}
         />
       </div>
     </Card>
