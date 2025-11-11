@@ -16,8 +16,8 @@ export interface MatchRecruitingPostDto {
 export interface MatchCandidateDto {
   userId: string;
   score: number;
-  overlappingTravelTendencyTypes: TravelStyleType[];
-  overlappingTravelTendencies: TravelTendencyType[];
+  overlappingTravelStyles: TravelStyleType[];
+  overlappingTendencies: TravelTendencyType[];
   mbtiMatchScore: number;
   recruitingPost?: MatchRecruitingPostDto | null;
 }
