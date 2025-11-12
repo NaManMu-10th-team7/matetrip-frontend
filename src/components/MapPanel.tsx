@@ -483,9 +483,9 @@ export function MapPanel({
               <Polyline
                 key={`${layer.id}-segment-${index}`} // 각 세그먼트별 고유 키
                 path={segment.path}
-                strokeWeight={3}
+                strokeWeight={5}
                 strokeColor={layer.color}
-                strokeOpacity={0.8}
+                strokeOpacity={0.9}
                 strokeStyle={'solid'}
               />
             ));
@@ -499,9 +499,9 @@ export function MapPanel({
             <Polyline
               key={layer.id}
               path={path}
-              strokeWeight={3}
+              strokeWeight={5}
               strokeColor={layer.color}
-              strokeOpacity={0.8}
+              strokeOpacity={0.9}
               strokeStyle={'solid'}
             />
           ) : null;
