@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { MapPin, ClipboardList, Plus } from 'lucide-react';
 import { Button } from './ui/button';
 import { ImageWithFallback } from './figma/ImageWithFallback';
@@ -6,8 +6,9 @@ import client from '../api/client';
 import { type Post } from '../types/post';
 import { MainPostCardSkeleton } from './MainPostCardSkeleton';
 import { WorkspaceCarousel } from './WorkspaceCarousel';
+import { MatchingCarousel } from './MatchingCarousel';
 import { useAuthStore } from '../store/authStore';
-import type { MatchCandidateDto } from '../types/matching';
+import type { MatchCandidateDto, MatchingInfo } from '../types/matching';
 
 interface MainPageProps {
   onSearch: (params: {
@@ -66,6 +67,45 @@ const REGION_CATEGORIES = [
     description: '맛집 투어의 메카',
   },
 ];
+
+const normalizeOverlapText = (values?: unknown): string | undefined => {
+  if (!values) {
+    return undefined;
+  }
+
+  const arrayValues = Array.isArray(values) ? values : [values];
+
+  const normalized = arrayValues
+    .map((value) => {
+      if (!value) {
+        return '';
+      }
+      if (typeof value === 'string') {
+        return value;
+      }
+      if (typeof value === 'object') {
+        const candidate = value as Record<string, unknown>;
+        if (typeof candidate.label === 'string') {
+          return candidate.label;
+        }
+        if (typeof candidate.value === 'string') {
+          return candidate.value;
+        }
+        if (typeof candidate.name === 'string') {
+          return candidate.name;
+        }
+      }
+      return String(value);
+    })
+    .map((text) => text.trim())
+    .filter((text) => text.length > 0);
+
+  if (!normalized.length) {
+    return undefined;
+  }
+
+  return normalized.join(', ');
+};
 
 export function MainPage({
   onSearch,
@@ -163,6 +203,65 @@ export function MainPage({
   //   });
   // };
 
+  const { recommendedPosts, matchingInfoByPostId } = useMemo(() => {
+    const toPercent = (value?: number) => {
+      if (value === undefined || value === null) {
+        return 0;
+      }
+      return Math.round(value <= 1 ? value * 100 : value);
+    };
+
+    const entries: Array<{ post: Post; info: MatchingInfo }> = [];
+    const seenPostIds = new Set<string>();
+
+    matches.forEach((candidate) => {
+      const matchedPost = posts.find((post) => {
+        const writerIds = [
+          post.writerId,
+          post.writer?.id,
+          post.writerProfile?.id,
+        ].filter(Boolean);
+        return writerIds.includes(candidate.userId);
+      });
+
+      if (!matchedPost || seenPostIds.has(matchedPost.id)) {
+        return;
+      }
+
+      seenPostIds.add(matchedPost.id);
+
+      const tendencyText = normalizeOverlapText(
+        candidate.overlappingTendencies
+      );
+
+      const styleText = normalizeOverlapText(candidate.overlappingTravelStyles);
+
+      entries.push({
+        post: matchedPost,
+        info: {
+          score: toPercent(candidate.score),
+          vectorscore:
+            candidate.vectorScore !== undefined
+              ? toPercent(candidate.vectorScore)
+              : undefined,
+          tendency: tendencyText,
+          style: styleText,
+        },
+      });
+    });
+
+    return {
+      recommendedPosts: entries.map((entry) => entry.post),
+      matchingInfoByPostId: entries.reduce<Record<string, MatchingInfo>>(
+        (acc, entry) => {
+          acc[entry.post.id] = entry.info;
+          return acc;
+        },
+        {}
+      ),
+    };
+  }, [matches, posts]);
+
   return (
     <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-gray-50">
       {/* --- User's Participating Trips Section --- */}
@@ -215,13 +314,14 @@ export function MainPage({
                   <MainPostCardSkeleton key={index} />
                 ))}
               </div>
-            ) : posts.length === 0 ? (
+            ) : recommendedPosts.length === 0 ? (
               <div className="text-center text-gray-500 py-10">
-                최신 게시글이 없습니다.
+                추천할 게시글이 없습니다.
               </div>
             ) : (
-              <WorkspaceCarousel
-                posts={posts}
+              <MatchingCarousel
+                posts={recommendedPosts}
+                matchingInfoByPostId={matchingInfoByPostId}
                 onCardClick={(post) => onViewPost(post.id)}
               />
             )}
