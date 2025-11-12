@@ -119,6 +119,10 @@ export function MainPage({
   const [isLoading, setIsLoading] = useState(true); // Single loading state for both sections
   const { user, isAuthLoading } = useAuthStore(); // Get user and isAuthLoading from auth store
   const [matches, setMatches] = useState<MatchCandidateDto[]>([]);
+  const [isMatchesLoading, setIsMatchesLoading] = useState(true);
+  const [featuredView, setFeaturedView] = useState<'latest' | 'recommended'>(
+    'latest'
+  );
 
   useEffect(() => {
     // isAuthLoading이 true일 때는 API 호출을 하지 않습니다.
@@ -184,6 +188,7 @@ export function MainPage({
   //TODO:: 나중에 매칭 로직 확정될떄 불러오기
   useEffect(() => {
     const fetchMatches = async () => {
+      setIsMatchesLoading(true);
       try {
         const res = await client.post<MatchCandidateDto[]>('/matching/search', {
           limit: 5,
@@ -192,6 +197,8 @@ export function MainPage({
         setMatches(res.data ?? []);
       } catch (err) {
         console.error('Failed to fetch matches', err);
+      } finally {
+        setIsMatchesLoading(false);
       }
     };
     fetchMatches();
@@ -207,6 +214,12 @@ export function MainPage({
   //     title: searchTitle,
   //   });
   // };
+
+  useEffect(() => {
+    if (!isLoggedIn && featuredView === 'recommended') {
+      setFeaturedView('latest');
+    }
+  }, [featuredView, isLoggedIn]);
 
   const { recommendedPosts, matchingInfoByPostId } = useMemo(() => {
     const toPercent = (value?: number) => {
@@ -267,6 +280,25 @@ export function MainPage({
     };
   }, [matches, posts]);
 
+  const activeFeaturedView =
+    featuredView === 'recommended' && isLoggedIn ? 'recommended' : 'latest';
+
+  const featuredTitle =
+    activeFeaturedView === 'recommended' && user
+      ? `${user?.profile.nickname}님, 이런 동행은 어떠세요?`
+      : '최신 동행 모집';
+
+  const isFeaturedLoading =
+    activeFeaturedView === 'recommended' ? isMatchesLoading : isLoading;
+
+  const featuredItems =
+    activeFeaturedView === 'recommended' ? recommendedPosts : posts;
+
+  const featuredEmptyMessage =
+    activeFeaturedView === 'recommended'
+      ? '추천할 게시글이 없습니다.'
+      : '최신 게시글이 없습니다.';
+
   return (
     <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-gray-50">
       {/* --- User's Participating Trips Section --- */}
@@ -301,64 +333,67 @@ export function MainPage({
               />
             )}
           </section>
-          {/* ---추천 동행 --- */}
-          <section className="mb-12">
-            <div className="flex items-center gap-2 mb-6">
-              <ClipboardList className="w-5 h-5 text-blue-600" />
-              <h2 className="text-xl font-bold text-gray-900">
-                {isLoading ? (
-                  <div className="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>
-                ) : (
-                  `${user?.profile.nickname}님, 이런 동행은 어떠세요?`
-                )}
-              </h2>
-            </div>
-            {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {Array.from({ length: 3 }).map((_, index) => (
-                  <MainPostCardSkeleton key={index} />
-                ))}
-              </div>
-            ) : recommendedPosts.length === 0 ? (
-              <div className="text-center text-gray-500 py-10">
-                추천할 게시글이 없습니다.
-              </div>
-            ) : (
-              <MatchingCarousel
-                posts={recommendedPosts}
-                matchingInfoByPostId={matchingInfoByPostId}
-                onCardClick={(post) => onViewPost(post.id)}
-              />
-            )}
-          </section>
         </>
       )}
 
-      {/* --- Recent Posts Section --- */}
+      {/* --- Featured Section (Latest / Recommended toggle) --- */}
       <section className="mb-12">
-        <div className="flex items-center gap-2 mb-6">
-          <ClipboardList className="w-5 h-5 text-blue-600" />
-          <h2 className="text-xl font-bold text-gray-900">
-            {isLoading ? (
-              <div className="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>
-            ) : (
-              '최신 동행 모집'
-            )}
-          </h2>
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-2">
+            <ClipboardList className="w-5 h-5 text-blue-600" />
+            <h2 className="text-xl font-bold text-gray-900">
+              {isFeaturedLoading ? (
+                <div className="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>
+              ) : (
+                featuredTitle
+              )}
+            </h2>
+          </div>
+          <div className="flex items-center gap-2 bg-white rounded-full p-1 shadow-sm">
+            <button
+              type="button"
+              onClick={() => setFeaturedView('latest')}
+              className={`px-4 py-1 text-sm font-medium rounded-full transition ${
+                activeFeaturedView === 'latest'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              최신글 보기
+            </button>
+            <button
+              type="button"
+              onClick={() => setFeaturedView('recommended')}
+              disabled={!isLoggedIn}
+              className={`px-4 py-1 text-sm font-medium rounded-full transition ${
+                activeFeaturedView === 'recommended'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 hover:text-gray-900'
+              } ${!isLoggedIn ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              추천 동행
+            </button>
+          </div>
         </div>
-        {isLoading ? (
+        {isFeaturedLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 3 }).map((_, index) => (
               <MainPostCardSkeleton key={index} />
             ))}
           </div>
-        ) : posts.length === 0 ? (
+        ) : featuredItems.length === 0 ? (
           <div className="text-center text-gray-500 py-10">
-            최신 게시글이 없습니다.
+            {featuredEmptyMessage}
           </div>
+        ) : activeFeaturedView === 'recommended' ? (
+          <MatchingCarousel
+            posts={featuredItems}
+            matchingInfoByPostId={matchingInfoByPostId}
+            onCardClick={(post) => onViewPost(post.id)}
+          />
         ) : (
           <WorkspaceCarousel
-            posts={posts}
+            posts={featuredItems}
             onCardClick={(post) => onViewPost(post.id)}
           />
         )}
