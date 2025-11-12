@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from '../store/authStore';
+import { WEBSOCKET_CHAT_URL } from '../constants.ts';
 
 const ChatEvent = {
   JOIN: 'join',
@@ -54,11 +55,13 @@ export function useChatSocket(workspaceId: string) {
 
   useEffect(() => {
     if (!workspaceId || !username) {
-      console.warn('Workspace ID or username is missing. Skipping socket connection.');
+      console.warn(
+        'Workspace ID or username is missing. Skipping socket connection.'
+      );
       return;
     }
 
-    const socket = io('http://localhost:3004/chat', {
+    const socket = io(`${WEBSOCKET_CHAT_URL}/chat`, {
       transports: ['websocket'],
       query: { workspaceId, username }, // 초기 연결 시 쿼리 파라미터로 전달
     });
@@ -86,7 +89,8 @@ export function useChatSocket(workspaceId: string) {
     socket.on(ChatEvent.JOINED, (payload: string | ChatMessageResDto) => {
       console.log('[Event] JOINED 수신:', payload);
       try {
-        const parsedPayload = typeof payload === 'string' ? JSON.parse(payload) : payload;
+        const parsedPayload =
+          typeof payload === 'string' ? JSON.parse(payload) : payload;
         if (parsedPayload.username && parsedPayload.message) {
           // 일반 메시지
           setMessages((prevMessages) => [
@@ -135,7 +139,10 @@ export function useChatSocket(workspaceId: string) {
     return () => {
       console.log('Disconnecting chat socket...');
       if (socketRef.current?.connected) {
-        socketRef.current.emit(ChatEvent.LEAVE, { workspaceId, username } as LeaveChatReqDto);
+        socketRef.current.emit(ChatEvent.LEAVE, {
+          workspaceId,
+          username,
+        } as LeaveChatReqDto);
       }
       socket.off('connect');
       socket.off('disconnect');
@@ -149,7 +156,8 @@ export function useChatSocket(workspaceId: string) {
 
   const sendMessage = useCallback(
     (message: string) => {
-      if (socketRef.current && isConnected && message.trim() && userId) { // userId가 있는지 확인
+      if (socketRef.current && isConnected && message.trim() && userId) {
+        // userId가 있는지 확인
         const messagePayload: CreateMessageReqDto = {
           workspaceId,
           username,
@@ -173,7 +181,7 @@ export function useChatSocket(workspaceId: string) {
         });
       }
     },
-    [workspaceId, username, isConnected, userId], // 의존성 배열에 userId 추가
+    [workspaceId, username, isConnected, userId] // 의존성 배열에 userId 추가
   );
 
   return { messages, sendMessage, isConnected };
