@@ -167,35 +167,66 @@ export function MainPage({
     <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-gray-50">
       {/* --- User's Participating Trips Section --- */}
       {isLoggedIn && (
-        <section className="mb-12">
-          <div className="flex items-center gap-2 mb-6">
-            <ClipboardList className="w-5 h-5 text-blue-600" />
-            <h2 className="text-xl font-bold text-gray-900">
-              {isLoading ? (
-                <div className="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>
-              ) : (
-                // user?.profile.nickname은 isLoading이 false일 때 안전하게 접근 가능
-                `${user?.profile.nickname}님이 참여중인 여행`
-              )}
-            </h2>
-          </div>
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {Array.from({ length: 3 }).map((_, index) => (
-                <MainPostCardSkeleton key={index} />
-              ))}
+        <>
+          <section className="mb-12">
+            <div className="flex items-center gap-2 mb-6">
+              <ClipboardList className="w-5 h-5 text-blue-600" />
+              <h2 className="text-xl font-bold text-gray-900">
+                {isLoading ? (
+                  <div className="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>
+                ) : (
+                  // user?.profile.nickname은 isLoading이 false일 때 안전하게 접근 가능
+                  `${user?.profile.nickname}님이 참여중인 여행`
+                )}
+              </h2>
             </div>
-          ) : userPosts.length === 0 ? (
-            <div className="text-center text-gray-500 py-10">
-              참여중인 게시글이 없습니다.
+            {isLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <MainPostCardSkeleton key={index} />
+                ))}
+              </div>
+            ) : userPosts.length === 0 ? (
+              <div className="text-center text-gray-500 py-10">
+                참여중인 게시글이 없습니다.
+              </div>
+            ) : (
+              <WorkspaceCarousel
+                posts={userPosts}
+                onCardClick={(post) => onViewPost(post.id)}
+              />
+            )}
+          </section>
+          {/* ---추천 동행 --- */}
+          <section className="mb-12">
+            <div className="flex items-center gap-2 mb-6">
+              <ClipboardList className="w-5 h-5 text-blue-600" />
+              <h2 className="text-xl font-bold text-gray-900">
+                {isLoading ? (
+                  <div className="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>
+                ) : (
+                  `${user?.profile.nickname}님, 이런 동행은 어떠세요?`
+                )}
+              </h2>
             </div>
-          ) : (
-            <WorkspaceCarousel
-              posts={userPosts}
-              onCardClick={(post) => onViewPost(post.id)}
-            />
-          )}
-        </section>
+            {isLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <MainPostCardSkeleton key={index} />
+                ))}
+              </div>
+            ) : posts.length === 0 ? (
+              <div className="text-center text-gray-500 py-10">
+                최신 게시글이 없습니다.
+              </div>
+            ) : (
+              <WorkspaceCarousel
+                posts={posts}
+                onCardClick={(post) => onViewPost(post.id)}
+              />
+            )}
+          </section>
+        </>
       )}
 
       {/* --- Recent Posts Section --- */}
