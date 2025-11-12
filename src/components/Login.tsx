@@ -4,7 +4,6 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Checkbox } from './ui/checkbox';
-import { ImageWithFallback } from './figma/ImageWithFallback';
 import client from '../api/client';
 import type { ApiErrorResponse, LoginSuccessResponse } from '../types';
 import { useNavigate } from 'react-router-dom';
@@ -65,10 +64,10 @@ export function Login({ onLogin, onSignupClick }: LoginProps) {
     }
   };
 
-  const handleSocialLogin = (provider: 'google' | 'kakao') => {
-    // Handle social login logic
-    console.log(`Login with ${provider}`);
-  };
+  // const handleSocialLogin = (provider: 'google' | 'kakao') => {
+  //   // Handle social login logic
+  //   console.log(`Login with ${provider}`);
+  // };
 
   const handlePasswordReset = (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,7 +139,9 @@ export function Login({ onLogin, onSignupClick }: LoginProps) {
               </div>
 
               {errorMessage && (
-                <p className="text-red-500 text-sm text-center">{errorMessage}</p>
+                <p className="text-red-500 text-sm text-center">
+                  {errorMessage}
+                </p>
               )}
 
               <div className="flex items-center justify-between">
