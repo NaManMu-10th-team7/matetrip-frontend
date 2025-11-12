@@ -7,7 +7,7 @@ import { type Post } from '../types/post';
 import { MainPostCardSkeleton } from './MainPostCardSkeleton';
 import { WorkspaceCarousel } from './WorkspaceCarousel';
 import { useAuthStore } from '../store/authStore';
-import type { MatchCandidateDto, MatchResponseDto } from '../types/matching';
+import type { MatchCandidateDto } from '../types/matching';
 
 interface MainPageProps {
   onSearch: (params: {
@@ -153,15 +153,15 @@ export function MainPage({
     console.log('search 완료!');
   }, []);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e?.preventDefault();
-    onSearch({
-      startDate: searchStartDate,
-      endDate: searchEndDate,
-      location: searchLocation,
-      title: searchTitle,
-    });
-  };
+  // const handleSearch = (e: React.FormEvent) => {
+  //   e?.preventDefault();
+  //   onSearch({
+  //     startDate: searchStartDate,
+  //     endDate: searchEndDate,
+  //     location: searchLocation,
+  //     title: searchTitle,
+  //   });
+  // };
 
   return (
     <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-gray-50">
