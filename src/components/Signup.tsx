@@ -58,6 +58,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // Form data
   const [formData, setFormData] = useState({
@@ -156,9 +157,8 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
           // }
 
           // summary 랑 embedding 호출
-
-          // 로그인 성공 시 부모 컴포넌트의 onSignup 함수 호출 (상태 업데이트 및 페이지 이동)
-          onSignup();
+          // 로그인 성공 시 성공 모달을 띄웁니다.
+          setShowSuccessModal(true);
         }
       }
     } catch (error) {
@@ -554,6 +554,27 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
             </button>
           </p>
         </div>
+
+        {/* Success Modal */}
+        {showSuccessModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-8 text-center">
+              <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-6" />
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                회원가입 성공!
+              </h3>
+              <p className="text-gray-600 mb-8">
+                MateTrip에 오신 것을 환영합니다.
+              </p>
+              <Button
+                onClick={onSignup}
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              >
+                확인
+              </Button>
+            </div>
+          </div>
+        )}
     </div>
   );
 }
