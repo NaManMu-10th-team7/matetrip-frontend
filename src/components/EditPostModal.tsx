@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { X, Calendar, MapPin, Users, Tag } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
 import { Badge } from './ui/badge';
-import type { Post } from './PostCard';
+import type { Post } from '../types/post';
 import client from '../api/client';
 import { KEYWORD_OPTIONS, type KeywordValue } from '../utils/keyword';
 
@@ -13,16 +13,6 @@ interface EditPostModalProps {
   onClose: () => void;
   onSuccess: () => void;
   post: Post;
-}
-
-interface PostData {
-  title: string;
-  description: string;
-  startDate: string;
-  endDate: string;
-  location: string;
-  maxParticipants: number;
-  keywords: KeywordValue[];
 }
 
 export function EditPostModal({

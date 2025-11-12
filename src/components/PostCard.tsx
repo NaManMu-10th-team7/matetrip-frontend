@@ -1,40 +1,9 @@
-import { Calendar, MapPin, Users, Thermometer } from 'lucide-react';
-import { type BadgeProps, Badge } from './ui/badge';
+import { Calendar, MapPin, Users } from 'lucide-react';
+import { Badge } from './ui/badge';
 import { Card } from './ui/card';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { translateKeyword } from '../utils/keyword';
-
-// Define WriterProfile interface based on the new API response
-interface WriterProfile {
-  id: string;
-  nickname: string;
-  gender?: string;
-  description?: string;
-  intro?: string;
-  mbtiTypes?: string;
-  travelStyles?: string[];
-}
-
-interface Post {
-  id: string; // Changed from number to string
-  writerId: string; // Added
-  writerProfile: WriterProfile; // Added
-  createdAt: string; // Added
-  title: string;
-  // author: string; // Removed, replaced by writerProfile.nickname
-  // authorTemp?: number; // Removed, not in new API response
-  image?: string; // Made optional, as per SearchResults.tsx passing a fallback
-  // date: string; // Removed, replaced by startDate and endDate
-  startDate: string; // Added
-  endDate: string; // Added
-  location: string;
-  participants?: number; // Made optional, not in sample JSON
-  maxParticipants: number;
-  keywords: string[];
-  status: '모집중' | '모집완료' | '여행중' | '여행완료'; // Expanded based on MainPostCard's getStatusBadgeClass
-  description?: string; // Made optional, not in sample JSON
-  matchRate?: number;
-}
+import { type Post } from '../types/post';
 
 interface PostCardProps {
   post: Post;
@@ -50,7 +19,7 @@ export function PostCard({ post, onClick, image }: PostCardProps) {
     >
       <div className="relative h-48">
         <ImageWithFallback
-          src={image || post.image}
+          src={image}
           alt={post.title}
           className="w-full h-full object-cover"
         />
@@ -69,7 +38,9 @@ export function PostCard({ post, onClick, image }: PostCardProps) {
         <div className="flex items-center gap-2 mb-3">
           <div className="w-6 h-6 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full" />
           {/* Display writer's nickname */}
-          <span className="text-sm text-gray-600">{post.writerProfile?.nickname || '알 수 없는 사용자'}</span>
+          <span className="text-sm text-gray-600">
+            {post.writerProfile?.nickname || '알 수 없는 사용자'}
+          </span>
           {/* authorTemp and its display are removed as they are not in the new API response */}
         </div>
 
@@ -86,7 +57,10 @@ export function PostCard({ post, onClick, image }: PostCardProps) {
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4" />
             <span>
-              {post.participants !== undefined ? `${post.participants} / ` : ''}{post.maxParticipants}명
+              {post.participations !== undefined
+                ? `${post.participations} / `
+                : ''}
+              {post.maxParticipants}명
             </span>
           </div>
         </div>

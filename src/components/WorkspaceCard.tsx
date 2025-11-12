@@ -2,7 +2,6 @@ import { ImageWithFallback } from './figma/ImageWithFallback';
 import { MapPin, Calendar, Users } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { translateKeyword } from '../utils/keyword';
-import { Button } from './ui/button';
 import type { Post } from '../types/post';
 
 interface WorkspaceCardProps {
@@ -16,9 +15,9 @@ interface WorkspaceCardProps {
 export function WorkspaceCard({
   post,
   onClick,
-  onEnterClick,
-  showEnterButton,
-  buttonText,
+  // onEnterClick,
+  // showEnterButton,
+  // buttonText,
 }: WorkspaceCardProps) {
   const {
     title,
@@ -48,11 +47,11 @@ export function WorkspaceCard({
   // 참여자 목록을 구성합니다. writer와 participations를 사용합니다.
   const displayParticipants = [
     {
-      id: writer.id,
-      name: writer.profile?.nickname || '알 수 없음', // nullish coalescing operator 추가
+      id: writer?.id,
+      name: writer?.profile?.nickname || '알 수 없음', // nullish coalescing operator 추가
       profileImage:
-        writer.profile?.profileImageId ||
-        `https://ui-avatars.com/api/?name=${writer.profile?.nickname}&background=random`,
+        writer?.profile?.profileImageId ||
+        `https://ui-avatars.com/api/?name=${writer?.profile?.nickname}&background=random`,
     },
     ...(participations || [])
       .filter((p) => p.status === '승인')

@@ -21,13 +21,15 @@ import {
 import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import type { Poi } from '../hooks/usePoiSocket';
-import type { DayLayer, KakaoPlace, RouteSegment } from './MapPanel';
+import { type DayLayer, type KakaoPlace, type RouteSegment } from './MapPanel';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import React from 'react'; // React Fragment 사용을 위해 import
 
 const KAKAO_MAP_SERVICES_STATUS = window.kakao?.maps.services.Status;
 type KakaoPagination = kakao.maps.Pagination;
+type PlacesSearchResult = kakao.maps.services.PlacesSearchResult;
+type PlacesSearchResultStatus = kakao.maps.services.Status;
 
 interface PageInfo {
   current: number;
@@ -273,18 +275,18 @@ function SearchPanel({
 
   const searchCallback = useCallback(
     (
-      data: KakaoPlace[],
-      status: kakao.maps.services.Status,
-      pagi: KakaoPagination
+      result: PlacesSearchResult,
+      status: PlacesSearchResultStatus,
+      pagination: KakaoPagination
     ) => {
       if (status === KAKAO_MAP_SERVICES_STATUS.OK) {
-        setResults(data);
-        paginationRef.current = pagi;
+        setResults(result as KakaoPlace[]);
+        paginationRef.current = pagination;
         setPageInfo({
-          current: pagi.current,
-          last: pagi.last,
-          hasPrevPage: pagi.hasPrevPage,
-          hasNextPage: pagi.hasNextPage,
+          current: pagination.current,
+          last: pagination.last,
+          hasPrevPage: pagination.hasPrevPage,
+          hasNextPage: pagination.hasNextPage,
         });
       } else {
         setResults([]);

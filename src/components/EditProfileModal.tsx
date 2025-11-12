@@ -7,6 +7,8 @@ import { ImageWithFallback } from './figma/ImageWithFallback';
 import { X, Upload, Trash2, Lock } from 'lucide-react';
 import { useState } from 'react';
 import { Badge } from './ui/badge';
+import { TRAVEL_STYLE_TYPES } from '../constants/travelStyle';
+import { TRAVEL_TENDENCY_TYPE } from '../constants/travelTendencyType';
 
 interface EditProfileModalProps {
   open: boolean;
@@ -19,10 +21,15 @@ interface EditProfileModalProps {
     intro: string; // shortBio 대신 intro 사용
     description: string; // detailedBio 대신 description 사용
     travelStyles: string[];
+    tendency: string[];
   } | null;
 }
 
-export function EditProfileModal({ open, onOpenChange, user }: EditProfileModalProps) {
+export function EditProfileModal({
+  open,
+  onOpenChange,
+  user,
+}: EditProfileModalProps) {
   const [activeTab, setActiveTab] = useState('edit');
   const [profileImage, setProfileImage] = useState(user?.profileImage || '');
   const [nickname, setNickname] = useState(user?.name || '');
@@ -31,30 +38,25 @@ export function EditProfileModal({ open, onOpenChange, user }: EditProfileModalP
   const [selectedTravelStyles, setSelectedTravelStyles] = useState<string[]>(
     user?.travelStyles || []
   );
-  const [selectedTravelPreferences, setSelectedTravelPreferences] = useState<string[]>(['액티브', '문화탐방', '#미식가']);
-  const [isTagModalOpen, setIsTagModalOpen] = useState(false);
+  const [selectedTravelTendencies, setSelectedTravelTendencies] = useState<
+    string[]
+  >(user?.tendency || []);
+  const [isTendencyModalOpen, setIsTendencyModalOpen] = useState(false);
   const [isStyleModalOpen, setIsStyleModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  console.log(user);
+
   if (!user) return null;
 
   // 사용 가능한 모든 여행 성향 태그
-  const allTags = [
-    '계획적인', '즉흥적인', '사진 중시', '맛집 탐방', '액티브',
-    '힐링', '문화 체험', '쇼핑', '자연 친화', '도시 탐방',
-    '야경 감상', '카페 투어', '역사 탐방', '로컬 체험', '예산 중시',
-    '럭셔리', '새벽 일정', '여유로운', '사교적', '조용한'
-  ];
+  const allTendencyTags = Object.values(TRAVEL_TENDENCY_TYPE);
 
   // 여행 스타일 태그
-  const allStyleTags = [
-    '가족 여행', '전구 여행', '혼자 여행', '로맨스 여행',
-    '액티브', '문화탐방', '미식가', '쇼핑', '자연',
-    '도시', '힐링', '모험', '사진', '예산중시'
-  ];
+  const allStyleTags = Object.values(TRAVEL_STYLE_TYPES);
 
   const handleImageUpload = () => {
     // S3 업로드 로직 (Mock)
@@ -62,7 +64,9 @@ export function EditProfileModal({ open, onOpenChange, user }: EditProfileModalP
   };
 
   const handleImageDelete = () => {
-    setProfileImage('https://images.unsplash.com/photo-1500648767791-00dcc994a43e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwZXJzb24l20포트레이트%7Cperson%20portrait%7Cface&ixlib=rb-4.1.0&q=80&w=1080');
+    setProfileImage(
+      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwZXJzb24l20포트레이트%7Cperson%20portrait%7Cface&ixlib=rb-4.1.0&q=80&w=1080'
+    );
   };
 
   const handleNicknameCheck = () => {
@@ -70,23 +74,25 @@ export function EditProfileModal({ open, onOpenChange, user }: EditProfileModalP
     alert('사용 가능한 닉네임입니다.');
   };
 
-  const handleRemoveTag = (tag: string) => {
-    setSelectedTravelStyles(selectedTravelStyles.filter(t => t !== tag));
+  const handleRemoveStyle = (style: string) => {
+    setSelectedTravelStyles(selectedTravelStyles.filter((s) => s !== style));
   };
 
-  const handleAddTag = (tag: string) => {
-    if (!selectedTravelStyles.includes(tag)) {
-      setSelectedTravelStyles([...selectedTravelStyles, tag]);
+  const handleAddStyle = (style: string) => {
+    if (!selectedTravelStyles.includes(style)) {
+      setSelectedTravelStyles([...selectedTravelStyles, style]);
     }
   };
 
-  const handleRemovePreference = (preference: string) => {
-    setSelectedTravelPreferences(selectedTravelPreferences.filter(p => p !== preference));
+  const handleRemoveTendency = (tendency: string) => {
+    setSelectedTravelTendencies(
+      selectedTravelTendencies.filter((t) => t !== tendency)
+    );
   };
 
-  const handleAddPreference = (preference: string) => {
-    if (!selectedTravelPreferences.includes(preference)) {
-      setSelectedTravelPreferences([...selectedTravelPreferences, preference]);
+  const handleAddTendency = (tendency: string) => {
+    if (!selectedTravelTendencies.includes(tendency)) {
+      setSelectedTravelTendencies([...selectedTravelTendencies, tendency]);
     }
   };
 
@@ -110,7 +116,10 @@ export function EditProfileModal({ open, onOpenChange, user }: EditProfileModalP
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-3xl max-h-[90vh] p-0 overflow-hidden flex flex-col" aria-describedby={undefined}>
+        <DialogContent
+          className="max-w-3xl max-h-[90vh] p-0 overflow-hidden flex flex-col"
+          aria-describedby={undefined}
+        >
           {/* 헤더 */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-10">
             <DialogTitle className="text-gray-900">프로필 수정</DialogTitle>
@@ -149,7 +158,10 @@ export function EditProfileModal({ open, onOpenChange, user }: EditProfileModalP
           </div>
 
           {/* 탭 컨텐츠 */}
-          <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 120px)' }}>
+          <div
+            className="p-6 overflow-y-auto"
+            style={{ maxHeight: 'calc(90vh - 120px)' }}
+          >
             {/* 프로필 수정 탭 */}
             {activeTab === 'edit' && (
               <div className="space-y-6">
@@ -165,13 +177,24 @@ export function EditProfileModal({ open, onOpenChange, user }: EditProfileModalP
                       <div className="absolute inset-0 rounded-full bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all" />
                     </div>
                     <div className="flex-1 flex flex-col gap-3 pt-2">
-                      <p className="text-gray-600 text-sm">프로필 사진을 업로드하거나 삭제할 수 있습니다.</p>
+                      <p className="text-gray-600 text-sm">
+                        프로필 사진을 업로드하거나 삭제할 수 있습니다.
+                      </p>
                       <div className="flex gap-3">
-                        <Button size="default" variant="default" onClick={handleImageUpload} className="flex-1">
+                        <Button
+                          size="default"
+                          variant="default"
+                          onClick={handleImageUpload}
+                          className="flex-1"
+                        >
                           <Upload className="w-4 h-4 mr-2" />
                           이미지 업로드
                         </Button>
-                        <Button size="default" variant="outline" onClick={handleImageDelete}>
+                        <Button
+                          size="default"
+                          variant="outline"
+                          onClick={handleImageDelete}
+                        >
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
@@ -189,7 +212,11 @@ export function EditProfileModal({ open, onOpenChange, user }: EditProfileModalP
                       placeholder="닉네임을 입력하세요"
                       className="flex-1"
                     />
-                    <Button size="default" variant="outline" onClick={handleNicknameCheck}>
+                    <Button
+                      size="default"
+                      variant="outline"
+                      onClick={handleNicknameCheck}
+                    >
                       중복 확인
                     </Button>
                   </div>
@@ -204,7 +231,9 @@ export function EditProfileModal({ open, onOpenChange, user }: EditProfileModalP
                     placeholder="한 줄로 자신을 소개해주세요"
                     maxLength={50}
                   />
-                  <p className="text-gray-500 text-xs text-right">{shortBio.length}/50</p>
+                  <p className="text-gray-500 text-xs text-right">
+                    {shortBio.length}/50
+                  </p>
                 </div>
 
                 {/* 상세 소개 */}
@@ -217,22 +246,24 @@ export function EditProfileModal({ open, onOpenChange, user }: EditProfileModalP
                     rows={6}
                     maxLength={500}
                   />
-                  <p className="text-gray-500 text-xs text-right">{detailedBio.length}/500</p>
+                  <p className="text-gray-500 text-xs text-right">
+                    {detailedBio.length}/500
+                  </p>
                 </div>
 
                 {/* 여행 스타일 */}
                 <div className="space-y-3">
                   <Label className="text-base font-bold">여행 스타일</Label>
                   <div className="flex flex-wrap gap-2 mb-3">
-                    {selectedTravelPreferences.map((preference) => (
+                    {selectedTravelStyles.map((style) => (
                       <Badge
-                        key={preference}
+                        key={style}
                         variant="secondary"
                         className="bg-gray-900 text-white px-3 py-1.5 flex items-center gap-2 rounded-full"
                       >
-                        #{preference}
+                        #{style}
                         <button
-                          onClick={() => handleRemovePreference(preference)}
+                          onClick={() => handleRemoveStyle(style)}
                           className="hover:text-gray-300"
                         >
                           <X className="w-3 h-3" />
@@ -253,15 +284,15 @@ export function EditProfileModal({ open, onOpenChange, user }: EditProfileModalP
                 <div className="space-y-3">
                   <Label className="text-base font-bold">여행 성향</Label>
                   <div className="flex flex-wrap gap-2 mb-3">
-                    {selectedTravelStyles.map((style) => (
+                    {selectedTravelTendencies.map((tendency) => (
                       <Badge
-                        key={style}
+                        key={tendency}
                         variant="secondary"
                         className="bg-gray-900 text-white px-3 py-1.5 flex items-center gap-2 rounded-full"
                       >
-                        #{style}
+                        #{tendency}
                         <button
-                          onClick={() => handleRemoveTag(style)}
+                          onClick={() => handleRemoveTendency(tendency)}
                           className="hover:text-gray-300"
                         >
                           <X className="w-3 h-3" />
@@ -272,7 +303,7 @@ export function EditProfileModal({ open, onOpenChange, user }: EditProfileModalP
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setIsTagModalOpen(true)}
+                    onClick={() => setIsTendencyModalOpen(true)}
                   >
                     + 추가
                   </Button>
@@ -298,7 +329,9 @@ export function EditProfileModal({ open, onOpenChange, user }: EditProfileModalP
                     disabled
                     className="bg-gray-50"
                   />
-                  <p className="text-gray-500 text-xs">이메일은 변경할 수 없습니다.</p>
+                  <p className="text-gray-500 text-xs">
+                    이메일은 변경할 수 없습니다.
+                  </p>
                 </div>
 
                 {/* 비밀번호 변경 */}
@@ -333,17 +366,47 @@ export function EditProfileModal({ open, onOpenChange, user }: EditProfileModalP
         </DialogContent>
       </Dialog>
 
-      {/* 태그 추가 모달 */}
-      <Dialog open={isTagModalOpen} onOpenChange={setIsTagModalOpen}>
-        <DialogContent className="max-w-2xl" aria-describedby={undefined}>
-          <DialogTitle className="text-gray-900 mb-4">여행 성향 태그 선택</DialogTitle>
-          <div className="grid grid-cols-4 gap-3">
-            {allTags.map((tag) => (
+      {/* 여행 성향 태그 추가 모달 */}
+      <Dialog open={isTendencyModalOpen} onOpenChange={setIsTendencyModalOpen}>
+        <DialogContent className="max-w-7xl" aria-describedby={undefined}>
+          <DialogTitle className="text-gray-900 mb-4">
+            여행 성향 태그 선택
+          </DialogTitle>
+          <div className="grid grid-cols-8 gap-3">
+            {allTendencyTags.map((tag) => (
               <button
                 key={tag}
                 onClick={() => {
-                  handleAddTag(tag);
-                  setIsTagModalOpen(false);
+                  handleAddTendency(tag);
+                  setIsTendencyModalOpen(false);
+                }}
+                className={`px-2 py-2 rounded-lg text-sm transition-colors ${
+                  selectedTravelTendencies.includes(tag)
+                    ? 'bg-gray-900 text-white cursor-not-allowed'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+                disabled={selectedTravelTendencies.includes(tag)}
+              >
+                #{tag}
+              </button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 여행 스타일 태그 추가 모달 */}
+      <Dialog open={isStyleModalOpen} onOpenChange={setIsStyleModalOpen}>
+        <DialogContent className="max-w-2xl" aria-describedby={undefined}>
+          <DialogTitle className="text-gray-900 mb-4">
+            여행 스타일 태그 선택
+          </DialogTitle>
+          <div className="grid grid-cols-4 gap-3">
+            {allStyleTags.map((tag) => (
+              <button
+                key={tag}
+                onClick={() => {
+                  handleAddStyle(tag);
+                  setIsStyleModalOpen(false);
                 }}
                 className={`px-4 py-2 rounded-lg text-sm transition-colors ${
                   selectedTravelStyles.includes(tag)
@@ -359,36 +422,12 @@ export function EditProfileModal({ open, onOpenChange, user }: EditProfileModalP
         </DialogContent>
       </Dialog>
 
-      {/* 스타일 추가 모달 */}
-      <Dialog open={isStyleModalOpen} onOpenChange={setIsStyleModalOpen}>
-        <DialogContent className="max-w-2xl" aria-describedby={undefined}>
-          <DialogTitle className="text-gray-900 mb-4">여행 선호도 태그 선택</DialogTitle>
-          <div className="grid grid-cols-4 gap-3">
-            {allStyleTags.map((tag) => (
-              <button
-                key={tag}
-                onClick={() => {
-                  handleAddPreference(tag);
-                  setIsStyleModalOpen(false);
-                }}
-                className={`px-4 py-2 rounded-lg text-sm transition-colors ${
-                  selectedTravelPreferences.includes(tag)
-                    ? 'bg-gray-900 text-white cursor-not-allowed'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-                disabled={selectedTravelPreferences.includes(tag)}
-              >
-                #{tag}
-              </button>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
-
       {/* 비밀번호 변경 모달 */}
       <Dialog open={isPasswordModalOpen} onOpenChange={setIsPasswordModalOpen}>
         <DialogContent className="max-w-md" aria-describedby={undefined}>
-          <DialogTitle className="text-gray-900 mb-4">비밀번호 변경</DialogTitle>
+          <DialogTitle className="text-gray-900 mb-4">
+            비밀번호 변경
+          </DialogTitle>
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>현재 비밀번호</Label>

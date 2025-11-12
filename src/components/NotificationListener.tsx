@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { useNotificationStore } from '../store/useNotificationStore';
 import { toast } from 'sonner';
+import { API_BASE_URL } from '../api/client.ts';
 
 export const NotificationListener = () => {
   const { user } = useAuthStore();
@@ -15,7 +16,7 @@ export const NotificationListener = () => {
     );
 
     // 2. NestJS 엔드포인트
-    const eventSourceUrl = 'http://localhost:3000/notifications/connect/';
+    const eventSourceUrl = `${API_BASE_URL}/notifications/connect/`;
 
     // 3. EventSource 생성 시 { withCredentials: true } 옵션 추가
     const eventSource = new EventSource(eventSourceUrl, {
@@ -69,7 +70,7 @@ export const NotificationListener = () => {
     });
 
     // 8. 목록 미리 갱신 이벤트
-    eventSource.addEventListener('list-stale', (event) => {
+    eventSource.addEventListener('list-stale', (_event) => {
       // 새 알림이 오면 1페이지 목록을 미리 갱신
       try {
         useNotificationStore.getState().fetchInitialNotifications();

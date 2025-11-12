@@ -1,4 +1,4 @@
-import { type UserProfile, type User } from './user';
+import { type UserProfile } from './user';
 
 export type PostStatus = '모집중' | '모집완료' | '여행중' | '여행완료';
 
@@ -6,6 +6,17 @@ export interface Writer {
   id: string;
   email: string;
   profile: UserProfile;
+}
+
+interface WriterProfile {
+  id: string;
+  nickname: string;
+  gender?: string;
+  description?: string;
+  intro?: string;
+  mbtiTypes?: string;
+  travelStyles?: string[];
+  tendency?: string[];
 }
 
 export interface Requester {
@@ -23,7 +34,9 @@ export interface Participation {
 
 export interface Post {
   id: string;
-  writer: Writer;
+  writerId: string;
+  writerProfile?: WriterProfile;
+  writer?: Writer;
   createdAt: string;
   title: string;
   content: string;

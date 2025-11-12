@@ -22,32 +22,6 @@ interface MainPageProps {
   fetchTrigger: number;
 }
 
-// TODO: 백엔드 연동 시 API에서 추천 사용자 목록 가져오기
-// const RECOMMENDED_USERS = await fetchRecommendedUsers();
-const RECOMMENDED_USERS = [
-  {
-    id: '1',
-    name: '바다조아',
-    avatar: '',
-    travelStyle: ['힐링', '사진', '맛집투어'],
-    matchRate: 95,
-  },
-  {
-    id: '2',
-    name: '산악인',
-    avatar: '',
-    travelStyle: ['액티브', '등산', '자연'],
-    matchRate: 88,
-  },
-  {
-    id: '3',
-    name: '도시탐험가',
-    avatar: '',
-    travelStyle: ['카페', '쇼핑', '핫플'],
-    matchRate: 82,
-  },
-];
-
 const REGION_CATEGORIES = [
   {
     id: 1,

@@ -12,7 +12,6 @@ import { MainPage } from './components/MainPage';
 import { SearchResults } from './components/SearchResults';
 import { PostDetail } from './components/PostDetail';
 import { Workspace } from './components/Workspace';
-import { Profile } from './components/Profile';
 import { CreatePostModal } from './components/CreatePostModal';
 import { EditPostModal } from './components/EditPostModal';
 import { Login } from './components/Login';
@@ -36,7 +35,6 @@ function Layout({
   onLoginClick,
   onLogoutClick,
   onProfileClick,
-  onCreatePost,
   onLogoClick,
   onSearch,
 }: {
@@ -59,7 +57,6 @@ function Layout({
         onLoginClick={onLoginClick}
         onLogoutClick={onLogoutClick}
         onProfileClick={onProfileClick}
-        onCreatePost={onCreatePost}
         onLogoClick={onLogoClick}
         onSearch={onSearch}
       />
@@ -199,7 +196,7 @@ function PostDetailModalTrigger({
     if (id) {
       onViewPost(id);
     }
-  }, [id, onViewPost]);
+  }, [id, onViewPost, navigate]);
 
   return null; // 이 컴포넌트는 UI를 렌더링하지 않습니다.
 }
@@ -335,7 +332,12 @@ export default function App() {
             element={
               <>
                 {/* 배경으로 메인 페이지를 렌더링합니다. */}
-                <MainPageWrapper isLoggedIn={isLoggedIn} onViewPost={handleViewPost} onCreatePost={() => setShowCreatePost(true)} fetchTrigger={fetchTrigger} />
+                <MainPageWrapper
+                  isLoggedIn={isLoggedIn}
+                  onViewPost={handleViewPost}
+                  onCreatePost={() => setShowCreatePost(true)}
+                  fetchTrigger={fetchTrigger}
+                />
                 <PostDetailModalTrigger onViewPost={handleViewPost} />
               </>
             }
@@ -347,13 +349,7 @@ export default function App() {
       </Routes>
       {/* Modals */}
       {showCreatePost && (
-        <CreatePostModal
-          onClose={() => setShowCreatePost(false)}
-          onSuccess={() => {
-            setShowCreatePost(false);
-            handleDeleteSuccess(); // 재사용
-          }}
-        />
+        <CreatePostModal onClose={() => setShowCreatePost(false)} />
       )}
       {showEditPost && selectedPostForEdit && (
         <EditPostModal
