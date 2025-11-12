@@ -1,3 +1,4 @@
+import { ImageWithFallback } from './figma/ImageWithFallback';
 import { MapPin, Calendar, CheckCircle } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { Progress } from './ui/progress'; // shadcn/ui의 Progress 컴포넌트를 import합니다.
@@ -13,6 +14,8 @@ interface MatchingCardProps {
   onClick?: () => void;
 }
 
+const coverImage = 'https://via.placeholder.com/400x300';
+
 /**
  * 이미지에 표시된 '매칭 스코어' 기반의 추천 카드를 렌더링하는 컴포넌트입니다.
  * WorkspaceCard의 기본 골격(props, 스타일)을 따릅니다.
@@ -24,7 +27,7 @@ export function MatchingCard({
 }: MatchingCardProps) {
   const { title, location, startDate, endDate, status } = post;
   const { score, tendency, style, vectorscore } = matchingInfo;
-  const formatMatchText = (value?: string, fallback = '분석 중') =>
+  const formatMatchText = (value?: string, fallback = ' [ ]') =>
     value && value.trim().length > 0 ? value : fallback;
 
   // WorkspaceCard에서 가져온 총 일수 계산 함수
@@ -39,7 +42,7 @@ export function MatchingCard({
 
   // 커버 텍스트 (예: "일본 오사카" -> "오사카")
   // 이미지에는 "Osaka"로 되어있으나, 데이터("일본 오사카")를 따르는 것이 좋습니다.
-  const coverText = location.split(' ').pop() || 'Trip';
+  //const coverText = location.split(' ').pop() || 'Trip';
 
   return (
     <div
@@ -57,8 +60,14 @@ export function MatchingCard({
       )}
 
       {/* 2. 커버 영역 (이미지 디자인 적용) */}
-      <div className="h-48 overflow-hidden flex-shrink-0 bg-green-50 flex items-center justify-center">
-        <span className="text-7xl font-bold text-green-600">{coverText}</span>
+
+      {/* 커버 이미지 */}
+      <div className="h-48 overflow-hidden flex-shrink-0">
+        <ImageWithFallback
+          src={coverImage}
+          alt={title}
+          className="w-full h-full object-cover"
+        />
       </div>
 
       {/* 3. 콘텐츠 영역 */}
@@ -104,7 +113,7 @@ export function MatchingCard({
                 {' '}
                 {formatMatchText(tendency)}
               </span>
-              이(가) 잘 맞아요
+              이(가) 동일해요
             </span>
           </div>
           <div className="flex items-start gap-2">
@@ -115,7 +124,7 @@ export function MatchingCard({
                 {' '}
                 {formatMatchText(style)}
               </span>
-              이(가) 잘 맞아요
+              이(가) 동일해요
             </span>
           </div>
           {vectorscore !== undefined && (
