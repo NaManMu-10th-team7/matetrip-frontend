@@ -84,7 +84,8 @@ export function CreatePostModal({ onClose }: CreatePostModalProps) {
     try {
       await createPost(postData);
       alert('동행 모집 게시글이 작성되었습니다.');
-      onClose(); // 성공 시 모달 닫기
+      // onClose(); // 성공 시 모달 닫기
+      window.location.reload();
     } catch (error) {
       console.error('Error creating post:', error);
       alert(
