@@ -70,12 +70,12 @@ export function WorkspaceCard({
       onClick={onClick}
     >
       {/* 상태 배지 */}
-      {status && (
+      {(status === '모집중' || status === '완료') && (
         <Badge
           className="absolute top-4 right-4 z-10 px-3 py-1 text-sm font-semibold"
-          variant={status === '모집중' ? 'default' : 'secondary'} // 상태에 따라 배지 색상 변경
+          variant={status === '모집중' ? 'default' : 'secondary'}
         >
-          {status}
+          {status === '모집중' ? '모집중' : '모집완료'}
         </Badge>
       )}
 

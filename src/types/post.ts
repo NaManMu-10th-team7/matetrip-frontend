@@ -1,6 +1,6 @@
 import { type UserProfile } from './user';
 
-export type PostStatus = '모집중' | '모집완료' | '여행중' | '여행완료';
+export type PostStatus = '모집중' | '모집완료' | '완료';
 
 export interface Writer {
   id: string;

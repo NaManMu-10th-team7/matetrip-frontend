@@ -138,12 +138,15 @@ export function MainPage({
             : Promise.resolve({ data: [] }), // If not logged in or userId not available, resolve with empty array
         ]);
 
-        // 최신 글이 위로 오도록 생성일(createdAt) 기준으로 정렬합니다.
+        // 전체 글 목록: 최신순으로 정렬
         const sortedInitialPosts = initialPostsResponse.data.sort(
           (a, b) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
-        setPosts(sortedInitialPosts);
+
+        // '최신 동행 모집' 섹션에는 '모집중'인 글만 필터링하여 설정
+        const recruitingPosts = sortedInitialPosts.filter(post => post.status === '모집중');
+        setPosts(recruitingPosts);
         console.log(`최신 동행 글 목록`, sortedInitialPosts);
 
         if (isLoggedIn && user?.userId) {

@@ -309,37 +309,40 @@ export function MapPanel({
             const data = await response.json();
             console.log(`API response for day ${dayLayer.id}:`, data);
 
-            if (data.routes && data.routes.length > 0) {
+            // 경로 정보가 있고, 그 안에 sections 배열이 있는지 확인
+            if (data.routes && data.routes.length > 0 && data.routes[0].sections) {
               const route = data.routes[0];
               const segments: RouteSegment[] = [];
 
               // Kakao API 응답의 sections 배열을 순회하며 각 세그먼트 정보 추출
-              route.sections.forEach((section: any, index: number) => {
-                const detailedPath: { lat: number; lng: number }[] = [];
-                section.roads.forEach((road: any) => {
-                  for (let i = 0; i < road.vertexes.length; i += 2) {
-                    detailedPath.push({
-                      lng: road.vertexes[i],
-                      lat: road.vertexes[i + 1],
+              if (route.sections) { // 이중 확인으로 안정성 강화
+                route.sections.forEach((section: any, index: number) => {
+                  const detailedPath: { lat: number; lng: number }[] = [];
+                  section.roads.forEach((road: any) => {
+                    for (let i = 0; i < road.vertexes.length; i += 2) {
+                      detailedPath.push({
+                        lng: road.vertexes[i],
+                        lat: road.vertexes[i + 1],
+                      });
+                    }
+                  });
+
+                  // 이 섹션이 연결하는 POI를 식별
+                  const fromPoi = dayPois[index];
+                  const toPoi = dayPois[index + 1];
+
+                  if (fromPoi && toPoi) {
+                    segments.push({
+                      fromPoiId: fromPoi.id,
+                      toPoiId: toPoi.id,
+                      duration: section.duration,
+                      distance: section.distance,
+                      path: detailedPath,
                     });
                   }
                 });
-
-                // 이 섹션이 연결하는 POI를 식별
-                const fromPoi = dayPois[index];
-                const toPoi = dayPois[index + 1];
-
-                if (fromPoi && toPoi) {
-                  segments.push({
-                    fromPoiId: fromPoi.id,
-                    toPoiId: toPoi.id,
-                    duration: section.duration,
-                    distance: section.distance,
-                    path: detailedPath,
-                  });
-                }
-              });
-              newDailyRouteInfo[dayLayer.id] = segments;
+                newDailyRouteInfo[dayLayer.id] = segments;
+              }
             } else {
               console.warn(
                 `No routes found for day ${dayLayer.id} with data:`,
@@ -480,9 +483,9 @@ export function MapPanel({
               <Polyline
                 key={`${layer.id}-segment-${index}`} // 각 세그먼트별 고유 키
                 path={segment.path}
-                strokeWeight={3}
+                strokeWeight={5}
                 strokeColor={layer.color}
-                strokeOpacity={0.8}
+                strokeOpacity={0.9}
                 strokeStyle={'solid'}
               />
             ));
@@ -496,9 +499,9 @@ export function MapPanel({
             <Polyline
               key={layer.id}
               path={path}
-              strokeWeight={3}
+              strokeWeight={5}
               strokeColor={layer.color}
-              strokeOpacity={0.8}
+              strokeOpacity={0.9}
               strokeStyle={'solid'}
             />
           ) : null;
