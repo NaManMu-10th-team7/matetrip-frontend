@@ -138,7 +138,10 @@ export function MainPage({
               new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
           );
           setUserPosts(sortedUserPosts);
-          console.log(`${user.profile.nickname}님이 참여중인 여행`, sortedUserPosts);
+          console.log(
+            `${user.profile.nickname}님이 참여중인 여행`,
+            sortedUserPosts
+          );
         } else {
           setUserPosts([]);
         }
@@ -149,7 +152,6 @@ export function MainPage({
       }
     };
 
-
     fetchAllPosts();
   }, [
     isLoggedIn,
@@ -158,24 +160,24 @@ export function MainPage({
     isAuthLoading,
     fetchTrigger,
   ]); // Add fetchTrigger to dependency array
-  
+
   //matching 유사도로 내용 받아오기.. dto 안에 있는 내용중 선별해서 받아오면 됨. setmatches 안에 넣어놈
   //TODO:: 나중에 매칭 로직 확정될떄 불러오기
-  // useEffect(() => {
-  //   const fetchMatches = async () => {
-  //     try {
-  //       const res = await client.post<MatchResponseDto>('/matching/search', {
-  //         limit: 5,
-  //       });
-  //       console.log('match response', res.data.matches);
-  //       setMatches(res.data.matches ?? []);
-  //     } catch (err) {
-  //       console.error('Failed to fetch matches', err);
-  //     }
-  //   };
-  //   fetchMatches();
-  //   console.log('search 완료!');
-  // }, []);
+  useEffect(() => {
+    const fetchMatches = async () => {
+      try {
+        const res = await client.post<MatchCandidateDto[]>('/matching/search', {
+          limit: 5,
+        });
+        console.log('match response', res.data);
+        setMatches(res.data ?? []);
+      } catch (err) {
+        console.error('Failed to fetch matches', err);
+      }
+    };
+    fetchMatches();
+    console.log('search 완료!');
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e?.preventDefault();
