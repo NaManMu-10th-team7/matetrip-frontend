@@ -137,7 +137,7 @@ function WorkspaceWrapper() {
   const planDayDtos = location.state?.planDayDtos || [];
 
   const handleEndTrip = () => {
-    navigate('/review');
+    navigate('/');
   };
 
   return (

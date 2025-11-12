@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-export const API_BASE_URL = 'http://localhost:3000';
+export const API_BASE_URL = import.meta.env.VITE_REACT_APP_SERVER_URL;
 
 // 1. axios의 기본 설정을 만듬
 const client = axios.create({

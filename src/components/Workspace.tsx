@@ -33,9 +33,9 @@ const generateColorFromString = (str: string) => {
 
   let color = '#';
   for (let i = 0; i < 3; i++) {
-    const value = (hash >> (i * 8)) & 0xff;
-    const brightValue = Math.floor(value / 2) + 128;
-    color += brightValue.toString(16).padStart(2, '0');
+    const value = (hash >> (i * 8)) & 0xff; // 0-255
+    const darkValue = Math.floor(value * 0.7); // 0-178 범위로 조정하여 어두운 색상 유도
+    color += darkValue.toString(16).padStart(2, '0');
   }
   return color.toUpperCase();
 };
