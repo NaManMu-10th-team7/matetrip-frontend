@@ -48,10 +48,31 @@ interface MapPanelProps {
   selectedPlace: KakaoPlace | null;
   mapRef: React.RefObject<kakao.maps.Map | null>;
   hoveredPoi: Poi | null;
-  unmarkPoi: (poiId: string) => void;
+  unmarkPoi: (poiId: string) => void; // usePoiSocket.ts 에서는 string | number 로 되어있지만, Workspace.tsx 에서는 string으로 사용하고 있으므로 string으로 통일
   onPoiDragEnd: (poiId: string, lat: number, lng: number) => void;
   setSelectedPlace: (place: KakaoPlace | null) => void;
   onRouteInfoUpdate?: (routeInfo: Record<string, RouteSegment[]>) => void; // 추가된 prop
+  // 경로 최적화를 위한 콜백 추가
+  onRouteOptimized?: (dayId: string, optimizedPoiIds: string[]) => void;
+  // [추가] 최적화 로직을 트리거하고 완료를 알리기 위한 props
+  optimizingDayId?: string | null;
+  onOptimizationComplete?: () => void;
+}
+
+// 카카오내비 API 응답 타입을 위한 인터페이스 추가
+interface KakaoNaviRoad {
+  name: string;
+  distance: number;
+  duration: number;
+  traffic_speed: number;
+  traffic_state: number;
+  vertexes: number[];
+}
+
+interface KakaoNaviSection {
+  distance: number;
+  duration: number;
+  roads: KakaoNaviRoad[];
 }
 
 interface PoiMarkerProps {
@@ -192,7 +213,6 @@ const PoiMarker = memo(
   }
 );
 
-
 export function MapPanel({
   itinerary,
   dayLayers,
@@ -205,6 +225,9 @@ export function MapPanel({
   onPoiDragEnd,
   setSelectedPlace,
   onRouteInfoUpdate, // 추가된 prop
+  onRouteOptimized,
+  optimizingDayId,
+  onOptimizationComplete,
 }: MapPanelProps) {
   const [mapInstance, setMapInstance] = useState<kakao.maps.Map | null>(null);
   const pendingSelectedPlaceRef = useRef<KakaoPlace | null>(null);
@@ -259,66 +282,68 @@ export function MapPanel({
     }
   }, [mapInstance, markPoi, setSelectedPlace]);
 
-  // Kakao 길찾기 API 호출 및 경로 정보 업데이트 useEffect 추가
+  // [수정] 경로 그리기 전용 useEffect: itinerary나 dayLayers가 변경될 때만 실행
   useEffect(() => {
-    console.log('useEffect for fetching daily routes triggered.');
-    console.log('Current itinerary:', itinerary);
-    console.log('Current dayLayers:', dayLayers);
-
-    const fetchDailyRoutes = async () => {
+    console.log('[Effect] Drawing routes based on itinerary change.');
+    const drawStandardRoutes = async () => {
       const newDailyRouteInfo: Record<string, RouteSegment[]> = {};
 
       for (const dayLayer of dayLayers) {
         const dayPois = itinerary[dayLayer.id];
         if (dayPois && dayPois.length >= 2) {
-          const origin = `${dayPois[0].longitude},${dayPois[0].latitude}`;
-          const destination = `${dayPois[dayPois.length - 1].longitude},${
-            dayPois[dayPois.length - 1].latitude
-          }`;
-          // 경유지는 두 번째 POI부터 마지막 POI 직전까지
-          const waypoints = dayPois
-            .slice(1, dayPois.length - 1)
-            .map((poi) => `${poi.longitude},${poi.latitude}`)
-            .join('|');
-
-          console.log(`Fetching route for day ${dayLayer.id}:`);
-          console.log(`  Origin: ${origin}`);
-          console.log(`  Destination: ${destination}`);
-          console.log(`  Waypoints: ${waypoints || 'None'}`);
-
           try {
+            const originPoi = dayPois[0];
+            const destinationPoi = dayPois[dayPois.length - 1];
+            const waypoints = dayPois.slice(1, dayPois.length - 1);
+            const requestBody = {
+              origin: {
+                x: String(originPoi.longitude),
+                y: String(originPoi.latitude),
+              },
+              destination: {
+                x: String(destinationPoi.longitude),
+                y: String(destinationPoi.latitude),
+              },
+              waypoints: waypoints.map((poi) => ({
+                name: poi.placeName,
+                x: String(poi.longitude),
+                y: String(poi.latitude),
+              })),
+              priority: 'TIME',
+              summary: true,
+              road_details: true,
+            };
+
             const response = await fetch(
-              `https://apis-navi.kakaomobility.com/v1/directions?origin=${origin}&destination=${destination}${
-                waypoints ? `&waypoints=${waypoints}` : ''
-              }`,
+              `https://apis-navi.kakaomobility.com/v1/waypoints/directions`,
               {
-                method: 'GET',
+                method: 'POST',
                 headers: {
                   Authorization: `KakaoAK ${KAKAO_REST_API_KEY}`,
+                  'Content-Type': 'application/json',
                 },
+                body: JSON.stringify(requestBody),
               }
             );
 
-            if (!response.ok) {
-              const errorText = await response.text();
-              throw new Error(
-                `HTTP error! status: ${response.status}, message: ${errorText}`
-              );
-            }
+            if (!response.ok)
+              throw new Error(`HTTP error! status: ${response.status}`);
 
             const data = await response.json();
-            console.log(`API response for day ${dayLayer.id}:`, data);
 
-            // 경로 정보가 있고, 그 안에 sections 배열이 있는지 확인
-            if (data.routes && data.routes.length > 0 && data.routes[0].sections) {
+            if (data.routes && data.routes[0]?.sections) {
               const route = data.routes[0];
               const segments: RouteSegment[] = [];
+              const currentPoisInOrder = [
+                originPoi,
+                ...waypoints,
+                destinationPoi,
+              ];
 
-              // Kakao API 응답의 sections 배열을 순회하며 각 세그먼트 정보 추출
-              if (route.sections) { // 이중 확인으로 안정성 강화
-                route.sections.forEach((section: any, index: number) => {
-                  const detailedPath: { lat: number; lng: number }[] = [];
-                  section.roads.forEach((road: any) => {
+              route.sections.forEach((section: KakaoNaviSection, index: number) => {
+                const detailedPath: { lat: number; lng: number }[] = [];
+                if (section.roads) {
+                  section.roads.forEach((road: KakaoNaviRoad) => {
                     for (let i = 0; i < road.vertexes.length; i += 2) {
                       detailedPath.push({
                         lng: road.vertexes[i],
@@ -326,28 +351,22 @@ export function MapPanel({
                       });
                     }
                   });
+                }
 
-                  // 이 섹션이 연결하는 POI를 식별
-                  const fromPoi = dayPois[index];
-                  const toPoi = dayPois[index + 1];
+                const fromPoi = currentPoisInOrder[index];
+                const toPoi = currentPoisInOrder[index + 1];
 
-                  if (fromPoi && toPoi) {
-                    segments.push({
-                      fromPoiId: fromPoi.id,
-                      toPoiId: toPoi.id,
-                      duration: section.duration,
-                      distance: section.distance,
-                      path: detailedPath,
-                    });
-                  }
-                });
-                newDailyRouteInfo[dayLayer.id] = segments;
-              }
-            } else {
-              console.warn(
-                `No routes found for day ${dayLayer.id} with data:`,
-                data
-              );
+                if (fromPoi && toPoi) {
+                  segments.push({
+                    fromPoiId: fromPoi.id,
+                    toPoiId: toPoi.id,
+                    duration: section.duration,
+                    distance: section.distance,
+                    path: detailedPath,
+                  });
+                }
+              });
+              newDailyRouteInfo[dayLayer.id] = segments;
             }
           } catch (error) {
             console.error(
@@ -364,7 +383,10 @@ export function MapPanel({
         }
       }
 
-      console.log('New daily route info before setting state:', newDailyRouteInfo);
+      console.log(
+        'New daily route info before setting state:',
+        newDailyRouteInfo
+      );
       setDailyRouteInfo(newDailyRouteInfo);
       // 경로 정보 업데이트 시 부모 컴포넌트로 전달
       if (onRouteInfoUpdate) {
@@ -372,8 +394,116 @@ export function MapPanel({
       }
     };
 
-    fetchDailyRoutes();
-  }, [itinerary, dayLayers, onRouteInfoUpdate]); // onRouteInfoUpdate를 의존성 배열에 추가
+    drawStandardRoutes();
+  }, [itinerary, dayLayers, onRouteInfoUpdate]);
+
+  // [추가] 경로 최적화 전용 useEffect: optimizingDayId가 변경될 때만 실행
+  useEffect(() => {
+    if (!optimizingDayId) return;
+
+    console.log(`[Effect] Optimizing route for day: ${optimizingDayId}`);
+
+    const optimizeRoute = async () => {
+      const dayPois = itinerary[optimizingDayId];
+      if (!dayPois || dayPois.length < 4) {
+        // 출발, 도착, 경유지 2개 이상
+        console.warn('[TSP] Not enough POIs to optimize.');
+        onOptimizationComplete?.();
+        return;
+      }
+
+      // 두 지점 간의 경로 정보를 가져오는 함수
+      const fetchDuration = async (
+        from: Poi,
+        to: Poi
+      ): Promise<{
+        from: string;
+        to: string;
+        duration: number;
+        distance: number;
+      } | null> => {
+        try {
+          // [수정] GET 요청으로 변경하고, 파라미터를 URL 쿼리 스트링으로 전달합니다.
+          const response = await fetch(
+            `https://apis-navi.kakaomobility.com/v1/directions?origin=${from.longitude},${from.latitude}&destination=${to.longitude},${to.latitude}&priority=TIME&summary=true`,
+            {
+              method: 'GET',
+              headers: {
+                Authorization: `KakaoAK ${KAKAO_REST_API_KEY}`,
+              },
+            }
+          );
+          if (!response.ok) return null;
+          const data = await response.json();
+          if (data.routes && data.routes[0] && data.routes[0].summary) {
+            return {
+              from: from.id,
+              to: to.id,
+              duration: data.routes[0].summary.duration,
+              distance: data.routes[0].summary.distance,
+            };
+          }
+          return null;
+        } catch (error) {
+          console.error(
+            `Error fetching duration between ${from.placeName} and ${to.placeName}:`,
+            error
+          );
+          return null;
+        }
+      };
+
+      try {
+        const originPoi = dayPois[0];
+        const destinationPoi = dayPois[dayPois.length - 1];
+        const waypoints = dayPois.slice(1, dayPois.length - 1);
+        console.log(
+          `[TSP] Starting optimization for day ${optimizingDayId} with ${waypoints.length} waypoints.`
+        );
+        const allPoints = [originPoi, ...waypoints, destinationPoi];
+        const promises: ReturnType<typeof fetchDuration>[] = [];
+
+        // 1. 모든 지점 쌍(pair)에 대한 API 호출 Promise 생성
+        for (let i = 0; i < allPoints.length; i++) {
+          for (let j = 0; j < allPoints.length; j++) {
+            if (i === j) continue;
+            promises.push(fetchDuration(allPoints[i], allPoints[j]));
+          }
+        }
+
+        console.log(`[TSP] Created ${promises.length} API call promises.`);
+
+        // 2. Promise.all로 모든 API를 병렬 호출
+        const results = await Promise.all(promises);
+
+        // 3. 결과로 이동 시간 행렬(Matrix) 생성
+        const durationMatrix: Record<string, Record<string, number>> = {};
+        results.forEach((result) => {
+          if (result) {
+            if (!durationMatrix[result.from]) durationMatrix[result.from] = {};
+            durationMatrix[result.from][result.to] = result.duration;
+          }
+        });
+
+        console.log('[TSP] Duration Matrix created:', durationMatrix);
+
+        // --- 여기부터는 생성된 durationMatrix를 TSP 솔버에 전달하는 부분 ---
+        // 예시: console.log만 하고, 실제 솔버 연동은 서버에서 수행하는 것을 권장합니다.
+        // const optimizedOrder = await solveTspOnServer(durationMatrix, originPoi.id, destinationPoi.id);
+        // onRouteOptimized?.(optimizingDayId, optimizedOrder);
+      } catch (error) {
+        console.error(
+          `[TSP] Error during optimization for day ${optimizingDayId}:`,
+          error
+        );
+      } finally {
+        // 최적화 작업이 성공하든 실패하든 부모에게 완료를 알림
+        onOptimizationComplete?.();
+      }
+    };
+
+    optimizeRoute();
+  }, [optimizingDayId, itinerary, onRouteOptimized, onOptimizationComplete]);
 
   const scheduledPoiData = new Map<
     string,

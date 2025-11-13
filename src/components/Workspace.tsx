@@ -79,6 +79,10 @@ export function Workspace({
   const [activePoi, setActivePoi] = useState<Poi | null>(null);
   const [hoveredPoi, setHoveredPoi] = useState<Poi | null>(null); // hoveredPoi 상태 추가
   const mapRef = useRef<kakao.maps.Map>(null);
+  // [추가] 경로 최적화를 트리거하기 위한 상태
+  const [optimizingDayId, setOptimizingDayId] = useState<string | null>(null);
+  // [추가] 최적화 완료 후 상태를 리셋하는 콜백
+  const handleOptimizationComplete = useCallback(() => setOptimizingDayId(null), []);
 
   // MapPanel에서 전달받을 경로 세그먼트 정보를 저장할 상태 추가
   const [routeSegmentsByDay, setRouteSegmentsByDay] = useState<
@@ -141,6 +145,12 @@ export function Workspace({
 
   const handlePoiLeave = useCallback(() => {
     setHoveredPoi(null);
+  }, []);
+
+  // [추가] LeftPanel에서 경로 최적화 버튼 클릭 시 호출될 핸들러
+  const handleOptimizeRoute = useCallback((dayId: string) => {
+    console.log(`[Workspace] Optimization triggered for day: ${dayId}`);
+    setOptimizingDayId(dayId);
   }, []);
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -342,6 +352,23 @@ export function Workspace({
     []
   );
 
+  // [추가] MapPanel로부터 최적화된 경로 순서를 받아 처리하는 콜백 함수
+  const handleRouteOptimized = useCallback(
+    (dayId: string, optimizedPoiIds: string[]) => {
+      const currentPois = itinerary[dayId]?.map((p) => p.id) || [];
+      // 현재 순서와 API가 제안한 최적 순서가 다를 경우에만 업데이트
+      if (JSON.stringify(currentPois) !== JSON.stringify(optimizedPoiIds)) {
+        console.log(
+          `Route optimized for day ${dayId}. Applying new order:`,
+          optimizedPoiIds
+        );
+        // reorderPois를 호출하여 서버와 다른 클라이언트에 변경사항 전파
+        reorderPois(dayId, optimizedPoiIds);
+      }
+    },
+    [itinerary, reorderPois]
+  );
+
   return (
     <DndContext
       onDragStart={handleDragStart}
@@ -375,6 +402,7 @@ export function Workspace({
             onPoiClick={handlePoiClick}
             onPoiHover={handlePoiHover} // LeftPanel에 hover 핸들러 전달
             onPoiLeave={handlePoiLeave} // LeftPanel에 leave 핸들러 전달
+            onOptimizeRoute={handleOptimizeRoute} // [추가] 최적화 핸들러 전달
             routeSegmentsByDay={routeSegmentsByDay} // LeftPanel에 경로 정보 전달
           />
 
@@ -404,6 +432,9 @@ export function Workspace({
               setSelectedPlace={setSelectedPlace}
               onRouteInfoUpdate={handleRouteInfoUpdate} // MapPanel에 콜백 함수 전달
               hoveredPoi={hoveredPoi}
+              optimizingDayId={optimizingDayId} // [추가] 최적화 트리거 상태 전달
+              onOptimizationComplete={handleOptimizationComplete} // [추가] 최적화 완료 콜백 전달
+              onRouteOptimized={handleRouteOptimized} // [추가] 최적화된 경로 콜백 전달
             />
           </div>
 

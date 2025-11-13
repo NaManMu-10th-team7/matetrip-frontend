@@ -141,21 +141,47 @@ function MarkerStorage({ pois, onPoiClick, onPoiHover, onPoiLeave, unmarkPoi, re
     );
 }
 
-function ItineraryDay({ layer, pois, onPoiClick, onPoiHover, onPoiLeave, unmarkPoi, removeSchedule, routeSegmentsByDay }: { layer: DayLayer, pois: Poi[], onPoiClick: (poi: Poi) => void, onPoiHover?: (poi: Poi) => void, onPoiLeave?: () => void, unmarkPoi: (poiId: string | number) => void, removeSchedule: (poiId: string, planDayId: string) => void, routeSegmentsByDay: Record<string, RouteSegment[]> }) {
+function ItineraryDay({
+  layer,
+  pois,
+  onPoiClick,
+  onPoiHover,
+  onPoiLeave,
+  unmarkPoi,
+  removeSchedule,
+  routeSegmentsByDay,
+  onOptimizeRoute,
+}: {
+  layer: DayLayer;
+  pois: Poi[];
+  onPoiClick: (poi: Poi) => void;
+  onPoiHover?: (poi: Poi) => void;
+  onPoiLeave?: () => void;
+  unmarkPoi: (poiId: string | number) => void;
+  removeSchedule: (poiId: string, planDayId: string) => void;
+  routeSegmentsByDay: Record<string, RouteSegment[]>;
+  onOptimizeRoute: (dayId: string) => void;
+}) {
     const { setNodeRef } = useDroppable({ id: layer.id });
     const [isCollapsed, setIsCollapsed] = useState(false);
     
     const segmentsForThisDay = routeSegmentsByDay[layer.id] || [];
 
     return (
-        <div ref={setNodeRef}>
+        <div ref={setNodeRef} className="border-b pb-2">
             <div className="flex justify-between items-center mb-2">
-                <h3
-                    className="text-sm font-bold pb-1"
-                    style={{ borderBottomColor: layer.color }}
-                >
-                    {layer.label}
-                </h3>
+                <h3 className="text-sm font-bold">{layer.label}</h3>
+                {/* [추가] 경로 최적화 버튼 */}
+                {pois.length >= 4 && ( // 출발, 도착, 경유지 2개 이상일 때만 표시
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => onOptimizeRoute(layer.id)}
+                  >
+                    경로 최적화
+                  </Button>
+                )}
                 <Button variant="ghost" size="icon" onClick={() => setIsCollapsed(!isCollapsed)}>
                     {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
                 </Button>
@@ -218,6 +244,7 @@ function ItineraryPanel({
   unmarkPoi,
   removeSchedule,
   routeSegmentsByDay,
+  onOptimizeRoute,
 }: {
   itinerary: Record<string, Poi[]>;
   dayLayers: DayLayer[];
@@ -227,6 +254,7 @@ function ItineraryPanel({
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
   routeSegmentsByDay: Record<string, RouteSegment[]>;
+  onOptimizeRoute: (dayId: string) => void;
 }) {
   return (
     <div className="p-3 space-y-2 h-full overflow-y-auto">
@@ -246,6 +274,7 @@ function ItineraryPanel({
             unmarkPoi={unmarkPoi}
             removeSchedule={removeSchedule}
             routeSegmentsByDay={routeSegmentsByDay}
+            onOptimizeRoute={onOptimizeRoute}
           />
         ))}
       </div>
@@ -377,6 +406,7 @@ interface LeftPanelProps {
   onPoiHover?: (poi: Poi) => void;
   onPoiLeave?: () => void;
   routeSegmentsByDay: Record<string, RouteSegment[]>;
+  onOptimizeRoute: (dayId: string) => void;
 }
 
 export function LeftPanel({
@@ -391,6 +421,7 @@ export function LeftPanel({
   onPoiHover,
   onPoiLeave,
   routeSegmentsByDay,
+  onOptimizeRoute,
 }: LeftPanelProps) {
   if (!isOpen) {
     return null;
@@ -424,6 +455,7 @@ export function LeftPanel({
             unmarkPoi={unmarkPoi}
             removeSchedule={removeSchedule}
             routeSegmentsByDay={routeSegmentsByDay}
+            onOptimizeRoute={onOptimizeRoute}
           />
         </TabsContent>
         <TabsContent value="search" className="flex-1 relative m-0">
