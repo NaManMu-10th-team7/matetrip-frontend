@@ -9,7 +9,7 @@ import {
 } from 'react-kakao-maps-sdk';
 import { Button } from './ui/button';
 import { KAKAO_REST_API_KEY } from '../constants'; // KAKAO_REST_API_KEY import 추가
-import { useCursorSocket } from '../hooks/usePoiSocket';
+import { type HoveredPoiInfo, type UserCursor } from '../hooks/usePoiSocket';
 import type { WorkspaceMember } from '../types/member';
 
 export interface KakaoPlace {
@@ -58,7 +58,7 @@ interface MapPanelProps {
   ) => void;
   selectedPlace: KakaoPlace | null;
   mapRef: React.RefObject<kakao.maps.Map | null>;
-  hoveredPoi: Poi | null;
+  hoveredPoiInfo: HoveredPoiInfo | null; // hoveredPoi -> hoveredPoiInfo
   unmarkPoi: (poiId: string) => void; // usePoiSocket.ts 에서는 string | number 로 되어있지만, Workspace.tsx 에서는 string으로 사용하고 있으므로 string으로 통일
   setSelectedPlace: (place: KakaoPlace | null) => void;
   onRouteInfoUpdate?: (routeInfo: Record<string, RouteSegment[]>) => void; // 추가된 prop
@@ -71,6 +71,8 @@ interface MapPanelProps {
   latestChatMessage?: ChatMessage | null;
   workspaceId: string;
   members: WorkspaceMember[];
+  cursors: Record<string, Omit<UserCursor, 'userId'>>; // cursors prop 추가
+  moveCursor: (position: { lat: number; lng: number }) => void; // moveCursor prop 추가
 }
 
 // 카카오내비 API 응답 타입을 위한 인터페이스 추가
@@ -235,16 +237,16 @@ export function MapPanel({
   markPoi,
   selectedPlace,
   unmarkPoi,
-  mapRef,
-  hoveredPoi,
+  mapRef, // hoveredPoi 제거
+  hoveredPoiInfo, // hoveredPoiInfo 추가
   setSelectedPlace,
   onRouteInfoUpdate, // 추가된 prop
   onRouteOptimized,
   optimizingDayId,
   onOptimizationComplete,
   latestChatMessage,
-  workspaceId,
-  members,
+  cursors, // props로 받음
+  moveCursor, // props로 받음
 }: MapPanelProps) {
   const [mapInstance, setMapInstance] = useState<kakao.maps.Map | null>(null);
   const pendingSelectedPlaceRef = useRef<KakaoPlace | null>(null);
@@ -263,8 +265,6 @@ export function MapPanel({
   // 채팅 말풍선 상태와 타이머 Ref를 추가합니다.
   const [chatBubbles, setChatBubbles] = useState<Record<string, string>>({});
   const chatBubbleTimers = useRef<Record<string, NodeJS.Timeout>>({});
-
-  const { cursors, moveCursor } = useCursorSocket(workspaceId, members);
 
   // 새로운 채팅 메시지를 처리하는 useEffect (말풍선 표시 로직은 그대로 유지)
   useEffect(() => {
@@ -637,10 +637,7 @@ export function MapPanel({
     optimizeRoute();
   }, [optimizingDayId, itinerary, onRouteOptimized, onOptimizationComplete]);
 
-  const scheduledPoiData = new Map<
-    string,
-    { label: string; color: string }
-  >();
+  const scheduledPoiData = new Map<string, { label: string; color: string }>();
   dayLayers.forEach((dayLayer) => {
     const dayPois = itinerary[dayLayer.id];
     if (dayPois) {
@@ -753,31 +750,44 @@ export function MapPanel({
               poi={poi}
               markerLabel={markerLabel}
               markerColor={markerColor}
-              isHovered={hoveredPoi?.id === poi.id}
+              isHovered={hoveredPoiInfo?.poiId === poi.id}
               unmarkPoi={unmarkPoi}
               isOverlayHoveredRef={isOverlayHoveredRef}
             />
           );
         })}
 
-        {/* 현재 호버된 POI가 유효한지(삭제되지 않았는지) 확인 */}
-        {(() => {
-          const isHoveredPoiValid = hoveredPoi && pois.some(p => p.id === hoveredPoi.id);
-          if (!isHoveredPoiValid) return null;
-          
-          // hoveredPoi가 유효할 때만 오버레이를 렌더링하도록 return 문 추가
-          return (
-            <CustomOverlayMap
-              position={{ lat: hoveredPoi.latitude, lng: hoveredPoi.longitude }}
-              xAnchor={0.5} // 원의 가로 중앙을 마커 좌표에 맞춤
-              yAnchor={0.9} // 원의 하단을 마커 좌표에 가깝게 맞춤
-              zIndex={4} // 다른 오버레이보다 위에 표시
-            >
-              {/* TailwindCSS animate-pulse를 사용한 강조 효과 */}
-              <div className="w-16 h-16 rounded-full border-4 border-blue-500 bg-blue-500/20 animate-pulse" />
-            </CustomOverlayMap>
-          );
-        })()}
+        {/* 다른 사용자가 호버한 POI 강조 효과 */}
+        {hoveredPoiInfo &&
+          (() => {
+            const poi = pois.find((p) => p.id === hoveredPoiInfo.poiId);
+            if (!poi) return null;
+
+            return (
+              <CustomOverlayMap
+                position={{ lat: poi.latitude, lng: poi.longitude }}
+                xAnchor={0.5}
+                yAnchor={0.8}
+                zIndex={4}
+              >
+                {/* 원과 이름표를 포함하는 컨테이너 */}
+                <div className="relative w-20 h-20 flex items-center justify-center">
+                  {/* 원형 강조 효과 */}
+                  <div className="absolute inset-0 w-full h-full rounded-full border-4 border-blue-500 bg-blue-500/20 animate-pulse" />
+                  {/* 호버한 사용자 이름 표시 */}
+                  <div
+                    className="absolute bottom-0 mb-1 px-1.5 py-0.5 rounded-full text-xs text-white"
+                    style={{
+                      backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                      fontSize: '10px',
+                    }}
+                  >
+                    {hoveredPoiInfo.userName}
+                  </div>
+                </div>
+              </CustomOverlayMap>
+            );
+          })()}
 
         {/* 지도 클릭으로 생성된 임시 마커 및 오버레이 */}
         {temporaryPlaces.map((tempPlace) => (

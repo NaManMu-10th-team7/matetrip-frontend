@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { useAuthStore } from '../store/authStore';
+import { useAuthStore } from '../store/authStore'; // isAuthLoading 제거
 import { WEBSOCKET_POI_URL } from '../constants';
-import type { WorkspaceMember } from '../types/member.ts';
+import type { WorkspaceMember as OriginalWorkspaceMember } from '../types/member.ts';
 import { API_BASE_URL } from '../api/client';
+
+// color 속성을 포함하는 새로운 타입을 정의합니다.
+export type WorkspaceMember = OriginalWorkspaceMember & { color: string };
 
 const PoiSocketEvent = {
   JOIN: 'join',
@@ -20,6 +23,8 @@ const PoiSocketEvent = {
   REMOVE_SCHEDULE: 'removeSchedule',
   CURSOR_MOVE: 'cursorMove',
   CURSOR_MOVED: 'cursorMoved',
+  POI_HOVER: 'poi:hover', // POI 호버 이벤트 추가
+  POI_HOVERED: 'poi:hovered', // POI 호버 수신 이벤트 추가
 } as const;
 
 export type Poi = {
@@ -61,15 +66,45 @@ export type UserCursor = {
   userAvatar: string;
 };
 
-export function usePoiSocket(workspaceId: string) {
+// 다른 사용자가 호버한 POI 정보를 저장할 타입
+export interface HoveredPoiInfo {
+  poiId: string;
+  userId: string;
+  userName: string;
+  userColor: string;
+}
+
+export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
   const socketRef = useRef<Socket | null>(null);
   const [pois, setPois] = useState<Poi[]>([]);
   const [isSyncing, setIsSyncing] = useState(true);
-  const { user } = useAuthStore();
+  const { user, isAuthLoading } = useAuthStore();
+  const [cursors, setCursors] = useState<Record<string, Omit<UserCursor, 'userId'>>>({});
+  const [hoveredPoiInfo, setHoveredPoiInfo] = useState<HoveredPoiInfo | null>(null);
+
+  // useCallback을 사용하여 members 상태가 변경될 때마다 함수를 재생성합니다.
+  // useEffect 밖으로 이동시킵니다.
+  const handlePoiHovered = useCallback(
+    (data: HoveredPoiInfo | null) => {
+      if (data && data.poiId && data.userId !== user?.userId) {
+        const member = members.find((m) => m.id === data.userId);
+        if (member) {
+          setHoveredPoiInfo({
+            ...data,
+            userName: member.profile.nickname,
+            userColor: member.color,
+          });
+        }
+      } else {
+        // data가 null이거나 내 이벤트일 경우 호버 정보 초기화
+        setHoveredPoiInfo(null);
+      }
+    },
+    [members, user?.userId] // members가 변경될 때마다 이 함수를 다시 생성합니다.
+  );
+
   useEffect(() => {
-    const socket = io(`${WEBSOCKET_POI_URL}/poi`, {
-      transports: ['websocket'],
-    });
+    const socket = io(`${WEBSOCKET_POI_URL}/poi`, { transports: ['websocket'] });
     socketRef.current = socket;
 
     const handleSync = (payload: { pois: Poi[] }) => {
@@ -146,6 +181,19 @@ export function usePoiSocket(workspaceId: string) {
       );
     };
 
+    const handleCursorMoved = (data: UserCursor) => {
+      if (data.userId === user?.userId) return; // 내 커서는 표시하지 않음
+      setCursors((prevCursors) => ({
+        ...prevCursors,
+        [data.userId]: {
+          position: data.position,
+          userName: data.userName,
+          userColor: data.userColor,
+          userAvatar: data.userAvatar,
+        },
+      }));
+    };
+
     socket.on('connect', () => {
       console.log('Socket connected:', socket.id);
       socket.emit(PoiSocketEvent.JOIN, { workspaceId });
@@ -157,6 +205,8 @@ export function usePoiSocket(workspaceId: string) {
     socket.on(PoiSocketEvent.ADD_SCHEDULE, handleAddSchedule);
     socket.on(PoiSocketEvent.REMOVE_SCHEDULE, handleRemoveSchedule);
     socket.on(PoiSocketEvent.REORDER, handleReorder);
+    socket.on(PoiSocketEvent.CURSOR_MOVED, handleCursorMoved);
+    socket.on(PoiSocketEvent.POI_HOVERED, handlePoiHovered);
 
     return () => {
       console.log('Disconnecting socket...');
@@ -167,9 +217,11 @@ export function usePoiSocket(workspaceId: string) {
       socket.off(PoiSocketEvent.ADD_SCHEDULE, handleAddSchedule);
       socket.off(PoiSocketEvent.REMOVE_SCHEDULE, handleRemoveSchedule);
       socket.off(PoiSocketEvent.REORDER, handleReorder);
+      socket.off(PoiSocketEvent.CURSOR_MOVED, handleCursorMoved);
+      socket.off(PoiSocketEvent.POI_HOVERED, handlePoiHovered);
       socket.disconnect();
     };
-  }, [workspaceId, user?.userId]);
+  }, [workspaceId, user?.userId, handlePoiHovered]); // useEffect의 의존성 배열에 handlePoiHovered를 추가합니다.
 
   const markPoi = useCallback(
     (poiData: Omit<CreatePoiDto, 'workspaceId' | 'createdBy' | 'id'>) => {
@@ -178,9 +230,13 @@ export function usePoiSocket(workspaceId: string) {
         return;
       }
       const payload = { ...poiData, workspaceId, createdBy: user.userId };
-      socketRef.current?.emit(PoiSocketEvent.MARK, payload, (response: any) => {
-        console.log('[Ack] MARK 응답:', response);
-      });
+      socketRef.current?.emit(
+        PoiSocketEvent.MARK,
+        payload,
+        (response: Poi | { error: string }) => {
+          console.log('[Ack] MARK 응답:', response);
+        }
+      );
     },
     [workspaceId, user?.userId]
   );
@@ -225,64 +281,11 @@ export function usePoiSocket(workspaceId: string) {
     [workspaceId]
   );
 
-  return {
-    pois,
-    setPois,
-    isSyncing,
-    markPoi,
-    unmarkPoi,
-    addSchedule,
-    removeSchedule,
-    reorderPois,
-  };
-}
-
-export function useCursorSocket(workspaceId: string, members: WorkspaceMember[]) {
-  const socketRef = useRef<Socket | null>(null);
-  const [cursors, setCursors] = useState<
-    Record<string, Omit<UserCursor, 'userId'>>
-  >({});
-  const { user, isAuthLoading } = useAuthStore();
-
-  useEffect(() => {
-    const socket = io(`${WEBSOCKET_POI_URL}/poi`, {
-      transports: ['websocket'],
-    });
-    socketRef.current = socket;
-
-    const handleCursorMoved = (data: UserCursor) => {
-      if (data.userId === user?.userId) return; // 내 커서는 표시하지 않음
-      setCursors((prevCursors) => ({
-        ...prevCursors,
-        [data.userId]: {
-          position: data.position,
-          userName: data.userName,
-          userColor: data.userColor,
-          userAvatar: data.userAvatar,
-        },
-      }));
-    };
-
-    socket.on('connect', () => {
-      socket.emit(PoiSocketEvent.JOIN, { workspaceId });
-    });
-
-    socket.on(PoiSocketEvent.CURSOR_MOVED, handleCursorMoved);
-
-    return () => {
-      socket.emit(PoiSocketEvent.LEAVE, { workspaceId });
-      socket.off(PoiSocketEvent.CURSOR_MOVED, handleCursorMoved);
-      socket.disconnect();
-    };
-  }, [workspaceId, user?.userId]);
-
   const moveCursor = useCallback(
     (position: CursorPosition) => {
       if (isAuthLoading || !user || !socketRef.current?.connected) return;
 
-      const currentUserMemberInfo = members.find(
-        (member) => member.id === user.userId
-      );
+      const currentUserMemberInfo = members.find((member) => member.id === user.userId);
 
       const userAvatarUrl = currentUserMemberInfo?.profile.profileImageId
         ? `${API_BASE_URL}/binary-content/${currentUserMemberInfo.profile.profileImageId}/presigned-url`
@@ -293,8 +296,7 @@ export function useCursorSocket(workspaceId: string, members: WorkspaceMember[])
         userId: user.userId,
         position,
         userName: currentUserMemberInfo?.profile.nickname || 'Unknown',
-        // 여기서 색상을 결정할 수 있습니다. 예시로 generateColorFromString 사용
-        userColor: '#FF0000', // 임시 색상. 실제로는 사용자별 고유 색상 로직 필요
+        userColor: currentUserMemberInfo?.color || '#FF0000',
         userAvatar: userAvatarUrl,
       };
       socketRef.current?.emit(PoiSocketEvent.CURSOR_MOVE, payload);
@@ -302,8 +304,37 @@ export function useCursorSocket(workspaceId: string, members: WorkspaceMember[])
     [workspaceId, user, isAuthLoading, members]
   );
 
+  const hoverPoi = useCallback(
+    (poiId: string | null) => {
+      if (!user || !socketRef.current?.connected) return;
+      socketRef.current?.emit(PoiSocketEvent.POI_HOVER, {
+        workspaceId,
+        poiId,
+        userId: user.userId,
+      });
+      // 내가 호버한 아이템은 로컬에서 바로 반영하여 즉각적인 UI 반응을 유도
+      const member = members.find((m) => m.id === user.userId);
+      if (poiId && member) {
+        setHoveredPoiInfo({ poiId, userId: user.userId, userName: member.profile.nickname, userColor: member.color });
+      } else {
+        setHoveredPoiInfo(null);
+      }
+    },
+    [workspaceId, user, members]
+  );
+
   return {
+    pois,
+    setPois,
+    isSyncing,
+    markPoi,
+    unmarkPoi,
+    addSchedule,
+    removeSchedule,
+    reorderPois,
     cursors,
     moveCursor,
+    hoveredPoiInfo,
+    hoverPoi,
   };
 }

@@ -64,6 +64,7 @@ export function Workspace({
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
 
   const { members } = useWorkspaceMembers(workspaceId);
+  // usePoiSocket에서 모든 상태와 함수를 가져옵니다.
   const {
     pois,
     setPois,
@@ -73,7 +74,11 @@ export function Workspace({
     addSchedule,
     removeSchedule,
     reorderPois,
-  } = usePoiSocket(workspaceId);
+    cursors,
+    moveCursor,
+    hoveredPoiInfo,
+    hoverPoi,
+  } = usePoiSocket(workspaceId, members);
   const {
     messages,
     sendMessage,
@@ -90,7 +95,6 @@ export function Workspace({
 
   const [selectedPlace, setSelectedPlace] = useState<KakaoPlace | null>(null);
   const [activePoi, setActivePoi] = useState<Poi | null>(null);
-  const [hoveredPoi, setHoveredPoi] = useState<Poi | null>(null); // hoveredPoi 상태 추가
   const mapRef = useRef<kakao.maps.Map>(null);
   // [추가] 경로 최적화를 트리거하기 위한 상태
   const [optimizingDayId, setOptimizingDayId] = useState<string | null>(null);
@@ -173,14 +177,6 @@ export function Workspace({
     );
     map.panTo(moveLatLon);
   };
-
-  const handlePoiHover = useCallback((poi: Poi) => {
-    setHoveredPoi(poi);
-  }, []);
-
-  const handlePoiLeave = useCallback(() => {
-    setHoveredPoi(null);
-  }, []);
 
   // [추가] LeftPanel에서 경로 최적화 버튼 클릭 시 호출될 핸들러
   const handleOptimizeRoute = useCallback((dayId: string) => {
@@ -421,8 +417,8 @@ export function Workspace({
             removeSchedule={removeSchedule}
             onPlaceClick={setSelectedPlace}
             onPoiClick={handlePoiClick}
-            onPoiHover={handlePoiHover} // LeftPanel에 hover 핸들러 전달
-            onPoiLeave={handlePoiLeave} // LeftPanel에 leave 핸들러 전달
+            onPoiHover={hoverPoi} // LeftPanel에 hover 핸들러 전달
+            onPoiLeave={() => hoverPoi(null)} // onPoiLeave 핸들러 추가
             onOptimizeRoute={handleOptimizeRoute} // [추가] 최적화 핸들러 전달
             routeSegmentsByDay={routeSegmentsByDay} // LeftPanel에 경로 정보 전달
           />
@@ -451,13 +447,15 @@ export function Workspace({
               mapRef={mapRef}
               setSelectedPlace={setSelectedPlace}
               onRouteInfoUpdate={handleRouteInfoUpdate} // MapPanel에 콜백 함수 전달
-              hoveredPoi={hoveredPoi}
+              hoveredPoiInfo={hoveredPoiInfo} // hoveredPoi 대신 hoveredPoiInfo 전달
               optimizingDayId={optimizingDayId} // [추가] 최적화 트리거 상태 전달
               onOptimizationComplete={handleOptimizationComplete} // [추가] 최적화 완료 콜백 전달
               onRouteOptimized={handleRouteOptimized} // [추가] 최적화된 경로 콜백 전달
               latestChatMessage={latestChatMessage} // [추가] 최신 채팅 메시지 전달
               workspaceId={workspaceId}
               members={members}
+              cursors={cursors} // cursors prop 전달
+              moveCursor={moveCursor} // moveCursor prop 전달
             />
           </div>
 
