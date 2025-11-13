@@ -104,7 +104,7 @@ interface KakaoNaviGuide {
 
 interface PoiMarkerProps {
   poi: Poi;
-  sequenceNumber?: number;
+  markerLabel?: string;
   markerColor?: string;
   isHovered: boolean;
   unmarkPoi: (poiId: string) => void;
@@ -113,14 +113,16 @@ interface PoiMarkerProps {
 
 /**
  * POI 순번과 색상을 포함하는 커스텀 SVG 마커 아이콘을 생성합니다.
- * @param sequenceNumber - 마커에 표시될 순번
+ * @param label - 마커에 표시될 텍스트 ('출발', '경유', '도착' 등)
  * @param color - 마커의 배경색
  * @returns 데이터 URI 형식의 SVG 문자열
  */
-const createCustomMarkerIcon = (sequenceNumber: number, color: string) => {
+const createCustomMarkerIcon = (label: string, color: string) => {
+  // 텍스트 길이에 따라 폰트 크기 동적 조절
+  const fontSize = label.length > 1 ? 14 : 16;
   const svg = `<svg width="36" height="48" viewBox="0 0 36 48" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M18 0C8.058 0 0 8.058 0 18C0 28.296 15.66 46.404 16.596 47.544C17.328 48.456 18.672 48.456 19.404 47.544C20.34 46.404 36 28.296 36 18C36 8.058 27.942 0 18 0Z" fill="${color}"/>
-    <text x="18" y="21" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="white" text-anchor="middle" alignment-baseline="central">${sequenceNumber}</text>
+    <text x="18" y="21" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="bold" fill="white" text-anchor="middle" alignment-baseline="central">${label}</text>
   </svg>`;
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 };
@@ -128,7 +130,7 @@ const createCustomMarkerIcon = (sequenceNumber: number, color: string) => {
 const PoiMarker = memo(
   ({
     poi,
-    sequenceNumber,
+    markerLabel,
     markerColor,
     unmarkPoi,
     isOverlayHoveredRef,
@@ -161,11 +163,11 @@ const PoiMarker = memo(
       setIsInfoWindowOpen(true);
     };
 
-    const isScheduled = sequenceNumber !== undefined;
+    const isScheduled = markerLabel !== undefined;
 
     const markerImage = isScheduled
       ? {
-          src: createCustomMarkerIcon(sequenceNumber, markerColor || '#FF5733'),
+          src: createCustomMarkerIcon(markerLabel, markerColor || '#FF5733'),
           size: { width: 36, height: 48 },
           options: {
             offset: { x: 18, y: 48 }, // 마커의 하단 중앙을 좌표에 맞춤
@@ -637,14 +639,24 @@ export function MapPanel({
 
   const scheduledPoiData = new Map<
     string,
-    { sequence: number; color: string }
+    { label: string; color: string }
   >();
   dayLayers.forEach((dayLayer) => {
     const dayPois = itinerary[dayLayer.id];
     if (dayPois) {
+      const totalPois = dayPois.length;
       dayPois.forEach((poi, index) => {
+        let label: string;
+        if (index === 0) {
+          label = '출발';
+        } else if (index === totalPois - 1) {
+          label = '도착';
+        } else {
+          label = '경유';
+        }
+
         scheduledPoiData.set(poi.id, {
-          sequence: index + 1,
+          label,
           color: dayLayer.color,
         });
       });
@@ -733,13 +745,13 @@ export function MapPanel({
       >
         {pois.map((poi) => {
           const data = scheduledPoiData.get(poi.id);
-          const sequenceNumber = data?.sequence;
+          const markerLabel = data?.label;
           const markerColor = data?.color;
           return (
             <PoiMarker
               key={poi.id}
               poi={poi}
-              sequenceNumber={sequenceNumber}
+              markerLabel={markerLabel}
               markerColor={markerColor}
               isHovered={hoveredPoi?.id === poi.id}
               unmarkPoi={unmarkPoi}
