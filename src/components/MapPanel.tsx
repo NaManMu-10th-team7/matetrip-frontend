@@ -760,18 +760,24 @@ export function MapPanel({
           );
         })}
 
-        {/* 마우스를 올린 POI를 강조하는 오버레이 */}
-        {hoveredPoi && (
-          <CustomOverlayMap
-            position={{ lat: hoveredPoi.latitude, lng: hoveredPoi.longitude }}
-            xAnchor={0.5} // 원의 가로 중앙을 마커 좌표에 맞춤
-            yAnchor={0.9} // 원의 하단을 마커 좌표에 가깝게 맞춤
-            zIndex={4} // 다른 오버레이보다 위에 표시
-          >
-            {/* TailwindCSS animate-pulse를 사용한 강조 효과 */}
-            <div className="w-16 h-16 rounded-full border-4 border-blue-500 bg-blue-500/20 animate-pulse" />
-          </CustomOverlayMap>
-        )}
+        {/* 현재 호버된 POI가 유효한지(삭제되지 않았는지) 확인 */}
+        {(() => {
+          const isHoveredPoiValid = hoveredPoi && pois.some(p => p.id === hoveredPoi.id);
+          if (!isHoveredPoiValid) return null;
+          
+          // hoveredPoi가 유효할 때만 오버레이를 렌더링하도록 return 문 추가
+          return (
+            <CustomOverlayMap
+              position={{ lat: hoveredPoi.latitude, lng: hoveredPoi.longitude }}
+              xAnchor={0.5} // 원의 가로 중앙을 마커 좌표에 맞춤
+              yAnchor={0.9} // 원의 하단을 마커 좌표에 가깝게 맞춤
+              zIndex={4} // 다른 오버레이보다 위에 표시
+            >
+              {/* TailwindCSS animate-pulse를 사용한 강조 효과 */}
+              <div className="w-16 h-16 rounded-full border-4 border-blue-500 bg-blue-500/20 animate-pulse" />
+            </CustomOverlayMap>
+          );
+        })()}
 
         {/* 지도 클릭으로 생성된 임시 마커 및 오버레이 */}
         {temporaryPlaces.map((tempPlace) => (
