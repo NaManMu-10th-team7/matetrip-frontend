@@ -5,23 +5,28 @@ import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { X, Upload, Trash2, Lock } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Badge } from './ui/badge';
 import { TRAVEL_STYLE_TYPES } from '../constants/travelStyle';
 import { TRAVEL_TENDENCY_TYPE } from '../constants/travelTendencyType';
+//import type { UserProfile } from '../types/user';
+import { API_BASE_URL } from '../api/client';
+import type { UpdateProfileDto } from '../types/updateprofiledto';
+import type { TravelStyleType } from '../constants/travelStyle';
+import type { TravelTendencyType } from '../constants/travelTendencyType';
 
 interface EditProfileModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   user: {
     id: string;
-    name: string;
+    nickname: string;
     email?: string;
-    profileImage: string;
+    profileImageId: string | null;
     intro: string; // shortBio 대신 intro 사용
     description: string; // detailedBio 대신 description 사용
-    travelStyles: string[];
-    tendency: string[];
+    travelStyles: TravelStyleType[];
+    tendency: TravelTendencyType[];
   } | null;
 }
 
@@ -31,16 +36,31 @@ export function EditProfileModal({
   user,
 }: EditProfileModalProps) {
   const [activeTab, setActiveTab] = useState('edit');
-  const [profileImage, setProfileImage] = useState(user?.profileImage || '');
-  const [nickname, setNickname] = useState(user?.name || '');
-  const [shortBio, setShortBio] = useState(user?.intro || ''); // user.intro로 초기화
-  const [detailedBio, setDetailedBio] = useState(user?.description || ''); // user.description으로 초기화
-  const [selectedTravelStyles, setSelectedTravelStyles] = useState<string[]>(
-    user?.travelStyles || []
-  );
+  const [nickname, setNickname] = useState(user?.nickname || '');
+  const [shortBio, setShortBio] = useState(user?.intro || '');
+  const [detailedBio, setDetailedBio] = useState(user?.description || '');
+  const [selectedTravelStyles, setSelectedTravelStyles] = useState<
+    TravelStyleType[]
+  >(user?.travelStyles || []);
   const [selectedTravelTendencies, setSelectedTravelTendencies] = useState<
-    string[]
+    TravelTendencyType[]
   >(user?.tendency || []);
+  const [currentProfileImageId, setCurrentProfileImageId] = useState<
+    string | null
+  >(user?.profileImageId ?? null);
+  const [profileImageRemoteUrl, setProfileImageRemoteUrl] = useState<
+    string | null
+  >(null);
+  const [profileImagePreview, setProfileImagePreview] = useState<string | null>(
+    null
+  );
+  const [pendingProfileImageFile, setPendingProfileImageFile] =
+    useState<File | null>(null);
+  const profileImagePreviewRef = useRef<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isImageDeleting, setIsImageDeleting] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [isTendencyModalOpen, setIsTendencyModalOpen] = useState(false);
   const [isStyleModalOpen, setIsStyleModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
@@ -48,7 +68,72 @@ export function EditProfileModal({
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  console.log(user);
+  useEffect(() => {
+    if (!open || !user) {
+      return;
+    }
+    setNickname(user.nickname || '');
+    setShortBio(user.intro || '');
+    setDetailedBio(user.description || '');
+    setSelectedTravelStyles(user.travelStyles || []);
+    setSelectedTravelTendencies(user.tendency || []);
+    setCurrentProfileImageId(user.profileImageId ?? null);
+    setPendingProfileImageFile(null);
+    setProfileImagePreview(null);
+    setProfileImageRemoteUrl(null);
+    setSaveError(null);
+  }, [open, user]);
+
+  useEffect(() => {
+    return () => {
+      if (profileImagePreviewRef.current) {
+        URL.revokeObjectURL(profileImagePreviewRef.current);
+      }
+    };
+  }, []);
+
+  const defaultAvatar = user
+    ? `https://ui-avatars.com/api/?name=${encodeURIComponent(
+        user.nickname ?? 'user'
+      )}&background=random`
+    : null;
+
+  useEffect(() => {
+    if (!open || !user) {
+      return;
+    }
+    if (!currentProfileImageId) {
+      setProfileImageRemoteUrl(defaultAvatar);
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(
+          `${API_BASE_URL}/binary-content/${currentProfileImageId}/presigned-url`,
+          { credentials: 'include' }
+        );
+        if (!res.ok) throw new Error('프로필 이미지 URL 요청 실패');
+        const { url } = await res.json();
+        if (!cancelled) {
+          setProfileImageRemoteUrl(url);
+        }
+      } catch (error) {
+        console.error('프로필 이미지 URL 불러오기 실패:', error);
+        if (!cancelled) {
+          setProfileImageRemoteUrl(defaultAvatar);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentProfileImageId, defaultAvatar, open, user]);
+
+  const profileImageUrl =
+    profileImagePreview ?? profileImageRemoteUrl ?? defaultAvatar ?? '';
 
   if (!user) return null;
 
@@ -58,15 +143,75 @@ export function EditProfileModal({
   // 여행 스타일 태그
   const allStyleTags = Object.values(TRAVEL_STYLE_TYPES);
 
-  const handleImageUpload = () => {
-    // S3 업로드 로직 (Mock)
-    alert('이미지 업로드 기능은 백엔드 연동 후 구현됩니다.');
+  const updateProfileImagePreview = (nextUrl: string | null) => {
+    if (
+      profileImagePreviewRef.current &&
+      profileImagePreviewRef.current !== nextUrl
+    ) {
+      URL.revokeObjectURL(profileImagePreviewRef.current);
+    }
+    profileImagePreviewRef.current = nextUrl;
+    setProfileImagePreview(nextUrl);
   };
 
-  const handleImageDelete = () => {
-    setProfileImage(
-      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwZXJzb24l20포트레이트%7Cperson%20portrait%7Cface&ixlib=rb-4.1.0&q=80&w=1080'
-    );
+  const handleImageUpload = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImageSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setPendingProfileImageFile(file);
+    const previewUrl = URL.createObjectURL(file);
+    updateProfileImagePreview(previewUrl);
+    event.target.value = '';
+  };
+  //👀 delte API  호출
+  const handleImageDelete = async () => {
+    if (isImageDeleting) return;
+
+    // 로컬에 선택해 둔 새 파일만 있는 경우 서버 호출 없이 초기화
+    if (pendingProfileImageFile && !currentProfileImageId) {
+      setPendingProfileImageFile(null);
+      updateProfileImagePreview(null);
+      setProfileImageRemoteUrl(defaultAvatar);
+      return;
+    }
+
+    if (!currentProfileImageId) {
+      updateProfileImagePreview(null);
+      setProfileImageRemoteUrl(defaultAvatar);
+      return;
+    }
+
+    setIsImageDeleting(true);
+    setSaveError(null);
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/binary-content/${currentProfileImageId}`,
+        {
+          method: 'DELETE',
+          credentials: 'include',
+        }
+      );
+      if (!response.ok) {
+        const detail = await response.text();
+        throw new Error(detail || '이미지 삭제에 실패했습니다.');
+      }
+      setPendingProfileImageFile(null);
+      updateProfileImagePreview(null);
+      setCurrentProfileImageId(null);
+      setProfileImageRemoteUrl(defaultAvatar);
+    } catch (error) {
+      console.error('이미지 삭제 실패:', error);
+      setSaveError(
+        error instanceof Error
+          ? error.message
+          : '이미지 삭제 중 오류가 발생했습니다.'
+      );
+    } finally {
+      setIsImageDeleting(false);
+    }
   };
 
   const handleNicknameCheck = () => {
@@ -74,31 +219,101 @@ export function EditProfileModal({
     alert('사용 가능한 닉네임입니다.');
   };
 
-  const handleRemoveStyle = (style: string) => {
+  const handleRemoveStyle = (style: TravelStyleType) => {
     setSelectedTravelStyles(selectedTravelStyles.filter((s) => s !== style));
   };
 
-  const handleAddStyle = (style: string) => {
+  const handleAddStyle = (style: TravelStyleType) => {
     if (!selectedTravelStyles.includes(style)) {
       setSelectedTravelStyles([...selectedTravelStyles, style]);
     }
   };
 
-  const handleRemoveTendency = (tendency: string) => {
+  const handleRemoveTendency = (tendency: TravelTendencyType) => {
     setSelectedTravelTendencies(
       selectedTravelTendencies.filter((t) => t !== tendency)
     );
   };
 
-  const handleAddTendency = (tendency: string) => {
+  const handleAddTendency = (tendency: TravelTendencyType) => {
     if (!selectedTravelTendencies.includes(tendency)) {
       setSelectedTravelTendencies([...selectedTravelTendencies, tendency]);
     }
   };
 
-  const handleSaveProfile = () => {
-    alert('프로필이 저장되었습니다.');
-    onOpenChange(false);
+  //👀 save API  호출
+  const handleSaveProfile = async () => {
+    if (!user || isSaving) return;
+    setIsSaving(true);
+    setSaveError(null);
+    let nextProfileImageId = currentProfileImageId;
+
+    try {
+      if (pendingProfileImageFile) {
+        const file = pendingProfileImageFile;
+        const safeFileType = file.type || 'application/octet-stream';
+        const presignResponse = await fetch(
+          `${API_BASE_URL}/binary-content/presigned-url`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              fileName: file.name,
+              fileSize: file.size,
+              fileType: safeFileType,
+            }),
+          }
+        );
+        if (!presignResponse.ok) {
+          throw new Error('이미지 업로드 URL 생성에 실패했습니다.');
+        }
+        const { uploadUrl, binaryContentId } = await presignResponse.json();
+        const s3Response = await fetch(uploadUrl, {
+          method: 'PUT',
+          body: file,
+        });
+        if (!s3Response.ok) {
+          throw new Error('이미지 업로드에 실패했습니다.');
+        }
+        nextProfileImageId = binaryContentId;
+      }
+
+      const payload: UpdateProfileDto = {
+        nickname,
+        intro: shortBio,
+        description: detailedBio,
+        travelStyles: selectedTravelStyles,
+        tendency: selectedTravelTendencies,
+        profileImageId: nextProfileImageId,
+      };
+      // 사진외의 프로필 수정
+      const response = await fetch(`${API_BASE_URL}/profile/my`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const detail = await response.text();
+        throw new Error(detail || '프로필 업데이트에 실패했습니다.');
+      }
+
+      setPendingProfileImageFile(null);
+      updateProfileImagePreview(null);
+      setCurrentProfileImageId(nextProfileImageId ?? null);
+      onOpenChange(false);
+    } catch (error) {
+      console.error('프로필 저장 실패:', error);
+      setSaveError(
+        error instanceof Error
+          ? error.message
+          : '프로필 저장 중 오류가 발생했습니다.'
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handlePasswordChange = () => {
@@ -169,31 +384,45 @@ export function EditProfileModal({
                 <div className="space-y-4">
                   <div className="flex items-start gap-6">
                     <div className="relative group">
-                      <ImageWithFallback
-                        src={profileImage}
-                        alt="프로필 사진"
-                        className="w-32 h-32 rounded-full object-cover ring-4 ring-gray-200 transition-all group-hover:ring-gray-300"
-                      />
-                      <div className="absolute inset-0 rounded-full bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all" />
+                      <div className="relative w-32 h-32 rounded-full overflow-hidden bg-black ring-2 ring-gray-200 ring-offset-2 ring-offset-white transition-all group-hover:ring-gray-300">
+                        {profileImageUrl ? (
+                          <ImageWithFallback
+                            src={profileImageUrl}
+                            alt="프로필 사진"
+                            className="w-full h-full object-cover object-center"
+                          />
+                        ) : null}
+                      </div>
                     </div>
                     <div className="flex-1 flex flex-col gap-3 pt-2">
                       <p className="text-gray-600 text-sm">
                         프로필 사진을 업로드하거나 삭제할 수 있습니다.
                       </p>
                       <div className="flex gap-3">
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleImageSelected}
+                        />
                         <Button
+                          type="button"
                           size="default"
                           variant="default"
                           onClick={handleImageUpload}
                           className="flex-1"
+                          disabled={isSaving || isImageDeleting}
                         >
                           <Upload className="w-4 h-4 mr-2" />
                           이미지 업로드
                         </Button>
                         <Button
+                          type="button"
                           size="default"
                           variant="outline"
                           onClick={handleImageDelete}
+                          disabled={isSaving || isImageDeleting}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -311,8 +540,15 @@ export function EditProfileModal({
 
                 {/* 저장 버튼 */}
                 <div className="pt-4 border-t">
-                  <Button onClick={handleSaveProfile} className="w-full">
-                    변경사항 저장
+                  {saveError && (
+                    <p className="mb-3 text-sm text-red-500">{saveError}</p>
+                  )}
+                  <Button
+                    onClick={handleSaveProfile}
+                    className="w-full"
+                    disabled={isSaving}
+                  >
+                    {isSaving ? '저장 중...' : '변경사항 저장'}
                   </Button>
                 </div>
               </div>

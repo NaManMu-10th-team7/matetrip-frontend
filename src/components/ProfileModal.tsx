@@ -19,6 +19,8 @@ import { type UserProfile } from '../types/user';
 import { translateKeyword } from '../utils/keyword';
 import { WorkspaceCard } from './WorkspaceCard';
 import { EditProfileModal } from './EditProfileModal'; // Import EditProfileModal
+import type { GenderType } from '../constants/gender';
+import type { MbtiType } from '../constants/mbti';
 
 interface ProfileModalProps {
   open: boolean;
@@ -418,15 +420,15 @@ export function ProfileModal({
           }}
           user={{
             id: profile.id,
-            name: profile.nickname,
-            email: loggedInUser?.profile?.email, // Assuming email is available in loggedInUser
-            profileImage:
-              profile.profileImageId ||
-              'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+            nickname: profile.nickname,
+            email: loggedInUser?.profile?.email,
+            profileImageId: profile.profileImageId ?? null,
             intro: profile.intro || '', // profile.intro를 intro로 직접 전달
             description: profile.description || '', // profile.description을 description으로 직접 전달
             travelStyles: profile.travelStyles || [],
             tendency: profile.tendency || [],
+            gender: profile.gender as GenderType,
+            mbtiTypes: profile.mbtiTypes as MbtiType,
           }}
         />
       )}
