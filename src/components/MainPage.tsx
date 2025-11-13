@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { MapPin, ClipboardList, Plus, Wand2, Info } from 'lucide-react';
+import { MapPin, ClipboardList, Plus, Info } from 'lucide-react';
 import { Button } from './ui/button';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import client from '../api/client';
@@ -300,27 +300,14 @@ export function MainPage({
       ? '추천할 게시글이 없습니다.'
       : '최신 게시글이 없습니다.';
 
-  const handleFeaturedToggle = () => {
-    if (activeFeaturedView === 'recommended') {
-      setFeaturedView('latest');
+  const handleFeaturedViewChange = (view: 'latest' | 'recommended') => {
+    if (view === 'recommended' && !isLoggedIn) {
       return;
     }
-    if (!isLoggedIn) {
-      return;
-    }
-    setFeaturedView('recommended');
+    setFeaturedView(view);
   };
 
-  const toggleButtonLabel =
-    activeFeaturedView === 'recommended' ? '최신글 보기' : '추천 동행';
-
-  const toggleButtonClasses =
-    activeFeaturedView === 'recommended'
-      ? 'bg-blue-600 text-white hover:bg-blue-700'
-      : 'bg-pink-500 text-white hover:bg-pink-600';
-
-  const toggleButtonDisabled =
-    !isLoggedIn && activeFeaturedView !== 'recommended';
+  const isRecommendedButtonDisabled = !isLoggedIn;
 
   return (
     <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-gray-50">
@@ -395,19 +382,35 @@ export function MainPage({
               )}
             </div>
           </div>
-          <button
-            type="button"
-            onClick={handleFeaturedToggle}
-            disabled={toggleButtonDisabled}
-            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 ${toggleButtonClasses} ${
-              toggleButtonDisabled ? 'opacity-60 cursor-not-allowed' : ''
-            }`}
-          >
-            {activeFeaturedView === 'latest' && (
-              <Wand2 className="w-4 h-4" aria-hidden="true" />
-            )}
-            {toggleButtonLabel}
-          </button>
+          <div className="flex items-center gap-2 bg-white rounded-full p-1 shadow-sm">
+            <button
+              type="button"
+              onClick={() => handleFeaturedViewChange('latest')}
+              className={`px-4 py-1 text-sm font-medium rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 ${
+                activeFeaturedView === 'latest'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              최신글 보기
+            </button>
+            <button
+              type="button"
+              onClick={() => handleFeaturedViewChange('recommended')}
+              disabled={isRecommendedButtonDisabled}
+              className={`px-4 py-1 text-sm font-medium rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 ${
+                activeFeaturedView === 'recommended'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 hover:text-gray-900'
+              } ${
+                isRecommendedButtonDisabled
+                  ? 'opacity-50 cursor-not-allowed'
+                  : ''
+              }`}
+            >
+              추천 동행
+            </button>
+          </div>
         </div>
         {isFeaturedLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
