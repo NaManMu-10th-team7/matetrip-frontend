@@ -132,6 +132,17 @@ export function Workspace({
     });
   }, []);
 
+  // [수정] 패널 열기/닫기 시 지도 리렌더링을 위한 useEffect
+  useEffect(() => {
+    const map = mapRef.current;
+    if (map) {
+      // 패널의 transition duration(300ms) 이후에 relayout을 호출합니다.
+      const timer = setTimeout(() => {
+        map.relayout();
+      }, 310); // transition 시간보다 약간 길게 설정
+      return () => clearTimeout(timer);
+    }
+  }, [isLeftPanelOpen, isRightPanelOpen]);
   // PlanRoomHeader에 전달할 activeMembers 데이터 형식으로 변환
   const activeMembersForHeader = useMemo(() => {
     return members.map((member) => ({
