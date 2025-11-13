@@ -25,6 +25,8 @@ const PoiSocketEvent = {
   CURSOR_MOVED: 'cursorMoved',
   POI_HOVER: 'poi:hover', // POI 호버 이벤트 추가
   POI_HOVERED: 'poi:hovered', // POI 호버 수신 이벤트 추가
+  MAP_CLICK: 'map:click', // 지도 클릭 이벤트 추가
+  MAP_CLICKED: 'map:clicked', // 지도 클릭 수신 이벤트 추가
 } as const;
 
 export type Poi = {
@@ -74,6 +76,15 @@ export interface HoveredPoiInfo {
   userColor: string;
 }
 
+// 지도 클릭 효과를 위한 타입
+export interface MapClickEffect {
+  id: string;
+  position: CursorPosition;
+  userId: string;
+  userColor: string;
+  userName: string;
+}
+
 export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
   const socketRef = useRef<Socket | null>(null);
   const [pois, setPois] = useState<Poi[]>([]);
@@ -81,6 +92,7 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
   const { user, isAuthLoading } = useAuthStore();
   const [cursors, setCursors] = useState<Record<string, Omit<UserCursor, 'userId'>>>({});
   const [hoveredPoiInfo, setHoveredPoiInfo] = useState<HoveredPoiInfo | null>(null);
+  const [clickEffects, setClickEffects] = useState<MapClickEffect[]>([]); // 지도 클릭 효과 상태
 
   // useCallback을 사용하여 members 상태가 변경될 때마다 함수를 재생성합니다.
   // useEffect 밖으로 이동시킵니다.
@@ -194,6 +206,18 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
       }));
     };
 
+    const handleMapClicked = (data: Omit<MapClickEffect, 'id'>) => {
+      console.log('[Event] MAP_CLICKED 수신:', data);
+      // 내 클릭 이벤트는 로컬에서 즉시 처리되므로, 다른 사용자의 이벤트만 처리합니다.
+      if (data.userId === user?.userId) return;
+
+      const effectId = `${data.userId}-${Date.now()}`;
+      const newEffect: MapClickEffect = { ...data, id: effectId };
+      setClickEffects((prev) => [...prev, newEffect]);
+
+      setTimeout(() => setClickEffects((prev) => prev.filter((effect) => effect.id !== effectId)), 1000); // 1초 후 효과 제거
+    };
+
     socket.on('connect', () => {
       console.log('Socket connected:', socket.id);
       socket.emit(PoiSocketEvent.JOIN, { workspaceId });
@@ -207,6 +231,7 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
     socket.on(PoiSocketEvent.REORDER, handleReorder);
     socket.on(PoiSocketEvent.CURSOR_MOVED, handleCursorMoved);
     socket.on(PoiSocketEvent.POI_HOVERED, handlePoiHovered);
+    socket.on(PoiSocketEvent.MAP_CLICKED, handleMapClicked);
 
     return () => {
       console.log('Disconnecting socket...');
@@ -219,6 +244,7 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
       socket.off(PoiSocketEvent.REORDER, handleReorder);
       socket.off(PoiSocketEvent.CURSOR_MOVED, handleCursorMoved);
       socket.off(PoiSocketEvent.POI_HOVERED, handlePoiHovered);
+      socket.off(PoiSocketEvent.MAP_CLICKED, handleMapClicked);
       socket.disconnect();
     };
   }, [workspaceId, user?.userId, handlePoiHovered]); // useEffect의 의존성 배열에 handlePoiHovered를 추가합니다.
@@ -323,6 +349,30 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
     [workspaceId, user, members]
   );
 
+  const clickMap = useCallback(
+    (position: CursorPosition) => {
+      if (!user || !socketRef.current?.connected) return;
+      const member = members.find((m) => m.id === user.userId);
+      const userColor = member?.color || '#FF0000';
+      const userName = member?.profile.nickname || 'Unknown';
+
+      // 로컬에서 즉시 효과를 보여주기 위함
+      const effectId = `${user.userId}-${Date.now()}`;
+      const newEffect: MapClickEffect = { id: effectId, position, userId: user.userId, userColor, userName };
+      setClickEffects((prev) => [...prev, newEffect]);
+      setTimeout(() => setClickEffects((prev) => prev.filter((effect) => effect.id !== effectId)), 1000);
+      console.log('[Event] MAP_CLICK 송신:', { workspaceId, position, userId: user.userId, userColor, userName });
+
+      // 다른 사용자에게 이벤트 전파
+      socketRef.current?.emit(PoiSocketEvent.MAP_CLICK, {
+        workspaceId,
+        position,
+        userId: user.userId,
+        userColor,
+        userName,
+      });
+    }, [workspaceId, user, members]);
+
   return {
     pois,
     setPois,
@@ -336,5 +386,7 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
     moveCursor,
     hoveredPoiInfo,
     hoverPoi,
+    clickEffects, // 반환값에 추가
+    clickMap, // 반환값에 추가
   };
 }

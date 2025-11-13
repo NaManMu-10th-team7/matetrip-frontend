@@ -79,7 +79,7 @@ function PoiItem({ poi, color, index, onPoiClick, onPoiHover, onPoiLeave, unmark
     <li
       ref={setNodeRef}
       style={style}
-      className="flex items-center text-xs p-1 rounded-md cursor-pointer hover:bg-gray-100" // gap-2 제거
+      className="flex items-center text-xs p-1 rounded-md cursor-pointer hover:bg-blue-100" // gap-2 제거, 호버 색상 변경
       onClick={() => onPoiClick(poi)}
       onMouseEnter={() => onPoiHover(poi.id)}
       onMouseLeave={onPoiLeave}

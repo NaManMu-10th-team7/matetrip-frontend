@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, memo } from 'react';
-import type { Poi, CreatePoiDto } from '../hooks/usePoiSocket';
+import type { Poi, CreatePoiDto, MapClickEffect } from '../hooks/usePoiSocket';
 import { PlusCircle, X } from 'lucide-react'; // PlusCircle, X 아이콘 임포트
 import {
   Map as KakaoMap,
@@ -73,6 +73,8 @@ interface MapPanelProps {
   members: WorkspaceMember[];
   cursors: Record<string, Omit<UserCursor, 'userId'>>; // cursors prop 추가
   moveCursor: (position: { lat: number; lng: number }) => void; // moveCursor prop 추가
+  clickEffects: MapClickEffect[]; // 지도 클릭 효과를 위한 prop 추가
+  clickMap: (position: { lat: number; lng: number }) => void; // 지도 클릭 이벤트를 발생시키는 함수 prop 추가
 }
 
 // 카카오내비 API 응답 타입을 위한 인터페이스 추가
@@ -247,6 +249,8 @@ export function MapPanel({
   latestChatMessage,
   cursors, // props로 받음
   moveCursor, // props로 받음
+  clickEffects, // props로 받음
+  clickMap, // props로 받음
 }: MapPanelProps) {
   const [mapInstance, setMapInstance] = useState<kakao.maps.Map | null>(null);
   const pendingSelectedPlaceRef = useRef<KakaoPlace | null>(null);
@@ -667,6 +671,21 @@ export function MapPanel({
           div[style*="background: rgb(255, 255, 255);"][style*="border: 1px solid rgb(118, 129, 168);"] {
             display: none !important;
           }
+          .ripple {
+            position: absolute;
+            border-radius: 50%;
+            border-style: solid;
+            transform: translate(-50%, -50%);
+            animation: ripple-animation 1s ease-out;
+          }
+          @keyframes ripple-animation {
+            from { width: 0; height: 0; opacity: 0.9; }
+            to { width: 150px; height: 150px; opacity: 0; }
+          }
+          @keyframes fade-out {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-10px); }
+          }
         `}
       </style>
       <KakaoMap
@@ -684,9 +703,16 @@ export function MapPanel({
           if (isOverlayHoveredRef.current) return;
 
           const latlng = mouseEvent.latLng;
+
+          // 1. 다른 사용자에게 클릭 이벤트를 즉시 전파합니다.
+          clickMap({
+            lat: latlng.getLat(),
+            lng: latlng.getLng(),
+          });
+
+          // 2. 클릭한 위치의 주소 변환 및 임시 장소 생성 로직을 수행합니다.
           const geocoder = new window.kakao.maps.services.Geocoder();
           const places = new window.kakao.maps.services.Places();
-
           geocoder.coord2Address(
             latlng.getLng(),
             latlng.getLat(),
@@ -756,6 +782,56 @@ export function MapPanel({
             />
           );
         })}
+
+        {/* 지도 클릭 물결 효과 렌더링 */}
+        {clickEffects.map((effect) => (
+          <CustomOverlayMap
+            key={effect.id}
+            position={effect.position}
+            zIndex={5}
+            xAnchor={0.5}
+            yAnchor={0.5}
+          >
+            {/* 물결 효과와 이름표를 포함하는 컨테이너 */}
+            <div className="relative flex items-center justify-center">
+              {/* 이름표 */}
+              <span
+                className="px-2 py-1 text-xs text-white rounded-md shadow-md z-10"
+                style={{
+                  backgroundColor: effect.userColor,
+                  // 애니메이션으로 사라지도록 설정
+                  animation: 'fade-out 1s ease-out forwards',
+                  animationDelay: '0.5s',
+                }}
+              >
+                {effect.userName}
+              </span>
+              {/* 첫 번째 물결 */}
+              <div
+                className="ripple"
+                style={{
+                  top: '50%',
+                  left: '50%',
+                  borderWidth: '3px',
+                  borderColor: effect.userColor,
+                  backgroundColor: `${effect.userColor}66`,
+                }}
+              />
+              {/* 두 번째 물결 (지연 시작) */}
+              <div
+                className="ripple"
+                style={{
+                  top: '50%',
+                  left: '50%',
+                  borderWidth: '3px',
+                  borderColor: effect.userColor,
+                  backgroundColor: `${effect.userColor}66`,
+                  animationDelay: '0.3s', // 0.3초 뒤에 시작
+                }}
+              />
+            </div>
+          </CustomOverlayMap>
+        ))}
 
         {/* 다른 사용자가 호버한 POI 강조 효과 */}
         {hoveredPoiInfo &&

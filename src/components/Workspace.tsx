@@ -63,7 +63,17 @@ export function Workspace({
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
 
-  const { members } = useWorkspaceMembers(workspaceId);
+  const { members: membersWithoutColor } = useWorkspaceMembers(workspaceId);
+
+  // usePoiSocket에서 요구하는 color 속성을 멤버 객체에 추가합니다.
+  const members = useMemo(
+    () =>
+      membersWithoutColor.map((member) => ({
+        ...member,
+        color: generateColorFromString(member.id),
+      })),
+    [membersWithoutColor]
+  );
   // usePoiSocket에서 모든 상태와 함수를 가져옵니다.
   const {
     pois,
@@ -78,6 +88,8 @@ export function Workspace({
     moveCursor,
     hoveredPoiInfo,
     hoverPoi,
+    clickEffects, // 추가
+    clickMap, // 추가
   } = usePoiSocket(workspaceId, members);
   const {
     messages,
@@ -456,6 +468,8 @@ export function Workspace({
               members={members}
               cursors={cursors} // cursors prop 전달
               moveCursor={moveCursor} // moveCursor prop 전달
+              clickEffects={clickEffects} // clickEffects prop 전달
+              clickMap={clickMap} // clickMap prop 전달
             />
           </div>
 
