@@ -149,7 +149,7 @@ export function MatchingCard({
               <span className="font-semibold text-gray-900">
                 {formatMatchText(style)}
               </span>
-              로 비슷해요.
+              (으)로 같아요
             </span>
           </div>
           <div className="flex items-start gap-2">
@@ -159,7 +159,7 @@ export function MatchingCard({
               <span className="font-semibold text-gray-900">
                 {formatMatchText(tendency)}
               </span>
-              와 잘 맞아요.
+              (으)로 같아요
             </span>
           </div>
           {safeVectorScore !== undefined && (
@@ -170,7 +170,7 @@ export function MatchingCard({
                 <span className="font-semibold text-gray-900">
                   {safeVectorScore}%
                 </span>
-                예요.
+                예요
               </span>
             </div>
           )}

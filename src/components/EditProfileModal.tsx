@@ -230,6 +230,14 @@ export function EditProfileModal({
     }
   };
 
+  const handleToggleStyle = (style: TravelStyleType) => {
+    setSelectedTravelStyles((prev) =>
+      prev.includes(style)
+        ? prev.filter((item) => item !== style)
+        : [...prev, style]
+    );
+  };
+
   const handleRemoveTendency = (tendency: TravelTendencyType) => {
     setSelectedTravelTendencies(
       selectedTravelTendencies.filter((t) => t !== tendency)
@@ -240,6 +248,14 @@ export function EditProfileModal({
     if (!selectedTravelTendencies.includes(tendency)) {
       setSelectedTravelTendencies([...selectedTravelTendencies, tendency]);
     }
+  };
+
+  const handleToggleTendency = (tendency: TravelTendencyType) => {
+    setSelectedTravelTendencies((prev) =>
+      prev.includes(tendency)
+        ? prev.filter((item) => item !== tendency)
+        : [...prev, tendency]
+    );
   };
 
   //👀 save API  호출
@@ -633,23 +649,25 @@ export function EditProfileModal({
             여행 성향 태그 선택
           </DialogTitle>
           <div className="grid grid-cols-8 gap-3">
-            {allTendencyTags.map((tag) => (
-              <button
-                key={tag}
-                onClick={() => {
-                  handleAddTendency(tag);
-                  setIsTendencyModalOpen(false);
-                }}
-                className={`px-2 py-2 rounded-lg text-sm transition-colors ${
-                  selectedTravelTendencies.includes(tag)
-                    ? 'bg-gray-900 text-white cursor-not-allowed'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-                disabled={selectedTravelTendencies.includes(tag)}
-              >
-                #{tag}
-              </button>
-            ))}
+            {allTendencyTags.map((tag) => {
+              const isSelected = selectedTravelTendencies.includes(tag);
+              return (
+                <button
+                  type="button"
+                  key={tag}
+                  onClick={() =>
+                    handleToggleTendency(tag as TravelTendencyType)
+                  }
+                  className={`px-2 py-2 rounded-lg text-sm transition-colors ${
+                    isSelected
+                      ? 'bg-gray-900 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  #{tag}
+                </button>
+              );
+            })}
           </div>
         </DialogContent>
       </Dialog>
@@ -661,23 +679,23 @@ export function EditProfileModal({
             여행 스타일 태그 선택
           </DialogTitle>
           <div className="grid grid-cols-4 gap-3">
-            {allStyleTags.map((tag) => (
-              <button
-                key={tag}
-                onClick={() => {
-                  handleAddStyle(tag);
-                  setIsStyleModalOpen(false);
-                }}
-                className={`px-4 py-2 rounded-lg text-sm transition-colors ${
-                  selectedTravelStyles.includes(tag)
-                    ? 'bg-gray-900 text-white cursor-not-allowed'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-                disabled={selectedTravelStyles.includes(tag)}
-              >
-                #{tag}
-              </button>
-            ))}
+            {allStyleTags.map((tag) => {
+              const isSelected = selectedTravelStyles.includes(tag);
+              return (
+                <button
+                  type="button"
+                  key={tag}
+                  onClick={() => handleToggleStyle(tag as TravelStyleType)}
+                  className={`px-4 py-2 rounded-lg text-sm transition-colors ${
+                    isSelected
+                      ? 'bg-gray-900 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  #{tag}
+                </button>
+              );
+            })}
           </div>
         </DialogContent>
       </Dialog>

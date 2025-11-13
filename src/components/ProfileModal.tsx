@@ -19,6 +19,8 @@ import { type UserProfile } from '../types/user';
 import { translateKeyword } from '../utils/keyword';
 import { WorkspaceCard } from './WorkspaceCard';
 import { EditProfileModal } from './EditProfileModal'; // Import EditProfileModal
+import type { TravelStyleType } from '../constants/travelStyle';
+import type { TravelTendencyType } from '../constants/travelTendencyType';
 import type { GenderType } from '../constants/gender';
 import type { MbtiType } from '../constants/mbti';
 
@@ -44,8 +46,8 @@ interface Review {
       gender: string;
       intro: string;
       description: string;
-      travelStyles: string[];
-      travelTendency: string[];
+      travelStyles: TravelStyleType[];
+      travelTendency: TravelTendencyType[];
       mbtiTypes: string;
     };
   };
@@ -440,10 +442,10 @@ export function ProfileModal({
             profileImageId: profile.profileImageId ?? null,
             intro: profile.intro || '', // profile.intro를 intro로 직접 전달
             description: profile.description || '', // profile.description을 description으로 직접 전달
-            travelStyles: profile.travelStyles || [],
-            tendency: profile.tendency || [],
-            gender: profile.gender as GenderType,
-            mbtiTypes: profile.mbtiTypes as MbtiType,
+            travelStyles: (profile.travelStyles || []) as TravelStyleType[],
+            tendency: (profile.tendency || []) as TravelTendencyType[],
+            // gender: profile.gender as GenderType,
+            // mbtiTypes: profile.mbtiTypes as MbtiType,
           }}
         />
       )}

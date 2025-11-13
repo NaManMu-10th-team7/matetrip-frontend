@@ -130,6 +130,15 @@ export function MainPage({
   const [featuredView, setFeaturedView] = useState<'latest' | 'recommended'>(
     'latest'
   );
+  const travelStyleKey =
+    user?.profile?.travelStyles?.join(',') ??
+    user?.profile?.travelStyles?.toString() ??
+    '';
+  const tendencyKey =
+    user?.profile?.tendency?.join(',') ??
+    user?.profile?.tendency?.toString() ??
+    '';
+  const descriptionKey = user?.profile?.description ?? '';
 
   useEffect(() => {
     // isAuthLoading이 true일 때는 API 호출을 하지 않습니다.
@@ -234,7 +243,14 @@ export function MainPage({
     return () => {
       isMounted = false;
     };
-  }, [isAuthLoading, isLoggedIn, user?.userId]);
+  }, [
+    isAuthLoading,
+    isLoggedIn,
+    user?.userId,
+    travelStyleKey,
+    tendencyKey,
+    descriptionKey,
+  ]);
 
   // const handleSearch = (e: React.FormEvent) => {
   //   e?.preventDefault();
@@ -408,7 +424,7 @@ export function MainPage({
               {isRecommendedView && (
                 <p className="text-sm font-medium text-blue-900/80 flex items-center gap-1">
                   <Sparkles className="w-4 h-4 text-pink-500" />
-                  여행 성향·스타일·프로필 취향·MBTI를 모두 반영한 맞춤 추천
+                  여행 성향·스타일·프로필 상세소개·MBTI를 모두 반영한 맞춤 추천
                   리스트예요.
                 </p>
               )}
