@@ -437,6 +437,12 @@ export function MapPanel({
     if (mapInstance) {
       fetchPlacesInView(mapInstance);
     }
+    
+    return () => {
+        if (fetchTimerRef.current) {
+            clearTimeout(fetchTimerRef.current);
+        }
+    };
   }, [mapInstance, fetchPlacesInView]);
 
   useEffect(() => {
