@@ -92,7 +92,7 @@ export function MatchingCard({
       )}
       <div className="absolute top-4 left-4 z-10 inline-flex items-center gap-1 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-pink-500 border border-pink-100">
         <Sparkles className="w-3.5 h-3.5" />
-        맞춤 추천
+        {rankLabel}
       </div>
 
       <div className="h-48 overflow-hidden flex-shrink-0">
