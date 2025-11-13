@@ -111,6 +111,20 @@ interface PoiMarkerProps {
   isOverlayHoveredRef: React.MutableRefObject<boolean>;
 }
 
+/**
+ * POI 순번과 색상을 포함하는 커스텀 SVG 마커 아이콘을 생성합니다.
+ * @param sequenceNumber - 마커에 표시될 순번
+ * @param color - 마커의 배경색
+ * @returns 데이터 URI 형식의 SVG 문자열
+ */
+const createCustomMarkerIcon = (sequenceNumber: number, color: string) => {
+  const svg = `<svg width="36" height="48" viewBox="0 0 36 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M18 0C8.058 0 0 8.058 0 18C0 28.296 15.66 46.404 16.596 47.544C17.328 48.456 18.672 48.456 19.404 47.544C20.34 46.404 36 28.296 36 18C36 8.058 27.942 0 18 0Z" fill="${color}"/>
+    <text x="18" y="21" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="white" text-anchor="middle" alignment-baseline="central">${sequenceNumber}</text>
+  </svg>`;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+};
+
 const PoiMarker = memo(
   ({
     poi,
@@ -147,41 +161,28 @@ const PoiMarker = memo(
       setIsInfoWindowOpen(true);
     };
 
+    const isScheduled = sequenceNumber !== undefined;
+
+    const markerImage = isScheduled
+      ? {
+          src: createCustomMarkerIcon(sequenceNumber, markerColor || '#FF5733'),
+          size: { width: 36, height: 48 },
+          options: {
+            offset: { x: 18, y: 48 }, // 마커의 하단 중앙을 좌표에 맞춤
+          },
+        }
+      : undefined;
+
     return (
       <MapMarker
         position={{ lat: poi.latitude, lng: poi.longitude }}
+        image={markerImage}
         draggable={false}
         clickable={true}
         onMouseOver={handleMouseOver}
         onMouseOut={handleMouseOut}
         onClick={handleClick}
       >
-        {sequenceNumber !== undefined && (
-          <CustomOverlayMap
-            position={{ lat: poi.latitude, lng: poi.longitude }}
-            xAnchor={0.5}
-            yAnchor={2.2}
-            zIndex={2}
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '24px',
-                height: '24px',
-                backgroundColor: markerColor || '#FF5733',
-                color: '#fff',
-                borderRadius: '50%',
-                fontWeight: 'bold',
-                fontSize: '14px',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
-              }}
-            >
-              {sequenceNumber}
-            </div>
-          </CustomOverlayMap>
-        )}
         {isInfoWindowOpen && (
           <CustomOverlayMap
             position={{ lat: poi.latitude, lng: poi.longitude }}
@@ -201,7 +202,7 @@ const PoiMarker = memo(
                 {poi.address}
               </div>
               {/* 보관함에만 있는 마커일 경우 '제거' 버튼 표시 */}
-              {sequenceNumber === undefined && (
+              {!isScheduled && (
                 <Button
                   variant="destructive"
                   size="sm"
