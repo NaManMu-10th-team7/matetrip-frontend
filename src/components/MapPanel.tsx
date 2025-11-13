@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState, memo } from 'react';
-import type { Poi } from '../hooks/usePoiSocket';
 import { PlusCircle, X } from 'lucide-react'; // PlusCircle, X 아이콘 임포트
+import React, { useEffect, useRef, useState, memo, useCallback } from 'react';
+import type { Poi, CreatePoiDto } from '../hooks/usePoiSocket';
 import {
   Map as KakaoMap,
   MapMarker,
@@ -9,6 +9,9 @@ import {
 } from 'react-kakao-maps-sdk';
 import { Button } from './ui/button';
 import { KAKAO_REST_API_KEY } from '../constants'; // KAKAO_REST_API_KEY import 추가
+import { fetchPlacesInBounds } from '../api/places';
+import type { PlaceDto } from '../types/place';
+import { CATEGORY_INFO } from '../types/place';
 
 import { useAnimatedOpacity } from '../hooks/useAnimatedOpacity';
 
@@ -38,6 +41,191 @@ const createCustomMarkerIcon = (label: string, color: string) => {
   </svg>`;
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 };
+
+/**
+ * 백엔드 장소 마커 Props
+ */
+interface PlaceMarkerProps {
+  place: PlaceDto;
+  onPlaceClick: (place: PlaceDto) => void;
+}
+
+/**
+ * 백엔드에서 가져온 장소를 표시하는 마커 컴포넌트
+ */
+const PlaceMarker = memo(({ place, onPlaceClick }: PlaceMarkerProps) => {
+  const [isInfoWindowOpen, setIsInfoWindowOpen] = useState(false);
+  const infoWindowTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (infoWindowTimeoutRef.current) {
+        clearTimeout(infoWindowTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleMouseOver = () => {
+    if (infoWindowTimeoutRef.current) {
+      clearTimeout(infoWindowTimeoutRef.current);
+      infoWindowTimeoutRef.current = null;
+    }
+    setIsInfoWindowOpen(true);
+  };
+
+  const handleMouseOut = () => {
+    infoWindowTimeoutRef.current = setTimeout(() => {
+      setIsInfoWindowOpen(false);
+    }, 100);
+  };
+
+  const handleClick = () => {
+    if (infoWindowTimeoutRef.current) {
+      clearTimeout(infoWindowTimeoutRef.current);
+      infoWindowTimeoutRef.current = null;
+    }
+    onPlaceClick(place);
+  };
+  // 카테고리에 따른 아이콘 이미지 URL 생성
+  const getMarkerImageSrc = (categoryCode: string): string => {
+    // 카테고리별 색상 가져오기
+    const categoryInfo = CATEGORY_INFO[categoryCode as keyof typeof CATEGORY_INFO];
+    const color = categoryInfo?.color || '#808080';
+
+    // 카테고리별로 다른 SVG 아이콘 생성
+    let iconSvg = '';
+
+    switch (categoryCode) {
+      case '레포츠': // 레포츠 - 자전거/활동 아이콘
+        iconSvg = `
+          <g transform="translate(16, 16)">
+            <!-- 자전거 바퀴 -->
+            <circle cx="-4" cy="4" r="3" stroke="white" stroke-width="1.5" fill="none"/>
+            <circle cx="4" cy="4" r="3" stroke="white" stroke-width="1.5" fill="none"/>
+            <!-- 프레임 -->
+            <path d="M-4,4 L0,-2 L4,4 M0,-2 L0,1"
+                  stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- 핸들 -->
+            <path d="M-1,-2 L1,-2"
+                  stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+          </g>
+        `;
+        break;
+
+      case '추천코스': // 추천코스 - 별표 아이콘
+        iconSvg = `
+          <g transform="translate(16, 16)">
+            <!-- 별 -->
+            <path d="M0,-6 L1.5,-2 L6,-2 L2.5,1 L4,6 L0,3 L-4,6 L-2.5,1 L-6,-2 L-1.5,-2 Z"
+                  fill="white" stroke="white" stroke-width="1"/>
+          </g>
+        `;
+        break;
+
+      case '인문(문화/예술/역사)': // 문화/역사 - 박물관/건물
+        iconSvg = `
+          <g transform="translate(16, 16)">
+            <!-- 지붕 -->
+            <path d="M-7,-4 L0,-7 L7,-4 Z" fill="white" stroke="white" stroke-width="1"/>
+            <!-- 기둥들 -->
+            <rect x="-6" y="-3" width="2" height="8" fill="white"/>
+            <rect x="-1" y="-3" width="2" height="8" fill="white"/>
+            <rect x="4" y="-3" width="2" height="8" fill="white"/>
+            <!-- 바닥 -->
+            <rect x="-7" y="5" width="14" height="1" fill="white"/>
+          </g>
+        `;
+        break;
+
+      case '자연': // 자연 - 나무 아이콘
+        iconSvg = `
+          <g transform="translate(16, 16)">
+            <!-- 나무 잎 -->
+            <circle cx="0" cy="-3" r="4" fill="white"/>
+            <circle cx="-3" cy="-1" r="3" fill="white"/>
+            <circle cx="3" cy="-1" r="3" fill="white"/>
+            <!-- 나무 줄기 -->
+            <rect x="-1" y="1" width="2" height="5" fill="white"/>
+          </g>
+        `;
+        break;
+
+      default:
+        // 기본 아이콘 - 위치 핀
+        iconSvg = `
+          <circle cx="16" cy="16" r="6" fill="white"/>
+        `;
+    }
+
+    // SVG로 마커 이미지 생성 (데이터 URI 방식)
+    const svg = `
+      <svg width="36" height="44" xmlns="http://www.w3.org/2000/svg">
+        <!-- 핀 모양 배경 -->
+        <path d="M18 0C10.8 0 5 5.8 5 13c0 9.9 13 26 13 26s13-16.1 13-26c0-7.2-5.8-13-13-13z"
+              fill="${color}" stroke="white" stroke-width="2"/>
+        <!-- 카테고리별 아이콘 -->
+        ${iconSvg}
+      </svg>
+    `;
+    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  };
+
+  const markerImageSrc = getMarkerImageSrc(place.category);
+  const markerImage = {
+    src: markerImageSrc,
+    size: { width: 36, height: 44 },
+    options: {
+      offset: { x: 18, y: 44 }, // 마커 이미지의 기준점
+    },
+  };
+
+  return (
+    <>
+      <MapMarker
+        position={{ lat: place.latitude, lng: place.longitude }}
+        image={markerImage}
+        clickable={true}
+        onMouseOver={handleMouseOver}
+        onMouseOut={handleMouseOut}
+        onClick={handleClick}
+      />
+      {isInfoWindowOpen && (
+        <CustomOverlayMap
+          position={{ lat: place.latitude, lng: place.longitude }}
+          xAnchor={0.5}
+          yAnchor={1.8}
+          zIndex={10}
+        >
+          <div
+            className="min-w-[200px] max-w-[300px] rounded-lg bg-white p-3 shadow-[0_6px_20px_rgba(0,0,0,0.3)]"
+            onMouseOver={handleMouseOver}
+            onMouseOut={handleMouseOut}
+          >
+            <div className="mb-2 text-[16px] font-bold text-[#333]">
+              {place.title}
+            </div>
+            {place.image_url && (
+              <img
+                src={place.image_url}
+                alt={place.title}
+                className="mb-2 h-[120px] w-full rounded object-cover"
+              />
+            )}
+            <div className="mb-1 text-[13px] text-[#666]">{place.address}</div>
+            {place.summary && (
+              <div className="mt-2 text-[12px] leading-snug text-[#888]">
+                {place.summary}
+              </div>
+            )}
+            <div className="mt-2 inline-block rounded bg-[#f5f5f5] px-2 py-1 text-[11px] text-[#999]">
+              {CATEGORY_INFO[place.category as keyof typeof CATEGORY_INFO]?.name || '기타'}
+            </div>
+          </div>
+        </CustomOverlayMap>
+      )}
+    </>
+  );
+});
 
 const PoiMarker = memo(
   ({
@@ -109,6 +297,7 @@ const PoiMarker = memo(
             zIndex={3}
           >
             <div
+              className="block min-w-[180px] max-w-[400px] whitespace-normal rounded-lg bg-white p-2.5 text-left leading-relaxed shadow-[0_6px_20px_rgba(0,0,0,0.3)]"
               onMouseOver={handleMouseOver}
               onMouseOut={handleMouseOut}
               className="p-3 bg-white rounded-lg shadow-lg min-w-[200px] flex flex-col gap-1 relative"
@@ -265,6 +454,7 @@ export function MapPanel({
   const [dailyRouteInfo, setDailyRouteInfo] = useState<
     Record<string, RouteSegment[]>
   >({});
+
   // 채팅 말풍선 상태와 타이머 Ref를 추가합니다.
   const [chatBubbles, setChatBubbles] = useState<Record<string, string>>({});
   const chatBubbleTimers = useRef<Record<string, NodeJS.Timeout>>({});
@@ -324,6 +514,90 @@ export function MapPanel({
       );
     };
   }, [mapInstance, moveCursor]);
+
+  // 백엔드에서 가져온 장소 데이터 상태
+  const [places, setPlaces] = useState<PlaceDto[]>([]);
+  // 디바운스를 위한 타이머 ref
+  const fetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 선택된 백엔드 장소 상태
+  const [selectedBackendPlace, setSelectedBackendPlace] = useState<PlaceDto | null>(null);
+  // summary 펼치기/접기 상태
+  const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
+
+  /**
+   * 지도 영역 내의 장소 데이터를 가져오는 함수
+   */
+  const fetchPlacesInView = useCallback(async (map: kakao.maps.Map) => {
+    try {
+      const bounds = map.getBounds();
+      const sw = bounds.getSouthWest(); // 남서쪽 좌표
+      const ne = bounds.getNorthEast(); // 북동쪽 좌표
+
+      const mapBounds = {
+        swLat: sw.getLat(),
+        swLng: sw.getLng(),
+        neLat: ne.getLat(),
+        neLng: ne.getLng(),
+      };
+
+      console.log('Fetching places for bounds:', mapBounds);
+      const placesData = await fetchPlacesInBounds(mapBounds);
+      console.log('Received places:', placesData);
+      setPlaces(placesData);
+    } catch (error) {
+      console.error('Failed to fetch places:', error);
+    }
+  }, []);
+
+  /**
+   * 지도 이동/줌 변경 시 디바운스된 장소 데이터 요청
+   */
+  const handleMapBoundsChanged = useCallback(
+    (map: kakao.maps.Map) => {
+      // 기존 타이머가 있으면 취소
+      if (fetchTimerRef.current) {
+        clearTimeout(fetchTimerRef.current);
+      }
+
+      // 500ms 후에 API 요청 (디바운스)
+      fetchTimerRef.current = setTimeout(() => {
+        fetchPlacesInView(map);
+      }, 500);
+    },
+    [fetchPlacesInView]
+  );
+
+  /**
+   * 백엔드 장소 마커 클릭 시 처리
+   */
+  const handlePlaceClick = useCallback((place: PlaceDto) => {
+    setSelectedBackendPlace(place);
+    setIsSummaryExpanded(false); // 새로운 장소 선택 시 summary 접기
+
+    // 지도가 있으면 해당 위치로 포커싱 및 줌 조정
+    if (mapInstance) {
+      const position = new window.kakao.maps.LatLng(place.latitude, place.longitude);
+
+      // 줌 레벨을 먼저 설정한 후 중앙으로 이동
+      mapInstance.setLevel(5);
+
+      // setCenter를 사용하여 정확한 위치로 이동
+      mapInstance.setCenter(position);
+    }
+  }, [mapInstance]);
+
+  // 지도 인스턴스가 생성되면 초기 장소 데이터 로드
+  useEffect(() => {
+    if (mapInstance) {
+      fetchPlacesInView(mapInstance);
+    }
+    
+    return () => {
+        if (fetchTimerRef.current) {
+            clearTimeout(fetchTimerRef.current);
+        }
+    };
+  }, [mapInstance, fetchPlacesInView]);
 
   useEffect(() => {
     if (selectedPlace && mapInstance) {
@@ -689,13 +963,21 @@ export function MapPanel({
       </style>
       <KakaoMap
         center={{ lat: 33.450701, lng: 126.570667 }}
-        style={{ width: '100%', height: '100%' }}
+        className="h-full w-full"
         level={3}
         onCreate={(map) => {
           if (mapRef) {
             (mapRef as React.MutableRefObject<kakao.maps.Map>).current = map;
             setMapInstance(map);
           }
+        }}
+        onCenterChanged={(map) => {
+          // 지도 중심이 변경될 때마다 호출
+          handleMapBoundsChanged(map);
+        }}
+        onZoomChanged={(map) => {
+          // 줌 레벨이 변경될 때마다 호출
+          handleMapBoundsChanged(map);
         }}
         onClick={(_map, mouseEvent) => {
           // 오버레이 위에서 발생한 클릭이면 마커를 생성하지 않음
@@ -833,6 +1115,46 @@ export function MapPanel({
             </div>
           </CustomOverlayMap>
         ))}
+        {/* 백엔드에서 가져온 장소 마커 렌더링 */}
+        {places.map((place) => (
+          <PlaceMarker key={place.id} place={place} onPlaceClick={handlePlaceClick} />
+        ))}
+
+        {/* 각 세그먼트별 Polyline 렌더링 */}
+        {dayLayers.map((layer) => {
+          const segments = dailyRouteInfo[layer.id];
+          if (segments && segments.length > 0) {
+            return segments.map((segment, index) => (
+              <Polyline
+                key={`${layer.id}-segment-${index}`} // 각 세그먼트별 고유 키
+                path={segment.path}
+                strokeWeight={5}
+                strokeColor={layer.color}
+                strokeOpacity={0.9}
+                strokeStyle={'solid'}
+              />
+            ));
+          }
+          // 상세 경로 정보가 없으면 기존처럼 POI를 직접 연결
+          const path = (itinerary[layer.id] || []).map((poi) => ({
+            lat: poi.latitude,
+            lng: poi.longitude,
+          }));
+          return path.length > 1 ? (
+            <Polyline
+              key={layer.id}
+              path={path}
+              strokeWeight={5}
+              strokeColor={layer.color}
+              strokeOpacity={0.9}
+              strokeStyle={'solid'}
+            />
+          ) : null;
+        })}
+
+        {/* 각 세그먼트별 경로 정보 표시 CustomOverlayMap 추가 */}
+        {dayLayers.map((layer) => {
+          const segments = dailyRouteInfo[layer.id];
 
         {/* 다른 사용자가 호버한 POI 강조 효과 */}
         {hoveredPoiInfo &&
@@ -1043,18 +1365,87 @@ export function MapPanel({
       </KakaoMap>
 
       {isSyncing && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '10px',
-            left: '10px',
-            background: 'white',
-            padding: '10px',
-            borderRadius: '5px',
-            zIndex: 2,
-          }}
-        >
+        <div className="absolute left-2.5 top-2.5 z-20 rounded bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-md">
           데이터 동기화 중...
+        </div>
+      )}
+
+      {/* 선택된 백엔드 장소 상세 정보 사이드 패널 */}
+      {selectedBackendPlace && (
+        <div className="absolute right-5 top-5 z-10 flex w-[280px] max-h-[70vh] flex-col overflow-y-auto rounded-[10px] bg-white shadow-[0_6px_20px_rgba(0,0,0,0.25)]">
+          <div className="flex items-center justify-between border-b border-[#e0e0e0] px-4 py-3">
+            <h2 className="text-[16px] font-bold text-[#222]">장소 정보</h2>
+            <button
+              onClick={() => setSelectedBackendPlace(null)}
+              className="flex h-6 w-6 cursor-pointer items-center justify-center border-0 bg-transparent p-0 text-xl leading-none text-[#666]"
+              aria-label="닫기"
+              type="button"
+            >
+              ×
+            </button>
+          </div>
+          <div className="relative w-full border-b border-[#e0e0e0]">
+            {selectedBackendPlace.image_url && (
+              <img
+                src={selectedBackendPlace.image_url}
+                alt={selectedBackendPlace.title}
+                className="h-[150px] w-full object-cover"
+              />
+            )}
+          </div>
+          <div className="flex flex-col gap-3 p-4">
+            <h3 className="mb-2.5 text-lg font-bold text-[#222]">
+              {selectedBackendPlace.title}
+            </h3>
+            <div
+              className="mb-3 inline-block rounded-full px-2.5 py-1 text-[11px] font-bold text-white"
+              style={{
+                backgroundColor:
+                  CATEGORY_INFO[selectedBackendPlace.category as keyof typeof CATEGORY_INFO]?.color || '#808080',
+              }}
+            >
+              {CATEGORY_INFO[selectedBackendPlace.category as keyof typeof CATEGORY_INFO]?.name || '기타'}
+            </div>
+
+            {selectedBackendPlace.summary && (
+              <div className="mb-4 rounded border-l-[3px] border-[#4caf50] bg-[#f8f9fa] p-3">
+                <p
+                  className={`m-0 text-[13px] leading-relaxed text-[#555] ${
+                    isSummaryExpanded ? '' : 'line-clamp-3'
+                  }`}
+                >
+                  {selectedBackendPlace.summary}
+                </p>
+                {selectedBackendPlace.summary.length > 100 && (
+                  <button
+                    onClick={() => setIsSummaryExpanded(!isSummaryExpanded)}
+                    className="mt-1.5 border-0 bg-transparent p-0 text-xs font-bold text-[#4caf50] underline"
+                    type="button"
+                  >
+                    {isSummaryExpanded ? '접기' : '자세히보기'}
+                  </button>
+                )}
+              </div>
+            )}
+
+            <button
+              onClick={() => {
+                const poiData = {
+                  latitude: selectedBackendPlace.latitude,
+                  longitude: selectedBackendPlace.longitude,
+                  address: selectedBackendPlace.address,
+                  placeName: selectedBackendPlace.title,
+                  categoryName: selectedBackendPlace.category,
+                };
+                markPoi(poiData);
+                setSelectedBackendPlace(null);
+              }}
+              className="w-full rounded bg-[#4caf50] px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-[#45a049]"
+              type="button"
+            >
+              여행지에 추가
+            </button>
+          </div>
         </div>
       )}
     </div>
