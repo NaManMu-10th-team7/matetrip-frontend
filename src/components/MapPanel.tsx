@@ -1,10 +1,5 @@
 import React, { useEffect, useRef, useState, memo } from 'react';
-import type {
-  Poi,
-  CreatePoiDto,
-  UserCursor,
-  CursorPosition,
-} from '../hooks/usePoiSocket';
+import type { Poi, CreatePoiDto, CursorPosition } from '../hooks/usePoiSocket';
 import { PlusCircle, X } from 'lucide-react'; // PlusCircle, X 아이콘 임포트
 import {
   Map as KakaoMap,
@@ -51,6 +46,14 @@ export interface ChatMessage {
   avatar?: string; // [추가] 프로필 이미지 URL을 위한 속성
 }
 
+// [수정] cursors prop을 위한 명시적인 타입 정의
+interface CursorData {
+  position: CursorPosition;
+  userName: string;
+  userColor: string;
+  userAvatar: string;
+}
+
 interface MapPanelProps {
   itinerary: Record<string, Poi[]>;
   dayLayers: DayLayer[];
@@ -71,7 +74,7 @@ interface MapPanelProps {
   onRouteOptimized?: (dayId: string, optimizedPoiIds: string[]) => void;
   // [추가] 최적화 로직을 트리거하고 완료를 알리기 위한 props
   optimizingDayId?: string | null;
-  cursors: Record<string, Omit<UserCursor, 'userId'>>;
+  cursors: Record<string, CursorData>;
   onOptimizationComplete?: () => void;
   // 새로운 채팅 메시지를 수신하기 위한 prop 추가
   latestChatMessage?: ChatMessage | null;
@@ -425,25 +428,27 @@ export function MapPanel({
               throw new Error(`HTTP error! status: ${response.status}`);
 
             const data = await response.json();
-            console.log(`[DEBUG] Raw API response for day ${dayLayer.id}:`, data); // API 응답 전체를 로깅
+            console.log(
+              `[DEBUG] Raw API response for day ${dayLayer.id}:`,
+              data
+            ); // API 응답 전체를 로깅
 
             if (data.routes && data.routes[0]?.sections) {
               const segmentsForDay: RouteSegment[] = [];
               // [수정] poisForThisDay를 루프 안으로 이동
-              const poisForThisDay = [ 
-                originPoi,
-                ...waypoints,
-                destinationPoi,
-              ];
+              const poisForThisDay = [originPoi, ...waypoints, destinationPoi];
 
               // 좌표를 기반으로 가장 가까운 POI를 찾는 헬퍼 함수
               // [수정] 검색 대상을 인자로 받도록 변경
-              const findClosestPoi = (lng: number, lat: number, poisToSearch: Poi[]) => { 
+              const findClosestPoi = (
+                lng: number,
+                lat: number,
+                poisToSearch: Poi[]
+              ): Poi | null => {
                 let closestPoi: Poi | null = null;
                 let minDistance = Infinity;
 
-                console.log(`[DEBUG] poisToSearch for findClosestPoi:`, poisToSearch.map(p => p.placeName)); // findClosestPoi가 검색할 POI 목록 로깅
-                poisForThisDay.forEach((poi) => {
+                poisToSearch.forEach((poi) => {
                   const dist =
                     Math.pow(poi.longitude - lng, 2) +
                     Math.pow(poi.latitude - lat, 2);
@@ -452,7 +457,6 @@ export function MapPanel({
                     closestPoi = poi;
                   }
                 });
-                console.log(`[DEBUG] findClosestPoi returning: ${closestPoi?.placeName} (ID: ${closestPoi?.id})`); // findClosestPoi 결과 로깅
                 return closestPoi;
               };
 
@@ -460,7 +464,6 @@ export function MapPanel({
                 (section: KakaoNaviSection, index: number) => {
                   // [수정] detailedPath를 루프 내에서 초기화하여 각 세그먼트가 독립적인 경로를 갖도록 합니다.
                   const segmentPath: { lat: number; lng: number }[] = [];
-                  console.log(`[DEBUG] Processing section ${index} for day ${dayLayer.id}`); // 각 섹션 처리 시작 로깅
                   if (section.roads) {
                     section.roads.forEach((road: KakaoNaviRoad) => {
                       for (let i = 0; i < road.vertexes.length; i += 2) {
@@ -470,7 +473,6 @@ export function MapPanel({
                         });
                       }
                     });
-                    console.log(`[DEBUG] Segment path length for section ${index}: ${segmentPath.length}`); // segmentPath에 몇 개의 좌표가 들어갔는지 로깅
                   }
 
                   // guides 정보를 사용하여 정확한 fromPoi와 toPoi를 찾습니다.
@@ -486,14 +488,18 @@ export function MapPanel({
 
                   const endGuide = guides[guides.length - 1];
 
-                  console.log(`[DEBUG] Section ${index} startGuide: (${startGuide.x}, ${startGuide.y}), endGuide: (${endGuide.x}, ${endGuide.y})`); // 가이드 좌표 로깅
-
-                  const fromPoi = findClosestPoi(startGuide.x, startGuide.y, poisForThisDay); 
+                  const fromPoi = findClosestPoi(
+                    startGuide.x,
+                    startGuide.y,
+                    poisForThisDay
+                  );
                   // 마지막 섹션의 마지막 가이드는 도착지입니다.
                   // 경유지 가이드 타입은 1000, 도착지 가이드 타입은 101 입니다.
-                  const toPoi = findClosestPoi(endGuide.x, endGuide.y, poisForThisDay); 
-
-                  console.log(`[DEBUG] Section ${index} fromPoi: ${fromPoi?.placeName} (ID: ${fromPoi?.id}), toPoi: ${toPoi?.placeName} (ID: ${toPoi?.id})`); // 매칭된 fromPoi, toPoi 로깅
+                  const toPoi = findClosestPoi(
+                    endGuide.x,
+                    endGuide.y,
+                    poisForThisDay
+                  );
 
                   if (fromPoi && toPoi) {
                     segmentsForDay.push({
@@ -503,9 +509,6 @@ export function MapPanel({
                       distance: section.distance,
                       path: segmentPath,
                     });
-                    console.log(`[DEBUG] Segment pushed for section ${index}. segmentsForDay length: ${segmentsForDay.length}`); // 세그먼트가 성공적으로 추가되었는지 로깅
-                  } else {
-                    console.warn(`[DEBUG] fromPoi or toPoi not found for section ${index}. fromPoi: ${fromPoi?.placeName}, toPoi: ${toPoi?.placeName}`); // fromPoi 또는 toPoi 매칭 실패 시 경고 로깅
                   }
                 }
               );
@@ -532,12 +535,12 @@ export function MapPanel({
       );
       // 경로 정보 업데이트 시 부모 컴포넌트로 전달
       if (onRouteInfoUpdate) {
-        onRouteInfoUpdate(newDailyRouteInfo);
+        onRouteInfoUpdate(newDailyRouteInfo as Record<string, RouteSegment[]>);
       }
       setDailyRouteInfo(newDailyRouteInfo);
     };
 
-    drawStandardRoutes(); 
+    drawStandardRoutes();
   }, [itinerary, dayLayers, onRouteInfoUpdate]);
 
   // [추가] 경로 최적화 전용 useEffect: optimizingDayId가 변경될 때만 실행
