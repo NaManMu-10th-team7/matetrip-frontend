@@ -80,15 +80,14 @@ const PoiMarker = memo(
 
     const isScheduled = markerLabel !== undefined;
 
-    const markerImage = isScheduled
-      ? {
-          src: createCustomMarkerIcon(markerLabel, markerColor || '#FF5733'),
-          size: { width: 36, height: 48 },
-          options: {
-            offset: { x: 18, y: 48 }, // 마커의 하단 중앙을 좌표에 맞춤
-          },
-        }
-      : undefined;
+    // isScheduled가 true일 때만 커스텀 아이콘을 사용하고, false일 때는 undefined로 두어 기본 마커를 사용하도록 합니다.
+    const markerImage = isScheduled ? {
+      src: createCustomMarkerIcon(markerLabel, markerColor || '#FF5733'),
+      size: { width: 36, height: 48 },
+      options: {
+        offset: { x: 18, y: 48 }, // 마커의 하단 중앙을 좌표에 맞춤
+      },
+    } : undefined;
 
     return (
       <MapMarker
@@ -99,7 +98,8 @@ const PoiMarker = memo(
         onMouseOver={handleMouseOver}
         onMouseOut={handleMouseOut}
         onClick={handleClick}
-        opacity={animatedOpacity}
+        // isScheduled가 아닐 때는 항상 보이도록 opacity를 1로 설정합니다.
+        opacity={isScheduled ? animatedOpacity : 1}
       >
         {isInfoWindowOpen && (
           <CustomOverlayMap
