@@ -65,6 +65,7 @@ export function ProfileModal({
   const { user: loggedInUser } = useAuthStore();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [travelHistory, setTravelHistory] = useState<Post[]>([]);
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
@@ -96,6 +97,20 @@ export function ProfileModal({
       console.log('GET /users/{userId}profile 응답', profileRes.data);
 
       setProfile(profileRes.data);
+      //imageId가 있으면 url 호출
+      if (profileRes.data.profileImageId) {
+        try {
+          const presignedRes = await client.get<{ url: string }>(
+            `/binary-content/${profileRes.data.profileImageId}/presigned-url`
+          );
+          setProfileImageUrl(presignedRes.data.url);
+        } catch (presignedError) {
+          console.error('프로필 이미지 URL 불러오기 실패:', presignedError);
+          setProfileImageUrl(null);
+        }
+      } else {
+        setProfileImageUrl(null);
+      }
       setError(null);
 
       // 작성한 동행과 참여한 동행 목록을 합치고 중복을 제거합니다.
@@ -153,6 +168,7 @@ export function ProfileModal({
   }
 
   if (isLoading || !profile) {
+    //setProfileImageUrl(null);
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl h-[80vh]">
@@ -193,8 +209,7 @@ export function ProfileModal({
                   <div className="flex items-start gap-6">
                     <ImageWithFallback
                       src={
-                        // TODO: profileImageId를 presigned-url로 변환하는 로직 필요
-                        profile.profileImageId ||
+                        profileImageUrl ||
                         `https://ui-avatars.com/api/?name=${profile?.nickname}&background=random`
                       }
                       alt={profile.nickname}

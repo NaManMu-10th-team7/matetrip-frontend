@@ -385,6 +385,8 @@ export function EditProfileModal({
                   <div className="flex items-start gap-6">
                     <div className="relative group">
                       <div className="relative w-32 h-32 rounded-full overflow-hidden bg-black ring-2 ring-gray-200 ring-offset-2 ring-offset-white transition-all group-hover:ring-gray-300">
+                        {/* res.json()에서 받은 url을 <img src={url}>로 쓰면 브라우저가 그 URL을 이용해 S3에서 실제 이미지를 내려 받는 HTTP 요청을 자동으로 보내는데, 
+                        이건 코드로 직접 쓰진 않아도 브라우저 레벨에서 발생하는 2번째 호출 */}
                         {profileImageUrl ? (
                           <ImageWithFallback
                             src={profileImageUrl}
