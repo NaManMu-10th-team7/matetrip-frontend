@@ -57,6 +57,7 @@ export type UserCursor = {
   position: CursorPosition;
   userName: string;
   userColor: string;
+  userAvatar: string;
 };
 
 export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
@@ -156,6 +157,7 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
           position: data.position,
           userName: data.userName,
           userColor: data.userColor,
+          userAvatar: data.userAvatar,
         },
       }));
     };
@@ -249,6 +251,10 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
         (member) => member.id === user.userId
       );
 
+      const userAvatarUrl = currentUserMemberInfo?.profile.profileImageId
+        ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/binary-content/${currentUserMemberInfo.profile.profileImageId}/presigned-url`
+        : `https://ui-avatars.com/api/?name=${currentUserMemberInfo?.profile.nickname || 'User'}&background=random`;
+
       const payload = {
         workspaceId,
         userId: user.userId,
@@ -256,6 +262,7 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
         userName: currentUserMemberInfo?.profile.nickname || 'Unknown',
         // 여기서 색상을 결정할 수 있습니다. 예시로 generateColorFromString 사용
         userColor: '#FF0000', // 임시 색상. 실제로는 사용자별 고유 색상 로직 필요
+        userAvatar: userAvatarUrl,
       };
       socketRef.current?.emit(PoiSocketEvent.CURSOR_MOVE, payload);
     },

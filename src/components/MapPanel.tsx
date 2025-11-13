@@ -67,7 +67,6 @@ interface MapPanelProps {
   mapRef: React.RefObject<kakao.maps.Map | null>;
   hoveredPoi: Poi | null;
   unmarkPoi: (poiId: string) => void; // usePoiSocket.ts 에서는 string | number 로 되어있지만, Workspace.tsx 에서는 string으로 사용하고 있으므로 string으로 통일
-  onPoiDragEnd: (poiId: string, lat: number, lng: number) => void;
   setSelectedPlace: (place: KakaoPlace | null) => void;
   onRouteInfoUpdate?: (routeInfo: Record<string, RouteSegment[]>) => void; // 추가된 prop
   // 경로 최적화를 위한 콜백 추가
@@ -111,7 +110,6 @@ interface KakaoNaviGuide {
 
 interface PoiMarkerProps {
   poi: Poi;
-  onPoiDragEnd: (poiId: string, lat: number, lng: number) => void;
   sequenceNumber?: number;
   markerColor?: string;
   isHovered: boolean;
@@ -122,7 +120,6 @@ interface PoiMarkerProps {
 const PoiMarker = memo(
   ({
     poi,
-    onPoiDragEnd,
     sequenceNumber,
     markerColor,
     isHovered,
@@ -164,15 +161,11 @@ const PoiMarker = memo(
     return (
       <MapMarker
         position={{ lat: poi.latitude, lng: poi.longitude }}
-        draggable={true}
+        draggable={false}
         clickable={true}
         onMouseOver={handleMouseOver}
         onMouseOut={handleMouseOut}
         onClick={handleClick}
-        onDragEnd={(marker) => {
-          const newPosition = marker.getPosition();
-          onPoiDragEnd(poi.id, newPosition.getLat(), newPosition.getLng());
-        }}
       >
         {sequenceNumber !== undefined && (
           <CustomOverlayMap
@@ -253,7 +246,6 @@ export function MapPanel({
   unmarkPoi,
   mapRef,
   hoveredPoi,
-  onPoiDragEnd,
   setSelectedPlace,
   onRouteInfoUpdate, // 추가된 prop
   onRouteOptimized,
@@ -755,7 +747,6 @@ export function MapPanel({
             <PoiMarker
               key={poi.id}
               poi={poi}
-              onPoiDragEnd={onPoiDragEnd}
               sequenceNumber={sequenceNumber}
               markerColor={markerColor}
               isHovered={hoveredPoi?.id === poi.id}

@@ -365,20 +365,6 @@ export function Workspace({
     ]
   );
 
-  const handleMapPoiDragEnd = useCallback(
-    (poiId: string, lat: number, lng: number) => {
-      setPois((currentPois) =>
-        currentPois.map((poi) =>
-          poi.id === poiId ? { ...poi, latitude: lat, longitude: lng } : poi
-        )
-      );
-      // TODO: Call a socket event to persist the new coordinates.
-      // For now, only local state is updated.
-      console.log(`POI ${poiId} dragged to Lat: ${lat}, Lng: ${lng}`);
-    },
-    [setPois]
-  );
-
   // MapPanel로부터 경로 정보를 받아 상태를 업데이트하는 콜백 함수
   const handleRouteInfoUpdate = useCallback(
     (newRouteInfo: Record<string, RouteSegment[]>) => {
@@ -464,7 +450,6 @@ export function Workspace({
               unmarkPoi={unmarkPoi}
               selectedPlace={selectedPlace}
               mapRef={mapRef}
-              onPoiDragEnd={handleMapPoiDragEnd}
               setSelectedPlace={setSelectedPlace}
               cursors={cursors}
               onRouteInfoUpdate={handleRouteInfoUpdate} // MapPanel에 콜백 함수 전달
