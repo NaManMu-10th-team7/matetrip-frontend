@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, memo } from 'react';
-import type { Poi, CreatePoiDto, MapClickEffect } from '../hooks/usePoiSocket';
+import type { Poi } from '../hooks/usePoiSocket';
 import { PlusCircle, X } from 'lucide-react'; // PlusCircle, X 아이콘 임포트
 import {
   Map as KakaoMap,
@@ -9,113 +9,19 @@ import {
 } from 'react-kakao-maps-sdk';
 import { Button } from './ui/button';
 import { KAKAO_REST_API_KEY } from '../constants'; // KAKAO_REST_API_KEY import 추가
-import { type HoveredPoiInfo, type UserCursor } from '../hooks/usePoiSocket';
-import { useAnimatedOpacity } from '../hooks/useAnimatedOpacity'; // useAnimatedOpacity 훅 임포트
-import type { WorkspaceMember } from '../types/member';
 
-export interface KakaoPlace {
-  id: string;
-  place_name: string;
-  category_name: string;
-  category_group_code: string;
-  category_group_name: string;
-  phone: string;
-  address_name: string;
-  road_address_name: string;
-  x: string;
-  y: string;
-  place_url: string;
-  distance: string;
-}
+import { useAnimatedOpacity } from '../hooks/useAnimatedOpacity';
 
-export interface DayLayer {
-  id: string;
-  label: string;
-  color: string;
-}
-
-export interface RouteSegment {
-  fromPoiId: string;
-  toPoiId: string;
-  duration: number; // seconds
-  distance: number; // meters
-  path: { lat: number; lng: number }[];
-}
-
-// 채팅 메시지 타입을 정의합니다.
-export interface ChatMessage {
-  userId: string;
-  message: string;
-  avatar?: string; // [추가] 프로필 이미지 URL을 위한 속성
-}
-
-interface MapPanelProps {
-  itinerary: Record<string, Poi[]>;
-  dayLayers: DayLayer[];
-  pois: Poi[];
-  isSyncing: boolean;
-  markPoi: (
-    poiData: Omit<CreatePoiDto, 'workspaceId' | 'createdBy' | 'id'>
-  ) => void;
-  selectedPlace: KakaoPlace | null;
-  mapRef: React.RefObject<kakao.maps.Map | null>;
-  hoveredPoiInfo: HoveredPoiInfo | null; // hoveredPoi -> hoveredPoiInfo
-  unmarkPoi: (poiId: string) => void; // usePoiSocket.ts 에서는 string | number 로 되어있지만, Workspace.tsx 에서는 string으로 사용하고 있으므로 string으로 통일
-  setSelectedPlace: (place: KakaoPlace | null) => void;
-  onRouteInfoUpdate?: (routeInfo: Record<string, RouteSegment[]>) => void; // 추가된 prop
-  // 경로 최적화를 위한 콜백 추가
-  onRouteOptimized?: (dayId: string, optimizedPoiIds: string[]) => void;
-  // [추가] 최적화 로직을 트리거하고 완료를 알리기 위한 props
-  optimizingDayId?: string | null;
-  onOptimizationComplete?: () => void;
-  // 새로운 채팅 메시지를 수신하기 위한 prop 추가
-  latestChatMessage?: ChatMessage | null;
-  workspaceId: string;
-  members: WorkspaceMember[];
-  cursors: Record<string, Omit<UserCursor, 'userId'>>; // cursors prop 추가
-  moveCursor: (position: { lat: number; lng: number }) => void; // moveCursor prop 추가
-  clickEffects: MapClickEffect[]; // 지도 클릭 효과를 위한 prop 추가
-  clickMap: (position: { lat: number; lng: number }) => void; // 지도 클릭 이벤트를 발생시키는 함수 prop 추가
-  visibleDayIds: Set<string>; // [추가] 지도에 표시할 날짜 ID Set
-}
-
-// 카카오내비 API 응답 타입을 위한 인터페이스 추가
-interface KakaoNaviRoad {
-  name: string;
-  distance: number;
-  duration: number;
-  traffic_speed: number;
-  traffic_state: number;
-  vertexes: number[];
-}
-
-interface KakaoNaviSection {
-  distance: number;
-  duration: number;
-  roads: KakaoNaviRoad[];
-  guides: KakaoNaviGuide[];
-}
-
-// [추가] 카카오내비 API 응답 타입 - guides
-interface KakaoNaviGuide {
-  name: string;
-  x: number;
-  y: number;
-  distance: number;
-  duration: number;
-  type: number;
-  guidance: string;
-  road_index: number;
-}
-
-interface PoiMarkerProps {
-  poi: Poi;
-  markerLabel?: string;
-  markerColor?: string;
-  isHovered: boolean;
-  unmarkPoi: (poiId: string) => void;
-  isOverlayHoveredRef: React.MutableRefObject<boolean>;
-}
+import type {
+  KakaoPlace,
+  RouteSegment,
+  KakaoNaviRoad,
+  KakaoNaviSection,
+  KakaoNaviGuide,
+  MapPanelProps,
+  PoiMarkerProps,
+  DayRouteRendererProps,
+} from '../types/map';
 
 /**
  * POI 순번과 색상을 포함하는 커스텀 SVG 마커 아이콘을 생성합니다.
@@ -236,13 +142,6 @@ const PoiMarker = memo(
     );
   }
 );
-
-interface DayRouteRendererProps {
-  layer: DayLayer;
-  itinerary: Record<string, Poi[]>;
-  dailyRouteInfo: Record<string, RouteSegment[]>;
-  visibleDayIds: Set<string>;
-}
 
 const DayRouteRenderer = memo(
   ({

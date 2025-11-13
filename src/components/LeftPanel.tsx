@@ -22,7 +22,7 @@ import {
 import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import type { Poi } from '../hooks/usePoiSocket';
-import { type DayLayer, type KakaoPlace, type RouteSegment } from './MapPanel';
+import type { DayLayer, KakaoPlace, RouteSegment } from '../types/map';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import React from 'react'; // React Fragment 사용을 위해 import

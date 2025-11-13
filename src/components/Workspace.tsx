@@ -8,12 +8,8 @@ import {
   type DragEndEvent,
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
-import {
-  MapPanel,
-  type KakaoPlace,
-  type RouteSegment,
-  type ChatMessage,
-} from './MapPanel'; // RouteSegment, ChatMessage import 추가
+import { MapPanel } from './MapPanel';
+import type { KakaoPlace, RouteSegment, ChatMessage } from '../types/map';
 import type { PlanDayDto } from '../types/workspace';
 import { LeftPanel } from './LeftPanel';
 import { RightPanel } from './RightPanel';
