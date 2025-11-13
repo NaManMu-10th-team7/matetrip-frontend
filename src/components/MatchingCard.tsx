@@ -108,10 +108,10 @@ export function MatchingCard({
           <h3 className="text-gray-900 text-xl font-bold leading-snug truncate">
             {title}
           </h3>
-          <span className="inline-flex items-center gap-1 text-xs font-semibold text-pink-500">
+          {/* <span className="inline-flex items-center gap-1 text-xs font-semibold text-pink-500">
             <Sparkles className="w-3.5 h-3.5" />
             {rankLabel}
-          </span>
+          </span> */}
         </div>
 
         <div className="flex items-center gap-2 text-gray-600">
