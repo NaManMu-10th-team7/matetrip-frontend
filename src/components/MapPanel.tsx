@@ -5,6 +5,7 @@ import type {
   UserCursor,
   CursorPosition,
 } from '../hooks/usePoiSocket';
+import { PlusCircle, X } from 'lucide-react'; // PlusCircle, X 아이콘 임포트
 import {
   Map as KakaoMap,
   MapMarker,
@@ -681,7 +682,7 @@ export function MapPanel({
                 yAnchor={1.3} // yAnchor 값을 다른 오버레이와 동일하게 조정합니다.
               >
                 <div
-                  className="p-3 bg-white rounded-lg shadow-lg min-w-[200px] flex flex-col gap-2 relative"
+                  className="p-3 bg-white rounded-lg shadow-lg min-w-[200px]"
                   onMouseEnter={() => {
                     isOverlayHoveredRef.current = true;
                     setHoveredTempPlaceId(tempPlace.id);
@@ -691,61 +692,51 @@ export function MapPanel({
                     setHoveredTempPlaceId(null);
                   }}
                 >
-                  {/* 닫기 버튼 추가 */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation(); // 지도 클릭 이벤트 전파 방지
-                      isOverlayHoveredRef.current = false; // Ref 값을 수동으로 초기화
-                      // 임시 마커 목록에서 현재 마커를 제거
-                      setTemporaryPlaces((prev) =>
-                        prev.filter((p) => p.id !== tempPlace.id)
-                      );
-                    }}
-                    className="absolute top-1 right-1 p-1 text-gray-400 hover:text-gray-700"
-                    aria-label="닫기"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
                   <div className="font-bold text-base">
                     {tempPlace.place_name}
                   </div>
                   <div className="text-xs text-gray-500">
                     {tempPlace.address_name}
                   </div>
-                  <Button
-                    size="sm"
-                    className="mt-1 w-full"
-                    onClick={(e) => {
-                      e.stopPropagation(); // 지도 클릭 이벤트 전파 방지
-                      isOverlayHoveredRef.current = false; // Ref 값을 수동으로 초기화
-                      markPoi({
-                        latitude: Number(tempPlace.y),
-                        longitude: Number(tempPlace.x),
-                        address:
-                          tempPlace.road_address_name || tempPlace.address_name,
-                        placeName: tempPlace.place_name,
-                        categoryName: tempPlace.category_name,
-                      });
-                      setTemporaryPlaces((prev) =>
-                        prev.filter((p) => p.id !== tempPlace.id)
-                      );
-                    }}
-                  >
-                    보관함에 추가
-                  </Button>
+                  <div className="mt-3 flex items-center justify-between gap-2">
+                    <Button
+                      size="sm"
+                      className="flex-1 h-8"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        isOverlayHoveredRef.current = false;
+                        markPoi({
+                          latitude: Number(tempPlace.y),
+                          longitude: Number(tempPlace.x),
+                          address:
+                            tempPlace.road_address_name ||
+                            tempPlace.address_name,
+                          placeName: tempPlace.place_name,
+                          categoryName: tempPlace.category_name,
+                        });
+                        setTemporaryPlaces((prev) =>
+                          prev.filter((p) => p.id !== tempPlace.id)
+                        );
+                      }}
+                    >
+                      <PlusCircle className="w-4 h-4 mr-2" />
+                      보관함에 추가
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        isOverlayHoveredRef.current = false;
+                        setTemporaryPlaces((prev) =>
+                          prev.filter((p) => p.id !== tempPlace.id)
+                        );
+                      }}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               </CustomOverlayMap>
             )}
