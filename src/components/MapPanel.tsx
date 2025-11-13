@@ -91,6 +91,19 @@ interface KakaoNaviSection {
   distance: number;
   duration: number;
   roads: KakaoNaviRoad[];
+  guides: KakaoNaviGuide[];
+}
+
+// [추가] 카카오내비 API 응답 타입 - guides
+interface KakaoNaviGuide {
+  name: string;
+  x: number;
+  y: number;
+  distance: number;
+  duration: number;
+  type: number;
+  guidance: string;
+  road_index: number;
 }
 
 interface PoiMarkerProps {
@@ -379,80 +392,124 @@ export function MapPanel({
             const originPoi = dayPois[0];
             const destinationPoi = dayPois[dayPois.length - 1];
             const waypoints = dayPois.slice(1, dayPois.length - 1);
-            const requestBody = {
-              origin: {
-                x: String(originPoi.longitude),
-                y: String(originPoi.latitude),
-              },
-              destination: {
-                x: String(destinationPoi.longitude),
-                y: String(destinationPoi.latitude),
-              },
-              waypoints: waypoints.map((poi) => ({
-                name: poi.placeName,
-                x: String(poi.longitude),
-                y: String(poi.latitude),
-              })),
-              priority: 'TIME',
-              summary: true,
-              road_details: true,
-            };
+
+            const originParam = `${originPoi.longitude},${originPoi.latitude}`;
+            const destinationParam = `${destinationPoi.longitude},${destinationPoi.latitude}`;
+            const waypointsParam = waypoints
+              .map((poi) => `${poi.longitude},${poi.latitude}`)
+              .join('|');
+
+            const queryParams = new URLSearchParams({
+              origin: originParam,
+              destination: destinationParam,
+              priority: 'RECOMMEND',
+              // [수정] summary를 false로 설정해야 road_details와 guides 정보가 반환됩니다.
+              summary: 'false',
+              road_details: 'true', // 상세 경로 정보 요청
+              guides: 'true', // 경로 안내 정보 요청
+            });
+
+            if (waypointsParam) {
+              queryParams.append('waypoints', waypointsParam);
+            }
 
             const response = await fetch(
-              `https://apis-navi.kakaomobility.com/v1/waypoints/directions`,
+              `https://apis-navi.kakaomobility.com/v1/directions?${queryParams.toString()}`,
               {
-                method: 'POST',
                 headers: {
                   Authorization: `KakaoAK ${KAKAO_REST_API_KEY}`,
-                  'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(requestBody),
               }
             );
-
             if (!response.ok)
               throw new Error(`HTTP error! status: ${response.status}`);
 
             const data = await response.json();
+            console.log(`[DEBUG] Raw API response for day ${dayLayer.id}:`, data); // API 응답 전체를 로깅
 
             if (data.routes && data.routes[0]?.sections) {
-              const route = data.routes[0];
-              const segments: RouteSegment[] = [];
-              const currentPoisInOrder = [
+              const segmentsForDay: RouteSegment[] = [];
+              // [수정] poisForThisDay를 루프 안으로 이동
+              const poisForThisDay = [ 
                 originPoi,
                 ...waypoints,
                 destinationPoi,
               ];
 
-              route.sections.forEach(
+              // 좌표를 기반으로 가장 가까운 POI를 찾는 헬퍼 함수
+              // [수정] 검색 대상을 인자로 받도록 변경
+              const findClosestPoi = (lng: number, lat: number, poisToSearch: Poi[]) => { 
+                let closestPoi: Poi | null = null;
+                let minDistance = Infinity;
+
+                console.log(`[DEBUG] poisToSearch for findClosestPoi:`, poisToSearch.map(p => p.placeName)); // findClosestPoi가 검색할 POI 목록 로깅
+                poisForThisDay.forEach((poi) => {
+                  const dist =
+                    Math.pow(poi.longitude - lng, 2) +
+                    Math.pow(poi.latitude - lat, 2);
+                  if (dist < minDistance) {
+                    minDistance = dist;
+                    closestPoi = poi;
+                  }
+                });
+                console.log(`[DEBUG] findClosestPoi returning: ${closestPoi?.placeName} (ID: ${closestPoi?.id})`); // findClosestPoi 결과 로깅
+                return closestPoi;
+              };
+
+              data.routes[0].sections.forEach(
                 (section: KakaoNaviSection, index: number) => {
-                  const detailedPath: { lat: number; lng: number }[] = [];
+                  // [수정] detailedPath를 루프 내에서 초기화하여 각 세그먼트가 독립적인 경로를 갖도록 합니다.
+                  const segmentPath: { lat: number; lng: number }[] = [];
+                  console.log(`[DEBUG] Processing section ${index} for day ${dayLayer.id}`); // 각 섹션 처리 시작 로깅
                   if (section.roads) {
                     section.roads.forEach((road: KakaoNaviRoad) => {
                       for (let i = 0; i < road.vertexes.length; i += 2) {
-                        detailedPath.push({
+                        segmentPath.push({
                           lng: road.vertexes[i],
                           lat: road.vertexes[i + 1],
                         });
                       }
                     });
+                    console.log(`[DEBUG] Segment path length for section ${index}: ${segmentPath.length}`); // segmentPath에 몇 개의 좌표가 들어갔는지 로깅
                   }
 
-                  const fromPoi = currentPoisInOrder[index];
-                  const toPoi = currentPoisInOrder[index + 1];
+                  // guides 정보를 사용하여 정확한 fromPoi와 toPoi를 찾습니다.
+                  const guides = section.guides as KakaoNaviGuide[];
+                  // [수정] section.guides가 없거나 비어있는 경우를 처리합니다.
+                  if (!guides || guides.length === 0) {
+                    console.warn(
+                      `[DEBUG] Section ${index} for day ${dayLayer.id} has no guides. Skipping this section.`
+                    );
+                    return; // 현재 section 처리를 건너뛰고 다음 section으로 넘어갑니다.
+                  }
+                  const startGuide = guides[0];
+
+                  const endGuide = guides[guides.length - 1];
+
+                  console.log(`[DEBUG] Section ${index} startGuide: (${startGuide.x}, ${startGuide.y}), endGuide: (${endGuide.x}, ${endGuide.y})`); // 가이드 좌표 로깅
+
+                  const fromPoi = findClosestPoi(startGuide.x, startGuide.y, poisForThisDay); 
+                  // 마지막 섹션의 마지막 가이드는 도착지입니다.
+                  // 경유지 가이드 타입은 1000, 도착지 가이드 타입은 101 입니다.
+                  const toPoi = findClosestPoi(endGuide.x, endGuide.y, poisForThisDay); 
+
+                  console.log(`[DEBUG] Section ${index} fromPoi: ${fromPoi?.placeName} (ID: ${fromPoi?.id}), toPoi: ${toPoi?.placeName} (ID: ${toPoi?.id})`); // 매칭된 fromPoi, toPoi 로깅
 
                   if (fromPoi && toPoi) {
-                    segments.push({
+                    segmentsForDay.push({
                       fromPoiId: fromPoi.id,
                       toPoiId: toPoi.id,
                       duration: section.duration,
                       distance: section.distance,
-                      path: detailedPath,
+                      path: segmentPath,
                     });
+                    console.log(`[DEBUG] Segment pushed for section ${index}. segmentsForDay length: ${segmentsForDay.length}`); // 세그먼트가 성공적으로 추가되었는지 로깅
+                  } else {
+                    console.warn(`[DEBUG] fromPoi or toPoi not found for section ${index}. fromPoi: ${fromPoi?.placeName}, toPoi: ${toPoi?.placeName}`); // fromPoi 또는 toPoi 매칭 실패 시 경고 로깅
                   }
                 }
               );
-              newDailyRouteInfo[dayLayer.id] = segments;
+              newDailyRouteInfo[dayLayer.id] = segmentsForDay;
             }
           } catch (error) {
             console.error(
@@ -473,14 +530,14 @@ export function MapPanel({
         'New daily route info before setting state:',
         newDailyRouteInfo
       );
-      setDailyRouteInfo(newDailyRouteInfo);
       // 경로 정보 업데이트 시 부모 컴포넌트로 전달
       if (onRouteInfoUpdate) {
         onRouteInfoUpdate(newDailyRouteInfo);
       }
+      setDailyRouteInfo(newDailyRouteInfo);
     };
 
-    drawStandardRoutes();
+    drawStandardRoutes(); 
   }, [itinerary, dayLayers, onRouteInfoUpdate]);
 
   // [추가] 경로 최적화 전용 useEffect: optimizingDayId가 변경될 때만 실행
