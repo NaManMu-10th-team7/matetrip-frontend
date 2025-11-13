@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { MapPin, ClipboardList, Plus } from 'lucide-react';
+import { MapPin, ClipboardList, Plus, Wand2, Info } from 'lucide-react';
 import { Button } from './ui/button';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import client from '../api/client';
@@ -9,6 +9,7 @@ import { WorkspaceCarousel } from './WorkspaceCarousel';
 import { MatchingCarousel } from './MatchingCarousel';
 import { useAuthStore } from '../store/authStore';
 import type { MatchCandidateDto, MatchingInfo } from '../types/matching';
+import { Tooltip, TooltipTrigger, TooltipContent } from './ui/tooltip';
 
 interface MainPageProps {
   onSearch: (params: {
@@ -299,6 +300,28 @@ export function MainPage({
       ? '추천할 게시글이 없습니다.'
       : '최신 게시글이 없습니다.';
 
+  const handleFeaturedToggle = () => {
+    if (activeFeaturedView === 'recommended') {
+      setFeaturedView('latest');
+      return;
+    }
+    if (!isLoggedIn) {
+      return;
+    }
+    setFeaturedView('recommended');
+  };
+
+  const toggleButtonLabel =
+    activeFeaturedView === 'recommended' ? '최신글 보기' : '추천 동행';
+
+  const toggleButtonClasses =
+    activeFeaturedView === 'recommended'
+      ? 'bg-blue-600 text-white hover:bg-blue-700'
+      : 'bg-pink-500 text-white hover:bg-pink-600';
+
+  const toggleButtonDisabled =
+    !isLoggedIn && activeFeaturedView !== 'recommended';
+
   return (
     <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-gray-50">
       {/* --- User's Participating Trips Section --- */}
@@ -341,39 +364,50 @@ export function MainPage({
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-2">
             <ClipboardList className="w-5 h-5 text-blue-600" />
-            <h2 className="text-xl font-bold text-gray-900">
-              {isFeaturedLoading ? (
-                <div className="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>
-              ) : (
-                featuredTitle
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-bold text-gray-900">
+                {isFeaturedLoading ? (
+                  <div className="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>
+                ) : (
+                  featuredTitle
+                )}
+              </h2>
+              {activeFeaturedView === 'recommended' && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-blue-200 text-blue-600 hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
+                      aria-label="매칭 스코어 안내"
+                    >
+                      <Info className="w-3.5 h-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="top"
+                    showArrow={false}
+                    className="bg-white text-gray-700 border border-blue-200 text-xs font-medium shadow-md max-w-xs"
+                  >
+                    여행스타일, 여행성향, 상세 소개, MBTI의 가중치를 합산하여
+                    구한 매칭 스코어예요.
+                  </TooltipContent>
+                </Tooltip>
               )}
-            </h2>
+            </div>
           </div>
-          <div className="flex items-center gap-2 bg-white rounded-full p-1 shadow-sm">
-            <button
-              type="button"
-              onClick={() => setFeaturedView('latest')}
-              className={`px-4 py-1 text-sm font-medium rounded-full transition ${
-                activeFeaturedView === 'latest'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              최신글 보기
-            </button>
-            <button
-              type="button"
-              onClick={() => setFeaturedView('recommended')}
-              disabled={!isLoggedIn}
-              className={`px-4 py-1 text-sm font-medium rounded-full transition ${
-                activeFeaturedView === 'recommended'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-600 hover:text-gray-900'
-              } ${!isLoggedIn ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              추천 동행
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handleFeaturedToggle}
+            disabled={toggleButtonDisabled}
+            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 ${toggleButtonClasses} ${
+              toggleButtonDisabled ? 'opacity-60 cursor-not-allowed' : ''
+            }`}
+          >
+            {activeFeaturedView === 'latest' && (
+              <Wand2 className="w-4 h-4" aria-hidden="true" />
+            )}
+            {toggleButtonLabel}
+          </button>
         </div>
         {isFeaturedLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
