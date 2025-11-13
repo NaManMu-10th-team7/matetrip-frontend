@@ -25,8 +25,12 @@ export async function fetchPlacesInBounds(
       bounds.neLat,
       bounds.neLng
     );
+    // 임시라 그냥 mock 데이터용으로 변수명
 
-    console.log(`[MOCK] Found ${filteredPlaces.length} places in bounds:`, bounds);
+    console.log(
+      `[MOCK] Found ${filteredPlaces.length} places in bounds:`,
+      bounds
+    );
     return filteredPlaces;
   }
 
@@ -34,10 +38,10 @@ export async function fetchPlacesInBounds(
   try {
     const response = await client.get<PlaceDto[]>('/api/places', {
       params: {
-        swLat: bounds.swLat,
-        swLng: bounds.swLng,
-        neLat: bounds.neLat,
-        neLng: bounds.neLng,
+        southWestLatitude: bounds.swLat,
+        southWestLongitude: bounds.swLng,
+        northEastLatitude: bounds.neLat,
+        northEastLongitude: bounds.neLng,
       },
     });
     return response.data;
