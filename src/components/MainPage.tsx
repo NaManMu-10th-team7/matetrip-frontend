@@ -191,26 +191,50 @@ export function MainPage({
     fetchTrigger,
   ]); // Add fetchTrigger to dependency array
 
-  //matching 유사도로 내용 받아오기.. dto 안에 있는 내용중 선별해서 받아오면 됨. setmatches 안에 넣어놈
-  //TODO:: 나중에 매칭 로직 확정될떄 불러오기
+  // matching 유사도로 추천 글 받아오기 (로그인 시점에 맞춰 다시 호출)
   useEffect(() => {
+    if (isAuthLoading) {
+      return;
+    }
+
+    if (!isLoggedIn || !user?.userId) {
+      setMatches([]);
+      setIsMatchesLoading(false);
+      return;
+    }
+
+    let isMounted = true;
+
     const fetchMatches = async () => {
       setIsMatchesLoading(true);
       try {
         const res = await client.post<MatchCandidateDto[]>('/matching/search', {
           limit: 5,
         });
+        if (!isMounted) {
+          return;
+        }
         console.log('match response', res.data);
         setMatches(res.data ?? []);
       } catch (err) {
+        if (!isMounted) {
+          return;
+        }
         console.error('Failed to fetch matches', err);
       } finally {
-        setIsMatchesLoading(false);
+        if (isMounted) {
+          setIsMatchesLoading(false);
+        }
       }
     };
+
     fetchMatches();
-    console.log('search 완료!');
-  }, []);
+    console.log('matching search 완료!');
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isAuthLoading, isLoggedIn, user?.userId]);
 
   // const handleSearch = (e: React.FormEvent) => {
   //   e?.preventDefault();
