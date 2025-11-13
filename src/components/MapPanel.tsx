@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, memo } from 'react';
+import React, { useEffect, useRef, useState, memo, useCallback } from 'react';
 import type { Poi, CreatePoiDto } from '../hooks/usePoiSocket';
 import {
   Map as KakaoMap,
@@ -7,6 +7,9 @@ import {
   Polyline,
 } from 'react-kakao-maps-sdk';
 import { KAKAO_REST_API_KEY } from '../constants'; // KAKAO_REST_API_KEY import 추가
+import { fetchPlacesInBounds } from '../api/places';
+import type { PlaceDto } from '../types/place';
+import { CATEGORY_INFO } from '../types/place';
 
 export interface KakaoPlace {
   id: string;
@@ -62,6 +65,161 @@ interface PoiMarkerProps {
   isHovered: boolean;
 }
 
+/**
+ * 백엔드 장소 마커 Props
+ */
+interface PlaceMarkerProps {
+  place: PlaceDto;
+}
+
+/**
+ * 백엔드에서 가져온 장소를 표시하는 마커 컴포넌트
+ */
+const PlaceMarker = memo(({ place }: PlaceMarkerProps) => {
+  const [isInfoWindowOpen, setIsInfoWindowOpen] = useState(false);
+  const infoWindowTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleMouseOver = () => {
+    if (infoWindowTimeoutRef.current) {
+      clearTimeout(infoWindowTimeoutRef.current);
+      infoWindowTimeoutRef.current = null;
+    }
+    setIsInfoWindowOpen(true);
+  };
+
+  const handleMouseOut = () => {
+    infoWindowTimeoutRef.current = setTimeout(() => {
+      setIsInfoWindowOpen(false);
+    }, 100);
+  };
+
+  const handleClick = () => {
+    if (infoWindowTimeoutRef.current) {
+      clearTimeout(infoWindowTimeoutRef.current);
+      infoWindowTimeoutRef.current = null;
+    }
+    setIsInfoWindowOpen(true);
+  };
+
+  // 카테고리에 따른 아이콘 이미지 URL 생성
+  const getMarkerImageSrc = (categoryCode: string): string => {
+    // 카테고리별 색상 가져오기
+    const categoryInfo = CATEGORY_INFO[categoryCode as keyof typeof CATEGORY_INFO];
+    const color = categoryInfo?.color || '#808080';
+
+    // SVG로 마커 이미지 생성 (데이터 URI 방식)
+    const svg = `
+      <svg width="32" height="40" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16 0C7.2 0 0 7.2 0 16c0 11 16 24 16 24s16-13 16-24c0-8.8-7.2-16-16-16z"
+              fill="${color}" stroke="white" stroke-width="2"/>
+        <circle cx="16" cy="16" r="6" fill="white"/>
+      </svg>
+    `;
+    return `data:image/svg+xml;base64,${btoa(svg)}`;
+  };
+
+  const markerImageSrc = getMarkerImageSrc(place.categories);
+  const markerImage = {
+    src: markerImageSrc,
+    size: { width: 32, height: 40 },
+    options: {
+      offset: { x: 16, y: 40 }, // 마커 이미지의 기준점
+    },
+  };
+
+  return (
+    <>
+      <MapMarker
+        position={{ lat: place.latitude, lng: place.longitude }}
+        image={markerImage}
+        clickable={true}
+        onMouseOver={handleMouseOver}
+        onMouseOut={handleMouseOut}
+        onClick={handleClick}
+      />
+      {isInfoWindowOpen && (
+        <CustomOverlayMap
+          position={{ lat: place.latitude, lng: place.longitude }}
+          xAnchor={0.5}
+          yAnchor={1.8}
+          zIndex={10}
+        >
+          <div
+            onMouseOver={handleMouseOver}
+            onMouseOut={handleMouseOut}
+            style={{
+              padding: '12px',
+              backgroundColor: '#fff',
+              borderRadius: '8px',
+              boxShadow: '0 6px 20px rgba(0, 0, 0, 0.3)',
+              minWidth: '200px',
+              maxWidth: '300px',
+            }}
+          >
+            <div
+              style={{
+                fontWeight: 'bold',
+                fontSize: '16px',
+                marginBottom: '8px',
+                color: '#333',
+              }}
+            >
+              {place.title}
+            </div>
+            {place.image_url && (
+              <img
+                src={place.image_url}
+                alt={place.title}
+                style={{
+                  width: '100%',
+                  height: '120px',
+                  objectFit: 'cover',
+                  borderRadius: '4px',
+                  marginBottom: '8px',
+                }}
+              />
+            )}
+            <div
+              style={{
+                fontSize: '13px',
+                color: '#666',
+                marginBottom: '4px',
+              }}
+            >
+              {place.address}
+            </div>
+            {place.summary && (
+              <div
+                style={{
+                  fontSize: '12px',
+                  color: '#888',
+                  marginTop: '8px',
+                  lineHeight: '1.4',
+                }}
+              >
+                {place.summary}
+              </div>
+            )}
+            <div
+              style={{
+                fontSize: '11px',
+                color: '#999',
+                marginTop: '8px',
+                padding: '4px 8px',
+                backgroundColor: '#f5f5f5',
+                borderRadius: '4px',
+                display: 'inline-block',
+              }}
+            >
+              {CATEGORY_INFO[place.categories as keyof typeof CATEGORY_INFO]?.name || '기타'}
+            </div>
+          </div>
+        </CustomOverlayMap>
+      )}
+    </>
+  );
+});
+
 const PoiMarker = memo(
   ({
     poi,
@@ -71,7 +229,7 @@ const PoiMarker = memo(
     isHovered,
   }: PoiMarkerProps) => {
     const [isInfoWindowOpen, setIsInfoWindowOpen] = useState(false);
-    const infoWindowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const infoWindowTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const handleMouseOver = () => {
       if (infoWindowTimeoutRef.current) {
@@ -212,6 +370,60 @@ export function MapPanel({
   const [dailyRouteInfo, setDailyRouteInfo] = useState<
     Record<string, RouteSegment[]>
   >({});
+  // 백엔드에서 가져온 장소 데이터 상태
+  const [places, setPlaces] = useState<PlaceDto[]>([]);
+  // 디바운스를 위한 타이머 ref
+  const fetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /**
+   * 지도 영역 내의 장소 데이터를 가져오는 함수
+   */
+  const fetchPlacesInView = useCallback(async (map: kakao.maps.Map) => {
+    try {
+      const bounds = map.getBounds();
+      const sw = bounds.getSouthWest(); // 남서쪽 좌표
+      const ne = bounds.getNorthEast(); // 북동쪽 좌표
+
+      const mapBounds = {
+        swLat: sw.getLat(),
+        swLng: sw.getLng(),
+        neLat: ne.getLat(),
+        neLng: ne.getLng(),
+      };
+
+      console.log('Fetching places for bounds:', mapBounds);
+      const placesData = await fetchPlacesInBounds(mapBounds);
+      console.log('Received places:', placesData);
+      setPlaces(placesData);
+    } catch (error) {
+      console.error('Failed to fetch places:', error);
+    }
+  }, []);
+
+  /**
+   * 지도 이동/줌 변경 시 디바운스된 장소 데이터 요청
+   */
+  const handleMapBoundsChanged = useCallback(
+    (map: kakao.maps.Map) => {
+      // 기존 타이머가 있으면 취소
+      if (fetchTimerRef.current) {
+        clearTimeout(fetchTimerRef.current);
+      }
+
+      // 500ms 후에 API 요청 (디바운스)
+      fetchTimerRef.current = setTimeout(() => {
+        fetchPlacesInView(map);
+      }, 500);
+    },
+    [fetchPlacesInView]
+  );
+
+  // 지도 인스턴스가 생성되면 초기 장소 데이터 로드
+  useEffect(() => {
+    if (mapInstance) {
+      fetchPlacesInView(mapInstance);
+    }
+  }, [mapInstance, fetchPlacesInView]);
 
   useEffect(() => {
     if (selectedPlace && mapInstance) {
@@ -316,9 +528,13 @@ export function MapPanel({
 
               // Kakao API 응답의 sections 배열을 순회하며 각 세그먼트 정보 추출
               if (route.sections) { // 이중 확인으로 안정성 강화
-                route.sections.forEach((section: any, index: number) => {
+                route.sections.forEach((section: {
+                  duration: number;
+                  distance: number;
+                  roads: Array<{ vertexes: number[] }>;
+                }, index: number) => {
                   const detailedPath: { lat: number; lng: number }[] = [];
-                  section.roads.forEach((road: any) => {
+                  section.roads.forEach((road) => {
                     for (let i = 0; i < road.vertexes.length; i += 2) {
                       detailedPath.push({
                         lng: road.vertexes[i],
@@ -410,6 +626,14 @@ export function MapPanel({
             setMapInstance(map);
           }
         }}
+        onCenterChanged={(map) => {
+          // 지도 중심이 변경될 때마다 호출
+          handleMapBoundsChanged(map);
+        }}
+        onZoomChanged={(map) => {
+          // 줌 레벨이 변경될 때마다 호출
+          handleMapBoundsChanged(map);
+        }}
         onClick={(_map, mouseEvent) => {
           const latlng = mouseEvent.latLng;
           const geocoder = new window.kakao.maps.services.Geocoder();
@@ -474,6 +698,11 @@ export function MapPanel({
             />
           );
         })}
+
+        {/* 백엔드에서 가져온 장소 마커 렌더링 */}
+        {places.map((place) => (
+          <PlaceMarker key={place.id} place={place} />
+        ))}
 
         {/* 각 세그먼트별 Polyline 렌더링 */}
         {dayLayers.map((layer) => {
