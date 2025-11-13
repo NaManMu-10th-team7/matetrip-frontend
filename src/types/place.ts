@@ -3,7 +3,7 @@
  */
 export interface PlaceDto {
   id: string;
-  categories: string; // 카테고리 코드 (예: "FD6", "AT4", "CE7", "AD5", "CT1")
+  categories: CategoryCode; // 카테고리 코드 (예: "FD6", "AT4", "CE7", "AD5", "CT1")
   title: string;
   address: string;
   summary?: string; // 요약 설명

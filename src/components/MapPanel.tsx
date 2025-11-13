@@ -79,6 +79,14 @@ const PlaceMarker = memo(({ place }: PlaceMarkerProps) => {
   const [isInfoWindowOpen, setIsInfoWindowOpen] = useState(false);
   const infoWindowTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  useEffect(() => {
+    return () => {
+      if (infoWindowTimeoutRef.current) {
+        clearTimeout(infoWindowTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const handleMouseOver = () => {
     if (infoWindowTimeoutRef.current) {
       clearTimeout(infoWindowTimeoutRef.current);
@@ -100,30 +108,117 @@ const PlaceMarker = memo(({ place }: PlaceMarkerProps) => {
     }
     setIsInfoWindowOpen(true);
   };
-
   // 카테고리에 따른 아이콘 이미지 URL 생성
   const getMarkerImageSrc = (categoryCode: string): string => {
     // 카테고리별 색상 가져오기
     const categoryInfo = CATEGORY_INFO[categoryCode as keyof typeof CATEGORY_INFO];
     const color = categoryInfo?.color || '#808080';
 
+    // 카테고리별로 다른 SVG 아이콘 생성
+    let iconSvg = '';
+
+    switch (categoryCode) {
+      case 'FD6': // 음식점 - 포크와 나이프
+        iconSvg = `
+          <g transform="translate(16, 16)">
+            <!-- 포크 -->
+            <path d="M-3,-6 L-3,-2 M-5,-6 L-5,-3 M-1,-6 L-1,-3 M-3,-2 L-3,6"
+                  stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+            <!-- 나이프 -->
+            <path d="M3,-6 L3,6 M3,-6 L5,-4 L3,-2"
+                  stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+          </g>
+        `;
+        break;
+
+      case 'CE7': // 카페 - 커피잔
+        iconSvg = `
+          <g transform="translate(16, 16)">
+            <!-- 커피잔 -->
+            <path d="M-5,-3 L-5,3 Q-5,5 -3,5 L3,5 Q5,5 5,3 L5,-3 Z"
+                  fill="white" stroke="white" stroke-width="1"/>
+            <!-- 손잡이 -->
+            <path d="M5,0 Q8,0 8,3 Q8,5 6,5"
+                  stroke="white" stroke-width="1.5" fill="none"/>
+            <!-- 김 -->
+            <path d="M-2,-6 Q-2,-4 -2,-3 M0,-6 Q0,-4 0,-3 M2,-6 Q2,-4 2,-3"
+                  stroke="white" stroke-width="1" fill="none" stroke-linecap="round"/>
+          </g>
+        `;
+        break;
+
+      case 'AT4': // 관광명소 - 카메라
+        iconSvg = `
+          <g transform="translate(16, 16)">
+            <!-- 카메라 바디 -->
+            <rect x="-6" y="-3" width="12" height="9" rx="1"
+                  fill="white" stroke="white" stroke-width="1"/>
+            <!-- 렌즈 -->
+            <circle cx="0" cy="2" r="3" fill="${color}" stroke="white" stroke-width="1.5"/>
+            <!-- 뷰파인더 -->
+            <rect x="-2" y="-5" width="4" height="2" rx="0.5"
+                  fill="white" stroke="white" stroke-width="1"/>
+          </g>
+        `;
+        break;
+
+      case 'AD5': // 숙박 - 침대
+        iconSvg = `
+          <g transform="translate(16, 16)">
+            <!-- 침대 프레임 -->
+            <rect x="-6" y="-1" width="12" height="5" rx="1"
+                  fill="white" stroke="white" stroke-width="1"/>
+            <!-- 베개 -->
+            <rect x="-5" y="-3" width="4" height="2" rx="0.5"
+                  fill="white" stroke="white" stroke-width="1"/>
+            <!-- 다리 -->
+            <rect x="-6" y="4" width="1.5" height="3" fill="white"/>
+            <rect x="4.5" y="4" width="1.5" height="3" fill="white"/>
+          </g>
+        `;
+        break;
+
+      case 'CT1': // 문화시설 - 박물관/건물
+        iconSvg = `
+          <g transform="translate(16, 16)">
+            <!-- 지붕 -->
+            <path d="M-7,-4 L0,-7 L7,-4 Z" fill="white" stroke="white" stroke-width="1"/>
+            <!-- 기둥들 -->
+            <rect x="-6" y="-3" width="2" height="8" fill="white"/>
+            <rect x="-1" y="-3" width="2" height="8" fill="white"/>
+            <rect x="4" y="-3" width="2" height="8" fill="white"/>
+            <!-- 바닥 -->
+            <rect x="-7" y="5" width="14" height="1" fill="white"/>
+          </g>
+        `;
+        break;
+
+      default:
+        // 기본 아이콘 - 위치 핀
+        iconSvg = `
+          <circle cx="16" cy="16" r="6" fill="white"/>
+        `;
+    }
+
     // SVG로 마커 이미지 생성 (데이터 URI 방식)
     const svg = `
-      <svg width="32" height="40" xmlns="http://www.w3.org/2000/svg">
-        <path d="M16 0C7.2 0 0 7.2 0 16c0 11 16 24 16 24s16-13 16-24c0-8.8-7.2-16-16-16z"
+      <svg width="36" height="44" xmlns="http://www.w3.org/2000/svg">
+        <!-- 핀 모양 배경 -->
+        <path d="M18 0C10.8 0 5 5.8 5 13c0 9.9 13 26 13 26s13-16.1 13-26c0-7.2-5.8-13-13-13z"
               fill="${color}" stroke="white" stroke-width="2"/>
-        <circle cx="16" cy="16" r="6" fill="white"/>
+        <!-- 카테고리별 아이콘 -->
+        ${iconSvg}
       </svg>
     `;
-    return `data:image/svg+xml;base64,${btoa(svg)}`;
+    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
   };
 
   const markerImageSrc = getMarkerImageSrc(place.categories);
   const markerImage = {
     src: markerImageSrc,
-    size: { width: 32, height: 40 },
+    size: { width: 36, height: 44 },
     options: {
-      offset: { x: 16, y: 40 }, // 마커 이미지의 기준점
+      offset: { x: 18, y: 44 }, // 마커 이미지의 기준점
     },
   };
 
