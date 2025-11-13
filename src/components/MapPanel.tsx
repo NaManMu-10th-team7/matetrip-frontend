@@ -1,11 +1,17 @@
 import React, { useEffect, useRef, useState, memo } from 'react';
-import type { Poi, CreatePoiDto, UserCursor, CursorPosition } from '../hooks/usePoiSocket';
-import { 
+import type {
+  Poi,
+  CreatePoiDto,
+  UserCursor,
+  CursorPosition,
+} from '../hooks/usePoiSocket';
+import {
   Map as KakaoMap,
   MapMarker,
   CustomOverlayMap,
   Polyline,
 } from 'react-kakao-maps-sdk';
+import { Button } from './ui/button';
 import { KAKAO_REST_API_KEY } from '../constants'; // KAKAO_REST_API_KEY import 추가
 
 export interface KakaoPlace {
@@ -44,7 +50,7 @@ interface MapPanelProps {
   isSyncing: boolean;
   markPoi: (
     poiData: Omit<CreatePoiDto, 'workspaceId' | 'createdBy' | 'id'>
-  ) => void; 
+  ) => void;
   moveCursor: (position: CursorPosition) => void;
   selectedPlace: KakaoPlace | null;
   mapRef: React.RefObject<kakao.maps.Map | null>;
@@ -83,6 +89,8 @@ interface PoiMarkerProps {
   sequenceNumber?: number;
   markerColor?: string;
   isHovered: boolean;
+  unmarkPoi: (poiId: string) => void;
+  isOverlayHoveredRef: React.MutableRefObject<boolean>;
 }
 
 const PoiMarker = memo(
@@ -92,6 +100,8 @@ const PoiMarker = memo(
     sequenceNumber,
     markerColor,
     isHovered,
+    unmarkPoi,
+    isOverlayHoveredRef,
   }: PoiMarkerProps) => {
     const [isInfoWindowOpen, setIsInfoWindowOpen] = useState(false);
     const infoWindowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -101,11 +111,13 @@ const PoiMarker = memo(
         clearTimeout(infoWindowTimeoutRef.current);
         infoWindowTimeoutRef.current = null;
       }
+      isOverlayHoveredRef.current = true;
       setIsInfoWindowOpen(true);
     };
 
     const handleMouseOut = () => {
       infoWindowTimeoutRef.current = setTimeout(() => {
+        isOverlayHoveredRef.current = false;
         setIsInfoWindowOpen(false);
       }, 100);
     };
@@ -115,6 +127,7 @@ const PoiMarker = memo(
         clearTimeout(infoWindowTimeoutRef.current);
         infoWindowTimeoutRef.current = null;
       }
+      isOverlayHoveredRef.current = true;
       setIsInfoWindowOpen(true);
     };
 
@@ -165,48 +178,36 @@ const PoiMarker = memo(
           <CustomOverlayMap
             position={{ lat: poi.latitude, lng: poi.longitude }}
             xAnchor={0.5}
-            yAnchor={1.5}
+            yAnchor={1.3}
             zIndex={3}
           >
             <div
               onMouseOver={handleMouseOver}
               onMouseOut={handleMouseOut}
-              style={{
-                padding: '10px',
-                backgroundColor: '#fff',
-                borderRadius: '8px',
-                boxShadow: '0 6px 20px rgba(0, 0, 0, 0.3)',
-                minWidth: '180px',
-                maxWidth: '400px',
-                whiteSpace: 'normal',
-                lineHeight: '1.5',
-                textAlign: 'left',
-                boxSizing: 'border-box',
-                display: 'block',
-              }}
+              className="p-3 bg-white rounded-lg shadow-lg min-w-[200px] flex flex-col gap-1 relative"
             >
-              <div
-                style={{
-                  fontWeight: 'bold',
-                  fontSize: '16px',
-                  marginBottom: '5px',
-                  color: '#333',
-                  textAlign: 'center',
-                }}
-              >
+              <div className="font-bold text-base text-center">
                 {poi.placeName}
               </div>
-              <div
-                style={{
-                  fontSize: '13px',
-                  color: '#666',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              >
+              <div className="text-xs text-gray-500 truncate">
                 {poi.address}
               </div>
+              {/* 보관함에만 있는 마커일 경우 '제거' 버튼 표시 */}
+              {sequenceNumber === undefined && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="w-full mt-1"
+                  onClick={(e) => {
+                    e.stopPropagation(); // 클릭 이벤트 전파 방지
+                    isOverlayHoveredRef.current = false; // Ref 값을 수동으로 초기화
+                    unmarkPoi(poi.id);
+                    setIsInfoWindowOpen(false); // 정보창 닫기
+                  }}
+                >
+                  보관함에서 제거
+                </Button>
+              )}
             </div>
           </CustomOverlayMap>
         )}
@@ -223,6 +224,7 @@ export function MapPanel({
   moveCursor,
   markPoi,
   selectedPlace,
+  unmarkPoi,
   mapRef,
   hoveredPoi,
   onPoiDragEnd,
@@ -236,6 +238,14 @@ export function MapPanel({
   const [mapInstance, setMapInstance] = useState<kakao.maps.Map | null>(null);
   const pendingSelectedPlaceRef = useRef<KakaoPlace | null>(null);
   // 일자별 경로 세그먼트 정보를 저장할 상태 추가
+  // [추가] 지도 클릭으로 생성된 임시 장소를 저장할 상태
+  const [temporaryPlaces, setTemporaryPlaces] = useState<KakaoPlace[]>([]);
+  // [추가] 호버된 임시 장소의 ID를 저장할 상태
+  const [hoveredTempPlaceId, setHoveredTempPlaceId] = useState<string | null>(
+    null
+  );
+  // [추가] 오버레이 위에 마우스가 있는지 확인하기 위한 Ref
+  const isOverlayHoveredRef = useRef(false);
   const [dailyRouteInfo, setDailyRouteInfo] = useState<
     Record<string, RouteSegment[]>
   >({});
@@ -251,10 +261,18 @@ export function MapPanel({
     // 쓰로틀링을 적용하여 이벤트 발생 빈도를 조절할 수 있습니다. (예: 100ms 마다)
     // const throttledMoveCursor = throttle(handleMouseMove, 100);
 
-    window.kakao.maps.event.addListener(mapInstance, 'mousemove', handleMouseMove);
+    window.kakao.maps.event.addListener(
+      mapInstance,
+      'mousemove',
+      handleMouseMove
+    );
 
     return () => {
-      window.kakao.maps.event.removeListener(mapInstance, 'mousemove', handleMouseMove);
+      window.kakao.maps.event.removeListener(
+        mapInstance,
+        'mousemove',
+        handleMouseMove
+      );
     };
   }, [mapInstance, moveCursor]);
 
@@ -362,32 +380,34 @@ export function MapPanel({
                 destinationPoi,
               ];
 
-              route.sections.forEach((section: KakaoNaviSection, index: number) => {
-                const detailedPath: { lat: number; lng: number }[] = [];
-                if (section.roads) {
-                  section.roads.forEach((road: KakaoNaviRoad) => {
-                    for (let i = 0; i < road.vertexes.length; i += 2) {
-                      detailedPath.push({
-                        lng: road.vertexes[i],
-                        lat: road.vertexes[i + 1],
-                      });
-                    }
-                  });
-                }
+              route.sections.forEach(
+                (section: KakaoNaviSection, index: number) => {
+                  const detailedPath: { lat: number; lng: number }[] = [];
+                  if (section.roads) {
+                    section.roads.forEach((road: KakaoNaviRoad) => {
+                      for (let i = 0; i < road.vertexes.length; i += 2) {
+                        detailedPath.push({
+                          lng: road.vertexes[i],
+                          lat: road.vertexes[i + 1],
+                        });
+                      }
+                    });
+                  }
 
-                const fromPoi = currentPoisInOrder[index];
-                const toPoi = currentPoisInOrder[index + 1];
+                  const fromPoi = currentPoisInOrder[index];
+                  const toPoi = currentPoisInOrder[index + 1];
 
-                if (fromPoi && toPoi) {
-                  segments.push({
-                    fromPoiId: fromPoi.id,
-                    toPoiId: toPoi.id,
-                    duration: section.duration,
-                    distance: section.distance,
-                    path: detailedPath,
-                  });
+                  if (fromPoi && toPoi) {
+                    segments.push({
+                      fromPoiId: fromPoi.id,
+                      toPoiId: toPoi.id,
+                      duration: section.duration,
+                      distance: section.distance,
+                      path: detailedPath,
+                    });
+                  }
                 }
-              });
+              );
               newDailyRouteInfo[dayLayer.id] = segments;
             }
           } catch (error) {
@@ -563,6 +583,9 @@ export function MapPanel({
           }
         }}
         onClick={(_map, mouseEvent) => {
+          // 오버레이 위에서 발생한 클릭이면 마커를 생성하지 않음
+          if (isOverlayHoveredRef.current) return;
+
           const latlng = mouseEvent.latLng;
           const geocoder = new window.kakao.maps.services.Geocoder();
           const places = new window.kakao.maps.services.Places();
@@ -576,34 +599,43 @@ export function MapPanel({
                   result[0].road_address?.address_name ||
                   result[0].address.address_name;
 
+                // 임시 장소 데이터 생성
+                const tempPlace: KakaoPlace = {
+                  id: `temp_${new Date().getTime()}`,
+                  place_name: address, // 초기 이름은 주소로 설정
+                  address_name: address,
+                  road_address_name: result[0].road_address?.address_name || '',
+                  x: latlng.getLng().toString(),
+                  y: latlng.getLat().toString(),
+                  // KakaoPlace의 나머지 필수 필드들 초기화
+                  category_name: '',
+                  category_group_code: '',
+                  category_group_name: '',
+                  phone: '',
+                  place_url: '',
+                  distance: '',
+                };
+
+                // 주변 장소 검색으로 더 정확한 장소명 가져오기 (선택적)
                 places.keywordSearch(
                   address,
                   (data, searchStatus) => {
-                    let placeName = address;
-                    let categoryName: string | undefined = undefined;
-
                     if (
                       searchStatus === window.kakao.maps.services.Status.OK &&
                       data.length > 0
                     ) {
+                      // 검색된 첫 번째 장소 정보로 임시 장소 정보 업데이트
                       const place = data[0];
-                      placeName = place.place_name;
-                      categoryName = place.category_name;
+                      tempPlace.place_name = place.place_name;
+                      tempPlace.category_name = place.category_name;
                     }
-
-                    const poiData = {
-                      latitude: latlng.getLat(),
-                      longitude: latlng.getLng(),
-                      address: address,
-                      categoryName: categoryName,
-                      placeName: placeName,
-                    };
-                    markPoi(poiData);
+                    // markPoi를 직접 호출하는 대신, 임시 장소 상태를 설정
+                    setTemporaryPlaces((prev) => [...prev, tempPlace]);
                   },
                   {
                     location: latlng,
                     radius: 50,
-                    sort: window.kakao.maps.services.SortBy?.DISTANCE,
+                    sort: window.kakao.maps.services.SortBy.DISTANCE,
                   }
                 );
               }
@@ -623,9 +655,102 @@ export function MapPanel({
               sequenceNumber={sequenceNumber}
               markerColor={markerColor}
               isHovered={hoveredPoi?.id === poi.id}
+              unmarkPoi={unmarkPoi}
+              isOverlayHoveredRef={isOverlayHoveredRef}
             />
           );
         })}
+
+        {/* 지도 클릭으로 생성된 임시 마커 및 오버레이 */}
+        {temporaryPlaces.map((tempPlace) => (
+          <React.Fragment key={tempPlace.id}>
+            <MapMarker
+              position={{
+                lat: Number(tempPlace.y),
+                lng: Number(tempPlace.x),
+              }}
+              onMouseOver={() => setHoveredTempPlaceId(tempPlace.id)}
+              onMouseOut={() => setHoveredTempPlaceId(null)}
+            />
+            {hoveredTempPlaceId === tempPlace.id && (
+              <CustomOverlayMap
+                position={{
+                  lat: Number(tempPlace.y),
+                  lng: Number(tempPlace.x),
+                }}
+                yAnchor={1.3} // yAnchor 값을 다른 오버레이와 동일하게 조정합니다.
+              >
+                <div
+                  className="p-3 bg-white rounded-lg shadow-lg min-w-[200px] flex flex-col gap-2 relative"
+                  onMouseEnter={() => {
+                    isOverlayHoveredRef.current = true;
+                    setHoveredTempPlaceId(tempPlace.id);
+                  }}
+                  onMouseLeave={() => {
+                    isOverlayHoveredRef.current = false;
+                    setHoveredTempPlaceId(null);
+                  }}
+                >
+                  {/* 닫기 버튼 추가 */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation(); // 지도 클릭 이벤트 전파 방지
+                      isOverlayHoveredRef.current = false; // Ref 값을 수동으로 초기화
+                      // 임시 마커 목록에서 현재 마커를 제거
+                      setTemporaryPlaces((prev) =>
+                        prev.filter((p) => p.id !== tempPlace.id)
+                      );
+                    }}
+                    className="absolute top-1 right-1 p-1 text-gray-400 hover:text-gray-700"
+                    aria-label="닫기"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                  <div className="font-bold text-base">
+                    {tempPlace.place_name}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {tempPlace.address_name}
+                  </div>
+                  <Button
+                    size="sm"
+                    className="mt-1 w-full"
+                    onClick={(e) => {
+                      e.stopPropagation(); // 지도 클릭 이벤트 전파 방지
+                      isOverlayHoveredRef.current = false; // Ref 값을 수동으로 초기화
+                      markPoi({
+                        latitude: Number(tempPlace.y),
+                        longitude: Number(tempPlace.x),
+                        address:
+                          tempPlace.road_address_name || tempPlace.address_name,
+                        placeName: tempPlace.place_name,
+                        categoryName: tempPlace.category_name,
+                      });
+                      setTemporaryPlaces((prev) =>
+                        prev.filter((p) => p.id !== tempPlace.id)
+                      );
+                    }}
+                  >
+                    보관함에 추가
+                  </Button>
+                </div>
+              </CustomOverlayMap>
+            )}
+          </React.Fragment>
+        ))}
 
         {/* 다른 사용자들의 커서 렌더링 */}
         {Object.entries(cursors).map(([userId, cursorData]) => (
@@ -637,17 +762,25 @@ export function MapPanel({
             zIndex={10}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill={cursorData.userColor || '#FF0000'} style={{ transform: 'rotate(315deg)' }}>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill={cursorData.userColor || '#FF0000'}
+                style={{ transform: 'rotate(315deg)' }}
+              >
                 <path d="M4.222 3.4l15.876 7.938a1 1 0 010 1.789L4.222 21.065a1 1 0 01-1.444-1.245l3.96-6.6-3.96-6.6a1 1 0 011.444-1.22z" />
               </svg>
-              <span style={{
-                backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                color: 'white',
-                padding: '2px 6px',
-                borderRadius: '4px',
-                fontSize: '12px',
-                whiteSpace: 'nowrap',
-              }}>
+              <span
+                style={{
+                  backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                  color: 'white',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  fontSize: '12px',
+                  whiteSpace: 'nowrap',
+                }}
+              >
                 {cursorData.userName}
               </span>
             </div>
@@ -706,7 +839,7 @@ export function MapPanel({
                 <CustomOverlayMap
                   key={`route-info-${layer.id}-${index}`}
                   position={{ lat: midPoint.lat, lng: midPoint.lng }} // 중간 지점 사용
-                  yAnchor={1.5} // 경로 위에 표시되도록 조정
+                  yAnchor={1.6} // 경로 위에 표시되도록 조정
                 >
                   <div
                     style={{
