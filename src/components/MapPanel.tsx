@@ -70,12 +70,13 @@ interface PoiMarkerProps {
  */
 interface PlaceMarkerProps {
   place: PlaceDto;
+  onPlaceClick: (place: PlaceDto) => void;
 }
 
 /**
  * 백엔드에서 가져온 장소를 표시하는 마커 컴포넌트
  */
-const PlaceMarker = memo(({ place }: PlaceMarkerProps) => {
+const PlaceMarker = memo(({ place, onPlaceClick }: PlaceMarkerProps) => {
   const [isInfoWindowOpen, setIsInfoWindowOpen] = useState(false);
   const infoWindowTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -106,7 +107,7 @@ const PlaceMarker = memo(({ place }: PlaceMarkerProps) => {
       clearTimeout(infoWindowTimeoutRef.current);
       infoWindowTimeoutRef.current = null;
     }
-    setIsInfoWindowOpen(true);
+    onPlaceClick(place);
   };
   // 카테고리에 따른 아이콘 이미지 URL 생성
   const getMarkerImageSrc = (categoryCode: string): string => {
@@ -448,6 +449,10 @@ export function MapPanel({
   const [places, setPlaces] = useState<PlaceDto[]>([]);
   // 디바운스를 위한 타이머 ref
   const fetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 선택된 백엔드 장소 상태
+  const [selectedBackendPlace, setSelectedBackendPlace] = useState<PlaceDto | null>(null);
+  // summary 펼치기/접기 상태
+  const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
 
   /**
    * 지도 영역 내의 장소 데이터를 가져오는 함수
@@ -491,6 +496,25 @@ export function MapPanel({
     },
     [fetchPlacesInView]
   );
+
+  /**
+   * 백엔드 장소 마커 클릭 시 처리
+   */
+  const handlePlaceClick = useCallback((place: PlaceDto) => {
+    setSelectedBackendPlace(place);
+    setIsSummaryExpanded(false); // 새로운 장소 선택 시 summary 접기
+
+    // 지도가 있으면 해당 위치로 포커싱 및 줌 조정
+    if (mapInstance) {
+      const position = new window.kakao.maps.LatLng(place.latitude, place.longitude);
+
+      // 줌 레벨을 먼저 설정한 후 중앙으로 이동
+      mapInstance.setLevel(5);
+
+      // setCenter를 사용하여 정확한 위치로 이동
+      mapInstance.setCenter(position);
+    }
+  }, [mapInstance]);
 
   // 지도 인스턴스가 생성되면 초기 장소 데이터 로드
   useEffect(() => {
@@ -775,7 +799,7 @@ export function MapPanel({
 
         {/* 백엔드에서 가져온 장소 마커 렌더링 */}
         {places.map((place) => (
-          <PlaceMarker key={place.id} place={place} />
+          <PlaceMarker key={place.id} place={place} onPlaceClick={handlePlaceClick} />
         ))}
 
         {/* 각 세그먼트별 Polyline 렌더링 */}
@@ -867,6 +891,194 @@ export function MapPanel({
           }}
         >
           데이터 동기화 중...
+        </div>
+      )}
+
+      {/* 선택된 백엔드 장소 상세 정보 사이드 패널 */}
+      {selectedBackendPlace && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '20px',
+            right: '20px',
+            width: '280px',
+            maxHeight: '70vh',
+            overflowY: 'auto',
+            background: 'white',
+            borderRadius: '10px',
+            boxShadow: '0 6px 20px rgba(0, 0, 0, 0.25)',
+            zIndex: 10,
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          {/* 헤더 및 닫기 버튼 */}
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '12px 16px',
+              borderBottom: '1px solid #e0e0e0',
+            }}
+          >
+            <h2
+              style={{
+                margin: 0,
+                fontSize: '16px',
+                fontWeight: 'bold',
+                color: '#333',
+              }}
+            >
+              장소 정보
+            </h2>
+            <button
+              onClick={() => setSelectedBackendPlace(null)}
+              style={{
+                background: 'none',
+                border: 'none',
+                fontSize: '20px',
+                cursor: 'pointer',
+                color: '#666',
+                padding: '0',
+                width: '24px',
+                height: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              ×
+            </button>
+          </div>
+
+          {/* 장소 이미지 */}
+          {selectedBackendPlace.image_url && (
+            <img
+              src={selectedBackendPlace.image_url}
+              alt={selectedBackendPlace.title}
+              style={{
+                width: '100%',
+                height: '150px',
+                objectFit: 'cover',
+              }}
+            />
+          )}
+
+          {/* 장소 상세 정보 */}
+          <div style={{ padding: '16px' }}>
+            {/* 제목 */}
+            <h3
+              style={{
+                margin: '0 0 10px 0',
+                fontSize: '18px',
+                fontWeight: 'bold',
+                color: '#222',
+              }}
+            >
+              {selectedBackendPlace.title}
+            </h3>
+
+            {/* 카테고리 태그 */}
+            <div
+              style={{
+                display: 'inline-block',
+                padding: '4px 10px',
+                backgroundColor:
+                  CATEGORY_INFO[selectedBackendPlace.category as keyof typeof CATEGORY_INFO]?.color || '#808080',
+                color: 'white',
+                borderRadius: '16px',
+                fontSize: '11px',
+                fontWeight: 'bold',
+                marginBottom: '12px',
+              }}
+            >
+              {CATEGORY_INFO[selectedBackendPlace.category as keyof typeof CATEGORY_INFO]?.name || '기타'}
+            </div>
+
+            {/* 요약 설명 */}
+            {selectedBackendPlace.summary && (
+              <div
+                style={{
+                  marginBottom: '16px',
+                  padding: '12px',
+                  backgroundColor: '#f8f9fa',
+                  borderRadius: '6px',
+                  borderLeft: '3px solid #4CAF50',
+                }}
+              >
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: '13px',
+                    color: '#555',
+                    lineHeight: '1.6',
+                    maxHeight: isSummaryExpanded ? 'none' : '3.8em',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    display: '-webkit-box',
+                    WebkitLineClamp: isSummaryExpanded ? 'unset' : 3,
+                    WebkitBoxOrient: 'vertical',
+                  }}
+                >
+                  {selectedBackendPlace.summary}
+                </p>
+                {selectedBackendPlace.summary.length > 100 && (
+                  <button
+                    onClick={() => setIsSummaryExpanded(!isSummaryExpanded)}
+                    style={{
+                      marginTop: '6px',
+                      background: 'none',
+                      border: 'none',
+                      color: '#4CAF50',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      padding: '0',
+                      textDecoration: 'underline',
+                    }}
+                  >
+                    {isSummaryExpanded ? '접기' : '자세히보기'}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* 여행지에 추가 버튼 */}
+            <button
+              onClick={() => {
+                const poiData = {
+                  latitude: selectedBackendPlace.latitude,
+                  longitude: selectedBackendPlace.longitude,
+                  address: selectedBackendPlace.address,
+                  placeName: selectedBackendPlace.title,
+                  categoryName: selectedBackendPlace.category,
+                };
+                markPoi(poiData);
+                setSelectedBackendPlace(null);
+              }}
+              style={{
+                width: '100%',
+                padding: '12px',
+                backgroundColor: '#4CAF50',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                fontSize: '14px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                transition: 'background-color 0.2s',
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = '#45a049';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = '#4CAF50';
+              }}
+            >
+              여행지에 추가
+            </button>
+          </div>
         </div>
       )}
     </div>
