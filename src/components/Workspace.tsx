@@ -8,7 +8,12 @@ import {
   type DragEndEvent,
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
-import { MapPanel, type KakaoPlace, type RouteSegment } from './MapPanel'; // RouteSegment import 추가
+import {
+  MapPanel,
+  type KakaoPlace,
+  type RouteSegment,
+  type ChatMessage,
+} from './MapPanel'; // RouteSegment, ChatMessage import 추가
 import type { PlanDayDto } from '../types/workspace';
 import { LeftPanel } from './LeftPanel';
 import { RightPanel } from './RightPanel';
@@ -77,6 +82,14 @@ export function Workspace({
     isConnected: isChatConnected,
   } = useChatSocket(workspaceId);
 
+  // [추가] MapPanel에 전달할 최신 채팅 메시지 상태
+  const [latestChatMessage, setLatestChatMessage] = useState<ChatMessage | null>(
+    null
+  );
+
+  // [추가] messages 배열이 업데이트될 때마다 최신 메시지를 상태에 저장
+  const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
+
   const [selectedPlace, setSelectedPlace] = useState<KakaoPlace | null>(null);
   const [activePoi, setActivePoi] = useState<Poi | null>(null);
   const [hoveredPoi, setHoveredPoi] = useState<Poi | null>(null); // hoveredPoi 상태 추가
@@ -85,11 +98,6 @@ export function Workspace({
   const [optimizingDayId, setOptimizingDayId] = useState<string | null>(null);
   // [추가] 최적화 완료 후 상태를 리셋하는 콜백
   const handleOptimizationComplete = useCallback(() => setOptimizingDayId(null), []);
-
-  // MapPanel에서 전달받을 경로 세그먼트 정보를 저장할 상태 추가
-  const [routeSegmentsByDay, setRouteSegmentsByDay] = useState<
-    Record<string, RouteSegment[]>
-  >({});
 
   // PlanRoomHeader에 전달할 activeMembers 데이터 형식으로 변환
   const activeMembersForHeader = useMemo(() => {
@@ -103,6 +111,31 @@ export function Workspace({
         : `https://ui-avatars.com/api/?name=${member.profile.nickname}&background=random`,
     }));
   }, [members]);
+
+  // MapPanel에서 전달받을 경로 세그먼트 정보를 저장할 상태 추가
+  const [routeSegmentsByDay, setRouteSegmentsByDay] = useState<
+    Record<string, RouteSegment[]>
+  >({});
+
+  // [추가] 마지막 메시지가 변경될 때만 실행되는 useEffect
+  // 이렇게 하면 메시지 배열 전체가 아닌, 마지막 메시지가 바뀔 때만 반응합니다.
+  // RightPanel에서 받은 메시지 타입과 MapPanel에서 사용할 ChatMessage 타입을 맞춰줍니다.
+  useMemo(() => {
+    // lastMessage와 lastMessage.userId가 모두 존재해야 합니다. (시스템 메시지 제외)
+    if (lastMessage && lastMessage.userId && activeMembersForHeader) {
+      // [추가] 메시지를 보낸 사용자의 정보를 activeMembersForHeader에서 찾습니다.
+      const sender = activeMembersForHeader.find(
+        (member) => member.id === lastMessage.userId
+      );
+
+      setLatestChatMessage({
+        userId: lastMessage.userId, // 메시지를 보낸 사용자의 ID
+        message: lastMessage.message, // 메시지 내용
+        avatar: sender?.avatar, // [추가] 찾은 사용자의 아바타 URL
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastMessage, activeMembersForHeader]); // [수정] activeMembersForHeader를 의존성 배열에 추가
 
   const dayLayers = useMemo(
     () =>
@@ -439,6 +472,7 @@ export function Workspace({
               optimizingDayId={optimizingDayId} // [추가] 최적화 트리거 상태 전달
               onOptimizationComplete={handleOptimizationComplete} // [추가] 최적화 완료 콜백 전달
               onRouteOptimized={handleRouteOptimized} // [추가] 최적화된 경로 콜백 전달
+              latestChatMessage={latestChatMessage} // [추가] 최신 채팅 메시지 전달
             />
           </div>
 

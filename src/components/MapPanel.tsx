@@ -44,6 +44,13 @@ export interface RouteSegment {
   path: { lat: number; lng: number }[];
 }
 
+// 채팅 메시지 타입을 정의합니다.
+export interface ChatMessage {
+  userId: string;
+  message: string;
+  avatar?: string; // [추가] 프로필 이미지 URL을 위한 속성
+}
+
 interface MapPanelProps {
   itinerary: Record<string, Poi[]>;
   dayLayers: DayLayer[];
@@ -66,6 +73,8 @@ interface MapPanelProps {
   optimizingDayId?: string | null;
   cursors: Record<string, Omit<UserCursor, 'userId'>>;
   onOptimizationComplete?: () => void;
+  // 새로운 채팅 메시지를 수신하기 위한 prop 추가
+  latestChatMessage?: ChatMessage | null;
 }
 
 // 카카오내비 API 응답 타입을 위한 인터페이스 추가
@@ -235,6 +244,7 @@ export function MapPanel({
   optimizingDayId,
   cursors,
   onOptimizationComplete,
+  latestChatMessage,
 }: MapPanelProps) {
   const [mapInstance, setMapInstance] = useState<kakao.maps.Map | null>(null);
   const pendingSelectedPlaceRef = useRef<KakaoPlace | null>(null);
@@ -250,6 +260,39 @@ export function MapPanel({
   const [dailyRouteInfo, setDailyRouteInfo] = useState<
     Record<string, RouteSegment[]>
   >({});
+  // 채팅 말풍선 상태와 타이머 Ref를 추가합니다.
+  const [chatBubbles, setChatBubbles] = useState<Record<string, string>>({});
+  const chatBubbleTimers = useRef<Record<string, NodeJS.Timeout>>({});
+
+  // 새로운 채팅 메시지를 처리하는 useEffect (말풍선 표시 로직은 그대로 유지)
+  useEffect(() => {
+    if (latestChatMessage) {
+      const { userId, message } = latestChatMessage;
+
+      // 동일한 사용자의 이전 말풍선 타이머가 있다면 제거합니다.
+      if (chatBubbleTimers.current[userId]) {
+        clearTimeout(chatBubbleTimers.current[userId]);
+      }
+
+      // 새로운 말풍선을 표시합니다.
+      setChatBubbles((prev) => ({ ...prev, [userId]: message }));
+
+      // 5초 후에 말풍선을 자동으로 숨기는 타이머를 설정합니다.
+      chatBubbleTimers.current[userId] = setTimeout(() => {
+        setChatBubbles((prev) => {
+          const newBubbles = { ...prev };
+          delete newBubbles[userId];
+          return newBubbles;
+        });
+        delete chatBubbleTimers.current[userId];
+      }, 5000); // 5초 동안 표시
+    }
+
+    // 컴포넌트가 언마운트될 때 모든 타이머를 정리합니다.
+    return () => {
+      Object.values(chatBubbleTimers.current).forEach(clearTimeout);
+    };
+  }, [latestChatMessage]);
 
   useEffect(() => {
     if (!mapInstance) return;
@@ -753,6 +796,21 @@ export function MapPanel({
             zIndex={10}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              {/* [수정] 아바타를 커서 이름표 옆으로 이동 */}
+              <img
+                src={cursorData.userAvatar}
+                alt={cursorData.userName}
+                style={{
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '50%',
+                  border: '1px solid white',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                  // 커서 아이콘과 이름표 사이에 위치하도록 순서 조정
+                  order: 1,
+                }}
+              />
+
               <svg
                 width="20"
                 height="20"
@@ -770,10 +828,44 @@ export function MapPanel({
                   borderRadius: '4px',
                   fontSize: '12px',
                   whiteSpace: 'nowrap',
+                  // 커서 아이콘과 이름표 사이에 위치하도록 순서 조정
+                  order: 2,
                 }}
               >
                 {cursorData.userName}
               </span>
+              {/* 채팅 말풍선 렌더링 */}
+              {chatBubbles[userId] && (
+                <div // 말풍선과 아바타를 감싸는 컨테이너
+                  style={{
+                    position: 'absolute',
+                    bottom: '28px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    display: 'flex',
+                    alignItems: 'flex-end',
+                    gap: '8px',
+                  }}
+                >
+                  {/* 기존 말풍선 */}
+                  <div
+                    style={{
+                      background: 'rgba(0, 0, 0, 0.75)',
+                      color: 'white',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      fontSize: '13px',
+                      whiteSpace: 'nowrap',
+                      maxWidth: '200px',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+                    }}
+                  >
+                    {chatBubbles[userId]}
+                  </div>
+                </div>
+              )}
             </div>
           </CustomOverlayMap>
         ))}
