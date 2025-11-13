@@ -65,17 +65,15 @@ export function Workspace({
 
   const { members } = useWorkspaceMembers(workspaceId);
   const {
-    cursors,
     pois,
     setPois,
     isSyncing,
     markPoi,
     unmarkPoi,
-    moveCursor,
     addSchedule,
     removeSchedule,
     reorderPois,
-  } = usePoiSocket(workspaceId, members);
+  } = usePoiSocket(workspaceId);
   const {
     messages,
     sendMessage,
@@ -83,12 +81,12 @@ export function Workspace({
   } = useChatSocket(workspaceId);
 
   // [추가] MapPanel에 전달할 최신 채팅 메시지 상태
-  const [latestChatMessage, setLatestChatMessage] = useState<ChatMessage | null>(
-    null
-  );
+  const [latestChatMessage, setLatestChatMessage] =
+    useState<ChatMessage | null>(null);
 
   // [추가] messages 배열이 업데이트될 때마다 최신 메시지를 상태에 저장
-  const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
+  const lastMessage =
+    messages.length > 0 ? messages[messages.length - 1] : null;
 
   const [selectedPlace, setSelectedPlace] = useState<KakaoPlace | null>(null);
   const [activePoi, setActivePoi] = useState<Poi | null>(null);
@@ -97,7 +95,10 @@ export function Workspace({
   // [추가] 경로 최적화를 트리거하기 위한 상태
   const [optimizingDayId, setOptimizingDayId] = useState<string | null>(null);
   // [추가] 최적화 완료 후 상태를 리셋하는 콜백
-  const handleOptimizationComplete = useCallback(() => setOptimizingDayId(null), []);
+  const handleOptimizationComplete = useCallback(
+    () => setOptimizingDayId(null),
+    []
+  );
 
   // PlanRoomHeader에 전달할 activeMembers 데이터 형식으로 변환
   const activeMembersForHeader = useMemo(() => {
@@ -134,7 +135,6 @@ export function Workspace({
         avatar: sender?.avatar, // [추가] 찾은 사용자의 아바타 URL
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastMessage, activeMembersForHeader]); // [수정] activeMembersForHeader를 의존성 배열에 추가
 
   const dayLayers = useMemo(
@@ -445,19 +445,19 @@ export function Workspace({
               dayLayers={dayLayers}
               pois={pois}
               isSyncing={isSyncing}
-              moveCursor={moveCursor}
               markPoi={markPoi}
               unmarkPoi={unmarkPoi}
               selectedPlace={selectedPlace}
               mapRef={mapRef}
               setSelectedPlace={setSelectedPlace}
-              cursors={cursors}
               onRouteInfoUpdate={handleRouteInfoUpdate} // MapPanel에 콜백 함수 전달
               hoveredPoi={hoveredPoi}
               optimizingDayId={optimizingDayId} // [추가] 최적화 트리거 상태 전달
               onOptimizationComplete={handleOptimizationComplete} // [추가] 최적화 완료 콜백 전달
               onRouteOptimized={handleRouteOptimized} // [추가] 최적화된 경로 콜백 전달
               latestChatMessage={latestChatMessage} // [추가] 최신 채팅 메시지 전달
+              workspaceId={workspaceId}
+              members={members}
             />
           </div>
 

@@ -3,6 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from '../store/authStore';
 import { WEBSOCKET_POI_URL } from '../constants';
 import type { WorkspaceMember } from '../types/member.ts';
+import { API_BASE_URL } from '../api/client';
 
 const PoiSocketEvent = {
   JOIN: 'join',
@@ -60,15 +61,11 @@ export type UserCursor = {
   userAvatar: string;
 };
 
-export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
+export function usePoiSocket(workspaceId: string) {
   const socketRef = useRef<Socket | null>(null);
   const [pois, setPois] = useState<Poi[]>([]);
-  const [cursors, setCursors] = useState<
-    Record<string, Omit<UserCursor, 'userId'>>
-  >({});
   const [isSyncing, setIsSyncing] = useState(true);
-  const { user, isAuthLoading } = useAuthStore();
-
+  const { user } = useAuthStore();
   useEffect(() => {
     const socket = io(`${WEBSOCKET_POI_URL}/poi`, {
       transports: ['websocket'],
@@ -149,19 +146,6 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
       );
     };
 
-    const handleCursorMoved = (data: UserCursor) => {
-      if (data.userId === user?.userId) return; // 내 커서는 표시하지 않음
-      setCursors((prevCursors) => ({
-        ...prevCursors,
-        [data.userId]: {
-          position: data.position,
-          userName: data.userName,
-          userColor: data.userColor,
-          userAvatar: data.userAvatar,
-        },
-      }));
-    };
-
     socket.on('connect', () => {
       console.log('Socket connected:', socket.id);
       socket.emit(PoiSocketEvent.JOIN, { workspaceId });
@@ -173,7 +157,6 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
     socket.on(PoiSocketEvent.ADD_SCHEDULE, handleAddSchedule);
     socket.on(PoiSocketEvent.REMOVE_SCHEDULE, handleRemoveSchedule);
     socket.on(PoiSocketEvent.REORDER, handleReorder);
-    socket.on(PoiSocketEvent.CURSOR_MOVED, handleCursorMoved);
 
     return () => {
       console.log('Disconnecting socket...');
@@ -184,7 +167,6 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
       socket.off(PoiSocketEvent.ADD_SCHEDULE, handleAddSchedule);
       socket.off(PoiSocketEvent.REMOVE_SCHEDULE, handleRemoveSchedule);
       socket.off(PoiSocketEvent.REORDER, handleReorder);
-      socket.off(PoiSocketEvent.CURSOR_MOVED, handleCursorMoved);
       socket.disconnect();
     };
   }, [workspaceId, user?.userId]);
@@ -243,6 +225,57 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
     [workspaceId]
   );
 
+  return {
+    pois,
+    setPois,
+    isSyncing,
+    markPoi,
+    unmarkPoi,
+    addSchedule,
+    removeSchedule,
+    reorderPois,
+  };
+}
+
+export function useCursorSocket(workspaceId: string, members: WorkspaceMember[]) {
+  const socketRef = useRef<Socket | null>(null);
+  const [cursors, setCursors] = useState<
+    Record<string, Omit<UserCursor, 'userId'>>
+  >({});
+  const { user, isAuthLoading } = useAuthStore();
+
+  useEffect(() => {
+    const socket = io(`${WEBSOCKET_POI_URL}/poi`, {
+      transports: ['websocket'],
+    });
+    socketRef.current = socket;
+
+    const handleCursorMoved = (data: UserCursor) => {
+      if (data.userId === user?.userId) return; // 내 커서는 표시하지 않음
+      setCursors((prevCursors) => ({
+        ...prevCursors,
+        [data.userId]: {
+          position: data.position,
+          userName: data.userName,
+          userColor: data.userColor,
+          userAvatar: data.userAvatar,
+        },
+      }));
+    };
+
+    socket.on('connect', () => {
+      socket.emit(PoiSocketEvent.JOIN, { workspaceId });
+    });
+
+    socket.on(PoiSocketEvent.CURSOR_MOVED, handleCursorMoved);
+
+    return () => {
+      socket.emit(PoiSocketEvent.LEAVE, { workspaceId });
+      socket.off(PoiSocketEvent.CURSOR_MOVED, handleCursorMoved);
+      socket.disconnect();
+    };
+  }, [workspaceId, user?.userId]);
+
   const moveCursor = useCallback(
     (position: CursorPosition) => {
       if (isAuthLoading || !user || !socketRef.current?.connected) return;
@@ -252,7 +285,7 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
       );
 
       const userAvatarUrl = currentUserMemberInfo?.profile.profileImageId
-        ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/binary-content/${currentUserMemberInfo.profile.profileImageId}/presigned-url`
+        ? `${API_BASE_URL}/binary-content/${currentUserMemberInfo.profile.profileImageId}/presigned-url`
         : `https://ui-avatars.com/api/?name=${currentUserMemberInfo?.profile.nickname || 'User'}&background=random`;
 
       const payload = {
@@ -270,15 +303,7 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
   );
 
   return {
-    pois,
-    setPois,
     cursors,
-    isSyncing,
-    markPoi,
-    unmarkPoi,
-    addSchedule,
-    removeSchedule,
-    reorderPois,
     moveCursor,
   };
 }

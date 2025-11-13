@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, memo } from 'react';
-import type { Poi, CreatePoiDto, CursorPosition } from '../hooks/usePoiSocket';
+import type { Poi, CreatePoiDto } from '../hooks/usePoiSocket';
 import { PlusCircle, X } from 'lucide-react'; // PlusCircle, X 아이콘 임포트
 import {
   Map as KakaoMap,
@@ -9,6 +9,8 @@ import {
 } from 'react-kakao-maps-sdk';
 import { Button } from './ui/button';
 import { KAKAO_REST_API_KEY } from '../constants'; // KAKAO_REST_API_KEY import 추가
+import { useCursorSocket } from '../hooks/usePoiSocket';
+import type { WorkspaceMember } from '../types/member';
 
 export interface KakaoPlace {
   id: string;
@@ -46,14 +48,6 @@ export interface ChatMessage {
   avatar?: string; // [추가] 프로필 이미지 URL을 위한 속성
 }
 
-// [수정] cursors prop을 위한 명시적인 타입 정의
-interface CursorData {
-  position: CursorPosition;
-  userName: string;
-  userColor: string;
-  userAvatar: string;
-}
-
 interface MapPanelProps {
   itinerary: Record<string, Poi[]>;
   dayLayers: DayLayer[];
@@ -62,7 +56,6 @@ interface MapPanelProps {
   markPoi: (
     poiData: Omit<CreatePoiDto, 'workspaceId' | 'createdBy' | 'id'>
   ) => void;
-  moveCursor: (position: CursorPosition) => void;
   selectedPlace: KakaoPlace | null;
   mapRef: React.RefObject<kakao.maps.Map | null>;
   hoveredPoi: Poi | null;
@@ -73,10 +66,11 @@ interface MapPanelProps {
   onRouteOptimized?: (dayId: string, optimizedPoiIds: string[]) => void;
   // [추가] 최적화 로직을 트리거하고 완료를 알리기 위한 props
   optimizingDayId?: string | null;
-  cursors: Record<string, CursorData>;
   onOptimizationComplete?: () => void;
   // 새로운 채팅 메시지를 수신하기 위한 prop 추가
   latestChatMessage?: ChatMessage | null;
+  workspaceId: string;
+  members: WorkspaceMember[];
 }
 
 // 카카오내비 API 응답 타입을 위한 인터페이스 추가
@@ -240,7 +234,6 @@ export function MapPanel({
   dayLayers,
   pois,
   isSyncing,
-  moveCursor,
   markPoi,
   selectedPlace,
   unmarkPoi,
@@ -250,9 +243,10 @@ export function MapPanel({
   onRouteInfoUpdate, // 추가된 prop
   onRouteOptimized,
   optimizingDayId,
-  cursors,
   onOptimizationComplete,
   latestChatMessage,
+  workspaceId,
+  members,
 }: MapPanelProps) {
   const [mapInstance, setMapInstance] = useState<kakao.maps.Map | null>(null);
   const pendingSelectedPlaceRef = useRef<KakaoPlace | null>(null);
@@ -271,6 +265,8 @@ export function MapPanel({
   // 채팅 말풍선 상태와 타이머 Ref를 추가합니다.
   const [chatBubbles, setChatBubbles] = useState<Record<string, string>>({});
   const chatBubbleTimers = useRef<Record<string, NodeJS.Timeout>>({});
+
+  const { cursors, moveCursor } = useCursorSocket(workspaceId, members);
 
   // 새로운 채팅 메시지를 처리하는 useEffect (말풍선 표시 로직은 그대로 유지)
   useEffect(() => {
