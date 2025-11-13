@@ -247,10 +247,10 @@ export function MainPage({
   // };
 
   useEffect(() => {
-    if (!isLoggedIn && featuredView === 'recommended') {
+    if (!isLoggedIn) {
       setFeaturedView('latest');
     }
-  }, [featuredView, isLoggedIn]);
+  }, [isLoggedIn]);
 
   const { recommendedPosts, matchingInfoByPostId } = useMemo(() => {
     const toPercent = (value?: number) => {
