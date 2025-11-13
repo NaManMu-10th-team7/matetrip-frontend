@@ -210,15 +210,14 @@ export function MainPage({
     const fetchMatches = async () => {
       setIsMatchesLoading(true);
       try {
-        const res = await client.post<{ matches: MatchCandidateDto[] }>(
-          '/matching/search',
-          { limit: 5 }
-        );
+        const res = await client.post<MatchCandidateDto[]>('/matching/search', {
+          limit: 5,
+        });
         if (!isMounted) {
           return;
         }
-        console.log('match response', res.data);
-        setMatches(res.data?.matches ?? []);
+        console.log('match response', res.data); // res.data is now MatchCandidateDto[]
+        setMatches(res.data ?? []);
       } catch (err) {
         if (!isMounted) {
           return;
