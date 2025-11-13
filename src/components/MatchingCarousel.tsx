@@ -77,13 +77,14 @@ export function MatchingCarousel({
       className="w-full"
     >
       <CarouselContent className="-ml-6">
-        {posts.map((post) => (
+        {posts.map((post, index) => (
           <CarouselItem
             key={post.id}
             className="pl-6 md:basis-1/2 lg:basis-[40%]"
           >
             <MatchingCard
               post={post}
+              rank={index + 1}
               matchingInfo={
                 matchingInfoByPostId?.[post.id] ??
                 fallbackMatchingInfo ??
