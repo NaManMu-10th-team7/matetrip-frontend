@@ -318,6 +318,17 @@ export function MainPage({
 
   return (
     <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-gray-50">
+      {!isLoggedIn && (
+        <div className="mb-8 rounded-2xl border border-blue-200 bg-white p-4 text-center shadow-sm">
+          <h2 className="text-lg font-bold text-gray-900">
+            로그인하고 동행을 추천받아보세요
+          </h2>
+          <p className="text-sm text-gray-600">
+            여행 스타일, 성향, 프로필, MBTI 정보를 바탕으로 맞춤 동행을 확인할
+            수 있어요.
+          </p>
+        </div>
+      )}
       {/* --- User's Participating Trips Section --- */}
       {isLoggedIn && (
         <>
@@ -354,85 +365,110 @@ export function MainPage({
       )}
 
       {/* --- Featured Section (Latest / Recommended toggle) --- */}
-      <section className="mb-12">
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              <ClipboardList className="w-5 h-5 text-blue-600" />
+      {isLoggedIn ? (
+        <section className="mb-12">
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold text-gray-900">
-                  {isFeaturedLoading ? (
-                    <div className="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>
-                  ) : (
-                    featuredTitle
-                  )}
-                </h2>
+                <ClipboardList className="w-5 h-5 text-blue-600" />
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl font-bold text-gray-900">
+                    {isFeaturedLoading ? (
+                      <div className="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>
+                    ) : (
+                      featuredTitle
+                    )}
+                  </h2>
+                </div>
               </div>
+              {isRecommendedView && (
+                <p className="text-sm font-medium text-blue-900/80 flex items-center gap-1">
+                  <Sparkles className="w-4 h-4 text-pink-500" />
+                  여행 성향·스타일·프로필 취향·MBTI를 모두 반영한 맞춤 추천
+                  리스트예요.
+                </p>
+              )}
             </div>
-            {isRecommendedView && (
-              <p className="text-sm font-medium text-blue-900/80 flex items-center gap-1">
-                <Sparkles className="w-4 h-4 text-pink-500" />
-                여행 성향·스타일·프로필 취향·MBTI를 모두 반영한 맞춤 추천
-                리스트예요.
-              </p>
-            )}
+            <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-white p-1">
+              <button
+                type="button"
+                onClick={() => handleFeaturedViewChange('latest')}
+                className={`px-4 py-1 text-sm font-medium rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 ${
+                  activeFeaturedView === 'latest'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                최신글 보기
+              </button>
+              <button
+                type="button"
+                onClick={() => handleFeaturedViewChange('recommended')}
+                disabled={isRecommendedButtonDisabled}
+                className={`px-4 py-1 text-sm font-medium rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 ${
+                  isRecommendedView
+                    ? 'bg-gradient-to-r from-blue-500 via-indigo-500 to-pink-500 text-white'
+                    : 'text-gray-600 hover:text-gray-900'
+                } ${
+                  isRecommendedButtonDisabled
+                    ? 'opacity-50 cursor-not-allowed'
+                    : ''
+                }`}
+              >
+                <span className="inline-flex items-center gap-1.5">
+                  <Wand2 className="w-4 h-4" />
+                  추천 동행
+                </span>
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-white p-1">
-            <button
-              type="button"
-              onClick={() => handleFeaturedViewChange('latest')}
-              className={`px-4 py-1 text-sm font-medium rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 ${
-                activeFeaturedView === 'latest'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              최신글 보기
-            </button>
-            <button
-              type="button"
-              onClick={() => handleFeaturedViewChange('recommended')}
-              disabled={isRecommendedButtonDisabled}
-              className={`px-4 py-1 text-sm font-medium rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 ${
-                isRecommendedView
-                  ? 'bg-gradient-to-r from-blue-500 via-indigo-500 to-pink-500 text-white shadow-md'
-                  : 'text-gray-600 hover:text-gray-900'
-              } ${
-                isRecommendedButtonDisabled
-                  ? 'opacity-50 cursor-not-allowed'
-                  : ''
-              }`}
-            >
-              <span className="inline-flex items-center gap-1.5">
-                <Wand2 className="w-4 h-4" />
-                추천 동행
-              </span>
-            </button>
+          {isFeaturedLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <MainPostCardSkeleton key={index} />
+              ))}
+            </div>
+          ) : featuredItems.length === 0 ? (
+            <div className="text-center text-gray-500 py-10">
+              {featuredEmptyMessage}
+            </div>
+          ) : isRecommendedView ? (
+            <MatchingCarousel
+              posts={featuredItems}
+              matchingInfoByPostId={matchingInfoByPostId}
+              onCardClick={(post) => onViewPost(post.id)}
+            />
+          ) : (
+            <WorkspaceCarousel
+              posts={featuredItems}
+              onCardClick={(post) => onViewPost(post.id)}
+            />
+          )}
+        </section>
+      ) : (
+        <section className="mb-12">
+          <div className="flex items-center gap-2 mb-6">
+            <ClipboardList className="w-5 h-5 text-blue-600" />
+            <h2 className="text-xl font-bold text-gray-900">최신 동행 모집</h2>
           </div>
-        </div>
-        {isFeaturedLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: 3 }).map((_, index) => (
-              <MainPostCardSkeleton key={index} />
-            ))}
-          </div>
-        ) : featuredItems.length === 0 ? (
-          <div className="text-center text-gray-500 py-10">
-            {featuredEmptyMessage}
-          </div>
-        ) : isRecommendedView ? (
-          <MatchingCarousel
-            posts={featuredItems}
-            matchingInfoByPostId={matchingInfoByPostId}
-            onCardClick={(post) => onViewPost(post.id)}
-          />
-        ) : (
-          <WorkspaceCarousel
-            posts={featuredItems}
-            onCardClick={(post) => onViewPost(post.id)}
-          />
-        )}
-      </section>
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <MainPostCardSkeleton key={index} />
+              ))}
+            </div>
+          ) : posts.length === 0 ? (
+            <div className="text-center text-gray-500 py-10">
+              최신 게시글이 없습니다.
+            </div>
+          ) : (
+            <WorkspaceCarousel
+              posts={posts}
+              onCardClick={(post) => onViewPost(post.id)}
+            />
+          )}
+        </section>
+      )}
 
       {/* --- Region Categories Section --- */}
       <section>
