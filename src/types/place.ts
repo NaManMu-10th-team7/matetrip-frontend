@@ -3,7 +3,7 @@
  */
 export interface PlaceDto {
   id: string;
-  categories: CategoryCode; // 카테고리 코드 (예: "FD6", "AT4", "CE7", "AD5", "CT1")
+  category: CategoryCode; // 카테고리 코드(예)
   title: string;
   address: string;
   summary?: string; // 요약 설명
@@ -16,12 +16,13 @@ export interface PlaceDto {
  * 카테고리 코드와 이름 매핑
  */
 export const CATEGORY_INFO = {
-  FD6: { name: '음식점', color: '#FF6B6B' },
-  AT4: { name: '관광명소', color: '#4ECDC4' },
-  CE7: { name: '카페', color: '#45B7D1' },
-  AD5: { name: '숙박', color: '#96CEB4' },
-  CT1: { name: '문화시설', color: '#FFEAA7' },
+  '인문(문화/예술/역사)': { name: '문화/역사', color: '#FFEAA7' },
+  '레포츠': { name: '레포츠', color: '#A29BFE' },
+  '추천코스': { name: '추천코스', color: '#FF6B9D' },
+  '자연': { name: '자연', color: '#4ECDC4' },
 } as const;
+
+// 카테고리 : 레포츠, 추천코스, 인문(문화/예술/역사), 자연
 
 export type CategoryCode = keyof typeof CATEGORY_INFO;
 

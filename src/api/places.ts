@@ -14,29 +14,29 @@ export async function fetchPlacesInBounds(
   bounds: MapBounds
 ): Promise<PlaceDto[]> {
   // Mock 데이터 사용 시
-  if (USE_MOCK_DATA) {
-    // 실제 API 호출처럼 약간의 지연 시간 추가
-    await new Promise((resolve) => setTimeout(resolve, 300));
+  // if (USE_MOCK_DATA) {
+  //   // 실제 API 호출처럼 약간의 지연 시간 추가
+  //   await new Promise((resolve) => setTimeout(resolve, 300));
 
-    const filteredPlaces = filterPlacesByBounds(
-      MOCK_PLACES,
-      bounds.swLat,
-      bounds.swLng,
-      bounds.neLat,
-      bounds.neLng
-    );
-    // 임시라 그냥 mock 데이터용으로 변수명
+  //   const filteredPlaces = filterPlacesByBounds(
+  //     MOCK_PLACES,
+  //     bounds.swLat,
+  //     bounds.swLng,
+  //     bounds.neLat,
+  //     bounds.neLng
+  //   );
+  //   // 임시라 그냥 mock 데이터용으로 변수명
 
-    console.log(
-      `[MOCK] Found ${filteredPlaces.length} places in bounds:`,
-      bounds
-    );
-    return filteredPlaces;
-  }
+  //   console.log(
+  //     `[MOCK] Found ${filteredPlaces.length} places in bounds:`,
+  //     bounds
+  //   );
+  //   return filteredPlaces;
+  // }
 
   // 실제 API 호출
   try {
-    const response = await client.get<PlaceDto[]>('/api/places', {
+    const response = await client.get<PlaceDto[]>('/places', {
       params: {
         southWestLatitude: bounds.swLat,
         southWestLongitude: bounds.swLng,

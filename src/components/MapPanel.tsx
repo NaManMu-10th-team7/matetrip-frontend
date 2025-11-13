@@ -118,67 +118,33 @@ const PlaceMarker = memo(({ place }: PlaceMarkerProps) => {
     let iconSvg = '';
 
     switch (categoryCode) {
-      case 'FD6': // 음식점 - 포크와 나이프
+      case '레포츠': // 레포츠 - 자전거/활동 아이콘
         iconSvg = `
           <g transform="translate(16, 16)">
-            <!-- 포크 -->
-            <path d="M-3,-6 L-3,-2 M-5,-6 L-5,-3 M-1,-6 L-1,-3 M-3,-2 L-3,6"
+            <!-- 자전거 바퀴 -->
+            <circle cx="-4" cy="4" r="3" stroke="white" stroke-width="1.5" fill="none"/>
+            <circle cx="4" cy="4" r="3" stroke="white" stroke-width="1.5" fill="none"/>
+            <!-- 프레임 -->
+            <path d="M-4,4 L0,-2 L4,4 M0,-2 L0,1"
+                  stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- 핸들 -->
+            <path d="M-1,-2 L1,-2"
                   stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-            <!-- 나이프 -->
-            <path d="M3,-6 L3,6 M3,-6 L5,-4 L3,-2"
-                  stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round"/>
           </g>
         `;
         break;
 
-      case 'CE7': // 카페 - 커피잔
+      case '추천코스': // 추천코스 - 별표 아이콘
         iconSvg = `
           <g transform="translate(16, 16)">
-            <!-- 커피잔 -->
-            <path d="M-5,-3 L-5,3 Q-5,5 -3,5 L3,5 Q5,5 5,3 L5,-3 Z"
-                  fill="white" stroke="white" stroke-width="1"/>
-            <!-- 손잡이 -->
-            <path d="M5,0 Q8,0 8,3 Q8,5 6,5"
-                  stroke="white" stroke-width="1.5" fill="none"/>
-            <!-- 김 -->
-            <path d="M-2,-6 Q-2,-4 -2,-3 M0,-6 Q0,-4 0,-3 M2,-6 Q2,-4 2,-3"
-                  stroke="white" stroke-width="1" fill="none" stroke-linecap="round"/>
-          </g>
-        `;
-        break;
-
-      case 'AT4': // 관광명소 - 카메라
-        iconSvg = `
-          <g transform="translate(16, 16)">
-            <!-- 카메라 바디 -->
-            <rect x="-6" y="-3" width="12" height="9" rx="1"
-                  fill="white" stroke="white" stroke-width="1"/>
-            <!-- 렌즈 -->
-            <circle cx="0" cy="2" r="3" fill="${color}" stroke="white" stroke-width="1.5"/>
-            <!-- 뷰파인더 -->
-            <rect x="-2" y="-5" width="4" height="2" rx="0.5"
+            <!-- 별 -->
+            <path d="M0,-6 L1.5,-2 L6,-2 L2.5,1 L4,6 L0,3 L-4,6 L-2.5,1 L-6,-2 L-1.5,-2 Z"
                   fill="white" stroke="white" stroke-width="1"/>
           </g>
         `;
         break;
 
-      case 'AD5': // 숙박 - 침대
-        iconSvg = `
-          <g transform="translate(16, 16)">
-            <!-- 침대 프레임 -->
-            <rect x="-6" y="-1" width="12" height="5" rx="1"
-                  fill="white" stroke="white" stroke-width="1"/>
-            <!-- 베개 -->
-            <rect x="-5" y="-3" width="4" height="2" rx="0.5"
-                  fill="white" stroke="white" stroke-width="1"/>
-            <!-- 다리 -->
-            <rect x="-6" y="4" width="1.5" height="3" fill="white"/>
-            <rect x="4.5" y="4" width="1.5" height="3" fill="white"/>
-          </g>
-        `;
-        break;
-
-      case 'CT1': // 문화시설 - 박물관/건물
+      case '인문(문화/예술/역사)': // 문화/역사 - 박물관/건물
         iconSvg = `
           <g transform="translate(16, 16)">
             <!-- 지붕 -->
@@ -189,6 +155,19 @@ const PlaceMarker = memo(({ place }: PlaceMarkerProps) => {
             <rect x="4" y="-3" width="2" height="8" fill="white"/>
             <!-- 바닥 -->
             <rect x="-7" y="5" width="14" height="1" fill="white"/>
+          </g>
+        `;
+        break;
+
+      case '자연': // 자연 - 나무 아이콘
+        iconSvg = `
+          <g transform="translate(16, 16)">
+            <!-- 나무 잎 -->
+            <circle cx="0" cy="-3" r="4" fill="white"/>
+            <circle cx="-3" cy="-1" r="3" fill="white"/>
+            <circle cx="3" cy="-1" r="3" fill="white"/>
+            <!-- 나무 줄기 -->
+            <rect x="-1" y="1" width="2" height="5" fill="white"/>
           </g>
         `;
         break;
@@ -213,7 +192,7 @@ const PlaceMarker = memo(({ place }: PlaceMarkerProps) => {
     return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
   };
 
-  const markerImageSrc = getMarkerImageSrc(place.categories);
+  const markerImageSrc = getMarkerImageSrc(place.category);
   const markerImage = {
     src: markerImageSrc,
     size: { width: 36, height: 44 },
@@ -306,7 +285,7 @@ const PlaceMarker = memo(({ place }: PlaceMarkerProps) => {
                 display: 'inline-block',
               }}
             >
-              {CATEGORY_INFO[place.categories as keyof typeof CATEGORY_INFO]?.name || '기타'}
+              {CATEGORY_INFO[place.category as keyof typeof CATEGORY_INFO]?.name || '기타'}
             </div>
           </div>
         </CustomOverlayMap>
