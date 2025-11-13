@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { SimpleToggle } from './ui/SimpleToggle'; // Switch 대신 SimpleToggle을 import
 import {
   Calendar,
   Search,
@@ -141,100 +142,6 @@ function MarkerStorage({ pois, onPoiClick, onPoiHover, onPoiLeave, unmarkPoi, re
     );
 }
 
-function ItineraryDay({
-  layer,
-  pois,
-  onPoiClick,
-  onPoiHover, // (poiId: string) => void
-  onPoiLeave, // () => void
-  unmarkPoi,
-  removeSchedule,
-  routeSegmentsByDay,
-  onOptimizeRoute,
-}: {
-  layer: DayLayer;
-  pois: Poi[];
-  onPoiClick: (poi: Poi) => void;
-  onPoiHover: (poiId: string) => void;
-  onPoiLeave: () => void;
-  unmarkPoi: (poiId: string | number) => void;
-  removeSchedule: (poiId: string, planDayId: string) => void;
-  routeSegmentsByDay: Record<string, RouteSegment[]>;
-  onOptimizeRoute: (dayId: string) => void;
-}) {
-    const { setNodeRef } = useDroppable({ id: layer.id });
-    const [isCollapsed, setIsCollapsed] = useState(false);
-    
-    const segmentsForThisDay = routeSegmentsByDay[layer.id] || [];
-
-    return (
-        <div ref={setNodeRef} className="border-b pb-2">
-            <div className="flex justify-between items-center mb-2">
-                <h3 className="text-sm font-bold">{layer.label}</h3>
-                {/* [추가] 경로 최적화 버튼 */}
-                {pois.length >= 4 && ( // 출발, 도착, 경유지 2개 이상일 때만 표시
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-xs"
-                    onClick={() => onOptimizeRoute(layer.id)}
-                  >
-                    경로 최적화
-                  </Button>
-                )}
-                <Button variant="ghost" size="icon" onClick={() => setIsCollapsed(!isCollapsed)}>
-                    {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-                </Button>
-            </div>
-            {!isCollapsed && (
-                <SortableContext id={layer.id + '-sortable'} items={pois.map(p => p.id)} strategy={verticalListSortingStrategy}>
-                    <ul className="space-y-2 min-h-[2rem]">
-                        {pois.length > 0 ? (
-                            pois.map((poi, index) => (
-                                <React.Fragment key={poi.id}>
-                                    <PoiItem poi={poi} color={layer.color} index={index} onPoiClick={onPoiClick} onPoiHover={onPoiHover} onPoiLeave={onPoiLeave} unmarkPoi={unmarkPoi} removeSchedule={removeSchedule} />
-                                    {/* Display route segment info and vertical line between POIs */}
-                                    {index < pois.length - 1 && (() => {
-                                        const nextPoi = pois[index + 1];
-                                        const segment = segmentsForThisDay.find(
-                                            s => s.fromPoiId === poi.id && s.toPoiId === nextPoi.id
-                                        );
-
-                                        if (segment) {
-                                            const totalMinutes = Math.ceil(segment.duration / 60);
-                                            const totalKilometers = (segment.distance / 1000).toFixed(1);
-                                            return (
-                                                <div className="relative flex items-center h-8"> {/* relative 및 h-8 추가 */}
-                                                    {/* Vertical line */}
-                                                    <div className="absolute left-4 w-0.5 h-full bg-gray-300"></div> {/* left-4 (16px)로 조정 */}
-                                                    {/* Route info, adjusted for alignment */}
-                                                    <div className="flex items-center text-xs text-gray-600 ml-17"> {/* ml-17 (68px)로 조정 */}
-                                                        <span className="mr-2 flex items-center">
-                                                            <Clock className="w-3 h-3 mr-1" />
-                                                            {`${totalMinutes}분`}
-                                                        </span>
-                                                        <span className="flex items-center">
-                                                            <Car className="w-3 h-3 mr-1" />
-                                                            {`${totalKilometers}km`}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            );
-                                        }
-                                        return null;
-                                    })()}
-                                </React.Fragment>
-                            ))
-                        ) : (
-                            <p className="text-xs text-gray-500 p-2">마커를 드래그하여 추가하세요.</p>
-                        )}
-                    </ul>
-                </SortableContext>
-            )}
-        </div>
-    );
-}
-
 function ItineraryPanel({
   itinerary,
   dayLayers,
@@ -245,6 +152,8 @@ function ItineraryPanel({
   removeSchedule,
   routeSegmentsByDay,
   onOptimizeRoute,
+  visibleDayIds,
+  onDayVisibilityChange,
 }: {
   itinerary: Record<string, Poi[]>;
   dayLayers: DayLayer[];
@@ -255,6 +164,8 @@ function ItineraryPanel({
   removeSchedule: (poiId: string, planDayId: string) => void;
   routeSegmentsByDay: Record<string, RouteSegment[]>;
   onOptimizeRoute: (dayId: string) => void;
+  visibleDayIds: Set<string>;
+  onDayVisibilityChange: (dayId: string, isVisible: boolean) => void;
 }) {
   return (
     <div className="p-3 space-y-2 h-full overflow-y-auto">
@@ -263,20 +174,102 @@ function ItineraryPanel({
         <span className="text-base font-bold">여행 일정</span>
       </div>
       <div className="space-y-3">
-        {dayLayers.map((layer) => (
-          <ItineraryDay
-            key={layer.id}
-            layer={layer}
-            pois={itinerary[layer.id] || []}
-            onPoiClick={onPoiClick}
-            onPoiHover={onPoiHover}
-            onPoiLeave={onPoiLeave}
-            unmarkPoi={unmarkPoi}
-            removeSchedule={removeSchedule}
-            routeSegmentsByDay={routeSegmentsByDay}
-            onOptimizeRoute={onOptimizeRoute}
-          />
-        ))}
+        {dayLayers.map((layer) => {
+          const pois = itinerary[layer.id] || [];
+          const isDayVisible = visibleDayIds.has(layer.id);
+          const segmentsForThisDay = routeSegmentsByDay[layer.id] || [];
+          const containerBodyClasses = `transition-opacity duration-300 ${isDayVisible ? 'opacity-100' : 'opacity-40 pointer-events-none'}`;
+
+          // 각 날짜별 접힘/펼침 상태를 관리하기 위해 ItineraryPanel 내부에 상태를 만듭니다.
+          // 더 복잡한 상태 관리가 필요하면 이 로직을 부모 컴포넌트로 올릴 수 있습니다.
+          const [isCollapsed, setIsCollapsed] = useState(false);
+          const { setNodeRef } = useDroppable({ id: layer.id });
+
+          return (
+            <div key={layer.id} className="border-b pb-2">
+              {/* Header: 토글 스위치, 날짜, 버튼들 */}
+              <div ref={setNodeRef} className="flex items-center mb-2 gap-2">
+                  <div className="flex items-center gap-2">
+                    <SimpleToggle
+                      checked={isDayVisible}
+                      onChange={(checked) => onDayVisibilityChange(layer.id, checked)}
+                    />
+                    <h3 className="text-sm font-bold">{layer.label}</h3>
+                  </div>
+                  <div className="flex-grow">
+                    {pois.length >= 4 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs"
+                        onClick={() => onOptimizeRoute(layer.id)}
+                      >
+                        경로 최적화
+                      </Button>
+                    )}
+                  </div>
+                  <Button variant="ghost" size="icon" className="flex-shrink-0" onClick={() => setIsCollapsed(!isCollapsed)}>
+                      {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+                  </Button>
+              </div>
+
+              {/* Body: POI 목록 (opacity 적용) */}
+              <div className={containerBodyClasses}>
+                {!isCollapsed && (
+                    <SortableContext id={layer.id + '-sortable'} items={pois.map(p => p.id)} strategy={verticalListSortingStrategy}>
+                      <ul className="space-y-2 min-h-[2rem]">
+                          {pois.length > 0 ? (
+                              pois.map((poi, index) => (
+                                  <React.Fragment key={poi.id}>
+                                      <PoiItem
+                                        poi={poi}
+                                        color={layer.color}
+                                        index={index}
+                                        onPoiClick={onPoiClick}
+                                        onPoiHover={onPoiHover}
+                                        onPoiLeave={onPoiLeave}
+                                        unmarkPoi={unmarkPoi}
+                                        removeSchedule={removeSchedule}
+                                      />
+                                      {index < pois.length - 1 && (() => {
+                                          const nextPoi = pois[index + 1];
+                                          const segment = segmentsForThisDay.find(
+                                              s => s.fromPoiId === poi.id && s.toPoiId === nextPoi.id
+                                          );
+
+                                          const totalMinutes = segment ? Math.ceil(segment.duration / 60) : 0;
+                                          const totalKilometers = segment ? (segment.distance / 1000).toFixed(1) : '0.0';
+
+                                          return (
+                                              <div className="relative flex items-center h-8">
+                                                  <div className="absolute left-4 w-0.5 h-full bg-gray-300"></div>
+                                                  {segment && (
+                                                  <div className="flex items-center text-xs text-gray-600 ml-17">
+                                                      <span className="mr-2 flex items-center">
+                                                          <Clock className="w-3 h-3 mr-1" />
+                                                          {`${totalMinutes}분`}
+                                                      </span>
+                                                      <span className="flex items-center">
+                                                          <Car className="w-3 h-3 mr-1" />
+                                                          {`${totalKilometers}km`}
+                                                      </span>
+                                                  </div>
+                                                  )}
+                                              </div>
+                                          );
+                                      })()}
+                                  </React.Fragment>
+                              ))
+                          ) : (
+                              <p className="text-xs text-gray-500 p-2">마커를 드래그하여 추가하세요.</p>
+                          )}
+                      </ul>
+                    </SortableContext>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -407,6 +400,8 @@ interface LeftPanelProps {
   onPoiLeave: () => void; // onPoiHover(null)을 호출하므로 onPoiLeave는 동일
   routeSegmentsByDay: Record<string, RouteSegment[]>;
   onOptimizeRoute: (dayId: string) => void;
+  visibleDayIds: Set<string>;
+  onDayVisibilityChange: (dayId: string, isVisible: boolean) => void;
 }
 
 export function LeftPanel({
@@ -421,6 +416,8 @@ export function LeftPanel({
   onPoiHover, // (poiId: string | null) => void
   routeSegmentsByDay,
   onOptimizeRoute,
+  visibleDayIds,
+  onDayVisibilityChange,
 }: LeftPanelProps) {
   if (!isOpen) {
     return null;
@@ -455,6 +452,8 @@ export function LeftPanel({
             removeSchedule={removeSchedule}
             routeSegmentsByDay={routeSegmentsByDay}
             onOptimizeRoute={onOptimizeRoute}
+            visibleDayIds={visibleDayIds}
+            onDayVisibilityChange={onDayVisibilityChange}
           />
         </TabsContent>
         <TabsContent value="search" className="flex-1 relative m-0">

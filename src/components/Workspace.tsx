@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, GripVertical } from 'lucide-react';
 import {
   DndContext,
@@ -115,6 +115,26 @@ export function Workspace({
     () => setOptimizingDayId(null),
     []
   );
+  // [추가] 지도에 표시할 날짜 ID를 관리하는 상태
+  const [visibleDayIds, setVisibleDayIds] = useState<Set<string>>(new Set());
+
+  // [추가] planDayDtos가 변경되면 visibleDayIds를 모든 날짜 ID로 초기화
+  useEffect(() => {
+    setVisibleDayIds(new Set(planDayDtos.map((day) => day.id)));
+  }, [planDayDtos]);
+
+  // [추가] 날짜 가시성 토글 핸들러
+  const handleDayVisibilityChange = useCallback((dayId: string, isVisible: boolean) => {
+    setVisibleDayIds(prevVisibleDayIds => {
+      const newVisibleDayIds = new Set(prevVisibleDayIds);
+      if (isVisible) {
+        newVisibleDayIds.add(dayId);
+      } else {
+        newVisibleDayIds.delete(dayId);
+      }
+      return newVisibleDayIds;
+    });
+  }, []);
 
   // PlanRoomHeader에 전달할 activeMembers 데이터 형식으로 변환
   const activeMembersForHeader = useMemo(() => {
@@ -433,6 +453,8 @@ export function Workspace({
             onPoiLeave={() => hoverPoi(null)} // onPoiLeave 핸들러 추가
             onOptimizeRoute={handleOptimizeRoute} // [추가] 최적화 핸들러 전달
             routeSegmentsByDay={routeSegmentsByDay} // LeftPanel에 경로 정보 전달
+            visibleDayIds={visibleDayIds} // [추가] 가시성 상태 전달
+            onDayVisibilityChange={handleDayVisibilityChange} // [추가] 가시성 변경 핸들러 전달
           />
 
           <button
@@ -470,6 +492,7 @@ export function Workspace({
               moveCursor={moveCursor} // moveCursor prop 전달
               clickEffects={clickEffects} // clickEffects prop 전달
               clickMap={clickMap} // clickMap prop 전달
+              visibleDayIds={visibleDayIds} // [추가] 가시성 상태 전달
             />
           </div>
 

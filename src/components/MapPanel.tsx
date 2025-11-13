@@ -10,6 +10,7 @@ import {
 import { Button } from './ui/button';
 import { KAKAO_REST_API_KEY } from '../constants'; // KAKAO_REST_API_KEY import 추가
 import { type HoveredPoiInfo, type UserCursor } from '../hooks/usePoiSocket';
+import { useAnimatedOpacity } from '../hooks/useAnimatedOpacity'; // useAnimatedOpacity 훅 임포트
 import type { WorkspaceMember } from '../types/member';
 
 export interface KakaoPlace {
@@ -75,6 +76,7 @@ interface MapPanelProps {
   moveCursor: (position: { lat: number; lng: number }) => void; // moveCursor prop 추가
   clickEffects: MapClickEffect[]; // 지도 클릭 효과를 위한 prop 추가
   clickMap: (position: { lat: number; lng: number }) => void; // 지도 클릭 이벤트를 발생시키는 함수 prop 추가
+  visibleDayIds: Set<string>; // [추가] 지도에 표시할 날짜 ID Set
 }
 
 // 카카오내비 API 응답 타입을 위한 인터페이스 추가
@@ -141,6 +143,9 @@ const PoiMarker = memo(
   }: PoiMarkerProps) => {
     const [isInfoWindowOpen, setIsInfoWindowOpen] = useState(false);
     const infoWindowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const isVisible = markerLabel !== undefined;
+    // useAnimatedOpacity 훅을 사용하여 opacity 값을 제어합니다.
+    const animatedOpacity = useAnimatedOpacity(isVisible, 300);
 
     const handleMouseOver = () => {
       if (infoWindowTimeoutRef.current) {
@@ -188,6 +193,7 @@ const PoiMarker = memo(
         onMouseOver={handleMouseOver}
         onMouseOut={handleMouseOut}
         onClick={handleClick}
+        opacity={animatedOpacity}
       >
         {isInfoWindowOpen && (
           <CustomOverlayMap
@@ -231,6 +237,99 @@ const PoiMarker = memo(
   }
 );
 
+interface DayRouteRendererProps {
+  layer: DayLayer;
+  itinerary: Record<string, Poi[]>;
+  dailyRouteInfo: Record<string, RouteSegment[]>;
+  visibleDayIds: Set<string>;
+}
+
+const DayRouteRenderer = memo(
+  ({
+    layer,
+    itinerary,
+    dailyRouteInfo,
+    visibleDayIds,
+  }: DayRouteRendererProps) => {
+    const isVisible = visibleDayIds.has(layer.id);
+    const animatedOpacity = useAnimatedOpacity(isVisible, 300);
+
+    const segments = dailyRouteInfo[layer.id];
+    const dayPois = itinerary[layer.id] || [];
+
+    return (
+      <>
+        {/* Polyline rendering */}
+        {segments && segments.length > 0
+          ? segments.map((segment, index) => (
+              <Polyline
+                key={`${layer.id}-segment-${index}`}
+                path={segment.path}
+                strokeWeight={5}
+                strokeColor={layer.color}
+                strokeOpacity={animatedOpacity * 0.9}
+                strokeStyle={'solid'}
+              />
+            ))
+          : // 상세 경로 정보가 없으면 기존처럼 POI를 직접 연결
+            dayPois.length > 1 && (
+              <Polyline
+                key={layer.id}
+                path={dayPois.map((poi) => ({
+                  lat: poi.latitude,
+                  lng: poi.longitude,
+                }))}
+                strokeWeight={5}
+                strokeColor={layer.color}
+                strokeOpacity={animatedOpacity * 0.9}
+                strokeStyle={'solid'}
+              />
+            )}
+
+        {/* CustomOverlayMap for route info rendering */}
+        {segments &&
+          segments.length > 0 &&
+          segments.map((segment, index) => {
+            // 세그먼트의 상세 경로가 없거나 길이가 0이면 오버레이를 표시하지 않음
+            if (!segment.path || segment.path.length === 0) return null;
+
+            // 경로의 중간 지점 계산
+            const midPointIndex = Math.floor(segment.path.length / 2);
+            const midPoint = segment.path[midPointIndex];
+
+            const totalMinutes = Math.ceil(segment.duration / 60); // 초를 분으로 변환 (올림)
+            const totalKilometers = (segment.distance / 1000).toFixed(1); // 미터를 킬로미터로 변환 (소수점 첫째 자리)
+
+            return (
+              <CustomOverlayMap
+                key={`route-info-${layer.id}-${index}`}
+                position={{ lat: midPoint.lat, lng: midPoint.lng }} // 중간 지점 사용
+                yAnchor={1.6} // 경로 위에 표시되도록 조정
+              >
+                <div
+                  style={{
+                    padding: '5px 10px',
+                    backgroundColor: 'white',
+                    borderRadius: '5px',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    color: '#333',
+                    whiteSpace: 'nowrap',
+                    transition: 'opacity 0.3s ease-in-out', // CSS transition을 유지하여 부드러운 효과
+                    opacity: animatedOpacity,
+                  }}
+                >
+                  {`${totalMinutes}분, ${totalKilometers}km`}
+                </div>
+              </CustomOverlayMap>
+            );
+          })}
+      </>
+    );
+  }
+);
+
 export function MapPanel({
   itinerary,
   dayLayers,
@@ -251,6 +350,7 @@ export function MapPanel({
   moveCursor, // props로 받음
   clickEffects, // props로 받음
   clickMap, // props로 받음
+  visibleDayIds, // props로 받음
 }: MapPanelProps) {
   const [mapInstance, setMapInstance] = useState<kakao.maps.Map | null>(null);
   const pendingSelectedPlaceRef = useRef<KakaoPlace | null>(null);
@@ -770,11 +870,13 @@ export function MapPanel({
           const data = scheduledPoiData.get(poi.id);
           const markerLabel = data?.label;
           const markerColor = data?.color;
+          const isDayVisible =
+            !poi.planDayId || visibleDayIds.has(poi.planDayId);
           return (
             <PoiMarker
               key={poi.id}
               poi={poi}
-              markerLabel={markerLabel}
+              markerLabel={isDayVisible ? markerLabel : undefined}
               markerColor={markerColor}
               isHovered={hoveredPoiInfo?.poiId === poi.id}
               unmarkPoi={unmarkPoi}
@@ -946,164 +1048,99 @@ export function MapPanel({
           </React.Fragment>
         ))}
 
-        {/* 다른 사용자들의 커서 렌더링 */}
-        {Object.entries(cursors).map(([userId, cursorData]) => (
-          <CustomOverlayMap
-            key={userId}
-            position={cursorData.position}
-            xAnchor={0}
-            yAnchor={0}
-            zIndex={10}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              {/* [수정] 아바타를 커서 이름표 옆으로 이동 */}
-              <img
-                src={cursorData.userAvatar}
-                alt={cursorData.userName}
-                style={{
-                  width: '24px',
-                  height: '24px',
-                  borderRadius: '50%',
-                  border: '1px solid white',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
-                  // 커서 아이콘과 이름표 사이에 위치하도록 순서 조정
-                  order: 1,
-                }}
-              />
-
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill={cursorData.userColor || '#FF0000'}
-                style={{ transform: 'rotate(315deg)' }}
+        {/* 다른 사용자들의 커서 렌더링 (이전과 동일) */}
+        {Object.entries(cursors).map(([userId, cursorData]) => {
+          // ... (기존 커서 렌더링 로직)
+          return (
+            <CustomOverlayMap
+              key={userId}
+              position={cursorData.position}
+              xAnchor={0}
+              yAnchor={0}
+              zIndex={10}
+            >
+              <div
+                style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
               >
-                <path d="M4.222 3.4l15.876 7.938a1 1 0 010 1.789L4.222 21.065a1 1 0 01-1.444-1.245l3.96-6.6-3.96-6.6a1 1 0 011.444-1.22z" />
-              </svg>
-              <span
-                style={{
-                  backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                  color: 'white',
-                  padding: '2px 6px',
-                  borderRadius: '4px',
-                  fontSize: '12px',
-                  whiteSpace: 'nowrap',
-                  // 커서 아이콘과 이름표 사이에 위치하도록 순서 조정
-                  order: 2,
-                }}
-              >
-                {cursorData.userName}
-              </span>
-              {/* 채팅 말풍선 렌더링 */}
-              {chatBubbles[userId] && (
-                <div // 말풍선과 아바타를 감싸는 컨테이너
+                <img
+                  src={cursorData.userAvatar}
+                  alt={cursorData.userName}
                   style={{
-                    position: 'absolute',
-                    bottom: '28px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    display: 'flex',
-                    alignItems: 'flex-end',
-                    gap: '8px',
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '50%',
+                    border: '1px solid white',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                    order: 1,
+                  }}
+                />
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill={cursorData.userColor || '#FF0000'}
+                  style={{ transform: 'rotate(315deg)' }}
+                >
+                  <path d="M4.222 3.4l15.876 7.938a1 1 0 010 1.789L4.222 21.065a1 1 0 01-1.444-1.245l3.96-6.6-3.96-6.6a1 1 0 011.444-1.22z" />
+                </svg>
+                <span
+                  style={{
+                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                    color: 'white',
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    whiteSpace: 'nowrap',
+                    order: 2,
                   }}
                 >
-                  {/* 기존 말풍선 */}
+                  {cursorData.userName}
+                </span>
+                {chatBubbles[userId] && (
                   <div
                     style={{
-                      background: 'rgba(0, 0, 0, 0.75)',
-                      color: 'white',
-                      padding: '8px 12px',
-                      borderRadius: '8px',
-                      fontSize: '13px',
-                      whiteSpace: 'nowrap',
-                      maxWidth: '200px',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+                      position: 'absolute',
+                      bottom: '28px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      display: 'flex',
+                      alignItems: 'flex-end',
+                      gap: '8px',
                     }}
                   >
-                    {chatBubbles[userId]}
+                    <div
+                      style={{
+                        background: 'rgba(0, 0, 0, 0.75)',
+                        color: 'white',
+                        padding: '8px 12px',
+                        borderRadius: '8px',
+                        fontSize: '13px',
+                        whiteSpace: 'nowrap',
+                        maxWidth: '200px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+                      }}
+                    >
+                      {chatBubbles[userId]}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          </CustomOverlayMap>
+                )}
+              </div>
+            </CustomOverlayMap>
+          );
+        })}
+
+        {/* 각 날짜별 경로 및 정보 오버레이 렌더링 */}
+        {dayLayers.map((layer) => (
+          <DayRouteRenderer
+            key={layer.id}
+            layer={layer}
+            itinerary={itinerary}
+            dailyRouteInfo={dailyRouteInfo}
+            visibleDayIds={visibleDayIds}
+          />
         ))}
-
-        {/* 각 세그먼트별 Polyline 렌더링 */}
-        {dayLayers.map((layer) => {
-          const segments = dailyRouteInfo[layer.id];
-          if (segments && segments.length > 0) {
-            return segments.map((segment, index) => (
-              <Polyline
-                key={`${layer.id}-segment-${index}`} // 각 세그먼트별 고유 키
-                path={segment.path}
-                strokeWeight={5}
-                strokeColor={layer.color}
-                strokeOpacity={0.9}
-                strokeStyle={'solid'}
-              />
-            ));
-          }
-          // 상세 경로 정보가 없으면 기존처럼 POI를 직접 연결
-          const path = (itinerary[layer.id] || []).map((poi) => ({
-            lat: poi.latitude,
-            lng: poi.longitude,
-          }));
-          return path.length > 1 ? (
-            <Polyline
-              key={layer.id}
-              path={path}
-              strokeWeight={5}
-              strokeColor={layer.color}
-              strokeOpacity={0.9}
-              strokeStyle={'solid'}
-            />
-          ) : null;
-        })}
-
-        {/* 각 세그먼트별 경로 정보 표시 CustomOverlayMap 추가 */}
-        {dayLayers.map((layer) => {
-          const segments = dailyRouteInfo[layer.id];
-
-          if (segments && segments.length > 0) {
-            return segments.map((segment, index) => {
-              // 세그먼트의 상세 경로가 없거나 길이가 0이면 오버레이를 표시하지 않음
-              if (!segment.path || segment.path.length === 0) return null;
-
-              // 경로의 중간 지점 계산
-              const midPointIndex = Math.floor(segment.path.length / 2);
-              const midPoint = segment.path[midPointIndex];
-
-              const totalMinutes = Math.ceil(segment.duration / 60); // 초를 분으로 변환 (올림)
-              const totalKilometers = (segment.distance / 1000).toFixed(1); // 미터를 킬로미터로 변환 (소수점 첫째 자리)
-
-              return (
-                <CustomOverlayMap
-                  key={`route-info-${layer.id}-${index}`}
-                  position={{ lat: midPoint.lat, lng: midPoint.lng }} // 중간 지점 사용
-                  yAnchor={1.6} // 경로 위에 표시되도록 조정
-                >
-                  <div
-                    style={{
-                      padding: '5px 10px',
-                      backgroundColor: 'white',
-                      borderRadius: '5px',
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                      fontSize: '12px',
-                      fontWeight: 'bold',
-                      color: '#333',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {`${totalMinutes}분, ${totalKilometers}km`}
-                  </div>
-                </CustomOverlayMap>
-              );
-            });
-          }
-          return null;
-        })}
       </KakaoMap>
 
       {isSyncing && (
