@@ -12,6 +12,7 @@ interface Profile {
   travelStyles: string[];
   tendency: string[];
   profileImageId: string | null;
+  mannerTemperature?: number;
 }
 
 interface User {
