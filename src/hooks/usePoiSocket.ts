@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from '../store/authStore';
-import { WEBSOCKET_POI_URL } from '../constants.ts';
+import { WEBSOCKET_POI_URL } from '../constants';
+import type { WorkspaceMember } from '../types/member.ts';
 
 const PoiSocketEvent = {
   JOIN: 'join',
@@ -16,6 +17,8 @@ const PoiSocketEvent = {
   REORDER: 'reorder',
   ADD_SCHEDULE: 'addSchedule',
   REMOVE_SCHEDULE: 'removeSchedule',
+  CURSOR_MOVE: 'cursorMove',
+  CURSOR_MOVED: 'cursorMoved',
 } as const;
 
 export type Poi = {
@@ -44,11 +47,26 @@ export type CreatePoiDto = {
   categoryName?: string;
 };
 
-export function usePoiSocket(workspaceId: string) {
+export type CursorPosition = {
+  lat: number;
+  lng: number;
+};
+
+export type UserCursor = {
+  userId: string;
+  position: CursorPosition;
+  userName: string;
+  userColor: string;
+};
+
+export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
   const socketRef = useRef<Socket | null>(null);
   const [pois, setPois] = useState<Poi[]>([]);
+  const [cursors, setCursors] = useState<
+    Record<string, Omit<UserCursor, 'userId'>>
+  >({});
   const [isSyncing, setIsSyncing] = useState(true);
-  const { user } = useAuthStore();
+  const { user, isAuthLoading } = useAuthStore();
 
   useEffect(() => {
     const socket = io(`${WEBSOCKET_POI_URL}/poi`, {
@@ -130,6 +148,18 @@ export function usePoiSocket(workspaceId: string) {
       );
     };
 
+    const handleCursorMoved = (data: UserCursor) => {
+      if (data.userId === user?.userId) return; // 내 커서는 표시하지 않음
+      setCursors((prevCursors) => ({
+        ...prevCursors,
+        [data.userId]: {
+          position: data.position,
+          userName: data.userName,
+          userColor: data.userColor,
+        },
+      }));
+    };
+
     socket.on('connect', () => {
       console.log('Socket connected:', socket.id);
       socket.emit(PoiSocketEvent.JOIN, { workspaceId });
@@ -141,6 +171,7 @@ export function usePoiSocket(workspaceId: string) {
     socket.on(PoiSocketEvent.ADD_SCHEDULE, handleAddSchedule);
     socket.on(PoiSocketEvent.REMOVE_SCHEDULE, handleRemoveSchedule);
     socket.on(PoiSocketEvent.REORDER, handleReorder);
+    socket.on(PoiSocketEvent.CURSOR_MOVED, handleCursorMoved);
 
     return () => {
       console.log('Disconnecting socket...');
@@ -151,9 +182,10 @@ export function usePoiSocket(workspaceId: string) {
       socket.off(PoiSocketEvent.ADD_SCHEDULE, handleAddSchedule);
       socket.off(PoiSocketEvent.REMOVE_SCHEDULE, handleRemoveSchedule);
       socket.off(PoiSocketEvent.REORDER, handleReorder);
+      socket.off(PoiSocketEvent.CURSOR_MOVED, handleCursorMoved);
       socket.disconnect();
     };
-  }, [workspaceId]);
+  }, [workspaceId, user?.userId]);
 
   const markPoi = useCallback(
     (poiData: Omit<CreatePoiDto, 'workspaceId' | 'createdBy' | 'id'>) => {
@@ -209,14 +241,37 @@ export function usePoiSocket(workspaceId: string) {
     [workspaceId]
   );
 
+  const moveCursor = useCallback(
+    (position: CursorPosition) => {
+      if (isAuthLoading || !user || !socketRef.current?.connected) return;
+
+      const currentUserMemberInfo = members.find(
+        (member) => member.id === user.userId
+      );
+
+      const payload = {
+        workspaceId,
+        userId: user.userId,
+        position,
+        userName: currentUserMemberInfo?.profile.nickname || 'Unknown',
+        // 여기서 색상을 결정할 수 있습니다. 예시로 generateColorFromString 사용
+        userColor: '#FF0000', // 임시 색상. 실제로는 사용자별 고유 색상 로직 필요
+      };
+      socketRef.current?.emit(PoiSocketEvent.CURSOR_MOVE, payload);
+    },
+    [workspaceId, user, isAuthLoading, members]
+  );
+
   return {
     pois,
     setPois,
+    cursors,
     isSyncing,
     markPoi,
     unmarkPoi,
     addSchedule,
     removeSchedule,
     reorderPois,
+    moveCursor,
   };
 }

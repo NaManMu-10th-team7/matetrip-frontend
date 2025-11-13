@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, memo } from 'react';
-import type { Poi, CreatePoiDto } from '../hooks/usePoiSocket';
-import {
+import type { Poi, CreatePoiDto, UserCursor, CursorPosition } from '../hooks/usePoiSocket';
+import { 
   Map as KakaoMap,
   MapMarker,
   CustomOverlayMap,
@@ -44,7 +44,8 @@ interface MapPanelProps {
   isSyncing: boolean;
   markPoi: (
     poiData: Omit<CreatePoiDto, 'workspaceId' | 'createdBy' | 'id'>
-  ) => void;
+  ) => void; 
+  moveCursor: (position: CursorPosition) => void;
   selectedPlace: KakaoPlace | null;
   mapRef: React.RefObject<kakao.maps.Map | null>;
   hoveredPoi: Poi | null;
@@ -56,6 +57,7 @@ interface MapPanelProps {
   onRouteOptimized?: (dayId: string, optimizedPoiIds: string[]) => void;
   // [추가] 최적화 로직을 트리거하고 완료를 알리기 위한 props
   optimizingDayId?: string | null;
+  cursors: Record<string, Omit<UserCursor, 'userId'>>;
   onOptimizationComplete?: () => void;
 }
 
@@ -218,6 +220,7 @@ export function MapPanel({
   dayLayers,
   pois,
   isSyncing,
+  moveCursor,
   markPoi,
   selectedPlace,
   mapRef,
@@ -227,6 +230,7 @@ export function MapPanel({
   onRouteInfoUpdate, // 추가된 prop
   onRouteOptimized,
   optimizingDayId,
+  cursors,
   onOptimizationComplete,
 }: MapPanelProps) {
   const [mapInstance, setMapInstance] = useState<kakao.maps.Map | null>(null);
@@ -235,6 +239,24 @@ export function MapPanel({
   const [dailyRouteInfo, setDailyRouteInfo] = useState<
     Record<string, RouteSegment[]>
   >({});
+
+  useEffect(() => {
+    if (!mapInstance) return;
+
+    const handleMouseMove = (mouseEvent: kakao.maps.event.MouseEvent) => {
+      const latlng = mouseEvent.latLng;
+      moveCursor({ lat: latlng.getLat(), lng: latlng.getLng() });
+    };
+
+    // 쓰로틀링을 적용하여 이벤트 발생 빈도를 조절할 수 있습니다. (예: 100ms 마다)
+    // const throttledMoveCursor = throttle(handleMouseMove, 100);
+
+    window.kakao.maps.event.addListener(mapInstance, 'mousemove', handleMouseMove);
+
+    return () => {
+      window.kakao.maps.event.removeListener(mapInstance, 'mousemove', handleMouseMove);
+    };
+  }, [mapInstance, moveCursor]);
 
   useEffect(() => {
     if (selectedPlace && mapInstance) {
@@ -604,6 +626,33 @@ export function MapPanel({
             />
           );
         })}
+
+        {/* 다른 사용자들의 커서 렌더링 */}
+        {Object.entries(cursors).map(([userId, cursorData]) => (
+          <CustomOverlayMap
+            key={userId}
+            position={cursorData.position}
+            xAnchor={0}
+            yAnchor={0}
+            zIndex={10}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill={cursorData.userColor || '#FF0000'} style={{ transform: 'rotate(315deg)' }}>
+                <path d="M4.222 3.4l15.876 7.938a1 1 0 010 1.789L4.222 21.065a1 1 0 01-1.444-1.245l3.96-6.6-3.96-6.6a1 1 0 011.444-1.22z" />
+              </svg>
+              <span style={{
+                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                color: 'white',
+                padding: '2px 6px',
+                borderRadius: '4px',
+                fontSize: '12px',
+                whiteSpace: 'nowrap',
+              }}>
+                {cursorData.userName}
+              </span>
+            </div>
+          </CustomOverlayMap>
+        ))}
 
         {/* 각 세그먼트별 Polyline 렌더링 */}
         {dayLayers.map((layer) => {

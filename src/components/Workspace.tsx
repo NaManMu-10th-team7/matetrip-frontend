@@ -58,22 +58,24 @@ export function Workspace({
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
 
+  const { members } = useWorkspaceMembers(workspaceId);
   const {
+    cursors,
     pois,
     setPois,
     isSyncing,
     markPoi,
     unmarkPoi,
+    moveCursor,
     addSchedule,
     removeSchedule,
     reorderPois,
-  } = usePoiSocket(workspaceId);
+  } = usePoiSocket(workspaceId, members);
   const {
     messages,
     sendMessage,
     isConnected: isChatConnected,
-  } = useChatSocket(workspaceId); // useChatSocket 훅 호출
-  const { members } = useWorkspaceMembers(workspaceId);
+  } = useChatSocket(workspaceId);
 
   const [selectedPlace, setSelectedPlace] = useState<KakaoPlace | null>(null);
   const [activePoi, setActivePoi] = useState<Poi | null>(null);
@@ -424,12 +426,14 @@ export function Workspace({
               dayLayers={dayLayers}
               pois={pois}
               isSyncing={isSyncing}
+              moveCursor={moveCursor}
               markPoi={markPoi}
               unmarkPoi={unmarkPoi}
               selectedPlace={selectedPlace}
               mapRef={mapRef}
               onPoiDragEnd={handleMapPoiDragEnd}
               setSelectedPlace={setSelectedPlace}
+              cursors={cursors}
               onRouteInfoUpdate={handleRouteInfoUpdate} // MapPanel에 콜백 함수 전달
               hoveredPoi={hoveredPoi}
               optimizingDayId={optimizingDayId} // [추가] 최적화 트리거 상태 전달
