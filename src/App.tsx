@@ -7,8 +7,10 @@ import {
   Outlet,
   useParams,
 } from 'react-router-dom';
-import { Header } from './components/Header';
+import { Sidebar } from './components/Sidebar';
 import { MainPage } from './components/MainPage';
+import { AllPostsPage } from './components/AllPostsPage';
+import { MyTripsPage } from './components/MyTripsPage';
 import { SearchResults } from './components/SearchResults';
 import { PostDetail } from './components/PostDetail';
 import { Workspace } from './components/Workspace';
@@ -28,41 +30,27 @@ import { Dialog, DialogContent } from './components/ui/dialog';
 import { ProfileModal } from './components/ProfileModal';
 import PublicOnlyRoute from './components/PublicOnlyRoute';
 
-// Layout component for pages with Header
+// Layout component for pages with Sidebar
 function Layout({
   isLoggedIn,
-  isAuthLoading,
   onLoginClick,
-  onLogoutClick,
   onProfileClick,
-  onLogoClick,
-  onSearch,
+  onCreatePost,
 }: {
   isLoggedIn: boolean;
-  isAuthLoading: boolean;
   onLoginClick: () => void;
-  onLogoutClick: () => void;
   onProfileClick: () => void;
   onCreatePost: () => void;
-  onLogoClick: () => void;
-  onSearch: (query: string) => void;
 }) {
   return (
-    <div className="flex flex-col h-screen">
-      {' '}
-      {/* flex-col과 h-screen 유지 */}
-      <Header
+    <div className="flex h-screen">
+      <Sidebar
         isLoggedIn={isLoggedIn}
-        isAuthLoading={isAuthLoading}
         onLoginClick={onLoginClick}
-        onLogoutClick={onLogoutClick}
         onProfileClick={onProfileClick}
-        onLogoClick={onLogoClick}
-        onSearch={onSearch}
+        onCreatePost={onCreatePost}
       />
       <div className="flex-1 overflow-y-auto">
-        {' '}
-        {/* overflow-hidden 대신 overflow-y-auto 추가 */}
         <Outlet />
       </div>
     </div>
@@ -105,6 +93,38 @@ function MainPageWrapper({
       onViewPost={onViewPost}
       isLoggedIn={finalIsLoggedIn}
       onCreatePost={onCreatePost}
+      fetchTrigger={fetchTrigger}
+    />
+  );
+}
+
+function AllPostsPageWrapper({
+  onViewPost,
+  fetchTrigger,
+}: {
+  onViewPost: (postId: string) => void;
+  fetchTrigger: number;
+}) {
+  const navigate = useNavigate();
+
+  const handleSearch = (params: {
+    startDate?: string;
+    endDate?: string;
+    location?: string;
+    title?: string;
+  }) => {
+    const searchParams = new URLSearchParams();
+    if (params.startDate) searchParams.set('startDate', params.startDate);
+    if (params.endDate) searchParams.set('endDate', params.endDate);
+    if (params.location) searchParams.set('location', params.location);
+    if (params.title) searchParams.set('title', params.title);
+    navigate(`/search?${searchParams.toString()}`);
+  };
+
+  return (
+    <AllPostsPage
+      onViewPost={onViewPost}
+      onSearch={handleSearch}
       fetchTrigger={fetchTrigger}
     />
   );
@@ -256,10 +276,6 @@ export default function App() {
     }
   };
 
-  const handleLogoClick = () => {
-    navigate('/');
-  };
-
   const handleSearch = (query: string) => {
     const searchParams = new URLSearchParams({ title: query });
     navigate(`/search?${searchParams.toString()}`);
@@ -300,18 +316,14 @@ export default function App() {
           />
         </Route>
 
-        {/* Routes with Header */}
+        {/* Routes with Sidebar */}
         <Route
           element={
             <Layout
               isLoggedIn={isLoggedIn}
-              isAuthLoading={isAuthLoading}
               onLoginClick={() => navigate('/login')}
-              onLogoutClick={handleLogout}
               onProfileClick={handleProfileClick}
               onCreatePost={() => setShowCreatePost(true)}
-              onLogoClick={handleLogoClick}
-              onSearch={handleSearch}
             />
           }
         >
@@ -322,6 +334,25 @@ export default function App() {
                 isLoggedIn={isLoggedIn}
                 onViewPost={handleViewPost}
                 onCreatePost={() => setShowCreatePost(true)}
+                fetchTrigger={fetchTrigger}
+              />
+            }
+          />
+          <Route
+            path="/all-posts"
+            element={
+              <AllPostsPageWrapper
+                onViewPost={handleViewPost}
+                fetchTrigger={fetchTrigger}
+              />
+            }
+          />
+          <Route
+            path="/my-trips"
+            element={
+              <MyTripsPage
+                onViewPost={handleViewPost}
+                isLoggedIn={isLoggedIn}
                 fetchTrigger={fetchTrigger}
               />
             }
@@ -372,6 +403,7 @@ export default function App() {
         }
         userId={profileModalState.userId}
         onViewPost={handleViewPost}
+        onLogoutClick={handleLogout}
       />
       {postDetailModalState.open && postDetailModalState.postId && (
         <Dialog

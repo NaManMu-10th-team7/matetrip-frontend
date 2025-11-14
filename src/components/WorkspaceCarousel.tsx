@@ -37,7 +37,7 @@ export function WorkspaceCarousel({
       if (api) {
         api.scrollNext();
       }
-    }, 5000); // 5초마다 자동 스크롤
+    }, 7000); // 5초마다 자동 스크롤
   };
 
   useEffect(() => {
@@ -71,7 +71,7 @@ export function WorkspaceCarousel({
         {posts.map((post) => (
           <CarouselItem
             key={post.id}
-            className="pl-6 md:basis-1/2 lg:basis-[40%]"
+            className="pl-6 basis-1/2 md:basis-1/2 lg:basis-[25%]"
           >
             <WorkspaceCard post={post} onClick={() => onCardClick?.(post)} />
           </CarouselItem>

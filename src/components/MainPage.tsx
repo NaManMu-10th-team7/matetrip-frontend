@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
-import { MapPin, ClipboardList, Plus } from 'lucide-react';
+import { MapPin, SlidersHorizontal, Search } from 'lucide-react';
 import { Button } from './ui/button';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import client from '../api/client';
 import { type Post } from '../types/post';
 import { MainPostCardSkeleton } from './MainPostCardSkeleton';
-import { WorkspaceCarousel } from './WorkspaceCarousel';
+import { MainPostCard } from './MainPostCard';
 import { useAuthStore } from '../store/authStore';
+import { Badge } from './ui/badge';
 
 interface MainPageProps {
   onSearch: (params: {
@@ -69,51 +70,31 @@ const REGION_CATEGORIES = [
 export function MainPage({
   onSearch,
   onViewPost,
-  onCreatePost,
-  isLoggedIn,
   fetchTrigger,
+  isLoggedIn,
 }: MainPageProps) {
   const [posts, setPosts] = useState<Post[]>([]);
-  const [userPosts, setUserPosts] = useState<Post[]>([]);
-  const [isLoading, setIsLoading] = useState(true); // Single loading state for both sections
-  const { user, isAuthLoading } = useAuthStore(); // Get user and isAuthLoading from auth store
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const { isAuthLoading } = useAuthStore();
 
   useEffect(() => {
-    // isAuthLoading이 true일 때는 API 호출을 하지 않습니다.
-    // user 정보가 완전히 로드될 때까지 기다립니다.
     if (isAuthLoading) {
-      setIsLoading(true); // 인증 정보 로딩 중에는 전체 페이지 로딩 상태 유지
+      setIsLoading(true);
       return;
     }
 
     const fetchAllPosts = async () => {
       setIsLoading(true);
       try {
-        const [initialPostsResponse, userPostsResponse] = await Promise.all([
-          client.get<Post[]>('/posts'),
-          isLoggedIn && user?.userId
-            ? client.get<Post[]>(`/posts/user/${user.userId}`)
-            : Promise.resolve({ data: [] }), // If not logged in or userId not available, resolve with empty array
-        ]);
+        const initialPostsResponse = await client.get<Post[]>('/posts');
 
-        // 최신 글이 위로 오도록 생성일(createdAt) 기준으로 정렬합니다.
         const sortedInitialPosts = initialPostsResponse.data.sort(
           (a, b) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
         setPosts(sortedInitialPosts);
         console.log(`최신 동행 글 목록`, sortedInitialPosts);
-
-        if (isLoggedIn && user?.userId) {
-          const sortedUserPosts = userPostsResponse.data.sort(
-            (a, b) =>
-              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
-          setUserPosts(sortedUserPosts);
-          console.log(`${user.profile.nickname}님이 참여중인 여행`, sortedUserPosts);
-        } else {
-          setUserPosts([]);
-        }
       } catch (error) {
         console.error('Failed to fetch posts:', error);
       } finally {
@@ -121,118 +102,140 @@ export function MainPage({
       }
     };
 
-
     fetchAllPosts();
-  }, [
-    isLoggedIn,
-    user?.userId,
-    user?.profile.nickname,
-    isAuthLoading,
-    fetchTrigger,
-  ]); // Add fetchTrigger to dependency array
+  }, [isAuthLoading, fetchTrigger]);
+
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      onSearch({ title: searchQuery });
+    }
+  };
   
   return (
-    <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-gray-50">
-      {/* --- User's Participating Trips Section --- */}
-      {isLoggedIn && (
-        <section className="mb-12">
-          <div className="flex items-center gap-2 mb-6">
-            <ClipboardList className="w-5 h-5 text-blue-600" />
-            <h2 className="text-xl font-bold text-gray-900">
-              {isLoading ? (
-                <div className="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>
-              ) : (
-                // user?.profile.nickname은 isLoading이 false일 때 안전하게 접근 가능
-                `${user?.profile.nickname}님이 참여중인 여행`
-              )}
-            </h2>
-          </div>
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {Array.from({ length: 3 }).map((_, index) => (
-                <MainPostCardSkeleton key={index} />
-              ))}
-            </div>
-          ) : userPosts.length === 0 ? (
-            <div className="text-center text-gray-500 py-10">
-              참여중인 게시글이 없습니다.
-            </div>
-          ) : (
-            <WorkspaceCarousel
-              posts={userPosts}
-              onCardClick={(post) => onViewPost(post.id)}
-            />
-          )}
-        </section>
-      )}
-
-      {/* --- Recent Posts Section --- */}
-      <section className="mb-12">
-        <div className="flex items-center gap-2 mb-6">
-          <ClipboardList className="w-5 h-5 text-blue-600" />
-          <h2 className="text-xl font-bold text-gray-900">
-            {isLoading ? (
-              <div className="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>
-            ) : (
-              '최신 동행 모집'
-            )}
-          </h2>
+    <div className="bg-white min-h-screen">
+      <div className="max-w-7xl mx-auto px-16 py-12">
+        {/* Header Section */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-medium text-gray-900 mb-2">
+            당신과 잘 맞는 동행
+          </h1>
+          <p className="text-base text-gray-600">
+            MateTrip AI가 추천하는 최적의 여행 파트너
+          </p>
         </div>
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: 3 }).map((_, index) => (
-              <MainPostCardSkeleton key={index} />
-            ))}
-          </div>
-        ) : posts.length === 0 ? (
-          <div className="text-center text-gray-500 py-10">
-            최신 게시글이 없습니다.
+
+        {!isLoggedIn ? (
+          /* 로그인하지 않은 사용자를 위한 안내 */
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="bg-white rounded-lg shadow-lg p-12 max-w-md text-center">
+              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <MapPin className="w-10 h-10 text-blue-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                로그인이 필요한 서비스입니다
+              </h2>
+              <p className="text-gray-600 mb-8 leading-relaxed">
+                AI가 추천하는 최적의 여행 파트너를 만나려면
+                <br />
+                로그인이 필요합니다.
+                <br />
+                <br />
+                로그인 후 당신에게 딱 맞는 동행을 찾아보세요!
+              </p>
+              <Button
+                onClick={() => window.location.href = '/login'}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3"
+              >
+                로그인하러 가기
+              </Button>
+            </div>
           </div>
         ) : (
-          <WorkspaceCarousel
-            posts={posts}
-            onCardClick={(post) => onViewPost(post.id)}
-          />
+          <>
+            {/* Search Bar and Filters */}
+            <div className="mb-10 flex items-center gap-3">
+              <form onSubmit={handleSearchSubmit} className="flex-1 relative">
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="여행지, 관심사, 여행 스타일로 검색..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </form>
+              <Button
+                variant="outline"
+                className="gap-2 px-6 py-3 h-auto border-gray-200"
+              >
+                <SlidersHorizontal className="w-5 h-5" />
+                Filters
+              </Button>
+            </div>
+
+            {/* Recommended Posts Section */}
+            <section className="mb-12">
+              <h2 className="text-xl font-medium text-gray-900 mb-6">AI 추천 동행</h2>
+              {isLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                  {Array.from({ length: 5 }).map((_, index) => (
+                    <MainPostCardSkeleton key={index} />
+                  ))}
+                </div>
+              ) : posts.length === 0 ? (
+                <div className="text-center text-gray-500 py-10">
+                  추천할 동행이 없습니다.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                  {posts.slice(0, 10).map((post, index) => (
+                    <div key={post.id} className="relative">
+                      {index === 0 && (
+                        <Badge className="absolute -top-2 left-2 z-10 bg-purple-600 text-white px-3 py-1">
+                          Best Match
+                        </Badge>
+                      )}
+                      <MainPostCard post={post as any} onClick={onViewPost} />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          </>
         )}
-      </section>
 
-      {/* --- Region Categories Section --- */}
-      <section>
-        <div className="flex items-center gap-2 mb-6">
-          <MapPin className="w-5 h-5 text-blue-600" />
-          <h2 className="text-xl font-bold text-gray-900">인기 여행지</h2>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {REGION_CATEGORIES.map((region) => (
-            <button
-              key={region.id}
-              onClick={() => onSearch({ location: region.name })}
-              className="group relative aspect-[3/4] rounded-xl overflow-hidden hover:shadow-lg transition-all"
-            >
-              <ImageWithFallback
-                src={region.image}
-                alt={region.name}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                <h3 className="mb-1">{region.name}</h3>
-                <p className="text-xs text-gray-200">{region.description}</p>
-              </div>
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {isLoggedIn && (
-        <Button
-          onClick={onCreatePost}
-          className="fixed bottom-8 right-8 w-14 h-14 rounded-full shadow-lg bg-blue-600 hover:bg-blue-700 transition-all flex items-center justify-center z-40"
-          aria-label="게시글 작성"
-        >
-          <Plus className="w-6 h-6 text-white" />
-        </Button>
-      )}
+        {/* Region Categories Section */}
+        <section>
+          <div className="flex items-center gap-2 mb-6">
+            <MapPin className="w-5 h-5 text-blue-600" />
+            <h2 className="text-xl font-bold text-gray-900">인기 여행지</h2>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {REGION_CATEGORIES.map((region) => (
+              <button
+                key={region.id}
+                onClick={() => onSearch({ location: region.name })}
+                className="group relative aspect-[3/4] rounded-xl overflow-hidden hover:shadow-lg transition-all"
+              >
+                <ImageWithFallback
+                  src={region.image}
+                  alt={region.name}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                  <h3 className="mb-1">{region.name}</h3>
+                  <p className="text-xs text-gray-200">{region.description}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

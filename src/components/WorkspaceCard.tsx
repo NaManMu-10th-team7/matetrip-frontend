@@ -66,88 +66,111 @@ export function WorkspaceCard({
 
   return (
     <div
-      className="bg-white rounded-2xl shadow-lg overflow-hidden mx-4 hover:shadow-xl transition-shadow cursor-pointer relative h-full flex flex-col"
+      className="relative w-[270px] flex flex-col gap-[12px] cursor-pointer"
       onClick={onClick}
     >
-      {/* 상태 배지 */}
-      {status && (
-        <Badge
-          className="absolute top-4 right-4 z-10 px-3 py-1 text-sm font-semibold"
-          variant={status === '모집중' ? 'default' : 'secondary'} // 상태에 따라 배지 색상 변경
-        >
-          {status}
-        </Badge>
-      )}
+      {/* 이미지 영역과 키워드 */}
+      <div className="flex flex-col gap-3">
+        {/* 커버 이미지 */}
+        <div className="h-[252px] rounded-2xl overflow-hidden relative">
+          <ImageWithFallback
+            src={coverImage}
+            alt={title}
+            className="w-full h-full object-cover"
+          />
+          {/* 여행 키워드 - 한 줄로 제한 */}
+          {keywords && keywords.length > 0 && (
+            <div className="absolute left-2 bottom-2 w-[250px] overflow-hidden">
+              <div className="flex gap-1 overflow-x-auto no-scrollbar">
+                {keywords.map((keyword, index) => (
+                  <Badge 
+                    key={index} 
+                    variant="secondary" 
+                    className="text-xs px-2 py-1 bg-gray-50 border border-gray-200 flex-shrink-0 whitespace-nowrap"
+                  >
+                    #{translateKeyword(keyword)}
+                  </Badge>
+                ))}
+              </div>
+              {/* 오른쪽 fade 효과 */}
+              {/* <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none" /> */}
+            </div>
+          )}
+          {/* 프로필 이미지 - 이미지 내부 좌측 하단
+          {displayParticipants[0] && (
+            <div className="absolute left-2 bottom-2 w-12 h-12 rounded-full bg-white overflow-hidden">
+              <ImageWithFallback
+                src={displayParticipants[0].profileImage}
+                alt={displayParticipants[0].name}
+                className="w-full h-full rounded-full object-cover"
+              />
+            </div>
+          )} */}
+        </div>
 
-      {/* 커버 이미지 */}
-      <div className="h-48 overflow-hidden flex-shrink-0">
-        <ImageWithFallback
-          src={coverImage}
-          alt={title}
-          className="w-full h-full object-cover"
-        />
+        
       </div>
 
       {/* 콘텐츠 */}
-      <div className="p-6 space-y-1.5 flex flex-col flex-grow">
+      <div className="flex flex-col gap-2 px-2">
         {/* 제목 */}
-        <h3 className="text-gray-900 text-xl font-bold truncate">{title}</h3>
+        <div className="relative overflow-hidden">
+          <h3 className="text-xl font-bold text-black leading-tight whitespace-nowrap">{title}</h3>
+          {/* 오른쪽 fade 효과 */}
+          <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-white to-transparent pointer-events-none" />
+        </div>
 
         {/* 여행지 */}
-        <div className="flex items-center gap-2 text-gray-600">
-          <MapPin className="w-4 h-4" />
-          <span>{location}</span>
+        <div className="flex items-center gap-1">
+          <MapPin className="w-5 h-5 flex-shrink-0 text-gray-600" />
+          <span className="text-sm font-medium text-gray-600">{location}</span>
         </div>
 
         {/* 여행 기간 */}
-        <div className="flex items-center gap-2 text-gray-600">
-          <Calendar className="w-4 h-4" />
-          <span>
+        <div className="flex items-center gap-1 overflow-hidden">
+          <Calendar className="w-5 h-5 flex-shrink-0 text-gray-600" />
+          <span className="text-sm font-medium text-gray-600 leading-tight whitespace-nowrap">
             {startDate} ~ {endDate} ({calculateDays()}일)
           </span>
         </div>
+      </div>
 
-        {/* 여행 키워드 */}
-        {keywords && keywords.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 pt-2">
-            {keywords.map((keyword, index) => (
-              <Badge key={index} variant="secondary" className="text-xs">
-                #{translateKeyword(keyword)}
-              </Badge>
-            ))}
-          </div>
-        )}
-
-        {/* 참여자 목록 */}
-        <div className="pt-4 border-t mt-auto">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 flex-1 min-w-0">
-              <div className="flex -space-x-2 flex-shrink-0">
-                {displayParticipants
-                  .slice(0, 3)
-                  .map(
-                    (participant, index) =>
-                      participant && (
-                        <ImageWithFallback
-                          key={participant.id}
-                          src={participant.profileImage}
-                          alt={participant.name}
-                          className="w-8 h-8 rounded-full object-cover border-2 border-white"
-                          style={{ zIndex: displayParticipants.length - index }}
-                        />
-                      )
-                  )}
-              </div>
-              <div className="flex items-center gap-1 text-gray-500 text-sm">
-                <Users className="w-3.5 h-3.5 flex-shrink-0" />
-                <span className="truncate">
-                  {displayParticipants.length}/{maxParticipants || 0}명 모집중
-                </span>
-              </div>
-            </div>
-          </div>
+      {/* 참여자 정보 */}
+      <div className="flex items-center gap-2 px-2">
+        {/* 참여자 프로필 이미지 (중첩) */}
+        <div className="flex -space-x-8">
+          {displayParticipants.slice(0, 3).map((participant, index) =>
+            participant && (
+              <ImageWithFallback
+                key={participant.id}
+                src={participant.profileImage}
+                alt={participant.name}
+                className="w-8 h-8 rounded-full object-cover"
+                style={{ zIndex: displayParticipants.length - index }}
+              />
+            )
+          )}
+        </div>
+        
+        {/* 모집 인원 */}
+        <div className="flex items-center gap-1">
+          <Users className="w-6 h-6 text-[#4e4a65]" />
+          <span className="text-xs font-medium text-[#4e4a65]">
+            {displayParticipants.length}/{maxParticipants || 0}명 모집중
+          </span>
         </div>
       </div>
+
+      {/* 상태 배지 - 우측 상단 */}
+      {status && (
+        <div className={`absolute top-3 right-3 px-3 py-1 rounded-lg text-xs font-medium ${
+          status === '모집중' 
+            ? 'bg-[#101828] text-white' 
+            : 'bg-gray-100 text-[#101828]'
+        }`}>
+          {status}
+        </div>
+      )}
     </div>
   );
 }
