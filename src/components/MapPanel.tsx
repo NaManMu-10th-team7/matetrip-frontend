@@ -10,6 +10,7 @@ import {
 import { Button } from './ui/button';
 import { KAKAO_REST_API_KEY } from '../constants'; // KAKAO_REST_API_KEY import 추가
 import { fetchPlacesInBounds } from '../api/places';
+import { usePlaceStore } from '../store/placeStore'; // placeStore import
 import type { PlaceDto } from '../types/place';
 import { CATEGORY_INFO } from '../types/place';
 
@@ -24,6 +25,7 @@ import type {
 export interface MapPanelProps {
   itinerary: Record<string, Poi[]>;
   dayLayers: { id: string; label: string; color: string }[];
+  placesToRender: PlaceDto[]; // [수정] 렌더링할 장소 목록을 prop으로 받음
   pois: Poi[];
   isSyncing: boolean;
   markPoi: (
@@ -682,6 +684,7 @@ const DayRouteRenderer = memo(
 export function MapPanel({
   itinerary,
   dayLayers,
+  placesToRender,
   pois,
   isSyncing,
   markPoi,
@@ -702,6 +705,7 @@ export function MapPanel({
   visibleDayIds, // props로 받음
 }: MapPanelProps) {
   const [mapInstance, setMapInstance] = useState<kakao.maps.Map | null>(null);
+  const addPlacesToCache = usePlaceStore((state) => state.addPlaces); // 스토어의 액션 가져오기
   const pendingSelectedPlaceRef = useRef<KakaoPlace | null>(null);
   // [추가] 오버레이 위에 마우스가 있는지 확인하기 위한 Ref
   const isOverlayHoveredRef = useRef(false);
@@ -770,7 +774,6 @@ export function MapPanel({
   }, [mapInstance, moveCursor]);
 
   // 백엔드에서 가져온 장소 데이터 상태
-  const [places, setPlaces] = useState<PlaceDto[]>([]);
   // 디바운스를 위한 타이머 ref
   const fetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // 선택된 백엔드 장소 상태
@@ -798,11 +801,11 @@ export function MapPanel({
       console.log('Fetching places for bounds:', mapBounds);
       const placesData = await fetchPlacesInBounds(mapBounds);
       console.log('Received places:', placesData);
-      setPlaces(placesData);
+      addPlacesToCache(placesData); // [수정] 로컬 상태 대신 스토어에 저장
     } catch (error) {
       console.error('Failed to fetch places:', error);
     }
-  }, []);
+  }, [addPlacesToCache]);
 
   /**
    * 지도 이동/줌 변경 시 디바운스된 장소 데이터 요청
@@ -1252,31 +1255,13 @@ export function MapPanel({
           });
         }}
       >
-        {(() => {
-          // 1. 모든 POI를 PlaceDto와 유사한 형태로 변환합니다.
-          const placesFromPois = pois.map(
-            (poi): PlaceDto => ({
-              id: poi.id,
-              latitude: poi.latitude,
-              longitude: poi.longitude,
-              title: poi.placeName || '이름 없는 장소',
-              address: poi.address,
-              category: (poi.categoryName as PlaceDto['category']) || '기타',
-            })
-          );
-
-          // 2. places와 placesFromPois를 합치되, 중복을 제거합니다.
-          // places (API 응답)에 있는 정보가 더 상세하므로 우선권을 가집니다.
-          const combinedPlaces = new Map<string, PlaceDto>();
-          placesFromPois.forEach((p) => combinedPlaces.set(p.id, p));
-          places.forEach((p) => combinedPlaces.set(p.id, p)); // API에서 받은 상세 정보로 덮어쓰기
-
-          const allPlacesToRender = Array.from(combinedPlaces.values());
-
-          // 3. 통합된 목록으로 PlaceMarker를 렌더링합니다.
-          return allPlacesToRender.map((place) => (
+        {/* [수정] 부모로부터 받은 placesToRender를 사용하여 마커를 렌더링합니다. */}
+        {placesToRender.map((place) => {
+          // ID가 임시 ID인 경우 key가 중복될 수 있으므로 좌표를 추가하여 고유성을 보장합니다.
+          const key = `${place.id}-${place.latitude}-${place.longitude}`;
+          return (
             <PlaceMarker
-              key={place.id}
+              key={key}
               place={place}
               onPlaceClick={handlePlaceClick}
               markPoi={markPoi}
@@ -1285,8 +1270,8 @@ export function MapPanel({
               isOverlayHoveredRef={isOverlayHoveredRef}
               scheduledPoiData={scheduledPoiData}
             />
-          ));
-        })()}
+          );
+        })}
 
         {/* 지도 클릭 물결 효과 렌더링 */}
         {clickEffects.map((effect) => (
