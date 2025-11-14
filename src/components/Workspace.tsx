@@ -94,7 +94,7 @@ export function Workspace({
     messages,
     sendMessage,
     isConnected: isChatConnected,
-  } = useChatSocket(workspaceId, () => {}); // [수정] 더 이상 콜백이 필요 없으므로 빈 함수를 전달합니다.
+  } = useChatSocket(workspaceId);
 
   // [추가] MapPanel에 전달할 최신 채팅 메시지 상태
   const [latestChatMessage, setLatestChatMessage] =

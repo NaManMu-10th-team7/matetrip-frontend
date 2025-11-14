@@ -116,6 +116,12 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
   );
 
   useEffect(() => {
+    // [수정] 사용자 인증 정보 로딩이 완료될 때까지 소켓 연결을 지연시킵니다.
+    if (isAuthLoading) {
+      console.log('인증 정보 로딩 중... 소켓 연결을 대기합니다.');
+      return;
+    }
+
     const socket = io(`${WEBSOCKET_POI_URL}/poi`, { transports: ['websocket'] });
     socketRef.current = socket;
 
@@ -271,7 +277,7 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
       socket.off(PoiSocketEvent.MAP_CLICKED, handleMapClicked);
       socket.disconnect();
     };
-  }, [workspaceId, user?.userId, handlePoiHovered]); // useEffect의 의존성 배열에 handlePoiHovered를 추가합니다.
+  }, [workspaceId, user?.userId, handlePoiHovered, isAuthLoading]); // [수정] isAuthLoading을 의존성 배열에 추가합니다.
 
   const markPoi = useCallback(
     (
