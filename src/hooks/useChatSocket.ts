@@ -82,13 +82,7 @@ export function useChatSocket(
       console.log(`⚡ 웹소켓 액션 실행: ${actionCode}`);
 
       switch (actionCode) {
-        case 'UPDATE_MAP':
-          // AI가 추천한 장소 목록을 Workspace의 콜백을 통해 처리
-          if (Array.isArray(data)) {
-            console.log('UPDATE_MAP 실행, 데이터:', data);
-            onAiPlacesUpdate(data as AiPlace[]);
-          }
-          break;
+        // [제거] UPDATE_MAP 액션은 이제 백엔드에서 POI를 직접 생성하므로 프론트엔드에서 처리할 필요가 없습니다.
         case 'OPEN_SIDEBAR':
           // setIsSidebarOpen(true);
           console.log('OPEN_SIDEBAR 액션 호출됨');
@@ -263,7 +257,7 @@ export function useChatSocket(
       socket.off(ChatEvent.MESSAGE);
       socket.disconnect();
     };
-  }, [workspaceId, username, onAiPlacesUpdate]);
+  }, [workspaceId, username]); // [수정] onAiPlacesUpdate 의존성 제거
 
   const sendMessage = useCallback(
     (message: string) => {

@@ -44,7 +44,7 @@ interface PoiItemProps {
   color?: string;
   index?: number;
   onPoiClick: (poi: Poi) => void;
-  onPoiHover: (poiId: string) => void;
+  onPoiHover: (poiId: string | null) => void;
   onPoiLeave: () => void;
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
@@ -112,7 +112,7 @@ function PoiItem({ poi, color, index, onPoiClick, onPoiHover, onPoiLeave, unmark
   );
 }
 
-function MarkerStorage({ pois, onPoiClick, onPoiHover, onPoiLeave, unmarkPoi, removeSchedule }: { pois: Poi[], onPoiClick: (poi: Poi) => void, onPoiHover: (poiId: string) => void, onPoiLeave: () => void, unmarkPoi: (poiId: string | number) => void, removeSchedule: (poiId: string, planDayId: string) => void }) {
+function MarkerStorage({ pois, onPoiClick, onPoiHover, onPoiLeave, unmarkPoi, removeSchedule }: { pois: Poi[], onPoiClick: (poi: Poi) => void, onPoiHover: (poiId: string | null) => void, onPoiLeave: () => void, unmarkPoi: (poiId: string | number) => void, removeSchedule: (poiId: string, planDayId: string) => void }) {
     const { setNodeRef } = useDroppable({ id: 'marker-storage' });
     const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -146,7 +146,7 @@ function ItineraryPanel({
   itinerary,
   dayLayers,
   onPoiClick,
-  onPoiHover, // (poiId: string) => void
+  onPoiHover,
   onPoiLeave, // () => void
   unmarkPoi,
   removeSchedule,
@@ -158,7 +158,7 @@ function ItineraryPanel({
   itinerary: Record<string, Poi[]>;
   dayLayers: DayLayer[];
   onPoiClick: (poi: Poi) => void;
-  onPoiHover: (poiId: string) => void;
+  onPoiHover: (poiId: string | null) => void;
   onPoiLeave: () => void;
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
@@ -413,7 +413,7 @@ export function LeftPanel({
   removeSchedule,
   onPlaceClick,
   onPoiClick,
-  onPoiHover, // (poiId: string | null) => void
+  onPoiHover,
   routeSegmentsByDay,
   onOptimizeRoute,
   visibleDayIds,
@@ -446,7 +446,7 @@ export function LeftPanel({
             itinerary={itinerary}
             dayLayers={dayLayers}
             onPoiClick={onPoiClick}
-            onPoiHover={onPoiHover} // (poiId: string) => void
+            onPoiHover={onPoiHover}
             onPoiLeave={() => onPoiHover(null)} // onPoiHover(null) 호출
             unmarkPoi={unmarkPoi}
             removeSchedule={removeSchedule}

@@ -88,38 +88,11 @@ export function Workspace({
     clickMap, // 추가
   } = usePoiSocket(workspaceId, members);
 
-  // AI 장소 업데이트 중복 실행 방지를 위한 Ref
-  const isAiUpdating = useRef(false);
-
-  // AI가 추천한 장소 목록을 받아 마커를 추가하는 콜백
-  const handleAiPlacesUpdate = useCallback(
-    (places: AiPlace[]) => {
-      // 이미 업데이트가 진행 중이면 중복 실행 방지
-      if (isAiUpdating.current) return;
-
-      isAiUpdating.current = true;
-      places.forEach((place) => {
-        const poiData = {
-          latitude: place.y,
-          longitude: place.x,
-          address: place.road_address || place.address,
-          placeName: place.name,
-          categoryName: place.category,
-        };
-        // isOptimistic: false 옵션을 추가하여 낙관적 업데이트를 비활성화합니다.
-        // (usePoiSocket의 markPoi 함수 수정이 필요합니다. 아래 가이드 참고)
-        markPoi(poiData, { isOptimistic: false });
-      });
-      setTimeout(() => (isAiUpdating.current = false), 1000); // 1초 후 플래그 해제
-    },
-    [markPoi]
-  );
-
   const {
     messages,
     sendMessage,
     isConnected: isChatConnected,
-  } = useChatSocket(workspaceId, handleAiPlacesUpdate);
+  } = useChatSocket(workspaceId, () => {}); // [수정] 더 이상 콜백이 필요 없으므로 빈 함수를 전달합니다.
 
   // [추가] MapPanel에 전달할 최신 채팅 메시지 상태
   const [latestChatMessage, setLatestChatMessage] =
