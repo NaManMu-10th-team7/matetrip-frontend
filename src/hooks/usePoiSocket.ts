@@ -268,7 +268,6 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
           status: 'MARKED',
           sequence: 0,
           isPersisted: false,
-          createdBy: user.userId,
           ...payload,
         };
         setPois((prevPois) => [...prevPois, newPoi]);

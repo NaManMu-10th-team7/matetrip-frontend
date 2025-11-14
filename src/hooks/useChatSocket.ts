@@ -31,6 +31,7 @@ export type ChatMessage = {
   userId?: string; // userId 필드 추가
   role: 'user' | 'ai' | 'system'; // 메시지 역할 추가
   toolData?: ToolCallData[]; // AI 메시지인 경우 도구 데이터 추가
+  isLoading?: boolean; // AI 응답 대기 중 상태 표시
 };
 
 // Backend DTOs (simplified for frontend use)
@@ -39,6 +40,7 @@ type CreateMessageReqDto = {
   username: string;
   userId: string; // userId 추가
   message: string;
+  tempId?: string; // [추가] 낙관적 업데이트를 위한 임시 ID
 };
 
 type JoinChatReqDto = {
@@ -59,6 +61,7 @@ type IncomingChatMessagePayload = {
   userId?: string;
   role?: 'ai' | 'system' | 'user'; // 백엔드에서 역할 지정 가능
   toolData?: ToolCallData[]; // AI 메시지인 경우 도구 데이터 포함
+  tempId?: string; // [추가] 클라이언트가 보낸 임시 ID
 };
 
 export function useChatSocket(
@@ -78,7 +81,7 @@ export function useChatSocket(
   // useEffect 밖으로 이동하여 무한 루프를 방지합니다.
   // =================================================================
   const executeFrontendAction = useCallback(
-    (actionCode: string, data: any) => {
+    (actionCode: string, _data: any) => {
       console.log(`⚡ 웹소켓 액션 실행: ${actionCode}`);
 
       switch (actionCode) {
@@ -129,10 +132,10 @@ export function useChatSocket(
     // 메시지 처리 및 액션 실행을 위한 헬퍼 함수
     const processIncomingMessage = (payload: IncomingChatMessagePayload) => {
       setMessages((prevMessages) => {
-        // 낙관적 업데이트된 메시지가 있다면 업데이트, 없으면 새로 추가
-        const existingMessageIndex = prevMessages.findIndex(
-          (msg) => msg.id === payload.id
-        );
+        // 1. 내가 보낸 메시지인지 확인 (tempId 기준)
+        const optimisticMessageIndex = payload.tempId
+          ? prevMessages.findIndex((msg) => msg.id === payload.tempId)
+          : -1;
         console.log(`payload2`, payload);
         const newMessage: ChatMessage = {
           id: payload.id,
@@ -143,15 +146,30 @@ export function useChatSocket(
           role:
             payload.role || (payload.username === 'System' ? 'system' : 'user'), // 역할 지정
           toolData: payload.toolData,
+          isLoading: false, // 실제 메시지이므로 isLoading은 false
         };
 
-        if (existingMessageIndex > -1) {
+        // 2. 내가 보낸 메시지(낙관적 업데이트)를 서버에서 받은 메시지로 교체
+        if (optimisticMessageIndex > -1) {
           const updatedMessages = [...prevMessages];
-          updatedMessages[existingMessageIndex] = newMessage;
+          updatedMessages[optimisticMessageIndex] = newMessage;
           return updatedMessages;
-        } else {
-          return [...prevMessages, newMessage];
         }
+
+        // 3. AI 응답 처리: '대기 중' 메시지를 실제 응답으로 교체
+        if (newMessage.role === 'ai') {
+          const loadingMessageIndex = prevMessages.findIndex(
+            (msg) => msg.role === 'ai' && msg.isLoading
+          );
+          if (loadingMessageIndex > -1) {
+            const updatedMessages = [...prevMessages];
+            updatedMessages[loadingMessageIndex] = newMessage;
+            return updatedMessages;
+          }
+        }
+
+        // 4. 위 경우에 해당하지 않는 모든 새 메시지(다른 사용자 메시지, 시스템 메시지 등) 추가
+        return [...prevMessages, newMessage];
       });
 
       // 도구 데이터가 있으면 액션 실행
@@ -263,13 +281,41 @@ export function useChatSocket(
     (message: string) => {
       if (socketRef.current && isConnected && message.trim() && userId) {
         // userId가 있는지 확인
-        // const tempMessageId = `client-${Date.now()}-${Math.random()}`; // 낙관적 업데이트를 위한 임시 ID
+        const tempMessageId = `client-${Date.now()}-${Math.random()}`; // 낙관적 업데이트를 위한 임시 ID
+
+        // 1. 사용자 메시지를 즉시 UI에 추가 (낙관적 업데이트)
+        const userMessage: ChatMessage = {
+          id: tempMessageId,
+          username,
+          message,
+          timestamp: new Date().toISOString(),
+          userId,
+          role: 'user',
+        };
+        setMessages((prev) => [...prev, userMessage]);
+
+        // 2. '@AI'로 시작하는 경우, AI 응답 대기 메시지를 추가
+        if (message.startsWith('@AI')) {
+          const aiLoadingMessage: ChatMessage = {
+            id: `ai-loading-${Date.now()}`,
+            username: 'AI',
+            message: 'AI가 응답을 생성하고 있습니다...',
+            timestamp: new Date().toISOString(),
+            role: 'ai',
+            isLoading: true, // 로딩 상태임을 표시
+          };
+          setMessages((prev) => [...prev, aiLoadingMessage]);
+        }
+
+        // 3. 서버로 메시지 전송
         const messagePayload: CreateMessageReqDto = {
           workspaceId,
           username,
           userId, // userId 추가
           message,
+          tempId: tempMessageId, // [추가] 임시 ID를 payload에 포함
         };
+
         console.log('[Client] Sending MESSAGE event:', messagePayload);
         socketRef.current.emit(ChatEvent.MESSAGE, messagePayload);
       } else {
