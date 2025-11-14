@@ -466,6 +466,7 @@ export function Workspace({
             routeSegmentsByDay={routeSegmentsByDay} // LeftPanel에 경로 정보 전달
             visibleDayIds={visibleDayIds} // [추가] 가시성 상태 전달
             onDayVisibilityChange={handleDayVisibilityChange} // [추가] 가시성 변경 핸들러 전달
+            hoveredPoiId={hoveredPoiInfo?.poiId ?? null}
           />
 
           <button

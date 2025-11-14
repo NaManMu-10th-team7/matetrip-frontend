@@ -239,14 +239,17 @@ const PoiMarker = memo(
     markerColor,
     unmarkPoi,
     isOverlayHoveredRef,
+    isHovered,
   }: PoiMarkerProps) => {
     const [isInfoWindowOpen, setIsInfoWindowOpen] = useState(false);
     const infoWindowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const isVisible = markerLabel !== undefined;
-    // useAnimatedOpacity 훅을 사용하여 opacity 값을 제어합니다.
-    const animatedOpacity = useAnimatedOpacity(isVisible, 300);
+    const animatedOpacity = useAnimatedOpacity(isVisible, 300); // 라벨 유무에 따른 애니메이션
 
     const handleMouseOver = () => {
+      // 마커가 보이지 않으면 호버 이벤트를 무시합니다.
+      if (!isVisible) return;
+
       if (infoWindowTimeoutRef.current) {
         clearTimeout(infoWindowTimeoutRef.current);
         infoWindowTimeoutRef.current = null;
@@ -256,6 +259,9 @@ const PoiMarker = memo(
     };
 
     const handleMouseOut = () => {
+      // 마커가 보이지 않으면 호버 이벤트를 무시합니다.
+      if (!isVisible) return;
+
       infoWindowTimeoutRef.current = setTimeout(() => {
         isOverlayHoveredRef.current = false;
         setIsInfoWindowOpen(false);
@@ -263,6 +269,9 @@ const PoiMarker = memo(
     };
 
     const handleClick = () => {
+      // 마커가 보이지 않으면 클릭 이벤트를 무시합니다.
+      if (!isVisible) return;
+
       if (infoWindowTimeoutRef.current) {
         clearTimeout(infoWindowTimeoutRef.current);
         infoWindowTimeoutRef.current = null;
@@ -293,8 +302,7 @@ const PoiMarker = memo(
         onMouseOver={handleMouseOver}
         onMouseOut={handleMouseOut}
         onClick={handleClick}
-        // isScheduled가 아닐 때는 항상 보이도록 opacity를 1로 설정합니다.
-        opacity={isScheduled ? animatedOpacity : 1}
+        opacity={isHovered ? 0.5 : animatedOpacity}
       >
         {isInfoWindowOpen && (
           <CustomOverlayMap
@@ -347,7 +355,6 @@ const DayRouteRenderer = memo(
     visibleDayIds,
   }: DayRouteRendererProps) => {
     const isVisible = visibleDayIds.has(layer.id);
-    const animatedOpacity = useAnimatedOpacity(isVisible, 300);
 
     const segments = dailyRouteInfo[layer.id];
     const dayPois = itinerary[layer.id] || [];
@@ -362,7 +369,7 @@ const DayRouteRenderer = memo(
                 path={segment.path}
                 strokeWeight={5}
                 strokeColor={layer.color}
-                strokeOpacity={animatedOpacity * 0.9}
+                strokeOpacity={isVisible ? 0.9 : 0}
                 strokeStyle={'solid'}
               />
             ))
@@ -376,7 +383,7 @@ const DayRouteRenderer = memo(
                 }))}
                 strokeWeight={5}
                 strokeColor={layer.color}
-                strokeOpacity={animatedOpacity * 0.9}
+                strokeOpacity={isVisible ? 0.9 : 0}
                 strokeStyle={'solid'}
               />
             )}
@@ -412,7 +419,7 @@ const DayRouteRenderer = memo(
                     color: '#333',
                     whiteSpace: 'nowrap',
                     transition: 'opacity 0.3s ease-in-out', // CSS transition을 유지하여 부드러운 효과
-                    opacity: animatedOpacity,
+                    opacity: isVisible ? 1 : 0,
                   }}
                 >
                   {`${totalMinutes}분, ${totalKilometers}km`}
@@ -1137,38 +1144,6 @@ export function MapPanel({
             onPlaceClick={handlePlaceClick}
           />
         ))}
-
-        {/* 각 세그먼트별 Polyline 렌더링 */}
-        {dayLayers.map((layer) => {
-          const segments = dailyRouteInfo[layer.id];
-          if (segments && segments.length > 0) {
-            return segments.map((segment, index) => (
-              <Polyline
-                key={`${layer.id}-segment-${index}`} // 각 세그먼트별 고유 키
-                path={segment.path}
-                strokeWeight={5}
-                strokeColor={layer.color}
-                strokeOpacity={0.9}
-                strokeStyle={'solid'}
-              />
-            ));
-          }
-          // 상세 경로 정보가 없으면 기존처럼 POI를 직접 연결
-          const path = (itinerary[layer.id] || []).map((poi) => ({
-            lat: poi.latitude,
-            lng: poi.longitude,
-          }));
-          return path.length > 1 ? (
-            <Polyline
-              key={layer.id}
-              path={path}
-              strokeWeight={5}
-              strokeColor={layer.color}
-              strokeOpacity={0.9}
-              strokeStyle={'solid'}
-            />
-          ) : null;
-        })}
 
         {/* 다른 사용자가 호버한 POI 강조 효과 */}
         {hoveredPoiInfo &&

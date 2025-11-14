@@ -106,7 +106,7 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
             userName: member.profile.nickname,
             userColor: member.color,
           });
-        }
+        } else if (!data?.poiId) setHoveredPoiInfo(null);
       } else {
         // data가 null이거나 내 이벤트일 경우 호버 정보 초기화
         setHoveredPoiInfo(null);

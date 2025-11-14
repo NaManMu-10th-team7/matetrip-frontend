@@ -45,12 +45,21 @@ interface PoiItemProps {
   index?: number;
   onPoiClick: (poi: Poi) => void;
   onPoiHover: (poiId: string | null) => void;
-  onPoiLeave: () => void;
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
+  isHovered: boolean;
 }
 
-function PoiItem({ poi, color, index, onPoiClick, onPoiHover, onPoiLeave, unmarkPoi, removeSchedule }: PoiItemProps) {
+function PoiItem({
+  poi,
+  color,
+  index,
+  onPoiClick,
+  onPoiHover,
+  unmarkPoi,
+  removeSchedule,
+  isHovered,
+}: PoiItemProps) {
   const {
     attributes,
     listeners,
@@ -80,10 +89,12 @@ function PoiItem({ poi, color, index, onPoiClick, onPoiHover, onPoiLeave, unmark
     <li
       ref={setNodeRef}
       style={style}
-      className="flex items-center text-xs p-1 rounded-md cursor-pointer hover:bg-blue-100" // gap-2 제거, 호버 색상 변경
+      className={`flex items-center text-xs p-1 rounded-md cursor-pointer ${
+        isHovered ? 'bg-blue-100' : 'hover:bg-gray-100'
+      }`}
       onClick={() => onPoiClick(poi)}
       onMouseEnter={() => onPoiHover(poi.id)}
-      onMouseLeave={onPoiLeave}
+      onMouseLeave={() => onPoiHover(null)}
     >
       {/* 고정 너비 컨테이너 추가 */}
       <div className="flex items-center w-16 flex-shrink-0">
@@ -112,7 +123,22 @@ function PoiItem({ poi, color, index, onPoiClick, onPoiHover, onPoiLeave, unmark
   );
 }
 
-function MarkerStorage({ pois, onPoiClick, onPoiHover, onPoiLeave, unmarkPoi, removeSchedule }: { pois: Poi[], onPoiClick: (poi: Poi) => void, onPoiHover: (poiId: string | null) => void, onPoiLeave: () => void, unmarkPoi: (poiId: string | number) => void, removeSchedule: (poiId: string, planDayId: string) => void }) {
+function MarkerStorage({
+  pois,
+  onPoiClick,
+  onPoiHover,
+  onPoiLeave,
+  unmarkPoi,
+  removeSchedule,
+  hoveredPoiId,
+}: {
+  pois: Poi[];
+  onPoiClick: (poi: Poi) => void;
+  onPoiHover: (poiId: string | null) => void;
+  unmarkPoi: (poiId: string | number) => void;
+  removeSchedule: (poiId: string, planDayId: string) => void;
+  hoveredPoiId: string | null;
+}) {
     const { setNodeRef } = useDroppable({ id: 'marker-storage' });
     const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -131,7 +157,17 @@ function MarkerStorage({ pois, onPoiClick, onPoiHover, onPoiLeave, unmarkPoi, re
                 <SortableContext id="marker-storage-sortable" items={pois.map(p => p.id)} strategy={verticalListSortingStrategy}>
                     <ul className="space-y-2 min-h-[2rem]">
                         {pois.length > 0 ? (
-                            pois.map((poi) => <PoiItem key={poi.id} poi={poi} onPoiClick={onPoiClick} onPoiHover={onPoiHover} onPoiLeave={onPoiLeave} unmarkPoi={unmarkPoi} removeSchedule={removeSchedule} />)
+              pois.map((poi) => (
+                <PoiItem
+                  key={poi.id}
+                  poi={poi}
+                  onPoiClick={onPoiClick}
+                  onPoiHover={onPoiHover}
+                  unmarkPoi={unmarkPoi}
+                  removeSchedule={removeSchedule}
+                  isHovered={hoveredPoiId === poi.id}
+                />
+              ))
                         ) : (
                             <p className="text-xs text-gray-500 p-2">지도에 마커를 추가하여 보관하세요.</p>
                         )}
@@ -147,25 +183,25 @@ function ItineraryPanel({
   dayLayers,
   onPoiClick,
   onPoiHover,
-  onPoiLeave, // () => void
   unmarkPoi,
   removeSchedule,
   routeSegmentsByDay,
   onOptimizeRoute,
   visibleDayIds,
   onDayVisibilityChange,
+  hoveredPoiId,
 }: {
   itinerary: Record<string, Poi[]>;
   dayLayers: DayLayer[];
   onPoiClick: (poi: Poi) => void;
   onPoiHover: (poiId: string | null) => void;
-  onPoiLeave: () => void;
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
   routeSegmentsByDay: Record<string, RouteSegment[]>;
   onOptimizeRoute: (dayId: string) => void;
   visibleDayIds: Set<string>;
   onDayVisibilityChange: (dayId: string, isVisible: boolean) => void;
+  hoveredPoiId: string | null;
 }) {
   return (
     <div className="p-3 space-y-2 h-full overflow-y-auto">
@@ -227,9 +263,9 @@ function ItineraryPanel({
                                         index={index}
                                         onPoiClick={onPoiClick}
                                         onPoiHover={onPoiHover}
-                                        onPoiLeave={onPoiLeave}
                                         unmarkPoi={unmarkPoi}
                                         removeSchedule={removeSchedule}
+                                        isHovered={hoveredPoiId === poi.id}
                                       />
                                       {index < pois.length - 1 && (() => {
                                           const nextPoi = pois[index + 1];
@@ -397,11 +433,11 @@ interface LeftPanelProps {
   onPlaceClick: (place: KakaoPlace) => void;
   onPoiClick: (poi: Poi) => void;
   onPoiHover: (poiId: string | null) => void; // null을 허용하도록 변경
-  onPoiLeave: () => void; // onPoiHover(null)을 호출하므로 onPoiLeave는 동일
   routeSegmentsByDay: Record<string, RouteSegment[]>;
   onOptimizeRoute: (dayId: string) => void;
   visibleDayIds: Set<string>;
   onDayVisibilityChange: (dayId: string, isVisible: boolean) => void;
+  hoveredPoiId: string | null;
 }
 
 export function LeftPanel({
@@ -418,6 +454,7 @@ export function LeftPanel({
   onOptimizeRoute,
   visibleDayIds,
   onDayVisibilityChange,
+  hoveredPoiId,
 }: LeftPanelProps) {
   if (!isOpen) {
     return null;
@@ -441,19 +478,26 @@ export function LeftPanel({
           </TabsTrigger>
         </TabsList>
         <TabsContent value="plan" className="flex-1 overflow-auto m-0">
-          <MarkerStorage pois={markedPois} onPoiClick={onPoiClick} onPoiHover={onPoiHover} onPoiLeave={() => onPoiHover(null)} unmarkPoi={unmarkPoi} removeSchedule={removeSchedule} />
+          <MarkerStorage
+            pois={markedPois}
+            onPoiClick={onPoiClick}
+            onPoiHover={onPoiHover}
+            unmarkPoi={unmarkPoi}
+            removeSchedule={removeSchedule}
+            hoveredPoiId={hoveredPoiId}
+          />
           <ItineraryPanel
             itinerary={itinerary}
             dayLayers={dayLayers}
             onPoiClick={onPoiClick}
             onPoiHover={onPoiHover}
-            onPoiLeave={() => onPoiHover(null)} // onPoiHover(null) 호출
             unmarkPoi={unmarkPoi}
             removeSchedule={removeSchedule}
             routeSegmentsByDay={routeSegmentsByDay}
             onOptimizeRoute={onOptimizeRoute}
             visibleDayIds={visibleDayIds}
             onDayVisibilityChange={onDayVisibilityChange}
+            hoveredPoiId={hoveredPoiId}
           />
         </TabsContent>
         <TabsContent value="search" className="flex-1 relative m-0">
