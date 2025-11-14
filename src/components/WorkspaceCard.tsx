@@ -192,13 +192,13 @@ export function WorkspaceCard({
       })),
   ];
 
-  useEffect(() => {
-    console.log('WorkspaceCard writer profile', writer?.profile);
-    console.log(
-      'WorkspaceCard participant profiles',
-      (participations || []).map((p) => p.requester.profile)
-    );
-  }, [writer?.profile, participations]);
+  // useEffect(() => {
+  //   console.log('WorkspaceCard writer profile', writer?.profile);
+  //   console.log(
+  //     'WorkspaceCard participant profiles',
+  //     (participations || []).map((p) => p.requester.profile)
+  //   );
+  // }, [writer?.profile, participations]);
 
   return (
     <div
