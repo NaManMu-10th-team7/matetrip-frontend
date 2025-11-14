@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { MapPin, Calendar, Users } from 'lucide-react';
 import { Badge } from './ui/badge';
@@ -6,6 +6,7 @@ import { translateKeyword } from '../utils/keyword';
 import type { Post } from '../types/post';
 import { API_BASE_URL } from '../api/client';
 import client from '../api/client';
+import { useAuthStore } from '../store/authStore';
 
 interface WorkspaceCardProps {
   post: Post;
@@ -49,6 +50,17 @@ export function WorkspaceCard({
   const [profileImageUrls, setProfileImageUrls] = useState<
     Record<string, string | null>
   >({});
+  const { user } = useAuthStore();
+
+  const resolveProfileImageId = useCallback(
+    (ownerId?: string, originalId?: string | null) => {
+      if (ownerId && ownerId === user?.userId) {
+        return user?.profile?.profileImageId ?? null;
+      }
+      return originalId ?? null;
+    },
+    [user?.profile?.profileImageId, user?.userId]
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -98,13 +110,21 @@ export function WorkspaceCard({
 
     const fetchProfileImages = async () => {
       const imageIds = [
-        writer?.profile?.profileImageId,
+        resolveProfileImageId(writer?.id, writer?.profile?.profileImageId),
         ...(participations || [])
           .filter((p) => p.status === '승인')
-          .map((p) => p.requester.profile?.profileImageId),
+          .map((p) =>
+            resolveProfileImageId(
+              p.requester.id,
+              p.requester.profile?.profileImageId
+            )
+          ),
       ].filter((id): id is string => Boolean(id));
 
-      if (imageIds.length === 0) return;
+      if (imageIds.length === 0) {
+        setProfileImageUrls({});
+        return;
+      }
 
       const uniqueIds = Array.from(new Set(imageIds));
       console.log('WorkspaceCard profile image IDs', uniqueIds);
@@ -126,17 +146,11 @@ export function WorkspaceCard({
 
         if (cancelled) return;
 
-        setProfileImageUrls((prev) => {
-          const next = { ...prev };
-          let changed = false;
-          for (const { imageId, url } of responses) {
-            if (next[imageId] !== url) {
-              next[imageId] = url;
-              changed = true;
-            }
-          }
-          return changed ? next : prev;
-        });
+        const nextMap: Record<string, string | null> = {};
+        for (const { imageId, url } of responses) {
+          nextMap[imageId] = url;
+        }
+        setProfileImageUrls(nextMap);
       } catch (err) {
         console.error('WorkspaceCard profile image batch load failed:', err);
       }
@@ -147,14 +161,22 @@ export function WorkspaceCard({
     return () => {
       cancelled = true;
     };
-  }, [writer?.profile?.profileImageId, participations]);
+  }, [
+    writer?.profile?.profileImageId,
+    writer?.id,
+    participations,
+    resolveProfileImageId,
+  ]);
 
   // 참여자 목록을 구성합니다. writer와 participations를 사용합니다.
   const displayParticipants = [
     {
       id: writer?.id,
       name: writer?.profile?.nickname || '알 수 없음',
-      profileImageId: writer?.profile?.profileImageId ?? null,
+      profileImageId: resolveProfileImageId(
+        writer?.id,
+        writer?.profile?.profileImageId ?? null
+      ),
       fallback: `https://ui-avatars.com/api/?name=${writer?.profile?.nickname}&background=random`,
     },
     ...(participations || [])
@@ -162,7 +184,10 @@ export function WorkspaceCard({
       .map((p) => ({
         id: p.requester.id,
         name: p.requester.profile?.nickname || '알 수 없음',
-        profileImageId: p.requester.profile?.profileImageId ?? null,
+        profileImageId: resolveProfileImageId(
+          p.requester.id,
+          p.requester.profile?.profileImageId ?? null
+        ),
         fallback: `https://ui-avatars.com/api/?name=${p.requester.profile?.nickname}&background=random`,
       })),
   ];

@@ -207,14 +207,16 @@ export function ProfileModal({
               <div className="flex-1 border border-gray-200 rounded-lg p-6 bg-white shadow-sm">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-6">
-                    <ImageWithFallback
-                      src={
-                        profileImageUrl ||
-                        `https://ui-avatars.com/api/?name=${profile?.nickname}&background=random`
-                      }
-                      alt={profile.nickname}
-                      className="w-24 h-24 rounded-full object-cover ring-2 ring-gray-100"
-                    />
+                    <div className="w-24 h-24 flex items-center justify-center">
+                      <ImageWithFallback
+                        src={
+                          profileImageUrl ||
+                          `https://ui-avatars.com/api/?name=${profile?.nickname}&background=random`
+                        }
+                        alt={profile.nickname}
+                        className="w-24 h-24 rounded-full object-cover object-center ring-2 ring-gray-100"
+                      />
+                    </div>
                     <div className="flex flex-col gap-2 pt-2">
                       <h3 className="text-gray-900 text-2xl font-bold">
                         {profile.nickname}
