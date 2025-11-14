@@ -204,7 +204,7 @@ const PlaceMarker = memo(
           <CustomOverlayMap
             position={{ lat: place.latitude, lng: place.longitude }}
             xAnchor={0.5}
-            yAnchor={1.2}
+            yAnchor={1.15}
             zIndex={10}
           >
             <div
