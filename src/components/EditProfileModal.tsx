@@ -15,6 +15,8 @@ import type { UpdateProfileDto } from '../types/updateprofiledto';
 import type { TravelStyleType } from '../constants/travelStyle';
 import type { TravelTendencyType } from '../constants/travelTendencyType';
 import { useAuthStore } from '../store/authStore';
+import type { GenderType } from '../constants/gender.ts';
+import type { MbtiType } from '../constants/mbti.ts';
 
 interface EditProfileModalProps {
   open: boolean;
@@ -28,6 +30,8 @@ interface EditProfileModalProps {
     description: string; // detailedBio 대신 description 사용
     travelStyles: TravelStyleType[];
     tendency: TravelTendencyType[];
+    gender?: GenderType;
+    mbtiTypes?: MbtiType;
   } | null;
 }
 
@@ -224,10 +228,18 @@ export function EditProfileModal({
     setSelectedTravelStyles(selectedTravelStyles.filter((s) => s !== style));
   };
 
-  const handleAddStyle = (style: TravelStyleType) => {
-    if (!selectedTravelStyles.includes(style)) {
-      setSelectedTravelStyles([...selectedTravelStyles, style]);
-    }
+  // const handleAddStyle = (style: TravelStyleType) => {
+  //   if (!selectedTravelStyles.includes(style)) {
+  //     setSelectedTravelStyles([...selectedTravelStyles, style]);
+  //   }
+  // };
+
+  const handleToggleStyle = (style: TravelStyleType) => {
+    setSelectedTravelStyles((prev) =>
+      prev.includes(style)
+        ? prev.filter((item) => item !== style)
+        : [...prev, style]
+    );
   };
 
   const handleRemoveTendency = (tendency: TravelTendencyType) => {
@@ -236,11 +248,11 @@ export function EditProfileModal({
     );
   };
 
-  const handleAddTendency = (tendency: TravelTendencyType) => {
-    if (!selectedTravelTendencies.includes(tendency)) {
-      setSelectedTravelTendencies([...selectedTravelTendencies, tendency]);
-    }
-  };
+  // const handleAddTendency = (tendency: TravelTendencyType) => {
+  //   if (!selectedTravelTendencies.includes(tendency)) {
+  //     setSelectedTravelTendencies([...selectedTravelTendencies, tendency]);
+  //   }
+  // };
 
   //👀 save API  호출
   const handleSaveProfile = async () => {
@@ -633,23 +645,25 @@ export function EditProfileModal({
             여행 성향 태그 선택
           </DialogTitle>
           <div className="grid grid-cols-8 gap-3">
-            {allTendencyTags.map((tag) => (
-              <button
-                key={tag}
-                onClick={() => {
-                  handleAddTendency(tag);
-                  setIsTendencyModalOpen(false);
-                }}
-                className={`px-2 py-2 rounded-lg text-sm transition-colors ${
-                  selectedTravelTendencies.includes(tag)
-                    ? 'bg-gray-900 text-white cursor-not-allowed'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-                disabled={selectedTravelTendencies.includes(tag)}
-              >
-                #{tag}
-              </button>
-            ))}
+            {allTendencyTags.map((tag) => {
+              const isSelected = selectedTravelTendencies.includes(tag);
+              return (
+                <button
+                  type="button"
+                  key={tag}
+                  onClick={() =>
+                    handleToggleTendency(tag as TravelTendencyType)
+                  }
+                  className={`px-2 py-2 rounded-lg text-sm transition-colors ${
+                    isSelected
+                      ? 'bg-gray-900 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  #{tag}
+                </button>
+              );
+            })}
           </div>
         </DialogContent>
       </Dialog>
@@ -661,23 +675,23 @@ export function EditProfileModal({
             여행 스타일 태그 선택
           </DialogTitle>
           <div className="grid grid-cols-4 gap-3">
-            {allStyleTags.map((tag) => (
-              <button
-                key={tag}
-                onClick={() => {
-                  handleAddStyle(tag);
-                  setIsStyleModalOpen(false);
-                }}
-                className={`px-4 py-2 rounded-lg text-sm transition-colors ${
-                  selectedTravelStyles.includes(tag)
-                    ? 'bg-gray-900 text-white cursor-not-allowed'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-                disabled={selectedTravelStyles.includes(tag)}
-              >
-                #{tag}
-              </button>
-            ))}
+            {allStyleTags.map((tag) => {
+              const isSelected = selectedTravelStyles.includes(tag);
+              return (
+                <button
+                  type="button"
+                  key={tag}
+                  onClick={() => handleToggleStyle(tag as TravelStyleType)}
+                  className={`px-4 py-2 rounded-lg text-sm transition-colors ${
+                    isSelected
+                      ? 'bg-gray-900 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  #{tag}
+                </button>
+              );
+            })}
           </div>
         </DialogContent>
       </Dialog>

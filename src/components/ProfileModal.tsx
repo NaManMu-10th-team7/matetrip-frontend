@@ -19,8 +19,10 @@ import { type UserProfile } from '../types/user';
 import { translateKeyword } from '../utils/keyword';
 import { WorkspaceCard } from './WorkspaceCard';
 import { EditProfileModal } from './EditProfileModal'; // Import EditProfileModal
-import type { GenderType } from '../constants/gender';
-import type { MbtiType } from '../constants/mbti';
+import type { TravelStyleType } from '../constants/travelStyle';
+import type { TravelTendencyType } from '../constants/travelTendencyType';
+// import type { GenderType } from '../constants/gender';
+// import type { MbtiType } from '../constants/mbti';
 
 interface ProfileModalProps {
   open: boolean;
@@ -44,8 +46,8 @@ interface Review {
       gender: string;
       intro: string;
       description: string;
-      travelStyles: string[];
-      travelTendency: string[];
+      travelStyles: TravelStyleType[];
+      travelTendency: TravelTendencyType[];
       mbtiTypes: string;
     };
   };
@@ -81,7 +83,7 @@ export function ProfileModal({
     try {
       const [profileRes, writtenPostsRes, participatedPostsRes, reviewsRes] =
         await Promise.all([
-          client.get<UserProfile>(`/users/${userId}/profile`),
+          client.get<UserProfile>(`/profile/user/${userId}`),
           client.get<Post[]>(`/users/${userId}/posts`),
           client.get<Post[]>(`/users/${userId}/participations`),
           // API 응답이 POST가 아닌 GET으로 추정됩니다.
@@ -94,7 +96,7 @@ export function ProfileModal({
         participatedPostsRes.data
       );
 
-      console.log('GET /users/{userId}profile 응답', profileRes.data);
+      console.log('GET /profile/user/{userId} 응답', profileRes.data);
 
       setProfile(profileRes.data);
       //imageId가 있으면 url 호출
@@ -180,6 +182,18 @@ export function ProfileModal({
     );
   }
 
+  const rawMannerTemperature =
+    profile.mannerTemperature ?? profile.mannerTemp ?? null;
+  const parsedMannerTemperature =
+    typeof rawMannerTemperature === 'number'
+      ? rawMannerTemperature
+      : rawMannerTemperature != null
+        ? Number(rawMannerTemperature)
+        : null;
+  const mannerTemperature = Number.isFinite(parsedMannerTemperature)
+    ? parsedMannerTemperature
+    : null;
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -248,7 +262,11 @@ export function ProfileModal({
                     <p className="text-gray-500 text-sm mb-1">매너온도</p>
                     <div className="flex items-center justify-center gap-1 text-blue-600 font-semibold">
                       <Thermometer className="w-4 h-4" />
-                      <p>36.5°C</p>
+                      <p>
+                        {mannerTemperature != null
+                          ? `${mannerTemperature.toFixed(1)}°C`
+                          : '정보 없음'}
+                      </p>
                     </div>
                   </div>
                   <div className="bg-gray-50 rounded-lg p-4 text-center">
@@ -442,10 +460,10 @@ export function ProfileModal({
             profileImageId: profile.profileImageId ?? null,
             intro: profile.intro || '', // profile.intro를 intro로 직접 전달
             description: profile.description || '', // profile.description을 description으로 직접 전달
-            travelStyles: profile.travelStyles || [],
-            tendency: profile.tendency || [],
-            gender: profile.gender as GenderType,
-            mbtiTypes: profile.mbtiTypes as MbtiType,
+            travelStyles: (profile.travelStyles || []) as TravelStyleType[],
+            tendency: (profile.tendency || []) as TravelTendencyType[],
+            // gender: profile.gender as GenderType,
+            // mbtiTypes: profile.mbtiTypes  as MbtiType,
           }}
         />
       )}

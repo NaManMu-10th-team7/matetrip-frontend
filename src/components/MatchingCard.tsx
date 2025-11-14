@@ -149,7 +149,11 @@ export function MatchingCard({
               <span className="font-semibold text-gray-900">
                 {formatMatchText(style)}
               </span>
+<<<<<<< HEAD
               로 비슷해요.
+=======
+              (으)로 같아요
+>>>>>>> develop
             </span>
           </div>
           <div className="flex items-start gap-2">
@@ -159,7 +163,11 @@ export function MatchingCard({
               <span className="font-semibold text-gray-900">
                 {formatMatchText(tendency)}
               </span>
+<<<<<<< HEAD
               와 잘 맞아요.
+=======
+              (으)로 같아요
+>>>>>>> develop
             </span>
           </div>
           {safeVectorScore !== undefined && (
@@ -170,7 +178,11 @@ export function MatchingCard({
                 <span className="font-semibold text-gray-900">
                   {safeVectorScore}%
                 </span>
+<<<<<<< HEAD
                 예요.
+=======
+                예요
+>>>>>>> develop
               </span>
             </div>
           )}

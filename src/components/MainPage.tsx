@@ -130,6 +130,15 @@ export function MainPage({
   const [featuredView, setFeaturedView] = useState<'latest' | 'recommended'>(
     'latest'
   );
+  const travelStyleKey =
+    user?.profile?.travelStyles?.join(',') ??
+    user?.profile?.travelStyles?.toString() ??
+    '';
+  const tendencyKey =
+    user?.profile?.tendency?.join(',') ??
+    user?.profile?.tendency?.toString() ??
+    '';
+  const descriptionKey = user?.profile?.description ?? '';
 
   useEffect(() => {
     // isAuthLoading이 true일 때는 API 호출을 하지 않습니다.

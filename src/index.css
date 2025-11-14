@@ -3055,3 +3055,10 @@ html {
   inherits: false;
   initial-value: 1;
 }
+
+@layer utilities {
+  /* Hide default Kakao map overlays injected with inline styles */
+  div[style*='background: rgb(255, 255, 255);'][style*='border: 1px solid rgb(118, 129, 168);'] {
+    display: none !important;
+  }
+}
