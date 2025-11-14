@@ -1080,23 +1080,13 @@ export function MapPanel({
           const isDayVisible =
             !poi.planDayId || visibleDayIds.has(poi.planDayId);
 
-          // [수정] scheduledPoiData에 의존하지 않고 직접 label과 color를 결정합니다.
-          // 이렇게 하면 'MARKED' 상태의 POI가 서버 데이터로 교체될 때 렌더링 정보가 사라지는 문제를 해결합니다.
-          let markerLabel: string | undefined;
-          let markerColor: string | undefined;
-
-          if (poi.status === 'SCHEDULED' && poi.planDayId) {
-            const data = scheduledPoiData.get(poi.id);
-            markerLabel = data?.label;
-            markerColor = data?.color;
-          } else if (poi.status === 'MARKED') {
-            // 'MARKED' 상태일 때는 label이 필요 없지만, isVisible 로직을 위해 빈 문자열을 전달합니다.
-            markerLabel = '';
-          }
+          const data = scheduledPoiData.get(poi.id);
+          const markerLabel = data?.label;
+          const markerColor = data?.color;
 
           return (
             <PoiMarker
-              key={poi.id}
+              key={`${poi.id}-${poi.status}-${poi.planDayId || 'none'}`}
               poi={poi}
               markerLabel={isDayVisible ? markerLabel : undefined}
               markerColor={markerColor}
