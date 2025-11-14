@@ -497,8 +497,6 @@ export function Workspace({
               onOptimizationComplete={handleOptimizationComplete} // [추가] 최적화 완료 콜백 전달
               onRouteOptimized={handleRouteOptimized} // [추가] 최적화된 경로 콜백 전달
               latestChatMessage={latestChatMessage} // [추가] 최신 채팅 메시지 전달
-              workspaceId={workspaceId}
-              members={members}
               cursors={cursors} // cursors prop 전달
               moveCursor={moveCursor} // moveCursor prop 전달
               clickEffects={clickEffects} // clickEffects prop 전달
