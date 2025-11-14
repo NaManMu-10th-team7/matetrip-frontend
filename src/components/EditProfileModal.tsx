@@ -319,6 +319,15 @@ export function EditProfileModal({
         nextProfileImageId = binaryContentId;
       }
 
+      const descriptionChanged =
+        (originalDescriptionRef.current ?? '') !== detailedBio;
+      const stylesChanged =
+        JSON.stringify(originalTravelStylesRef.current) !==
+        JSON.stringify(selectedTravelStyles);
+      const tendenciesChanged =
+        JSON.stringify(originalTravelTendenciesRef.current) !==
+        JSON.stringify(selectedTravelTendencies);
+
       const payload: UpdateProfileDto = {
         nickname,
         intro: shortBio,

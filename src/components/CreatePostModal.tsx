@@ -24,6 +24,7 @@ interface PostData {
   maxParticipants: number;
   keywords: KeywordValue[];
   imageId: string | null;
+  imageId: string | null;
 }
 
 /**
@@ -130,6 +131,7 @@ export function CreatePostModal({ onClose }: CreatePostModalProps) {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setErrorMessage('');
     setErrorMessage('');
 
     if (!user) {
