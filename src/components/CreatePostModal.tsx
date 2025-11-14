@@ -24,7 +24,6 @@ interface PostData {
   maxParticipants: number;
   keywords: KeywordValue[];
   imageId: string | null;
-  imageId: string | null;
 }
 
 /**

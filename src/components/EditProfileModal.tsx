@@ -21,14 +21,14 @@ import type { MbtiType } from '../constants/mbti.ts';
 interface EditProfileModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onProfileUpdated?: (updates: {
-    nickname: string;
-    intro: string;
-    description: string;
-    travelStyles: TravelStyleType[];
-    tendency: TravelTendencyType[];
-    profileImageId: string | null;
-  }) => void;
+  // onProfileUpdated?: (updates: {
+  //   nickname: string;
+  //   intro: string;
+  //   description: string;
+  //   travelStyles: TravelStyleType[];
+  //   tendency: TravelTendencyType[];
+  //   profileImageId: string | null;
+  // }) => void;
   user: {
     id: string;
     nickname: string;
@@ -46,7 +46,7 @@ interface EditProfileModalProps {
 export function EditProfileModal({
   open,
   onOpenChange,
-  onProfileUpdated,
+  //onProfileUpdated,
   user,
 }: EditProfileModalProps) {
   const [activeTab, setActiveTab] = useState('edit');
@@ -319,14 +319,14 @@ export function EditProfileModal({
         nextProfileImageId = binaryContentId;
       }
 
-      const descriptionChanged =
-        (originalDescriptionRef.current ?? '') !== detailedBio;
-      const stylesChanged =
-        JSON.stringify(originalTravelStylesRef.current) !==
-        JSON.stringify(selectedTravelStyles);
-      const tendenciesChanged =
-        JSON.stringify(originalTravelTendenciesRef.current) !==
-        JSON.stringify(selectedTravelTendencies);
+      // const descriptionChanged =
+      //   (originalDescriptionRef.current ?? '') !== detailedBio;
+      // const stylesChanged =
+      //   JSON.stringify(originalTravelStylesRef.current) !==
+      //   JSON.stringify(selectedTravelStyles);
+      // const tendenciesChanged =
+      //   JSON.stringify(originalTravelTendenciesRef.current) !==
+      //   JSON.stringify(selectedTravelTendencies);
 
       const payload: UpdateProfileDto = {
         nickname,
