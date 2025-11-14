@@ -56,6 +56,7 @@ const PlaceMarker = memo(({ place, onPlaceClick }: PlaceMarkerProps) => {
   const infoWindowTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null
   );
+  const [isSummaryExpanded, setIsSummaryExpanded] = useState(false); // summary 확장 상태 추가
 
   useEffect(() => {
     return () => {
@@ -84,6 +85,7 @@ const PlaceMarker = memo(({ place, onPlaceClick }: PlaceMarkerProps) => {
       clearTimeout(infoWindowTimeoutRef.current);
       infoWindowTimeoutRef.current = null;
     }
+    setIsSummaryExpanded(false); // 클릭 시 summary 접기
     onPlaceClick(place);
   };
   // 카테고리에 따른 아이콘 이미지 URL 생성
@@ -194,7 +196,7 @@ const PlaceMarker = memo(({ place, onPlaceClick }: PlaceMarkerProps) => {
         <CustomOverlayMap
           position={{ lat: place.latitude, lng: place.longitude }}
           xAnchor={0.5}
-          yAnchor={1.8}
+          yAnchor={1.2}
           zIndex={10}
         >
           <div
@@ -202,6 +204,16 @@ const PlaceMarker = memo(({ place, onPlaceClick }: PlaceMarkerProps) => {
             onMouseOver={handleMouseOver}
             onMouseOut={handleMouseOut}
           >
+            {/* 닫기 버튼 (클릭 시 정보창을 닫도록 수정) */}
+            <button
+              onClick={() => setIsInfoWindowOpen(false)}
+              className="absolute right-2 top-2 z-10 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-gray-500/50 p-0 text-white hover:bg-gray-600/60"
+              aria-label="닫기"
+              type="button"
+            >
+              <X size={14} />
+            </button>
+
             <div className="mb-2 text-[16px] font-bold text-[#333]">
               {place.title}
             </div>
@@ -213,15 +225,46 @@ const PlaceMarker = memo(({ place, onPlaceClick }: PlaceMarkerProps) => {
               />
             )}
             <div className="mb-1 text-[13px] text-[#666]">{place.address}</div>
+
+            {/* 요약 정보 (자세히보기/접기 기능 및 줄바꿈 스타일 적용) */}
             {place.summary && (
               <div className="mt-2 text-[12px] leading-snug text-[#888]">
-                {place.summary}
+                <div
+                  className={isSummaryExpanded ? '' : 'line-clamp-3'}
+                  style={{
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
+                    whiteSpace: 'normal',
+                  }}
+                >
+                  {place.summary}
+                </div>
+                {place.summary.length > 100 && (
+                  <button
+                    onClick={() => setIsSummaryExpanded(!isSummaryExpanded)}
+                    className="mt-1 border-0 bg-transparent p-0 text-xs font-bold text-[#4caf50] underline"
+                    type="button"
+                  >
+                    {isSummaryExpanded ? '접기' : '자세히보기'}
+                  </button>
+                )}
               </div>
             )}
 
-            <div className="mt-2 inline-block rounded bg-[#f5f5f5] px-2 py-1 text-[11px] text-[#999]">
-              {CATEGORY_INFO[place.category as keyof typeof CATEGORY_INFO]
-                ?.name || '기타'}
+            <div className="mt-2 flex items-center justify-between">
+              <div className="inline-block rounded bg-[#f5f5f5] px-2 py-1 text-[11px] text-[#999]">
+                {CATEGORY_INFO[place.category as keyof typeof CATEGORY_INFO]
+                  ?.name || '기타'}
+              </div>
+              {/* '여행지에 추가' 버튼을 누르면 onPlaceClick을 호출하도록 변경 */}
+              <Button
+                size="sm"
+                className="h-7 bg-[#4caf50] px-2.5 text-xs hover:bg-[#45a049]"
+                onClick={handleClick}
+              >
+                <PlusCircle size={14} className="mr-1" />
+                자세히 보기
+              </Button>
             </div>
           </div>
         </CustomOverlayMap>
@@ -1361,94 +1404,102 @@ export function MapPanel({
             visibleDayIds={visibleDayIds}
           />
         ))}
+
+        {/* 선택된 백엔드 장소 상세 정보 사이드 패널 */}
+        {selectedBackendPlace && (
+          <CustomOverlayMap
+            position={{
+              lat: selectedBackendPlace.latitude,
+              lng: selectedBackendPlace.longitude,
+            }}
+            yAnchor={1.2} // 마커 이미지 높이를 고려하여 조정
+            zIndex={11} // 다른 정보창보다 위에 표시되도록 z-index 조정
+          >
+            {/* 마우스 오버 정보창과 유사한 스타일로 변경 */}
+            <div className="relative min-w-[200px] max-w-[300px] rounded-lg bg-white p-3 shadow-[0_6px_20px_rgba(0,0,0,0.3)]">
+              {/* 닫기 버튼 */}
+              <button
+                onClick={() => setSelectedBackendPlace(null)}
+                className="absolute right-2 top-2 z-10 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-gray-500/50 p-0 text-white hover:bg-gray-600/60"
+                aria-label="닫기"
+                type="button"
+              >
+                <X size={14} />
+              </button>
+
+              <div className="mb-2 text-[16px] font-bold text-[#333]">
+                {selectedBackendPlace.title}
+              </div>
+              {selectedBackendPlace.image_url && (
+                <img
+                  src={selectedBackendPlace.image_url}
+                  alt={selectedBackendPlace.title}
+                  className="mb-2 h-[120px] w-full rounded object-cover"
+                />
+              )}
+              <div className="mb-1 text-[13px] text-[#666]">
+                {selectedBackendPlace.address}
+              </div>
+
+              {/* 요약 정보 (자세히보기/접기 기능 유지) */}
+              {selectedBackendPlace.summary && (
+                <div className="mt-2 text-[12px] leading-snug text-[#888]">
+                  {/* p 태그 대신 div를 사용하고, 줄 바꿈을 강제하는 인라인 스타일을 적용합니다. */}
+                  <div
+                    className={isSummaryExpanded ? '' : 'line-clamp-3'}
+                    style={{
+                      wordBreak: 'break-word',
+                      overflowWrap: 'break-word',
+                      whiteSpace: 'normal', // 줄 바꿈을 명시적으로 허용합니다.
+                    }}
+                  >
+                    {selectedBackendPlace.summary}
+                  </div>
+                  {selectedBackendPlace.summary.length > 100 && (
+                    <button
+                      onClick={() => setIsSummaryExpanded(!isSummaryExpanded)}
+                      className="mt-1 border-0 bg-transparent p-0 text-xs font-bold text-[#4caf50] underline"
+                      type="button"
+                    >
+                      {isSummaryExpanded ? '접기' : '자세히보기'}
+                    </button>
+                  )}
+                </div>
+              )}
+
+              <div className="mt-2 flex items-center justify-between">
+                <div className="inline-block rounded bg-[#f5f5f5] px-2 py-1 text-[11px] text-[#999]">
+                  {CATEGORY_INFO[
+                    selectedBackendPlace.category as keyof typeof CATEGORY_INFO
+                  ]?.name || '기타'}
+                </div>
+                <Button
+                  size="sm"
+                  className="h-7 bg-[#4caf50] px-2.5 text-xs hover:bg-[#45a049]"
+                  onClick={() => {
+                    const poiData = {
+                      latitude: selectedBackendPlace.latitude,
+                      longitude: selectedBackendPlace.longitude,
+                      address: selectedBackendPlace.address,
+                      placeName: selectedBackendPlace.title,
+                      categoryName: selectedBackendPlace.category,
+                    };
+                    markPoi(poiData);
+                    setSelectedBackendPlace(null);
+                  }}
+                >
+                  <PlusCircle size={14} className="mr-1" />
+                  여행지에 추가
+                </Button>
+              </div>
+            </div>
+          </CustomOverlayMap>
+        )}
       </KakaoMap>
 
       {isSyncing && (
         <div className="absolute left-2.5 top-2.5 z-20 rounded bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-md">
           데이터 동기화 중...
-        </div>
-      )}
-
-      {/* 선택된 백엔드 장소 상세 정보 사이드 패널 */}
-      {selectedBackendPlace && (
-        <div className="absolute right-5 top-5 z-10 flex w-[280px] max-h-[70vh] flex-col overflow-y-auto rounded-[10px] bg-white shadow-[0_6px_20px_rgba(0,0,0,0.25)]">
-          <div className="flex items-center justify-between border-b border-[#e0e0e0] px-4 py-3">
-            <h2 className="text-[16px] font-bold text-[#222]">장소 정보</h2>
-            <button
-              onClick={() => setSelectedBackendPlace(null)}
-              className="flex h-6 w-6 cursor-pointer items-center justify-center border-0 bg-transparent p-0 text-xl leading-none text-[#666]"
-              aria-label="닫기"
-              type="button"
-            >
-              ×
-            </button>
-          </div>
-          <div className="relative w-full border-b border-[#e0e0e0]">
-            {selectedBackendPlace.image_url && (
-              <img
-                src={selectedBackendPlace.image_url}
-                alt={selectedBackendPlace.title}
-                className="h-[150px] w-full object-cover"
-              />
-            )}
-          </div>
-          <div className="flex flex-col gap-3 p-4">
-            <h3 className="mb-2.5 text-lg font-bold text-[#222]">
-              {selectedBackendPlace.title}
-            </h3>
-            <div
-              className="mb-3 inline-block rounded-full px-2.5 py-1 text-[11px] font-bold text-white"
-              style={{
-                backgroundColor:
-                  CATEGORY_INFO[
-                    selectedBackendPlace.category as keyof typeof CATEGORY_INFO
-                  ]?.color || '#808080',
-              }}
-            >
-              {CATEGORY_INFO[
-                selectedBackendPlace.category as keyof typeof CATEGORY_INFO
-              ]?.name || '기타'}
-            </div>
-
-            {selectedBackendPlace.summary && (
-              <div className="mb-4 rounded border-l-[3px] border-[#4caf50] bg-[#f8f9fa] p-3">
-                <p
-                  className={`m-0 text-[13px] leading-relaxed text-[#555] ${
-                    isSummaryExpanded ? '' : 'line-clamp-3'
-                  }`}
-                >
-                  {selectedBackendPlace.summary}
-                </p>
-                {selectedBackendPlace.summary.length > 100 && (
-                  <button
-                    onClick={() => setIsSummaryExpanded(!isSummaryExpanded)}
-                    className="mt-1.5 border-0 bg-transparent p-0 text-xs font-bold text-[#4caf50] underline"
-                    type="button"
-                  >
-                    {isSummaryExpanded ? '접기' : '자세히보기'}
-                  </button>
-                )}
-              </div>
-            )}
-
-            <button
-              onClick={() => {
-                const poiData = {
-                  latitude: selectedBackendPlace.latitude,
-                  longitude: selectedBackendPlace.longitude,
-                  address: selectedBackendPlace.address,
-                  placeName: selectedBackendPlace.title,
-                  categoryName: selectedBackendPlace.category,
-                };
-                markPoi(poiData);
-                setSelectedBackendPlace(null);
-              }}
-              className="w-full rounded bg-[#4caf50] px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-[#45a049]"
-              type="button"
-            >
-              여행지에 추가
-            </button>
-          </div>
         </div>
       )}
     </div>
