@@ -870,16 +870,7 @@ export function MapPanel({
         Number(selectedPlace.x)
       );
       mapInstance.panTo(position);
-
-      const poiData = {
-        latitude: Number(selectedPlace.y),
-        longitude: Number(selectedPlace.x),
-        address: selectedPlace.road_address_name || selectedPlace.address_name,
-        placeName: selectedPlace.place_name,
-        categoryName: selectedPlace.category_name,
-      };
-      markPoi(poiData);
-      setSelectedPlace(null);
+      setSelectedPlace(null); // 처리 후 상태 초기화
     } else if (selectedPlace && !mapInstance) {
       pendingSelectedPlaceRef.current = selectedPlace;
     }
