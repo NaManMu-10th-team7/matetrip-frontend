@@ -1,8 +1,17 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from '../store/authStore';
-import { WEBSOCKET_CHAT_URL } from '../constants.ts';
-import { useMapStore } from '../store/useMapStore'; // 1. 스토어 가져오기
+import { WEBSOCKET_CHAT_URL } from '../constants';
+
+// AI가 보내주는 장소 데이터 타입
+export type AiPlace = {
+  name: string;
+  address: string;
+  road_address: string;
+  x: number; // longitude
+  y: number; // latitude
+  category: string;
+};
 import { type ToolCallData } from '../types/chat'; // ToolCallData 타입 가져오기
 const ChatEvent = {
   JOIN: 'join',
@@ -21,7 +30,7 @@ export type ChatMessage = {
   timestamp: string; // 클라이언트에서 추가할 필드
   userId?: string; // userId 필드 추가
   role: 'user' | 'ai' | 'system'; // 메시지 역할 추가
-  tool_data?: ToolCallData[]; // AI 메시지인 경우 도구 데이터 추가
+  toolData?: ToolCallData[]; // AI 메시지인 경우 도구 데이터 추가
 };
 
 // Backend DTOs (simplified for frontend use)
@@ -49,10 +58,13 @@ type IncomingChatMessagePayload = {
   message: string;
   userId?: string;
   role?: 'ai' | 'system' | 'user'; // 백엔드에서 역할 지정 가능
-  tool_data?: ToolCallData[]; // AI 메시지인 경우 도구 데이터 포함
+  toolData?: ToolCallData[]; // AI 메시지인 경우 도구 데이터 포함
 };
 
-export function useChatSocket(workspaceId: string) {
+export function useChatSocket(
+  workspaceId: string,
+  onAiPlacesUpdate: (places: AiPlace[]) => void
+) {
   const socketRef = useRef<Socket | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isConnected, setIsConnected] = useState(false);
@@ -60,7 +72,6 @@ export function useChatSocket(workspaceId: string) {
   // user?.nickname 대신 user?.profile.nickname 사용
   const username = user?.profile?.nickname || 'Anonymous';
   const userId = user?.userId; // user 객체에서 userId를 가져옵니다.
-  const setMarkers = useMapStore((state) => state.setMarkers);
 
   // =================================================================
   // 🛠️ [핵심] 액션 분배기 (Action Dispatcher)
@@ -68,26 +79,25 @@ export function useChatSocket(workspaceId: string) {
   // =================================================================
   const executeFrontendAction = useCallback(
     (actionCode: string, data: any) => {
-      console.log(`⚡ 웹소켓 액션 실행: ${actionCode}`, data);
+      console.log(`⚡ 웹소켓 액션 실행: ${actionCode}`);
 
       switch (actionCode) {
         case 'UPDATE_MAP':
-          // 지도 상태 업데이트 -> MapComponent가 자동으로 다시 그려짐
-          setMarkers(data);
-          break;
-        case 'SHOW_TOAST':
-          // toast.success("작업 완료!");
-          console.log('SHOW_TOAST 액션 호출됨', data);
+          // AI가 추천한 장소 목록을 Workspace의 콜백을 통해 처리
+          if (Array.isArray(data)) {
+            console.log('UPDATE_MAP 실행, 데이터:', data);
+            onAiPlacesUpdate(data as AiPlace[]);
+          }
           break;
         case 'OPEN_SIDEBAR':
           // setIsSidebarOpen(true);
-          console.log('OPEN_SIDEBAR 액션 호출됨', data);
+          console.log('OPEN_SIDEBAR 액션 호출됨');
           break;
         default:
           console.warn(`알 수 없는 액션: ${actionCode}`);
       }
     },
-    [setMarkers]
+    [onAiPlacesUpdate]
   );
 
   useEffect(() => {
@@ -129,7 +139,7 @@ export function useChatSocket(workspaceId: string) {
         const existingMessageIndex = prevMessages.findIndex(
           (msg) => msg.id === payload.id
         );
-
+        console.log(`payload2`, payload);
         const newMessage: ChatMessage = {
           id: payload.id,
           username: payload.username || 'Unknown',
@@ -138,7 +148,7 @@ export function useChatSocket(workspaceId: string) {
           userId: payload.userId,
           role:
             payload.role || (payload.username === 'System' ? 'system' : 'user'), // 역할 지정
-          tool_data: payload.tool_data,
+          toolData: payload.toolData,
         };
 
         if (existingMessageIndex > -1) {
@@ -151,10 +161,19 @@ export function useChatSocket(workspaceId: string) {
       });
 
       // 도구 데이터가 있으면 액션 실행
-      if (payload.tool_data && payload.tool_data.length > 0) {
-        payload.tool_data.forEach((tool: ToolCallData) => {
+      if (payload.toolData && payload.toolData.length > 0) {
+        payload.toolData.forEach((tool: ToolCallData) => {
           tool.frontend_actions.forEach((action) => {
-            executeFrontendAction(action, tool.tool_output);
+            // tool_output이 문자열일 경우 JSON으로 파싱
+            let outputData = tool.tool_output;
+            if (typeof outputData === 'string') {
+              try {
+                outputData = JSON.parse(outputData.replace(/'/g, '"'));
+              } catch (e) {
+                console.error('Failed to parse tool_output:', e);
+              }
+            }
+            executeFrontendAction(action, outputData);
           });
         });
       }
@@ -162,7 +181,7 @@ export function useChatSocket(workspaceId: string) {
 
     socket.on(
       ChatEvent.JOINED,
-      (payload: string | IncomingChatMessagePayload) => {
+      (payload: string | IncomingChatMessagePayload | IncomingChatMessagePayload[]) => {
         console.log('[Event] JOINED 수신:', payload); // payload: string | IncomingChatMessagePayload
         try {
           const parsedPayload =
@@ -170,21 +189,34 @@ export function useChatSocket(workspaceId: string) {
 
           if (typeof parsedPayload.data === 'string') {
             // 시스템 입장 메시지
-            // 사용자 입장 메시지
             setMessages((prevMessages) => [
               ...prevMessages,
               {
-                id: `system-join-${Date.now()}-${Math.random()}`, // 시스템 메시지 고유 ID
+                id: `system-join-${Date.now()}-${Math.random()}`,
                 username: 'System',
                 message: `${parsedPayload.data}님이 채팅방에 입장했습니다.`,
                 timestamp: new Date().toISOString(),
-                userId: undefined, // 시스템 메시지는 userId가 없을 수 있음
+                userId: undefined,
                 role: 'system',
               },
             ]);
+          } else if (Array.isArray(parsedPayload)) {
+            // [수정] 과거 채팅 기록 (배열) 처리
+            console.log('과거 채팅 기록 수신:', parsedPayload);
+            const historyMessages: ChatMessage[] = parsedPayload.map((p: IncomingChatMessagePayload) => ({
+              id: p.id,
+              username: p.username,
+              message: p.message,
+              timestamp: new Date().toISOString(), // TODO: 서버에서 타임스탬프를 준다면 그것을 사용
+              userId: p.userId,
+              role: p.role || 'user',
+              toolData: p.toolData,
+            }));
+            // 과거 기록은 액션을 실행하지 않고 메시지 목록만 설정합니다.
+            setMessages(historyMessages);
           } else {
-            // 일반 메시지 또는 AI 메시지
-            processIncomingMessage(parsedPayload);
+            // payload가 예상치 못한 형식일 경우를 대비한 로그
+            console.warn('Unhandled JOINED payload format:', parsedPayload);
           }
         } catch (e) {
           console.error('Failed to parse JOINED payload:', payload, e);
@@ -210,6 +242,8 @@ export function useChatSocket(workspaceId: string) {
 
     socket.on(ChatEvent.MESSAGE, (payload: IncomingChatMessagePayload) => {
       // payload: IncomingChatMessagePayload
+      console.log(`processIncomingMessage 실행!`);
+      console.log(`payload`, payload);
       processIncomingMessage(payload);
     });
 
@@ -229,13 +263,13 @@ export function useChatSocket(workspaceId: string) {
       socket.off(ChatEvent.MESSAGE);
       socket.disconnect();
     };
-  }, [workspaceId, username, userId, executeFrontendAction]); // 의존성 배열에 executeFrontendAction 추가
+  }, [workspaceId, username, onAiPlacesUpdate]);
 
   const sendMessage = useCallback(
     (message: string) => {
       if (socketRef.current && isConnected && message.trim() && userId) {
         // userId가 있는지 확인
-        const tempMessageId = `client-${Date.now()}-${Math.random()}`; // 낙관적 업데이트를 위한 임시 ID
+        // const tempMessageId = `client-${Date.now()}-${Math.random()}`; // 낙관적 업데이트를 위한 임시 ID
         const messagePayload: CreateMessageReqDto = {
           workspaceId,
           username,
@@ -244,19 +278,6 @@ export function useChatSocket(workspaceId: string) {
         };
         console.log('[Client] Sending MESSAGE event:', messagePayload);
         socketRef.current.emit(ChatEvent.MESSAGE, messagePayload);
-        // 자신의 메시지는 즉시 UI에 반영 (서버 응답을 기다리지 않음)
-        setMessages((prevMessages) => [
-          // 이 부분을 제거합니다.
-          ...prevMessages,
-          {
-            id: tempMessageId,
-            username,
-            message,
-            timestamp: new Date().toISOString(),
-            userId,
-            role: 'user',
-          },
-        ]);
       } else {
         console.warn('[Client] sendMessage condition not met:', {
           socketConnected: !!socketRef.current,

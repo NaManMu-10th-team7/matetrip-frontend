@@ -250,21 +250,33 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
   }, [workspaceId, user?.userId, handlePoiHovered]); // useEffect의 의존성 배열에 handlePoiHovered를 추가합니다.
 
   const markPoi = useCallback(
-    (poiData: Omit<CreatePoiDto, 'workspaceId' | 'createdBy' | 'id'>) => {
+    (
+      poiData: Omit<CreatePoiDto, 'workspaceId' | 'createdBy' | 'id'>,
+      options: { isOptimistic?: boolean } = { isOptimistic: true }
+    ) => {
       if (!user?.userId) {
         console.error('인증된 사용자 정보가 없습니다.');
         return;
       }
+
+      const tempId = `poi-${Date.now()}-${Math.random()}`;
       const payload = { ...poiData, workspaceId, createdBy: user.userId };
-      socketRef.current?.emit(
-        PoiSocketEvent.MARK,
-        payload,
-        (response: Poi | { error: string }) => {
-          console.log('[Ack] MARK 응답:', response);
-        }
-      );
+
+      if (options.isOptimistic) {
+        const newPoi: Poi = {
+          id: tempId,
+          status: 'MARKED',
+          sequence: 0,
+          isPersisted: false,
+          createdBy: user.userId,
+          ...payload,
+        };
+        setPois((prevPois) => [...prevPois, newPoi]);
+      }
+
+      socketRef.current?.emit(PoiSocketEvent.MARK, { ...payload, tempId });
     },
-    [workspaceId, user?.userId]
+    [workspaceId, user?.userId, setPois]
   );
 
   const unmarkPoi = useCallback(

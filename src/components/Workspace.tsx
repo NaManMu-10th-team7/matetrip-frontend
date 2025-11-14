@@ -15,7 +15,7 @@ import { LeftPanel } from './LeftPanel';
 import { RightPanel } from './RightPanel';
 import { PlanRoomHeader } from './PlanRoomHeader';
 import { type Poi, usePoiSocket } from '../hooks/usePoiSocket.ts';
-import { useChatSocket } from '../hooks/useChatSocket'; // useChatSocket import 추가
+import { type AiPlace, useChatSocket } from '../hooks/useChatSocket'; // useChatSocket import 추가
 import { useWorkspaceMembers } from '../hooks/useWorkspaceMembers.ts';
 import { API_BASE_URL } from '../api/client.ts'; // useWorkspaceMembers 훅 import
 
@@ -87,11 +87,39 @@ export function Workspace({
     clickEffects, // 추가
     clickMap, // 추가
   } = usePoiSocket(workspaceId, members);
+
+  // AI 장소 업데이트 중복 실행 방지를 위한 Ref
+  const isAiUpdating = useRef(false);
+
+  // AI가 추천한 장소 목록을 받아 마커를 추가하는 콜백
+  const handleAiPlacesUpdate = useCallback(
+    (places: AiPlace[]) => {
+      // 이미 업데이트가 진행 중이면 중복 실행 방지
+      if (isAiUpdating.current) return;
+
+      isAiUpdating.current = true;
+      places.forEach((place) => {
+        const poiData = {
+          latitude: place.y,
+          longitude: place.x,
+          address: place.road_address || place.address,
+          placeName: place.name,
+          categoryName: place.category,
+        };
+        // isOptimistic: false 옵션을 추가하여 낙관적 업데이트를 비활성화합니다.
+        // (usePoiSocket의 markPoi 함수 수정이 필요합니다. 아래 가이드 참고)
+        markPoi(poiData, { isOptimistic: false });
+      });
+      setTimeout(() => (isAiUpdating.current = false), 1000); // 1초 후 플래그 해제
+    },
+    [markPoi]
+  );
+
   const {
     messages,
     sendMessage,
     isConnected: isChatConnected,
-  } = useChatSocket(workspaceId);
+  } = useChatSocket(workspaceId, handleAiPlacesUpdate);
 
   // [추가] MapPanel에 전달할 최신 채팅 메시지 상태
   const [latestChatMessage, setLatestChatMessage] =
@@ -120,17 +148,20 @@ export function Workspace({
   }, [planDayDtos]);
 
   // [추가] 날짜 가시성 토글 핸들러
-  const handleDayVisibilityChange = useCallback((dayId: string, isVisible: boolean) => {
-    setVisibleDayIds(prevVisibleDayIds => {
-      const newVisibleDayIds = new Set(prevVisibleDayIds);
-      if (isVisible) {
-        newVisibleDayIds.add(dayId);
-      } else {
-        newVisibleDayIds.delete(dayId);
-      }
-      return newVisibleDayIds;
-    });
-  }, []);
+  const handleDayVisibilityChange = useCallback(
+    (dayId: string, isVisible: boolean) => {
+      setVisibleDayIds((prevVisibleDayIds) => {
+        const newVisibleDayIds = new Set(prevVisibleDayIds);
+        if (isVisible) {
+          newVisibleDayIds.add(dayId);
+        } else {
+          newVisibleDayIds.delete(dayId);
+        }
+        return newVisibleDayIds;
+      });
+    },
+    []
+  );
 
   // [수정] 패널 열기/닫기 시 지도 리렌더링을 위한 useEffect
   useEffect(() => {
