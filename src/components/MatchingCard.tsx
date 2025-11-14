@@ -1,10 +1,11 @@
-import type { KeyboardEvent } from 'react';
+import { useEffect, useState, type KeyboardEvent } from 'react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { MapPin, Calendar, CheckCircle, Sparkles } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { Progress } from './ui/progress'; // shadcn/ui의 Progress 컴포넌트를 import합니다.
 import type { Post } from '../types/post';
 import type { MatchingInfo } from '../types/matching';
+import { API_BASE_URL } from '../api/client';
 
 interface MatchingCardProps {
   /** 기존 WorkspaceCard와 동일한 Post 데이터 */
@@ -17,7 +18,7 @@ interface MatchingCardProps {
   rank?: number;
 }
 
-const coverImage = 'https://via.placeholder.com/400x300';
+const defaultCoverImage = 'https://via.placeholder.com/400x300';
 
 /**
  * 이미지에 표시된 '매칭 스코어' 기반의 추천 카드를 렌더링하는 컴포넌트입니다.
@@ -70,9 +71,48 @@ export function MatchingCard({
     return diffDays;
   };
 
-  // 커버 텍스트 (예: "일본 오사카" -> "오사카")
-  // 이미지에는 "Osaka"로 되어있으나, 데이터("일본 오사카")를 따르는 것이 좋습니다.
-  //const coverText = location.split(' ').pop() || 'Trip';
+  const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchCoverImage = async () => {
+      if (!post.imageId) {
+        setCoverImageUrl(null);
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/binary-content/${post.imageId}/presigned-url`,
+          {
+            credentials: 'include',
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('게시글 이미지를 불러오지 못했습니다.');
+        }
+
+        const payload = await response.json();
+        const { url } = payload;
+        if (!cancelled) {
+          setCoverImageUrl(url);
+        }
+      } catch (error) {
+        console.error('MatchingCard cover image load failed:', error);
+        if (!cancelled) {
+          setCoverImageUrl(null);
+        }
+      }
+    };
+
+    fetchCoverImage();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [post.imageId]);
 
   return (
     <div
@@ -97,7 +137,7 @@ export function MatchingCard({
 
       <div className="h-48 overflow-hidden flex-shrink-0">
         <ImageWithFallback
-          src={coverImage}
+          src={coverImageUrl ?? defaultCoverImage}
           alt={title}
           className="w-full h-full object-cover"
         />
