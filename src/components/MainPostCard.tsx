@@ -59,12 +59,16 @@ export function MainPostCard({ post, onClick }: MainPostCardProps) {
         <div className="mb-3">
           <div className="flex justify-between items-start mb-1">
             <h3 className="text-lg font-bold text-gray-900 flex-1 pr-4 break-words">
-            {post.title}
-          </h3>
-          <Badge className={getStatusBadgeClass(post.status)}>{post.status}</Badge>
+              {post.title}
+            </h3>
+            <Badge className={getStatusBadgeClass(post.status)}>
+              {post.status}
+            </Badge>
           </div>
           {/* Display writer's nickname */}
-          <p className="text-sm text-gray-600">{post.writerProfile?.nickname || '알 수 없는 사용자'}</p>
+          <p className="text-sm text-gray-600">
+            {post.writerProfile?.nickname || '알 수 없는 사용자'}
+          </p>
         </div>
 
         <div className="space-y-2 text-sm text-gray-600 mb-4">

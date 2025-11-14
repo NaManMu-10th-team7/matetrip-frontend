@@ -40,6 +40,7 @@ import client from '../api/client';
 import { type Post, type Participation } from '../types/post';
 import { translateKeyword } from '../utils/keyword';
 import { useAuthStore } from '../store/authStore';
+import { API_BASE_URL } from '../api/client';
 
 interface PostDetailProps {
   postId: string;
@@ -58,6 +59,9 @@ export function PostDetail({
   onOpenChange,
   onDeleteSuccess,
 }: PostDetailProps) {
+  const [remoteCoverImageUrl, setRemoteCoverImageUrl] = useState<string | null>(
+    null
+  );
   const { user } = useAuthStore();
   const [post, setPost] = useState<Post | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -78,7 +82,21 @@ export function PostDetail({
     try {
       const postResponse = await client.get<Post>(`/posts/${postId}`);
       const fetchedPost = postResponse.data;
+      console.log('PostDetail fetched post', fetchedPost);
       setPost(fetchedPost);
+      if (fetchedPost.imageId) {
+        try {
+          const payload = await client.get<{ url: string }>(
+            `/binary-content/${fetchedPost.imageId}/presigned-url`
+          );
+          setRemoteCoverImageUrl(payload.data.url);
+        } catch (imageErr) {
+          console.error('Post detail cover image load failed:', imageErr);
+          setRemoteCoverImageUrl(null);
+        }
+      } else {
+        setRemoteCoverImageUrl(null);
+      }
 
       const allParticipations = fetchedPost.participations || [];
       setParticipations(allParticipations);
@@ -383,11 +401,13 @@ export function PostDetail({
                   </div>
                 </div>
 
-                <div className="flex-1">
-                  <div className="relative w-full h-full max-h-[200px] rounded-xl overflow-hidden bg-gray-100">
+                <div className="flex-1 flex justify-center">
+                  <div className="relative w-full max-w-[450px] min-h-[200px] max-h-[400px] rounded-xl overflow-hidden bg-gray-100">
                     <ImageWithFallback
                       src={
-                        'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=800&q=80'
+                        remoteCoverImageUrl ||
+                        'https://via.placeholder.com/400x300'
+                        //'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=800&q=80'
                       }
                       alt={post.title}
                       className="w-full h-full object-cover"

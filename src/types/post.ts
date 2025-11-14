@@ -47,4 +47,5 @@ export interface Post {
   startDate: string;
   endDate: string;
   participations: Participation[];
+  imageId: string | null;
 }

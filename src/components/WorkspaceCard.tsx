@@ -1,8 +1,10 @@
+import { useEffect, useState } from 'react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { MapPin, Calendar, Users } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { translateKeyword } from '../utils/keyword';
 import type { Post } from '../types/post';
+import { API_BASE_URL } from '../api/client';
 
 interface WorkspaceCardProps {
   post: Post;
@@ -41,8 +43,51 @@ export function WorkspaceCard({
     return diffDays;
   };
 
-  // API 응답에 커버 이미지가 없으므로 임시 플레이스홀더를 사용합니다.
-  const coverImage = 'https://via.placeholder.com/400x300';
+  const defaultCoverImage = 'https://via.placeholder.com/400x300';
+  const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchCoverImage = async () => {
+      if (!post.imageId) {
+        setCoverImageUrl(null);
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/binary-content/${post.imageId}/presigned-url`,
+          {
+            credentials: 'include',
+            //cache: 'no-store',
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('게시글 이미지를 불러오지 못했습니다.');
+        }
+
+        const payload = await response.json();
+        //console.log('WorkspaceCard presigned payload', post.imageId, payload);
+        const { url } = payload;
+        if (!cancelled) {
+          setCoverImageUrl(url);
+        }
+      } catch (error) {
+        console.error('WorkspaceCard cover image load failed:', error);
+        if (!cancelled) {
+          setCoverImageUrl(null);
+        }
+      }
+    };
+
+    fetchCoverImage();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [post.imageId]);
 
   // 참여자 목록을 구성합니다. writer와 participations를 사용합니다.
   const displayParticipants = [
@@ -82,7 +127,7 @@ export function WorkspaceCard({
       {/* 커버 이미지 */}
       <div className="h-48 overflow-hidden flex-shrink-0">
         <ImageWithFallback
-          src={coverImage}
+          src={coverImageUrl ?? defaultCoverImage}
           alt={title}
           className="w-full h-full object-cover"
         />
