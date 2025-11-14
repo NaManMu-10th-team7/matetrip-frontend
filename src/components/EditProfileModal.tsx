@@ -21,6 +21,14 @@ import type { MbtiType } from '../constants/mbti.ts';
 interface EditProfileModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onProfileUpdated?: (updates: {
+    nickname: string;
+    intro: string;
+    description: string;
+    travelStyles: TravelStyleType[];
+    tendency: TravelTendencyType[];
+    profileImageId: string | null;
+  }) => void;
   user: {
     id: string;
     nickname: string;
@@ -38,6 +46,7 @@ interface EditProfileModalProps {
 export function EditProfileModal({
   open,
   onOpenChange,
+  onProfileUpdated,
   user,
 }: EditProfileModalProps) {
   const [activeTab, setActiveTab] = useState('edit');
@@ -234,10 +243,6 @@ export function EditProfileModal({
     alert('사용 가능한 닉네임입니다.');
   };
 
-  const handleRemoveStyle = (style: TravelStyleType) => {
-    setSelectedTravelStyles(selectedTravelStyles.filter((s) => s !== style));
-  };
-
   // const handleAddStyle = (style: TravelStyleType) => {
   //   if (!selectedTravelStyles.includes(style)) {
   //     setSelectedTravelStyles([...selectedTravelStyles, style]);
@@ -250,6 +255,18 @@ export function EditProfileModal({
         ? prev.filter((item) => item !== style)
         : [...prev, style]
     );
+  };
+
+  const handleToggleTendency = (style: TravelTendencyType) => {
+    setSelectedTravelTendencies((prev) =>
+      prev.includes(style)
+        ? prev.filter((item) => item !== style)
+        : [...prev, style]
+    );
+  };
+
+  const handleRemoveStyle = (style: TravelStyleType) => {
+    setSelectedTravelStyles(selectedTravelStyles.filter((s) => s !== style));
   };
 
   const handleRemoveTendency = (tendency: TravelTendencyType) => {
@@ -302,15 +319,6 @@ export function EditProfileModal({
         nextProfileImageId = binaryContentId;
       }
 
-      const descriptionChanged =
-        (originalDescriptionRef.current ?? '') !== detailedBio;
-      const stylesChanged =
-        JSON.stringify(originalTravelStylesRef.current) !==
-        JSON.stringify(selectedTravelStyles);
-      const tendenciesChanged =
-        JSON.stringify(originalTravelTendenciesRef.current) !==
-        JSON.stringify(selectedTravelTendencies);
-
       const payload: UpdateProfileDto = {
         nickname,
         intro: shortBio,
@@ -332,24 +340,25 @@ export function EditProfileModal({
         throw new Error(detail || '프로필 업데이트에 실패했습니다.');
       }
 
-      //📌상세소개가 호출 변경되는 경우에는 임베딩 진행
-      if (descriptionChanged || stylesChanged || tendenciesChanged) {
-        try {
-          await fetch(`${API_BASE_URL}/profile/embedding`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              description: detailedBio,
-              travelStyles: selectedTravelStyles,
-              tendency: selectedTravelTendencies,
-            }),
-          });
-        } catch (error) {
-          console.error('프로필 임베딩 갱신 실패:', error);
-        }
-      }
-      //변경되면 호출
+      // //📌상세소개가 호출 변경되는 경우에는 임베딩 진행
+      // if (descriptionChanged || stylesChanged || tendenciesChanged) {
+      //   try {
+      //     await fetch(`${API_BASE_URL}/profile/embedding`, {
+      //       method: 'POST',
+      //       headers: { 'Content-Type': 'application/json' },
+      //       credentials: 'include',
+      //       body: JSON.stringify({
+      //         description: detailedBio,
+      //         travelStyles: selectedTravelStyles,
+      //         tendency: selectedTravelTendencies,
+      //       }),
+      //     });
+      //   } catch (error) {
+      //     console.error('프로필 임베딩 갱신 실패:', error);
+      //   }
+      // }
+
+      //변경되면 호출(새로고침)
       useAuthStore.setState((state) => {
         if (!state.user) {
           return state;
@@ -378,6 +387,7 @@ export function EditProfileModal({
       updateProfileImagePreview(null);
       setCurrentProfileImageId(nextProfileImageId ?? null);
       onOpenChange(false);
+      //   window.location.reload();
     } catch (error) {
       console.error('프로필 저장 실패:', error);
       setSaveError(

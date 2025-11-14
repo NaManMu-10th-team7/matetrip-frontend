@@ -509,6 +509,22 @@ export function ProfileModal({
             }
             setIsEditProfileModalOpen(open);
           }}
+          onProfileUpdated={(updates) => {
+            setProfile((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    nickname: updates.nickname,
+                    intro: updates.intro,
+                    description: updates.description,
+                    travelStyles: updates.travelStyles,
+                    tendency: updates.tendency,
+                    profileImageId:
+                      updates.profileImageId ?? prev.profileImageId,
+                  }
+                : prev
+            );
+          }}
           user={{
             id: profile.id,
             nickname: profile.nickname,

@@ -130,15 +130,6 @@ export function MainPage({
   const [featuredView, setFeaturedView] = useState<'latest' | 'recommended'>(
     'latest'
   );
-  const travelStyleKey =
-    user?.profile?.travelStyles?.join(',') ??
-    user?.profile?.travelStyles?.toString() ??
-    '';
-  const tendencyKey =
-    user?.profile?.tendency?.join(',') ??
-    user?.profile?.tendency?.toString() ??
-    '';
-  const descriptionKey = user?.profile?.description ?? '';
 
   useEffect(() => {
     // isAuthLoading이 true일 때는 API 호출을 하지 않습니다.
@@ -217,9 +208,12 @@ export function MainPage({
     const fetchMatches = async () => {
       setIsMatchesLoading(true);
       try {
-        const res = await client.post<MatchCandidateDto[]>('/matching/search', {
-          limit: 5,
-        });
+        const res = await client.post<MatchCandidateDto[]>( //응답타입
+          '/profile/matching/search',
+          {
+            limit: 5, //BODY
+          }
+        );
         if (!isMounted) {
           return;
         }

@@ -127,7 +127,7 @@ export function WorkspaceCard({
       }
 
       const uniqueIds = Array.from(new Set(imageIds));
-      console.log('WorkspaceCard profile image IDs', uniqueIds);
+      // console.log('WorkspaceCard profile image IDs', uniqueIds);
 
       try {
         const responses = await Promise.all(

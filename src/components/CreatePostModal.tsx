@@ -266,7 +266,7 @@ export function CreatePostModal({ onClose }: CreatePostModalProps) {
               )}
             </div>
             <p className="text-xs text-gray-500">
-              최대 5MB 이하의 JPG, PNG 이미지를 권장합니다.
+              최대 50MB 이하의 JPG, PNG 이미지를 권장합니다.
             </p>
           </div>
 
