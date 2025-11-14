@@ -266,13 +266,13 @@ export function WorkspaceCard({
                     ? profileImageUrls[participant.profileImageId]
                     : undefined;
 
-                  if (participant.profileImageId) {
-                    console.log(
-                      'WorkspaceCard profile image URL',
-                      participant.profileImageId,
-                      resolvedUrl
-                    );
-                  }
+                  // if (participant.profileImageId) {
+                  //   console.log(
+                  //     'WorkspaceCard profile image URL',
+                  //     participant.profileImageId,
+                  //     resolvedUrl
+                  //   );
+                  // }
 
                   return (
                     <ImageWithFallback

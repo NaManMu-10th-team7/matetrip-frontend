@@ -59,14 +59,9 @@ type ProfileWithMannerTemperature = {
 const formatMannerTemperature = (
   profile?: ProfileWithMannerTemperature | null
 ) => {
-  const raw =
-    profile?.mannerTemperature ?? profile?.mannerTemp ?? null;
+  const raw = profile?.mannerTemperature ?? profile?.mannerTemp ?? null;
   const parsed =
-    typeof raw === 'number'
-      ? raw
-      : raw != null
-      ? Number(raw)
-      : null;
+    typeof raw === 'number' ? raw : raw != null ? Number(raw) : null;
 
   return typeof parsed === 'number' && Number.isFinite(parsed)
     ? `${parsed.toFixed(1)}°C`
@@ -564,9 +559,7 @@ export function PostDetail({
                               <div className="flex items-center gap-1 text-sm text-blue-600">
                                 <Thermometer className="w-4 h-4" />
                                 <span>
-                                  {formatMannerTemperature(
-                                    p.requester.profile
-                                  )}
+                                  {formatMannerTemperature(p.requester.profile)}
                                 </span>
                               </div>
                             </div>

@@ -49,6 +49,7 @@ interface Review {
       travelStyles: TravelStyleType[];
       travelTendency: TravelTendencyType[];
       mbtiTypes: string;
+      profileImageId: string | null;
     };
   };
   rating: number;
@@ -69,6 +70,9 @@ export function ProfileModal({
   const [travelHistory, setTravelHistory] = useState<Post[]>([]);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewerImageUrls, setReviewerImageUrls] = useState<
+    Record<string, string | null>
+  >({});
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [isBioExpanded, setIsBioExpanded] = useState(false);
@@ -91,12 +95,12 @@ export function ProfileModal({
         ]);
 
       // [디버그용] 참여한 동행 데이터 확인
-      console.log(
-        'GET /users/{userId}/participations 응답:',
-        participatedPostsRes.data
-      );
-
-      console.log('GET /profile/user/{userId} 응답', profileRes.data);
+      // console.log(
+      //   'GET /users/{userId}/participations 응답:',
+      //   participatedPostsRes.data
+      // );
+      console.log('GET /profile/review/{userId} 응답', reviewsRes.data);
+      // console.log('GET /profile/user/{userId} 응답', profileRes.data);
 
       setProfile(profileRes.data);
       //imageId가 있으면 url 호출
@@ -131,7 +135,54 @@ export function ProfileModal({
       );
 
       setTravelHistory(uniquePosts);
-      setReviews(reviewsRes.data);
+      const reviewsData = reviewsRes.data;
+      setReviews(reviewsData);
+      const reviewerIdsWithImages = reviewsData
+        .map((review) => {
+          const imageId = review.reviewer.profile?.profileImageId;
+          return imageId ? { imageId, reviewerId: review.reviewer.id } : null;
+        })
+        .filter(
+          (item): item is { imageId: string; reviewerId: string } =>
+            item !== null
+        );
+
+      if (reviewerIdsWithImages.length > 0) {
+        try {
+          const uniqueImageIds = Array.from(
+            new Set(reviewerIdsWithImages.map((item) => item.imageId))
+          );
+          const presignedResponses = await Promise.all(
+            uniqueImageIds.map(async (imageId) => {
+              try {
+                const { data } = await client.get<{ url: string }>(
+                  `/binary-content/${imageId}/presigned-url`
+                );
+                return { imageId, url: data.url };
+              } catch (err) {
+                console.error('Reviewer image presigned fetch failed:', err);
+                return { imageId, url: null as string | null };
+              }
+            })
+          );
+
+          setReviewerImageUrls((prev) => {
+            const next = { ...prev };
+            let changed = false;
+            for (const { imageId, url } of presignedResponses) {
+              if (next[imageId] !== url) {
+                next[imageId] = url;
+                changed = true;
+              }
+            }
+            return changed ? next : prev;
+          });
+        } catch (err) {
+          console.error('Failed to fetch reviewer images:', err);
+        }
+      } else {
+        setReviewerImageUrls({});
+      }
     } catch (error) {
       setError(error);
       console.error('Failed to fetch profile data:', error);
@@ -397,9 +448,14 @@ export function ProfileModal({
                           <div className="flex justify-between items-start mb-2">
                             <div className="flex items-center gap-3">
                               <ImageWithFallback
-                                // TODO: UserProfile에 profileImageId가 추가되면 해당 필드를 사용해야 합니다.
-                                // 현재는 닉네임 기반의 fallback 이미지만 사용합니다.
-                                src={`https://ui-avatars.com/api/?name=${review.reviewer.profile?.nickname}&background=random`}
+                                src={
+                                  (review.reviewer.profile?.profileImageId
+                                    ? (reviewerImageUrls[
+                                        review.reviewer.profile.profileImageId
+                                      ] ?? null)
+                                    : null) ??
+                                  `https://ui-avatars.com/api/?name=${review.reviewer.profile?.nickname}&background=random`
+                                }
                                 alt={review.reviewer.profile?.nickname}
                                 className="w-10 h-10 rounded-full object-cover"
                               />
