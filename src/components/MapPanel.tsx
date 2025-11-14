@@ -13,8 +13,6 @@ import { fetchPlacesInBounds } from '../api/places';
 import type { PlaceDto } from '../types/place';
 import { CATEGORY_INFO } from '../types/place';
 
-import { useAnimatedOpacity } from '../hooks/useAnimatedOpacity';
-
 import type {
   KakaoPlace,
   RouteSegment,
@@ -243,8 +241,14 @@ const PoiMarker = memo(
   }: PoiMarkerProps) => {
     const [isInfoWindowOpen, setIsInfoWindowOpen] = useState(false);
     const infoWindowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const isVisible = markerLabel !== undefined;
-    const animatedOpacity = useAnimatedOpacity(isVisible, 300); // 라벨 유무에 따른 애니메이션
+    // [수정] isVisible 로직 변경
+    // 마커의 가시성은 markerLabel의 존재 여부가 아니라,
+    // POI의 상태와 부모로부터 받은 가시성 정보(visibleDayIds)에 따라 결정되어야 합니다.
+    const isVisible =
+      poi.status === 'MARKED' ||
+      (poi.status === 'SCHEDULED' &&
+        poi.planDayId &&
+        markerLabel !== undefined);
 
     const handleMouseOver = () => {
       // 마커가 보이지 않으면 호버 이벤트를 무시합니다.
@@ -280,7 +284,9 @@ const PoiMarker = memo(
       setIsInfoWindowOpen(true);
     };
 
-    const isScheduled = markerLabel !== undefined;
+    const isScheduled = poi.status === 'SCHEDULED' && markerLabel !== undefined;
+
+    const isMarkedOnly = poi.status === 'MARKED' && !poi.planDayId;
 
     // isScheduled가 true일 때만 커스텀 아이콘을 사용하고, false일 때는 undefined로 두어 기본 마커를 사용하도록 합니다.
     const markerImage = isScheduled
@@ -296,13 +302,15 @@ const PoiMarker = memo(
     return (
       <MapMarker
         position={{ lat: poi.latitude, lng: poi.longitude }}
-        image={markerImage}
+        image={markerImage} // isScheduled가 아니면 기본 카카오 마커가 표시됩니다.
         draggable={false}
         clickable={true}
         onMouseOver={handleMouseOver}
         onMouseOut={handleMouseOut}
         onClick={handleClick}
-        opacity={isHovered ? 0.5 : animatedOpacity}
+        // [수정] isVisible을 기반으로 투명도 조절
+        // isHovered는 isVisible일 때만 의미가 있습니다.
+        opacity={!isVisible ? 0 : isHovered ? 0.5 : 1}
       >
         {isInfoWindowOpen && (
           <CustomOverlayMap
@@ -324,7 +332,7 @@ const PoiMarker = memo(
                 {poi.address}
               </div>
               {/* 보관함에만 있는 마커일 경우 '제거' 버튼 표시 */}
-              {!isScheduled && (
+              {isMarkedOnly && (
                 <Button
                   variant="destructive"
                   size="sm"
@@ -1069,11 +1077,23 @@ export function MapPanel({
         }}
       >
         {pois.map((poi) => {
-          const data = scheduledPoiData.get(poi.id);
-          const markerLabel = data?.label;
-          const markerColor = data?.color;
           const isDayVisible =
             !poi.planDayId || visibleDayIds.has(poi.planDayId);
+
+          // [수정] scheduledPoiData에 의존하지 않고 직접 label과 color를 결정합니다.
+          // 이렇게 하면 'MARKED' 상태의 POI가 서버 데이터로 교체될 때 렌더링 정보가 사라지는 문제를 해결합니다.
+          let markerLabel: string | undefined;
+          let markerColor: string | undefined;
+
+          if (poi.status === 'SCHEDULED' && poi.planDayId) {
+            const data = scheduledPoiData.get(poi.id);
+            markerLabel = data?.label;
+            markerColor = data?.color;
+          } else if (poi.status === 'MARKED') {
+            // 'MARKED' 상태일 때는 label이 필요 없지만, isVisible 로직을 위해 빈 문자열을 전달합니다.
+            markerLabel = '';
+          }
+
           return (
             <PoiMarker
               key={poi.id}

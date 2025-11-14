@@ -125,31 +125,55 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
       setIsSyncing(false);
     };
 
-    const handleMarked = (newPoi: Poi) => {
-      console.log('[Event] MARKED 수신:', newPoi);
-      if (newPoi && newPoi.id) {
+    const handleMarked = (data: Poi & { tempId?: string }) => {
+      console.log('[Event] MARKED 수신:', data);
+      if (data && data.id) {
+        // [수정] 서버에서 받은 데이터에 status가 없을 경우를 대비하여 기본값을 'MARKED'로 설정합니다.
+        // 이렇게 하면 낙관적 업데이트 데이터와 실제 데이터 간의 status 불일치 문제를 방지할 수 있습니다.
+        const newPoiData = {
+          ...data,
+          status: data.status || 'MARKED',
+          isPersisted: true,
+        };
+
         setPois((prevPois) => {
-          // Ensure the new POI has a status, defaulting to 'MARKED' if not provided
-          const poiWithStatus = {
-            ...newPoi,
-            status: newPoi.status || 'MARKED',
-          };
-          if (prevPois.some((p) => p.id === poiWithStatus.id)) {
+          // tempId가 있고, 내 로컬 상태에 해당 임시 POI가 있는지 확인합니다.
+          const isMyOptimisticUpdate =
+            newPoiData.tempId && prevPois.some((p) => p.id === newPoiData.tempId);
+
+          if (isMyOptimisticUpdate) {
+            // 케이스 1: 내가 생성한 POI를 서버 데이터로 교체
+            console.log(`[handleMarked] Optimistic POI ${newPoiData.tempId}를 실제 ID ${newPoiData.id}로 교체합니다.`);
             return prevPois.map((p) =>
-              p.id === poiWithStatus.id ? poiWithStatus : p
+              p.id === newPoiData.tempId ? newPoiData : p
             );
           }
-          return [...prevPois, poiWithStatus];
+
+          // 케이스 2: 다른 사용자가 생성한 POI이거나, 중복 이벤트 수신
+          const existingPoiIndex = prevPois.findIndex((p) => p.id === newPoiData.id);
+          if (existingPoiIndex > -1) {
+            console.log(`[handleMarked] 기존 POI ${newPoiData.id}를 업데이트합니다.`);
+            const newPois = [...prevPois];
+            newPois[existingPoiIndex] = newPoiData;
+            return newPois;
+          }
+
+          console.log(`[handleMarked] 다른 사용자가 생성한 새 POI ${newPoiData.id}를 추가합니다.`);
+          return [...prevPois, newPoiData];
         });
       }
     };
 
-    const handleUnmarked = (poiId: string) => {
-      // data 객체 대신 poiId 문자열을 직접 받도록 변경
-      console.log('[Event] UNMARKED 수신:', poiId);
-      if (poiId) {
-        // poiId가 유효한지 확인
-        setPois((prevPois) => prevPois.filter((p) => p.id !== poiId));
+    const handleUnmarked = (data: string | { poiId: string }) => {
+      console.log('[Event] UNMARKED 수신:', data);
+      // 서버에서 문자열로 보내주든, 객체({ poiId: '...' })로 보내주든 모두 처리
+      const idToRemove = typeof data === 'string' ? data : data?.poiId;
+
+      if (idToRemove) {
+        setPois((prevPois) => {
+          console.log(`Removing POI with id: ${idToRemove}`);
+          return prevPois.filter((p) => p.id !== idToRemove);
+        });
       }
     };
 

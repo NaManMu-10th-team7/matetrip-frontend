@@ -98,7 +98,11 @@ function PoiItem({
     >
       {/* 고정 너비 컨테이너 추가 */}
       <div className="flex items-center w-16 flex-shrink-0">
-        <div {...attributes} {...listeners} className="cursor-grab touch-none p-1">
+        <div
+          {...attributes}
+          {...listeners}
+          className="cursor-grab touch-none p-1"
+        >
           <GripVertical className="w-4 h-4 text-gray-400" />
         </div>
         {color && index !== undefined && (
@@ -127,7 +131,6 @@ function MarkerStorage({
   pois,
   onPoiClick,
   onPoiHover,
-  onPoiLeave,
   unmarkPoi,
   removeSchedule,
   hoveredPoiId,
@@ -139,24 +142,36 @@ function MarkerStorage({
   removeSchedule: (poiId: string, planDayId: string) => void;
   hoveredPoiId: string | null;
 }) {
-    const { setNodeRef } = useDroppable({ id: 'marker-storage' });
-    const [isCollapsed, setIsCollapsed] = useState(false);
+  const { setNodeRef } = useDroppable({ id: 'marker-storage' });
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
-    return (
-        <div ref={setNodeRef} className="p-3 border-b">
-            <div className="flex justify-between items-center mb-2">
-                <div className="flex items-center gap-2">
-                    <MapPin className="w-5 h-5 text-gray-600" />
-                    <h3 className="text-base font-bold">마커 보관함</h3>
-                </div>
-                <Button variant="ghost" size="icon" onClick={() => setIsCollapsed(!isCollapsed)}>
-                    {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-                </Button>
-            </div>
-            {!isCollapsed && (
-                <SortableContext id="marker-storage-sortable" items={pois.map(p => p.id)} strategy={verticalListSortingStrategy}>
-                    <ul className="space-y-2 min-h-[2rem]">
-                        {pois.length > 0 ? (
+  return (
+    <div ref={setNodeRef} className="p-3 border-b">
+      <div className="flex justify-between items-center mb-2">
+        <div className="flex items-center gap-2">
+          <MapPin className="w-5 h-5 text-gray-600" />
+          <h3 className="text-base font-bold">마커 보관함</h3>
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setIsCollapsed(!isCollapsed)}
+        >
+          {isCollapsed ? (
+            <ChevronDown className="h-4 w-4" />
+          ) : (
+            <ChevronUp className="h-4 w-4" />
+          )}
+        </Button>
+      </div>
+      {!isCollapsed && (
+        <SortableContext
+          id="marker-storage-sortable"
+          items={pois.map((p) => p.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <ul className="space-y-2 min-h-[2rem]">
+            {pois.length > 0 ? (
               pois.map((poi) => (
                 <PoiItem
                   key={poi.id}
@@ -168,14 +183,16 @@ function MarkerStorage({
                   isHovered={hoveredPoiId === poi.id}
                 />
               ))
-                        ) : (
-                            <p className="text-xs text-gray-500 p-2">지도에 마커를 추가하여 보관하세요.</p>
-                        )}
-                    </ul>
-                </SortableContext>
+            ) : (
+              <p className="text-xs text-gray-500 p-2">
+                지도에 마커를 추가하여 보관하세요.
+              </p>
             )}
-        </div>
-    );
+          </ul>
+        </SortableContext>
+      )}
+    </div>
+  );
 }
 
 function ItineraryPanel({
@@ -225,82 +242,106 @@ function ItineraryPanel({
             <div key={layer.id} className="border-b pb-2">
               {/* Header: 토글 스위치, 날짜, 버튼들 */}
               <div ref={setNodeRef} className="flex items-center mb-2 gap-2">
-                  <div className="flex items-center gap-2">
-                    <SimpleToggle
-                      checked={isDayVisible}
-                      onChange={(checked) => onDayVisibilityChange(layer.id, checked)}
-                    />
-                    <h3 className="text-sm font-bold">{layer.label}</h3>
-                  </div>
-                  <div className="flex-grow">
-                    {pois.length >= 4 && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-xs"
-                        onClick={() => onOptimizeRoute(layer.id)}
-                      >
-                        경로 최적화
-                      </Button>
-                    )}
-                  </div>
-                  <Button variant="ghost" size="icon" className="flex-shrink-0" onClick={() => setIsCollapsed(!isCollapsed)}>
-                      {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-                  </Button>
+                <div className="flex items-center gap-2">
+                  <SimpleToggle
+                    checked={isDayVisible}
+                    onChange={(checked) =>
+                      onDayVisibilityChange(layer.id, checked)
+                    }
+                  />
+                  <h3 className="text-sm font-bold">{layer.label}</h3>
+                </div>
+                <div className="flex-grow">
+                  {pois.length >= 4 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={() => onOptimizeRoute(layer.id)}
+                    >
+                      경로 최적화
+                    </Button>
+                  )}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="flex-shrink-0"
+                  onClick={() => setIsCollapsed(!isCollapsed)}
+                >
+                  {isCollapsed ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronUp className="h-4 w-4" />
+                  )}
+                </Button>
               </div>
 
               {/* Body: POI 목록 (opacity 적용) */}
               <div className={containerBodyClasses}>
                 {!isCollapsed && (
-                    <SortableContext id={layer.id + '-sortable'} items={pois.map(p => p.id)} strategy={verticalListSortingStrategy}>
-                      <ul className="space-y-2 min-h-[2rem]">
-                          {pois.length > 0 ? (
-                              pois.map((poi, index) => (
-                                  <React.Fragment key={poi.id}>
-                                      <PoiItem
-                                        poi={poi}
-                                        color={layer.color}
-                                        index={index}
-                                        onPoiClick={onPoiClick}
-                                        onPoiHover={onPoiHover}
-                                        unmarkPoi={unmarkPoi}
-                                        removeSchedule={removeSchedule}
-                                        isHovered={hoveredPoiId === poi.id}
-                                      />
-                                      {index < pois.length - 1 && (() => {
-                                          const nextPoi = pois[index + 1];
-                                          const segment = segmentsForThisDay.find(
-                                              s => s.fromPoiId === poi.id && s.toPoiId === nextPoi.id
-                                          );
+                  <SortableContext
+                    id={layer.id + '-sortable'}
+                    items={pois.map((p) => p.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <ul className="space-y-2 min-h-[2rem]">
+                      {pois.length > 0 ? (
+                        pois.map((poi, index) => (
+                          <React.Fragment key={poi.id}>
+                            <PoiItem
+                              poi={poi}
+                              color={layer.color}
+                              index={index}
+                              onPoiClick={onPoiClick}
+                              onPoiHover={onPoiHover}
+                              unmarkPoi={unmarkPoi}
+                              removeSchedule={removeSchedule}
+                              isHovered={hoveredPoiId === poi.id}
+                            />
+                            {index < pois.length - 1 &&
+                              (() => {
+                                const nextPoi = pois[index + 1];
+                                const segment = segmentsForThisDay.find(
+                                  (s) =>
+                                    s.fromPoiId === poi.id &&
+                                    s.toPoiId === nextPoi.id
+                                );
 
-                                          const totalMinutes = segment ? Math.ceil(segment.duration / 60) : 0;
-                                          const totalKilometers = segment ? (segment.distance / 1000).toFixed(1) : '0.0';
+                                const totalMinutes = segment
+                                  ? Math.ceil(segment.duration / 60)
+                                  : 0;
+                                const totalKilometers = segment
+                                  ? (segment.distance / 1000).toFixed(1)
+                                  : '0.0';
 
-                                          return (
-                                              <div className="relative flex items-center h-8">
-                                                  <div className="absolute left-4 w-0.5 h-full bg-gray-300"></div>
-                                                  {segment && (
-                                                  <div className="flex items-center text-xs text-gray-600 ml-17">
-                                                      <span className="mr-2 flex items-center">
-                                                          <Clock className="w-3 h-3 mr-1" />
-                                                          {`${totalMinutes}분`}
-                                                      </span>
-                                                      <span className="flex items-center">
-                                                          <Car className="w-3 h-3 mr-1" />
-                                                          {`${totalKilometers}km`}
-                                                      </span>
-                                                  </div>
-                                                  )}
-                                              </div>
-                                          );
-                                      })()}
-                                  </React.Fragment>
-                              ))
-                          ) : (
-                              <p className="text-xs text-gray-500 p-2">마커를 드래그하여 추가하세요.</p>
-                          )}
-                      </ul>
-                    </SortableContext>
+                                return (
+                                  <div className="relative flex items-center h-8">
+                                    <div className="absolute left-4 w-0.5 h-full bg-gray-300"></div>
+                                    {segment && (
+                                      <div className="flex items-center text-xs text-gray-600 ml-17">
+                                        <span className="mr-2 flex items-center">
+                                          <Clock className="w-3 h-3 mr-1" />
+                                          {`${totalMinutes}분`}
+                                        </span>
+                                        <span className="flex items-center">
+                                          <Car className="w-3 h-3 mr-1" />
+                                          {`${totalKilometers}km`}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })()}
+                          </React.Fragment>
+                        ))
+                      ) : (
+                        <p className="text-xs text-gray-500 p-2">
+                          마커를 드래그하여 추가하세요.
+                        </p>
+                      )}
+                    </ul>
+                  </SortableContext>
                 )}
               </div>
             </div>
@@ -315,9 +356,7 @@ interface SearchPanelProps {
   onPlaceClick: (place: KakaoPlace) => void;
 }
 
-function SearchPanel({
-  onPlaceClick,
-}: SearchPanelProps) {
+function SearchPanel({ onPlaceClick }: SearchPanelProps) {
   const [keyword, setKeyword] = useState('');
   const [results, setResults] = useState<KakaoPlace[]>([]);
   const [pageInfo, setPageInfo] = useState<PageInfo | null>(null);
@@ -402,16 +441,22 @@ function SearchPanel({
             <Button
               size="sm"
               variant="ghost"
-              onClick={() => paginationRef.current?.gotoPage(pageInfo.current - 1)}
+              onClick={() =>
+                paginationRef.current?.gotoPage(pageInfo.current - 1)
+              }
               disabled={!pageInfo.hasPrevPage}
             >
               이전
             </Button>
-            <span>{pageInfo.current} / {pageInfo.last}</span>
+            <span>
+              {pageInfo.current} / {pageInfo.last}
+            </span>
             <Button
               size="sm"
               variant="ghost"
-              onClick={() => paginationRef.current?.gotoPage(pageInfo.current + 1)}
+              onClick={() =>
+                paginationRef.current?.gotoPage(pageInfo.current + 1)
+              }
               disabled={!pageInfo.hasNextPage}
             >
               다음
