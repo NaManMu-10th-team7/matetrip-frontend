@@ -71,6 +71,12 @@ export function PostDetail({
   const [approvedParticipants, setApprovedParticipants] = useState<
     Participation[]
   >([]);
+  const [writerProfileImageUrl, setWriterProfileImageUrl] = useState<
+    string | null
+  >(null);
+  const [participantProfileUrls, setParticipantProfileUrls] = useState<
+    Record<string, string | null>
+  >({});
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [showDeleteSuccessAlert, setShowDeleteSuccessAlert] = useState(false);
@@ -117,6 +123,82 @@ export function PostDetail({
   useEffect(() => {
     fetchPostDetail();
   }, [fetchPostDetail]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const profileImageId = post?.writer?.profile?.profileImageId;
+
+    if (!profileImageId) {
+      setWriterProfileImageUrl(null);
+      return;
+    }
+
+    (async () => {
+      try {
+        const { data } = await client.get<{ url: string }>(
+          `/binary-content/${profileImageId}/presigned-url`
+        );
+        if (!cancelled) {
+          setWriterProfileImageUrl(data.url);
+        }
+      } catch (err) {
+        console.error('PostDetail writer image load failed:', err);
+        if (!cancelled) {
+          setWriterProfileImageUrl(null);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [post?.writer?.profile?.profileImageId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const imageIds = participations
+      .map((p) => p.requester.profile?.profileImageId)
+      .filter((id): id is string => Boolean(id));
+
+    if (!imageIds.length) {
+      setParticipantProfileUrls({});
+      return;
+    }
+
+    const uniqueIds = Array.from(new Set(imageIds));
+
+    (async () => {
+      try {
+        const results = await Promise.all(
+          uniqueIds.map(async (imageId) => {
+            try {
+              const { data } = await client.get<{ url: string }>(
+                `/binary-content/${imageId}/presigned-url`
+              );
+              return { imageId, url: data.url };
+            } catch (err) {
+              console.error('PostDetail participant image load failed:', err);
+              return { imageId, url: null };
+            }
+          })
+        );
+        if (cancelled) {
+          return;
+        }
+        const nextMap: Record<string, string | null> = {};
+        for (const { imageId, url } of results) {
+          nextMap[imageId] = url;
+        }
+        setParticipantProfileUrls(nextMap);
+      } catch (err) {
+        console.error('PostDetail participant image batch load failed:', err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [participations]);
 
   const isAuthor = user && post ? user.userId === post?.writer?.id : false;
   const isLoggedIn = !!user;
@@ -362,7 +444,7 @@ export function PostDetail({
                   <div className="flex items-start gap-4 p-4 bg-white rounded-xl border h-full">
                     <ImageWithFallback
                       src={
-                        post.writer?.profile?.profileImageId ??
+                        writerProfileImageUrl ??
                         `https://ui-avatars.com/api/?name=${post.writer?.profile?.nickname}&background=random`
                       }
                       alt={post.writer?.profile?.nickname}
@@ -440,7 +522,11 @@ export function PostDetail({
                         <div className="flex items-start gap-3">
                           <ImageWithFallback
                             src={
-                              p.requester.profile.profileImageId ??
+                              (p.requester.profile.profileImageId
+                                ? (participantProfileUrls[
+                                    p.requester.profile.profileImageId
+                                  ] ?? null)
+                                : null) ??
                               `https://ui-avatars.com/api/?name=${p.requester.profile.nickname}&background=random`
                             }
                             alt={p.requester.profile.nickname}
@@ -502,7 +588,11 @@ export function PostDetail({
                         <div className="flex items-start gap-3">
                           <ImageWithFallback
                             src={
-                              request.requester.profile.profileImageId ??
+                              (request.requester.profile.profileImageId
+                                ? (participantProfileUrls[
+                                    request.requester.profile.profileImageId
+                                  ] ?? null)
+                                : null) ??
                               `https://ui-avatars.com/api/?name=${request.requester.profile.nickname}&background=random`
                             }
                             alt={request.requester.profile.nickname}

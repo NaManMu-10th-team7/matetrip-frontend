@@ -5,6 +5,7 @@ import { Badge } from './ui/badge';
 import { translateKeyword } from '../utils/keyword';
 import type { Post } from '../types/post';
 import { API_BASE_URL } from '../api/client';
+import client from '../api/client';
 
 interface WorkspaceCardProps {
   post: Post;
@@ -45,6 +46,9 @@ export function WorkspaceCard({
 
   const defaultCoverImage = 'https://via.placeholder.com/400x300';
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
+  const [profileImageUrls, setProfileImageUrls] = useState<
+    Record<string, string | null>
+  >({});
 
   useEffect(() => {
     let cancelled = false;
@@ -89,25 +93,87 @@ export function WorkspaceCard({
     };
   }, [post.imageId]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchProfileImages = async () => {
+      const imageIds = [
+        writer?.profile?.profileImageId,
+        ...(participations || [])
+          .filter((p) => p.status === '승인')
+          .map((p) => p.requester.profile?.profileImageId),
+      ].filter((id): id is string => Boolean(id));
+
+      if (imageIds.length === 0) return;
+
+      const uniqueIds = Array.from(new Set(imageIds));
+      console.log('WorkspaceCard profile image IDs', uniqueIds);
+
+      try {
+        const responses = await Promise.all(
+          uniqueIds.map(async (imageId) => {
+            try {
+              const { data } = await client.get<{ url: string }>(
+                `/binary-content/${imageId}/presigned-url`
+              );
+              return { imageId, url: data.url };
+            } catch (error) {
+              console.error('WorkspaceCard profile image load failed:', error);
+              return { imageId, url: null };
+            }
+          })
+        );
+
+        if (cancelled) return;
+
+        setProfileImageUrls((prev) => {
+          const next = { ...prev };
+          let changed = false;
+          for (const { imageId, url } of responses) {
+            if (next[imageId] !== url) {
+              next[imageId] = url;
+              changed = true;
+            }
+          }
+          return changed ? next : prev;
+        });
+      } catch (err) {
+        console.error('WorkspaceCard profile image batch load failed:', err);
+      }
+    };
+
+    fetchProfileImages();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [writer?.profile?.profileImageId, participations]);
+
   // 참여자 목록을 구성합니다. writer와 participations를 사용합니다.
   const displayParticipants = [
     {
       id: writer?.id,
-      name: writer?.profile?.nickname || '알 수 없음', // nullish coalescing operator 추가
-      profileImage:
-        writer?.profile?.profileImageId ||
-        `https://ui-avatars.com/api/?name=${writer?.profile?.nickname}&background=random`,
+      name: writer?.profile?.nickname || '알 수 없음',
+      profileImageId: writer?.profile?.profileImageId ?? null,
+      fallback: `https://ui-avatars.com/api/?name=${writer?.profile?.nickname}&background=random`,
     },
     ...(participations || [])
       .filter((p) => p.status === '승인')
       .map((p) => ({
         id: p.requester.id,
-        name: p.requester.profile?.nickname || '알 수 없음', // nullish coalescing operator 추가
-        profileImage:
-          p.requester.profile?.profileImageId ||
-          `https://ui-avatars.com/api/?name=${p.requester.profile?.nickname}&background=random`,
+        name: p.requester.profile?.nickname || '알 수 없음',
+        profileImageId: p.requester.profile?.profileImageId ?? null,
+        fallback: `https://ui-avatars.com/api/?name=${p.requester.profile?.nickname}&background=random`,
       })),
   ];
+
+  useEffect(() => {
+    console.log('WorkspaceCard writer profile', writer?.profile);
+    console.log(
+      'WorkspaceCard participant profiles',
+      (participations || []).map((p) => p.requester.profile)
+    );
+  }, [writer?.profile, participations]);
 
   return (
     <div
@@ -168,20 +234,31 @@ export function WorkspaceCard({
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 flex-1 min-w-0">
               <div className="flex -space-x-2 flex-shrink-0">
-                {displayParticipants
-                  .slice(0, 3)
-                  .map(
-                    (participant, index) =>
-                      participant && (
-                        <ImageWithFallback
-                          key={participant.id}
-                          src={participant.profileImage}
-                          alt={participant.name}
-                          className="w-8 h-8 rounded-full object-cover border-2 border-white"
-                          style={{ zIndex: displayParticipants.length - index }}
-                        />
-                      )
-                  )}
+                {displayParticipants.slice(0, 3).map((participant, index) => {
+                  if (!participant) return null;
+
+                  const resolvedUrl = participant.profileImageId
+                    ? profileImageUrls[participant.profileImageId]
+                    : undefined;
+
+                  if (participant.profileImageId) {
+                    console.log(
+                      'WorkspaceCard profile image URL',
+                      participant.profileImageId,
+                      resolvedUrl
+                    );
+                  }
+
+                  return (
+                    <ImageWithFallback
+                      key={participant.id}
+                      src={resolvedUrl ?? participant.fallback}
+                      alt={participant.name}
+                      className="w-8 h-8 rounded-full object-cover border-2 border-white"
+                      style={{ zIndex: displayParticipants.length - index }}
+                    />
+                  );
+                })}
               </div>
               <div className="flex items-center gap-1 text-gray-500 text-sm">
                 <Users className="w-3.5 h-3.5 flex-shrink-0" />
