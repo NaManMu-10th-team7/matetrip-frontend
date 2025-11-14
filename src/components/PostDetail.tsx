@@ -543,7 +543,8 @@ export function PostDetail({
                               </div>
                             </div>
                             <div className="flex items-center gap-1">
-                              {p.requester.profile.travelStyles?.map(
+                              {/* 😨동행자 키워드  주석 처리  */}
+                              {/* {p.requester.profile.travelStyles?.map(
                                 (style, idx) => (
                                   <span
                                     key={idx}
@@ -552,7 +553,7 @@ export function PostDetail({
                                     #{translateKeyword(style)}
                                   </span>
                                 )
-                              )}
+                              )} */}
                             </div>
                           </div>
                           <Button
@@ -609,7 +610,8 @@ export function PostDetail({
                               </div>
                             </div>
                             <div className="flex items-center gap-1">
-                              {request.requester.profile.travelStyles?.map(
+                              {/* 😨동행 신청자 키워드  주석 처리  */}
+                              {/* {request.requester.profile.travelStyles?.map(
                                 (style, idx) => (
                                   <span
                                     key={idx}
@@ -618,7 +620,7 @@ export function PostDetail({
                                     #{translateKeyword(style)}
                                   </span>
                                 )
-                              )}
+                              )} */}
                             </div>
                           </div>
                           <Button
