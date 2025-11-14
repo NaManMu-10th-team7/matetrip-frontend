@@ -62,6 +62,13 @@ export function EditProfileModal({
   const [pendingProfileImageFile, setPendingProfileImageFile] =
     useState<File | null>(null);
   const profileImagePreviewRef = useRef<string | null>(null);
+  const originalDescriptionRef = useRef<string>(user?.description ?? '');
+  const originalTravelStylesRef = useRef<TravelStyleType[]>(
+    user?.travelStyles || []
+  );
+  const originalTravelTendenciesRef = useRef<TravelTendencyType[]>(
+    user?.tendency || []
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isImageDeleting, setIsImageDeleting] = useState(false);
@@ -80,8 +87,11 @@ export function EditProfileModal({
     setNickname(user.nickname || '');
     setShortBio(user.intro || '');
     setDetailedBio(user.description || '');
+    originalDescriptionRef.current = user.description || '';
     setSelectedTravelStyles(user.travelStyles || []);
     setSelectedTravelTendencies(user.tendency || []);
+    originalTravelStylesRef.current = user.travelStyles || [];
+    originalTravelTendenciesRef.current = user.tendency || [];
     setCurrentProfileImageId(user.profileImageId ?? null);
     setPendingProfileImageFile(null);
     setProfileImagePreview(null);
@@ -292,6 +302,15 @@ export function EditProfileModal({
         nextProfileImageId = binaryContentId;
       }
 
+      const descriptionChanged =
+        (originalDescriptionRef.current ?? '') !== detailedBio;
+      const stylesChanged =
+        JSON.stringify(originalTravelStylesRef.current) !==
+        JSON.stringify(selectedTravelStyles);
+      const tendenciesChanged =
+        JSON.stringify(originalTravelTendenciesRef.current) !==
+        JSON.stringify(selectedTravelTendencies);
+
       const payload: UpdateProfileDto = {
         nickname,
         intro: shortBio,
@@ -313,6 +332,24 @@ export function EditProfileModal({
         throw new Error(detail || '프로필 업데이트에 실패했습니다.');
       }
 
+      //📌상세소개가 호출 변경되는 경우에는 임베딩 진행
+      if (descriptionChanged || stylesChanged || tendenciesChanged) {
+        try {
+          await fetch(`${API_BASE_URL}/profile/embedding`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              description: detailedBio,
+              travelStyles: selectedTravelStyles,
+              tendency: selectedTravelTendencies,
+            }),
+          });
+        } catch (error) {
+          console.error('프로필 임베딩 갱신 실패:', error);
+        }
+      }
+      //변경되면 호출
       useAuthStore.setState((state) => {
         if (!state.user) {
           return state;
@@ -333,6 +370,9 @@ export function EditProfileModal({
           },
         };
       });
+      originalDescriptionRef.current = detailedBio;
+      originalTravelStylesRef.current = selectedTravelStyles;
+      originalTravelTendenciesRef.current = selectedTravelTendencies;
 
       setPendingProfileImageFile(null);
       updateProfileImagePreview(null);
