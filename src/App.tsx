@@ -270,11 +270,6 @@ export default function App() {
     }
   };
 
-  const handleSearch = (query: string) => {
-    const searchParams = new URLSearchParams({ title: query });
-    navigate(`/search?${searchParams.toString()}`);
-  };
-
   const handleViewProfile = (userId: string) => {
     setProfileModalState({ open: true, userId });
   };

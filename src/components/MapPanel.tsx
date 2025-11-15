@@ -1130,49 +1130,47 @@ export function MapPanel({
                 return closestPoi;
               };
 
-              data.routes[0].sections.forEach(
-                (section: KakaoNaviSection, index: number) => {
-                  const segmentPath: { lat: number; lng: number }[] = [];
-                  if (section.roads) {
-                    section.roads.forEach((road: KakaoNaviRoad) => {
-                      for (let i = 0; i < road.vertexes.length; i += 2) {
-                        segmentPath.push({
-                          lng: road.vertexes[i],
-                          lat: road.vertexes[i + 1],
-                        });
-                      }
-                    });
-                  }
-
-                  const guides = section.guides as KakaoNaviGuide[];
-                  if (!guides || guides.length === 0) {
-                    return;
-                  }
-                  const startGuide = guides[0];
-                  const endGuide = guides[guides.length - 1];
-
-                  const fromPoi = findClosestPoi(
-                    startGuide.x,
-                    startGuide.y,
-                    poisForThisDay
-                  );
-                  const toPoi = findClosestPoi(
-                    endGuide.x,
-                    endGuide.y,
-                    poisForThisDay
-                  );
-
-                  if (fromPoi && toPoi) {
-                    segmentsForDay.push({
-                      fromPoiId: fromPoi.id,
-                      toPoiId: toPoi.id,
-                      duration: section.duration,
-                      distance: section.distance,
-                      path: segmentPath,
-                    });
-                  }
+              data.routes[0].sections.forEach((section: KakaoNaviSection) => {
+                const segmentPath: { lat: number; lng: number }[] = [];
+                if (section.roads) {
+                  section.roads.forEach((road: KakaoNaviRoad) => {
+                    for (let i = 0; i < road.vertexes.length; i += 2) {
+                      segmentPath.push({
+                        lng: road.vertexes[i],
+                        lat: road.vertexes[i + 1],
+                      });
+                    }
+                  });
                 }
-              );
+
+                const guides = section.guides as KakaoNaviGuide[];
+                if (!guides || guides.length === 0) {
+                  return;
+                }
+                const startGuide = guides[0];
+                const endGuide = guides[guides.length - 1];
+
+                const fromPoi = findClosestPoi(
+                  startGuide.x,
+                  startGuide.y,
+                  poisForThisDay
+                );
+                const toPoi = findClosestPoi(
+                  endGuide.x,
+                  endGuide.y,
+                  poisForThisDay
+                );
+
+                if (fromPoi && toPoi) {
+                  segmentsForDay.push({
+                    fromPoiId: fromPoi.id,
+                    toPoiId: toPoi.id,
+                    duration: section.duration,
+                    distance: section.distance,
+                    path: segmentPath,
+                  });
+                }
+              });
               newRecommendedRouteInfo[dayId] = segmentsForDay;
             }
           } catch (error) {
@@ -1197,9 +1195,9 @@ export function MapPanel({
 
     const optimizeRoute = async () => {
       const dayPois = itinerary[optimizingDayId];
-      if (!dayPois || dayPois.length < 4) {
+      if (!dayPois) {
         console.warn(
-          `[Optimization] Not enough POIs to optimize for day ${optimizingDayId}. Need at least 4.`
+          `[Optimization] No POIs found for day ${optimizingDayId}.`
         );
         onOptimizationComplete?.();
         return;

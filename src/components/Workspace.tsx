@@ -23,7 +23,8 @@ import { useChatSocket } from '../hooks/useChatSocket'; // useChatSocket import 
 import { useWorkspaceMembers } from '../hooks/useWorkspaceMembers.ts';
 import { API_BASE_URL } from '../api/client.ts';
 import { CATEGORY_INFO, type PlaceDto } from '../types/place.ts'; // useWorkspaceMembers 훅 import
-import { AddToItineraryModal } from './AddToItineraryModal.tsx'; // [신규] 모달 컴포넌트 임포트 (생성 필요)
+import { AddToItineraryModal } from './AddToItineraryModal.tsx';
+import { PdfDocument } from './PdfDocument.tsx'; // [신규] 모달 컴포넌트 임포트 (생성 필요)
 
 interface WorkspaceProps {
   workspaceId: string;
@@ -131,11 +132,14 @@ export function Workspace({
   const mapRef = useRef<kakao.maps.Map>(null);
   // [추가] 경로 최적화를 트리거하기 위한 상태
   const [optimizingDayId, setOptimizingDayId] = useState<string | null>(null);
+  // [추가] 최적화 진행 중 상태
+  const [isOptimizationProcessing, setIsOptimizationProcessing] =
+    useState(false);
   // [추가] 최적화 완료 후 상태를 리셋하는 콜백
-  const handleOptimizationComplete = useCallback(
-    () => setOptimizingDayId(null),
-    []
-  );
+  const handleOptimizationComplete = useCallback(() => {
+    setOptimizingDayId(null);
+    setIsOptimizationProcessing(false); // Optimization ends
+  }, []);
   // [추가] 지도에 표시할 날짜 ID를 관리하는 상태
   const [visibleDayIds, setVisibleDayIds] = useState<Set<string>>(new Set());
 
@@ -171,25 +175,23 @@ export function Workspace({
         }
 
         const newRecommendedItinerary: Record<string, Poi[]> = {};
-        data.recommendations.forEach(
-          (rec: { pois: any[] }, index: number) => {
-            // 응답 데이터의 순서와 planDayDtos의 순서를 매칭
-            const planDay = planDayDtos[index];
-            if (!planDay || !rec || !rec.pois) return; // rec와 rec.pois가 유효한지 확인
+        data.recommendations.forEach((rec: { pois: any[] }, index: number) => {
+          // 응답 데이터의 순서와 planDayDtos의 순서를 매칭
+          const planDay = planDayDtos[index];
+          if (!planDay || !rec || !rec.pois) return; // rec와 rec.pois가 유효한지 확인
 
-            const virtualPlanDayId = `rec-${workspaceId}-${planDay.planDate}`;
-            newRecommendedItinerary[virtualPlanDayId] = rec.pois
-              .filter((p) => p && p.id) // [수정] id가 없는 비정상적인 poi 데이터 필터링
-              .map((p: any) => ({
-                id: `rec-${p.id}`, // 실제 POI ID와 충돌 방지
-                placeName: p.title, // 필드명 매핑
-                categoryName: p.category, // 필드명 매핑
-                status: 'RECOMMENDED' as any, // 가상 상태 부여
-                planDayId: virtualPlanDayId,
-                ...p,
-              }));
-          }
-        );
+          const virtualPlanDayId = `rec-${workspaceId}-${planDay.planDate}`;
+          newRecommendedItinerary[virtualPlanDayId] = rec.pois
+            .filter((p) => p && p.id) // [수정] id가 없는 비정상적인 poi 데이터 필터링
+            .map((p: any) => ({
+              id: `rec-${p.id}`, // 실제 POI ID와 충돌 방지
+              placeName: p.title, // 필드명 매핑
+              categoryName: p.category, // 필드명 매핑
+              status: 'RECOMMENDED' as any, // 가상 상태 부여
+              planDayId: virtualPlanDayId,
+              ...p,
+            }));
+        });
         setRecommendedItinerary(newRecommendedItinerary);
       } catch (error) {
         console.error('Failed to generate AI plan:', error);
@@ -425,12 +427,19 @@ export function Workspace({
     };
 
     generatePdf();
-  }, [isGeneratingPdf, workspaceName, itinerary, dayLayers, routeSegmentsByDay]);
+  }, [
+    isGeneratingPdf,
+    workspaceName,
+    itinerary,
+    dayLayers,
+    routeSegmentsByDay,
+  ]);
 
   // [추가] LeftPanel에서 경로 최적화 버튼 클릭 시 호출될 핸들러
   const handleOptimizeRoute = useCallback((dayId: string) => {
     console.log(`[Workspace] Optimization triggered for day: ${dayId}`);
     setOptimizingDayId(dayId);
+    setIsOptimizationProcessing(true); // Optimization starts
   }, []);
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -710,6 +719,7 @@ export function Workspace({
             visibleDayIds={visibleDayIds} // [추가] 가시성 상태 전달
             onDayVisibilityChange={handleDayVisibilityChange} // [추가] 가시성 변경 핸들러 전달
             hoveredPoiId={hoveredPoiInfo?.poiId ?? null}
+            isOptimizationProcessing={isOptimizationProcessing} // New prop
           />
 
           <button

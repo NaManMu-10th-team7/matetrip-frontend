@@ -514,26 +514,61 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
   );
 
   const addRecommendedPoisToDay = useCallback(
-    (planDayId: string, pois: Poi[]) => {
-      if (!user) return;
+    (planDayId: string, recommendedPois: Poi[]) => {
+      if (!user?.userId) return;
+  
+      // Use a set for efficient duplicate checking
+      const existingCoordinates = new Set(pois.map(p => `${p.latitude.toFixed(5)},${p.longitude.toFixed(5)}`));
+      
+      const poisToCreate: { tempId: string, payload: CreatePoiDto }[] = [];
+      const newPoisForState: Poi[] = [];
 
-      console.log(
-        `[addRecommendedPoisToDay] ${pois.length}개의 추천 POI를 ${planDayId}에 추가합니다.`
-      );
-
-      pois.forEach((poi) => {
-        const { latitude, longitude, address, placeName, categoryName } = poi;
-        const poiToCreate = {
-          latitude,
-          longitude,
-          address,
-          placeName,
-          categoryName,
+      recommendedPois.forEach((poi) => {
+        const newCoord = `${poi.latitude.toFixed(5)},${poi.longitude.toFixed(5)}`;
+        if (existingCoordinates.has(newCoord)) {
+          console.log(`[addRecommendedPoisToDay] Skipping duplicate POI: ${poi.placeName}`);
+          return;
+        }
+        
+        const tempId = `poi-${Date.now()}-${Math.random()}`;
+        const payload: CreatePoiDto = {
+            workspaceId,
+            createdBy: user.userId,
+            latitude: poi.latitude,
+            longitude: poi.longitude,
+            address: poi.address,
+            placeName: poi.placeName,
+            categoryName: poi.categoryName,
+            planDayId: planDayId,
         };
-        markPoi(poiToCreate, { isOptimistic: true, targetDayId: planDayId });
+
+        // For emitting to socket
+        poisToCreate.push({ tempId, payload: { ...payload, planDayId: undefined } }); // `planDayId` is handled by `optimisticScheduleRef`
+
+        // For optimistic update
+        newPoisForState.push({
+            id: tempId,
+            status: 'SCHEDULED',
+            sequence: 999, // Let server decide final sequence or handle reordering
+            isPersisted: false,
+            ...payload,
+        });
+
+        // Store optimistic schedule info for when the POI is confirmed by the server
+        optimisticScheduleRef.current.set(tempId, { planDayId });
+      });
+
+      // 1. Perform a single optimistic update for the UI
+      if (newPoisForState.length > 0) {
+        setPois((prevPois) => [...prevPois, ...newPoisForState]);
+      }
+  
+      // 2. Emit events to the server
+      poisToCreate.forEach(({ tempId, payload }) => {
+        socketRef.current?.emit(PoiSocketEvent.MARK, { ...payload, tempId });
       });
     },
-    [user, markPoi]
+    [user, workspaceId, pois]
   );
 
   return {

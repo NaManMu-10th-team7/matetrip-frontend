@@ -7,7 +7,10 @@ import type { DayLayer, RouteSegment } from '../types/map';
 interface PdfDocumentProps {
   workspaceName: string;
   itinerary: Record<string, Poi[]>;
-  dayLayers: DayLayer[];
+  // DayLayer 타입에 planDate가 없으므로, 직접 타입을 확장하여 사용합니다.
+  dayLayers: (DayLayer & {
+    planDate: string;
+  })[];
   routeSegmentsByDay: Record<string, RouteSegment[]>;
 }
 
