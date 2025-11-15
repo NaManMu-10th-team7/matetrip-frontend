@@ -19,7 +19,7 @@ import { type Poi, usePoiSocket } from '../hooks/usePoiSocket.ts';
 import { useChatSocket } from '../hooks/useChatSocket'; // useChatSocket import 추가
 import { useWorkspaceMembers } from '../hooks/useWorkspaceMembers.ts';
 import { API_BASE_URL } from '../api/client.ts';
-import type { PlaceDto } from '../types/place.ts'; // useWorkspaceMembers 훅 import
+import { CATEGORY_INFO, type PlaceDto } from '../types/place.ts'; // useWorkspaceMembers 훅 import
 
 interface WorkspaceProps {
   workspaceId: string;
@@ -440,7 +440,11 @@ export function Workspace({
         longitude: poi.longitude,
         title: poi.placeName || '이름 없는 장소',
         address: poi.address,
-        category: (poi.categoryName as PlaceDto['category']) || '기타',
+        // poi.categoryName이 유효한 카테고리인지 확인하고, 아니면 '기타'를 할당합니다.
+        category:
+          poi.categoryName && poi.categoryName in CATEGORY_INFO
+            ? (poi.categoryName as PlaceDto['category'])
+            : '기타',
       };
       // [수정] 캐시된 상세 정보(existingPlace)가 POI 기본 정보(poiAsPlace)를 덮어쓰도록 순서를 변경합니다.
       combinedPlaces.set(getKey(poi), { ...poiAsPlace, ...existingPlace });

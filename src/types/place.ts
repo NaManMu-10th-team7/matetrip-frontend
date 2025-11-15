@@ -20,6 +20,7 @@ export const CATEGORY_INFO = {
   '레포츠': { name: '레포츠', color: '#673AB7' }, // 선명한 보라색 (Deep Purple)
   '추천코스': { name: '추천코스', color: '#E91E63' }, // 선명한 핑크색 (Pink)
   '자연': { name: '자연', color: '#4CAF50' }, // 선명한 녹색 (Green)
+  '기타': { name: '기타', color: '#9E9E9E' }, // 회색 (Grey)
 } as const;
 
 // 카테고리 : 레포츠, 추천코스, 인문(문화/예술/역사), 자연
