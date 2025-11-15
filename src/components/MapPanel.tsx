@@ -365,10 +365,26 @@ const PlaceMarker = memo(
         `;
           break;
 
-        default:
-          // 기본 아이콘 - 위치 핀
-          iconSvg = `
-          <circle cx="20" cy="18" r="7" fill="white"/>
+      case '숙박': // 숙박 - 침대 아이콘
+        iconSvg = `
+          <g transform="translate(16, 16)">
+            <!-- 침대 머리판 -->
+            <rect x="-7" y="-4" width="2" height="6" fill="white" rx="0.5"/>
+            <!-- 침대 본체 -->
+            <rect x="-5" y="0" width="10" height="3" fill="white" rx="0.5"/>
+            <!-- 베개 -->
+            <rect x="-4" y="-2" width="3" height="2" fill="white" rx="0.5"/>
+            <!-- 침대 다리 -->
+            <rect x="-5" y="3" width="1.5" height="3" fill="white"/>
+            <rect x="3.5" y="3" width="1.5" height="3" fill="white"/>
+          </g>
+        `;
+        break;
+
+      default:
+        // 기본 아이콘 - 위치 핀
+        iconSvg = `
+          <circle cx="16" cy="16" r="6" fill="white"/>
         `;
       }
 
