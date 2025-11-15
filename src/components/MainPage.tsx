@@ -111,7 +111,7 @@ const generateMockMatchingInfo = (index: number): MatchingInfo => {
   const scores = [92, 85, 78, 73, 68, 65, 62, 58, 55, 52];
   const tendencies = ['즉흥적', '계획적', '주도적', '따라가는'];
   const styles = ['호텔', '게스트하우스', '에어비앤비', '캠핑'];
-  
+
   return {
     score: scores[index % scores.length] || 50,
     tendency: tendencies[index % tendencies.length],
@@ -132,7 +132,7 @@ export function MainPage({
   const [matches, setMatches] = useState<MatchCandidateDto[]>([]);
   const [isMatchesLoading, setIsMatchesLoading] = useState(true);
   const [featuredView, setFeaturedView] = useState<'latest' | 'recommended'>(
-    'latest'
+    'recommended'
   );
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -289,7 +289,7 @@ export function MainPage({
       onSearch({ title: searchQuery });
     }
   };
-  
+
   const handleCardClick = (post: Post) => {
     if (!isLoggedIn) {
       window.location.href = '/login';
@@ -354,7 +354,7 @@ export function MainPage({
                 </div>
               </div>
               <Button
-                onClick={() => window.location.href = '/login'}
+                onClick={() => (window.location.href = '/login')}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6"
               >
                 로그인하기
@@ -365,7 +365,9 @@ export function MainPage({
 
         {/* Recommended Posts Section - 모든 사용자에게 표시 */}
         <section className="mb-12">
-          <h2 className="text-xl font-medium text-gray-900 mb-6">AI 추천 동행</h2>
+          <h2 className="text-xl font-medium text-gray-900 mb-6">
+            AI 추천 동행
+          </h2>
           {isFeaturedLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
               {Array.from({ length: 5 }).map((_, index) => (
@@ -382,10 +384,13 @@ export function MainPage({
               matchingInfoByPostId={
                 activeFeaturedView === 'recommended'
                   ? matchingInfoByPostId
-                  : featuredItems.slice(0, 10).reduce((acc, post, index) => {
-                      acc[post.id] = generateMockMatchingInfo(index);
-                      return acc;
-                    }, {} as Record<string, MatchingInfo>)
+                  : featuredItems.slice(0, 10).reduce(
+                      (acc, post, index) => {
+                        acc[post.id] = generateMockMatchingInfo(index);
+                        return acc;
+                      },
+                      {} as Record<string, MatchingInfo>
+                    )
               }
               onCardClick={handleCardClick}
             />
