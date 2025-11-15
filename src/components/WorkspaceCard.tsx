@@ -202,7 +202,7 @@ export function WorkspaceCard({
 
   return (
     <div
-      className="relative w-[270px] flex flex-col gap-[12px] cursor-pointer"
+      className="relative min-w-[250px] flex flex-col gap-[12px] cursor-pointer"
       onClick={onClick}
     >
       {/* 이미지 영역과 키워드 */}

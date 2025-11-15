@@ -11,6 +11,9 @@ import { Sidebar } from './components/Sidebar';
 import { MainPage } from './components/MainPage';
 import { AllPostsPage } from './components/AllPostsPage';
 import { MyTripsPage } from './components/MyTripsPage';
+import { AIChatPage } from './components/AIChatPage';
+import { AIChatPanel } from './components/AIChatPanel';
+import { InspirationPage } from './components/InspirationPage';
 import { SearchResults } from './components/SearchResults';
 import { PostDetail } from './components/PostDetail';
 import { Workspace } from './components/Workspace';
@@ -36,11 +39,13 @@ function Layout({
   onLoginClick,
   onProfileClick,
   onCreatePost,
+  onAIChatClick,
 }: {
   isLoggedIn: boolean;
   onLoginClick: () => void;
   onProfileClick: () => void;
   onCreatePost: () => void;
+  onAIChatClick: () => void;
 }) {
   return (
     <div className="flex h-screen">
@@ -49,6 +54,7 @@ function Layout({
         onLoginClick={onLoginClick}
         onProfileClick={onProfileClick}
         onCreatePost={onCreatePost}
+        onAIChatClick={onAIChatClick}
       />
       <div className="flex-1 overflow-y-auto">
         <Outlet />
@@ -249,6 +255,8 @@ export default function App() {
     postId: string | null;
   }>({ open: false, postId: null });
 
+  const [chatPanelOpen, setChatPanelOpen] = useState(false);
+
   const [fetchTrigger, setFetchTrigger] = useState(0);
 
   // 앱이 처음 로드될 때 쿠키를 통해 로그인 상태를 확인합니다.
@@ -297,6 +305,10 @@ export default function App() {
     setFetchTrigger((prev) => prev + 1); // fetch 트리거 상태 변경
   };
 
+  const handleAIChatClick = () => {
+    setChatPanelOpen(true);
+  };
+
   return (
     <div className="h-screen bg-gray-50">
       {' '}
@@ -324,6 +336,7 @@ export default function App() {
               onLoginClick={() => navigate('/login')}
               onProfileClick={handleProfileClick}
               onCreatePost={() => setShowCreatePost(true)}
+              onAIChatClick={handleAIChatClick}
             />
           }
         >
@@ -347,8 +360,10 @@ export default function App() {
               />
             }
           />
+          <Route path="/ai-chat" element={<AIChatPage />} />
+          <Route path="/inspiration" element={<InspirationPage />} />
           <Route
-            path="/my-trips"
+            path="/save"
             element={
               <MyTripsPage
                 onViewPost={handleViewPost}
@@ -379,6 +394,10 @@ export default function App() {
         </Route>
       </Routes>
       {/* Modals */}
+      <AIChatPanel
+        open={chatPanelOpen}
+        onOpenChange={setChatPanelOpen}
+      />
       {showCreatePost && (
         <CreatePostModal onClose={() => setShowCreatePost(false)} />
       )}

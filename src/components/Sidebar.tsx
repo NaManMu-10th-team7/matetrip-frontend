@@ -1,14 +1,16 @@
-import { Map, FileText, Plane, Plus, LogIn } from 'lucide-react';
+import { Map, FileText, Plane, LogIn, Heart, MessageSquare, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from './ui/button';
 import { useAuthStore } from '../store/authStore';
 import { NotificationPanel } from './NotificationPanel';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 
 interface SidebarProps {
   isLoggedIn: boolean;
   onLoginClick: () => void;
   onProfileClick: () => void;
   onCreatePost: () => void;
+  onAIChatClick: () => void;
 }
 
 export function Sidebar({
@@ -16,29 +18,67 @@ export function Sidebar({
   onLoginClick,
   onProfileClick,
   onCreatePost,
+  onAIChatClick,
 }: SidebarProps) {
   const { user } = useAuthStore();
   const location = useLocation();
   const navigate = useNavigate();
+  const [isExpanded, setIsExpanded] = useState(true);
 
   const isActive = (path: string) => location.pathname === path;
 
+  // 반응형 AI Chat 핸들러
+  // 모바일 breakpoint: 768px (Tailwind의 md breakpoint와 동일)
+  const handleAIChatClick = () => {
+    const isMobile = window.innerWidth < 768; // 768px = md breakpoint
+    
+    if (isMobile) {
+      // 모바일: 바로 full page로 이동
+      navigate('/ai-chat');
+    } else {
+      // 데스크톱: Quick Chat Panel 열기
+      onAIChatClick();
+    }
+  };
+
   return (
-    <div className="bg-white border-r border-gray-200 h-screen w-64 flex flex-col shrink-0">
+    <div 
+      className={`bg-white border-r border-gray-200 h-screen flex flex-col shrink-0 transition-all duration-300 ${
+        isExpanded ? 'w-[185px]' : 'w-[84px]'
+      }`}
+    >
       {/* Logo Section */}
-      <div className="border-b border-gray-200 px-6 py-6">
+      <div className="border-b border-gray-200 px-6 py-6 h-[81px] flex items-center">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center shrink-0">
             <Map className="w-5 h-5 text-white" />
           </div>
-          <span className="text-xl font-semibold text-gray-900">MateTrip</span>
+          {isExpanded && (
+            <span className="text-xl font-semibold text-gray-900 whitespace-nowrap">
+              MateTrip
+            </span>
+          )}
         </div>
       </div>
 
       {/* Navigation Menu */}
       <nav className="flex-1 px-4 py-4">
         <div className="flex flex-col gap-1">
-          {/* 동행 찾기 - 항상 표시 */}
+          {/* AI Chat */}
+          <button
+            onClick={handleAIChatClick}
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+              isActive('/ai-chat')
+                ? 'bg-gray-900 text-white'
+                : 'text-gray-700 hover:bg-gray-100'
+            }`}
+            title={!isExpanded ? 'AI Chat' : ''}
+          >
+            <MessageSquare className="w-5 h-5 shrink-0" />
+            {isExpanded && <span className="font-medium whitespace-nowrap">AI Chat</span>}
+          </button>
+
+          {/* AI 동행 찾기 */}
           <button
             onClick={() => navigate('/')}
             className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
@@ -46,12 +86,43 @@ export function Sidebar({
                 ? 'bg-gray-900 text-white'
                 : 'text-gray-700 hover:bg-gray-100'
             }`}
+            title={!isExpanded ? 'AI 동행 찾기' : ''}
           >
-            <Plane className="w-5 h-5" />
-            <span className="font-medium">AI 동행 찾기</span>
+            <Plane className="w-5 h-5 shrink-0" />
+            {isExpanded && <span className="font-medium whitespace-nowrap">AI 동행 찾기</span>}
           </button>
 
-          {/* 모든 동행 찾기 - 항상 표시 */}
+          {/* SAVE - 로그인 사용자만 */}
+          {isLoggedIn && (
+            <button
+              onClick={() => navigate('/save')}
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                isActive('/save')
+                  ? 'bg-gray-900 text-white'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+              title={!isExpanded ? 'SAVE' : ''}
+            >
+              <Heart className="w-5 h-5 shrink-0" />
+              {isExpanded && <span className="font-medium whitespace-nowrap">SAVE</span>}
+            </button>
+          )}
+
+          {/* Inspiration */}
+          <button
+            onClick={() => navigate('/inspiration')}
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+              isActive('/inspiration')
+                ? 'bg-gray-900 text-white'
+                : 'text-gray-700 hover:bg-gray-100'
+            }`}
+            title={!isExpanded ? 'Inspiration' : ''}
+          >
+            <Sparkles className="w-5 h-5 shrink-0" />
+            {isExpanded && <span className="font-medium whitespace-nowrap">Inspiration</span>}
+          </button>
+
+          {/* 모든 동행 */}
           <button
             onClick={() => navigate('/all-posts')}
             className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
@@ -59,48 +130,38 @@ export function Sidebar({
                 ? 'bg-gray-900 text-white'
                 : 'text-gray-700 hover:bg-gray-100'
             }`}
+            title={!isExpanded ? '모든 동행' : ''}
           >
-            <FileText className="w-5 h-5" />
-            <span className="font-medium">모든 동행 찾기</span>
+            <FileText className="w-5 h-5 shrink-0" />
+            {isExpanded && <span className="font-medium whitespace-nowrap">모든 동행</span>}
           </button>
-
-          {/* 내 여행 - 로그인 사용자만 */}
-          {isLoggedIn && (
-            <button
-              onClick={() => navigate('/my-trips')}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                isActive('/my-trips')
-                  ? 'bg-gray-900 text-white'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              <Plane className="w-5 h-5" />
-              <span className="font-medium">내 여행</span>
-            </button>
-          )}
         </div>
       </nav>
 
+      {/* Toggle Button */}
+      <div className="px-4 py-2">
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="w-full flex items-center justify-center p-2 rounded-lg hover:bg-gray-100 transition-colors"
+          title={isExpanded ? '사이드바 축소' : '사이드바 확장'}
+        >
+          {isExpanded ? (
+            <ChevronLeft className="w-5 h-5 text-gray-600" />
+          ) : (
+            <ChevronRight className="w-5 h-5 text-gray-600" />
+          )}
+        </button>
+      </div>
+
       {/* Bottom Section */}
       <div className="border-t border-gray-200 px-4 py-4">
-        {/* 새 여행 계획 버튼 - 로그인 사용자만 */}
-        {isLoggedIn && (
-          <Button
-            onClick={onCreatePost}
-            className="w-full mb-4 bg-gray-100 hover:bg-gray-200 text-gray-900 gap-2"
-            variant="secondary"
-          >
-            <Plus className="w-4 h-4" />
-            새 여행 계획
-          </Button>
-        )}
-
         {/* Profile or Login Section */}
         {isLoggedIn ? (
-          <div className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 transition-colors">
+          <div className="flex items-center gap-3 px-2 py-3 rounded-lg hover:bg-gray-100 transition-colors">
             <button
               onClick={onProfileClick}
-              className="flex items-center gap-3 flex-1"
+              className="flex items-center gap-3 flex-1 min-w-0"
+              title={!isExpanded ? user?.profile?.nickname || '내 프로필' : ''}
             >
               <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
                 {user?.profile?.profileImageId ? (
@@ -117,22 +178,27 @@ export function Sidebar({
                   />
                 )}
               </div>
-              <div className="flex-1 text-left">
-                <p className="text-sm font-medium text-gray-900">
-                  {user?.profile?.nickname || '사용자'}
-                </p>
-                <p className="text-xs text-gray-500">내 프로필</p>
-              </div>
+              {isExpanded && (
+                <div className="flex-1 text-left overflow-hidden">
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {user?.profile?.nickname || '사용자'}
+                  </p>
+                  <p className="text-xs text-gray-500">내 프로필</p>
+                </div>
+              )}
             </button>
-            <NotificationPanel />
+            {isExpanded && <NotificationPanel />}
           </div>
         ) : (
           <Button
             onClick={onLoginClick}
-            className="w-full gap-2 bg-blue-600 hover:bg-blue-700"
+            className={`w-full gap-2 bg-blue-600 hover:bg-blue-700 ${
+              !isExpanded ? 'px-2' : ''
+            }`}
+            title={!isExpanded ? '로그인' : ''}
           >
             <LogIn className="w-4 h-4" />
-            로그인
+            {isExpanded && '로그인'}
           </Button>
         )}
       </div>
