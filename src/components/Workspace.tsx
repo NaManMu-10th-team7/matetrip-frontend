@@ -493,7 +493,10 @@ export function Workspace({
     (dayId: string, optimizedPoiIds: string[]) => {
       const currentPois = itinerary[dayId]?.map((p) => p.id) || [];
       // 현재 순서와 API가 제안한 최적 순서가 다를 경우에만 업데이트
-      if (JSON.stringify(currentPois) !== JSON.stringify(optimizedPoiIds) && optimizedPoiIds.length > 0) {
+      if (
+        JSON.stringify(currentPois) !== JSON.stringify(optimizedPoiIds) &&
+        optimizedPoiIds.length > 0
+      ) {
         console.log(
           `Route optimized for day ${dayId}. Applying new order:`,
           optimizedPoiIds

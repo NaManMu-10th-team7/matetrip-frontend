@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { Map, MapMarker } from 'react-kakao-maps-sdk';
 import type { Poi } from '../hooks/usePoiSocket';
 import type { DayLayer } from '../types/map';
@@ -10,52 +10,71 @@ interface PdfDocumentProps {
 }
 
 /**
- * 주어진 POI 목록을 모두 포함하는 지도의 중심점과 확대 레벨을 계산합니다.
+ * 숫자 텍스트를 포함하는 원형 마커 이미지를 데이터 URI로 생성합니다.
+ * @param text - 마커에 표시할 숫자 텍스트
+ * @returns 생성된 이미지의 데이터 URI
  */
-const getMapBounds = (pois: Poi[]) => {
-  if (!pois || pois.length === 0) {
-    return {
-      center: { lat: 37.5665, lng: 126.978 }, // 기본값: 서울 시청
-      level: 7,
-    };
-  }
+const createMarkerImageSrc = (text: string): string => {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return '';
 
-  const bounds = new window.kakao.maps.LatLngBounds();
-  pois.forEach((poi) => {
-    bounds.extend(new window.kakao.maps.LatLng(poi.latitude, poi.longitude));
-  });
+  const size = 24; // 마커 원의 지름
+  const fontSize = 12; // 폰트 크기
 
-  const sw = bounds.getSouthWest();
-  const ne = bounds.getNorthEast();
+  canvas.width = size;
+  canvas.height = size;
 
-  const center = {
-    lat: (sw.getLat() + ne.getLat()) / 2,
-    lng: (sw.getLng() + ne.getLng()) / 2,
-  };
+  // 원 그리기
+  ctx.beginPath();
+  ctx.arc(size / 2, size / 2, size / 2, 0, 2 * Math.PI, false);
+  ctx.fillStyle = '#F87171'; // Tailwind's red-400
+  ctx.fill();
+  ctx.lineWidth = 2; // 테두리를 더 잘 보이게 조정
+  ctx.strokeStyle = '#FFFFFF';
+  ctx.stroke();
 
-  let level = 7;
-  if (pois.length > 1) {
-    const dx = ne.getLng() - sw.getLng();
-    const dy = ne.getLat() - sw.getLat();
-    const zoomLevel = Math.max(dx, dy);
+  // 텍스트 그리기
+  ctx.font = `bold ${fontSize}px sans-serif`;
+  ctx.fillStyle = 'white';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, size / 2, size / 2 + 1); // 텍스트 수직 정렬 미세 조정
 
-    if (zoomLevel > 0.8) level = 11;
-    else if (zoomLevel > 0.4) level = 10;
-    else if (zoomLevel > 0.2) level = 9;
-    else if (zoomLevel > 0.1) level = 8;
-    else if (zoomLevel > 0.05) level = 7;
-    else if (zoomLevel > 0.025) level = 6;
-    else level = 5;
-  }
-
-  return { center, level };
+  return canvas.toDataURL('image/png');
 };
 
 /**
  * 인터랙티브 Map을 사용하여 PDF용 지도 이미지를 렌더링하는 컴포넌트
  */
 const PdfInteractiveMap = ({ pois }: { pois: Poi[] }) => {
-  const { center, level } = getMapBounds(pois);
+  const [map, setMap] = useState<kakao.maps.Map>();
+
+  useEffect(() => {
+    if (!map || pois.length === 0) return;
+
+    // [핵심 수정] 렌더링이 안정화될 시간을 준 후, 로직을 실행합니다.
+    const timer = setTimeout(() => {
+      // 1. 지도가 컨테이너의 정확한 크기를 다시 계산하도록 합니다.
+      map.relayout();
+
+      // 2. 정확해진 크기를 기준으로 모든 마커가 보이도록 경계를 설정합니다.
+      const bounds = new window.kakao.maps.LatLngBounds();
+      pois.forEach((poi) => {
+        bounds.extend(
+          new window.kakao.maps.LatLng(poi.latitude, poi.longitude)
+        );
+      });
+      map.setBounds(bounds);
+    }, 100); // 짧은 지연 시간으로 안정성 확보
+
+    return () => clearTimeout(timer);
+  }, [map, pois]);
+
+  // 각 POI에 대한 마커 이미지를 미리 생성합니다.
+  const markerImages = useMemo(() => {
+    return pois.map((_, index) => createMarkerImageSrc(String(index + 1)));
+  }, [pois]);
 
   return (
     <div
@@ -63,8 +82,7 @@ const PdfInteractiveMap = ({ pois }: { pois: Poi[] }) => {
       style={{ width: '100%', height: '400px' }}
     >
       <Map
-        center={center}
-        level={level}
+        center={{ lat: 37.5665, lng: 126.978 }} // 초기 중심점 (setBounds에 의해 덮어쓰여짐)
         style={{ width: '100%', height: '100%' }}
         // PDF 출력을 위해 모든 상호작용 비활성화
         isPanto={false}
@@ -72,35 +90,19 @@ const PdfInteractiveMap = ({ pois }: { pois: Poi[] }) => {
         scrollwheel={false}
         zoomable={false}
         keyboardShortcuts={false}
+        // Map 인스턴스를 state에 저장하여 useEffect에서 사용할 수 있도록 합니다.
+        onCreate={setMap}
       >
         {pois.map((poi, index) => (
           <MapMarker
             key={poi.id}
             position={{ lat: poi.latitude, lng: poi.longitude }}
-            // 마커 핀 이미지 대신 커스텀 오버레이(숫자)를 표시합니다.
-            // 외부 URL 대신 데이터 URI를 사용하여 CORS 오류를 원천적으로 방지합니다.
+            // 미리 생성된 데이터 URI를 마커 이미지로 사용합니다.
             image={{
-              src: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
-              size: { width: 1, height: 1 },
-              options: { offset: { x: 0, y: 0 } },
+              src: markerImages[index],
+              size: { width: 24, height: 24 },
             }}
-          >
-            <div
-              style={{
-                padding: '2px 6px',
-                background: '#F87171', // Tailwind red-400
-                color: 'white',
-                borderRadius: '9999px',
-                fontSize: '0.75rem',
-                fontWeight: 'bold',
-                textAlign: 'center',
-                border: '1px solid white',
-                transform: 'translate(-50%, -50%)',
-              }}
-            >
-              {index + 1}
-            </div>
-          </MapMarker>
+          />
         ))}
       </Map>
     </div>
@@ -125,7 +127,11 @@ export const PdfDocument = React.forwardRef<HTMLDivElement, PdfDocumentProps>(
           if (poisForDay.length === 0) return null;
 
           return (
-            <div key={day.id} className="mb-10" style={{ breakInside: 'avoid' }}>
+            <div
+              key={day.id}
+              className="mb-10"
+              style={{ breakInside: 'avoid' }}
+            >
               <h2
                 className="text-2xl font-semibold mb-4"
                 style={{ color: day.color }}
