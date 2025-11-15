@@ -9,7 +9,7 @@ import {
   Polyline,
 } from 'react-kakao-maps-sdk';
 import { Button } from './ui/button';
-import { KAKAO_REST_API_KEY } from '../constants';
+import { AI_SERVER_URL, KAKAO_REST_API_KEY } from '../constants';
 import { fetchPlacesInBounds } from '../api/places';
 import { usePlaceStore } from '../store/placeStore';
 import type { PlaceDto } from '../types/place';
@@ -381,12 +381,12 @@ const PlaceMarker = memo(
           `;
           break;
 
-          default:
-            // 기본 아이콘 - 위치 핀
-            iconSvg = `
+        default:
+          // 기본 아이콘 - 위치 핀
+          iconSvg = `
               <circle cx="16" cy="16" r="6" fill="white"/>
             `;
-          }
+      }
 
       // SVG로 마커 이미지 생성 (데이터 URI 방식)
       const svg = `
@@ -1095,7 +1095,7 @@ export function MapPanel({
           payload
         );
 
-        const response = await fetch('http://localhost:8000/optimization/route', {
+        const response = await fetch(`${AI_SERVER_URL}/optimization/route`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
