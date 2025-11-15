@@ -243,8 +243,21 @@ export function Workspace({
         return;
       }
 
-      // 1. 추천 POI의 정보로 새로운 '실제 POI'를 생성합니다.
-      markPoi({ ...poiToAdd, placeName: poiToAdd.placeName }, { targetDayId });
+      // FIX: markPoi에 필요한 데이터만 추출하여 전달
+      const { latitude, longitude, address, placeName, categoryName } =
+        poiToAdd;
+      const poiToCreate = {
+        latitude,
+        longitude,
+        address,
+        placeName,
+        categoryName,
+      };
+
+      markPoi(poiToCreate, { targetDayId });
+
+      // 모달 닫기
+      setIsAddModalOpen(false);
     },
     [poiToAdd, markPoi, pois]
   );
@@ -278,24 +291,20 @@ export function Workspace({
     Record<string, RouteSegment[]>
   >({});
 
-  // [추가] 마지막 메시지가 변경될 때만 실행되는 useEffect
-  // 이렇게 하면 메시지 배열 전체가 아닌, 마지막 메시지가 바뀔 때만 반응합니다.
-  // RightPanel에서 받은 메시지 타입과 MapPanel에서 사용할 ChatMessage 타입을 맞춰줍니다.
-  useMemo(() => {
-    // lastMessage와 lastMessage.userId가 모두 존재해야 합니다. (시스템 메시지 제외)
+  // [FIX] useMemo를 useEffect로 변경하여 Rules of Hooks 위반 해결
+  useEffect(() => {
     if (lastMessage && lastMessage.userId && activeMembersForHeader) {
-      // [추가] 메시지를 보낸 사용자의 정보를 activeMembersForHeader에서 찾습니다.
       const sender = activeMembersForHeader.find(
         (member) => member.id === lastMessage.userId
       );
 
       setLatestChatMessage({
-        userId: lastMessage.userId, // 메시지를 보낸 사용자의 ID
-        message: lastMessage.message, // 메시지 내용
-        avatar: sender?.avatar, // [추가] 찾은 사용자의 아바타 URL
+        userId: lastMessage.userId,
+        message: lastMessage.message,
+        avatar: sender?.avatar,
       });
     }
-  }, [lastMessage, activeMembersForHeader]); // [수정] activeMembersForHeader를 의존성 배열에 추가
+  }, [lastMessage, activeMembersForHeader]);
 
   const dayLayers = useMemo(
     () =>
