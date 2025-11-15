@@ -1,12 +1,14 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { Map, MapMarker } from 'react-kakao-maps-sdk';
+import { Clock, Car } from 'lucide-react'; // 아이콘 import 추가
 import type { Poi } from '../hooks/usePoiSocket';
-import type { DayLayer } from '../types/map';
+import type { DayLayer, RouteSegment } from '../types/map';
 
 interface PdfDocumentProps {
   workspaceName: string;
   itinerary: Record<string, Poi[]>;
   dayLayers: DayLayer[];
+  routeSegmentsByDay: Record<string, RouteSegment[]>; // prop 타입 추가
 }
 
 /**
@@ -110,7 +112,7 @@ const PdfInteractiveMap = ({ pois }: { pois: Poi[] }) => {
 };
 
 export const PdfDocument = React.forwardRef<HTMLDivElement, PdfDocumentProps>(
-  ({ workspaceName, itinerary, dayLayers }, ref) => {
+  ({ workspaceName, itinerary, dayLayers, routeSegmentsByDay }, ref) => {
     return (
       // PDF로 변환할 전체 영역입니다.
       <div
@@ -124,6 +126,7 @@ export const PdfDocument = React.forwardRef<HTMLDivElement, PdfDocumentProps>(
 
         {dayLayers.map((day, dayIndex) => {
           const poisForDay = itinerary[day.id] || [];
+          const segmentsForDay = routeSegmentsByDay[day.id] || []; // 해당 날짜의 경로 정보 가져오기
           if (poisForDay.length === 0) return null;
 
           return (
@@ -145,18 +148,44 @@ export const PdfDocument = React.forwardRef<HTMLDivElement, PdfDocumentProps>(
               {/* 장소 목록 */}
               <ul className="space-y-3">
                 {poisForDay.map((poi, index) => (
-                  <li key={poi.id} className="flex items-start">
-                    <span
-                      className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full text-white text-sm mr-4 mt-1"
-                      style={{ backgroundColor: day.color }}
-                    >
-                      {index + 1}
-                    </span>
-                    <div>
-                      <p className="font-bold text-lg">{poi.placeName}</p>
-                      <p className="text-sm text-gray-600">{poi.address}</p>
-                    </div>
-                  </li>
+                  <React.Fragment key={poi.id}>
+                    <li className="flex items-start">
+                      <span
+                        className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full text-white text-sm mr-4 mt-1"
+                        style={{ backgroundColor: day.color }}
+                      >
+                        {index + 1}
+                      </span>
+                      <div>
+                        <p className="font-bold text-lg">{poi.placeName}</p>
+                        <p className="text-sm text-gray-600">{poi.address}</p>
+                      </div>
+                    </li>
+                    {/* 마지막 장소가 아닐 경우, 다음 장소까지의 경로 정보 표시 */}
+                    {index < poisForDay.length - 1 &&
+                      (() => {
+                        const nextPoi = poisForDay[index + 1];
+                        const segment = segmentsForDay.find(
+                          (s) =>
+                            s.fromPoiId === poi.id && s.toPoiId === nextPoi.id
+                        );
+                        if (!segment) return null;
+
+                        const totalMinutes = Math.ceil(segment.duration / 60);
+                        const totalKilometers = (
+                          segment.distance / 1000
+                        ).toFixed(1);
+
+                        return (
+                          <li className="flex items-center pl-10 text-xs text-gray-500">
+                            <Clock className="w-3 h-3 mr-1" />
+                            <span className="mr-4">{`${totalMinutes}분`}</span>
+                            <Car className="w-3 h-3 mr-1" />
+                            <span>{`${totalKilometers}km`}</span>
+                          </li>
+                        );
+                      })()}
+                  </React.Fragment>
                 ))}
               </ul>
             </div>

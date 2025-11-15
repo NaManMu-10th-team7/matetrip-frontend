@@ -312,7 +312,7 @@ export function Workspace({
     };
 
     generatePdf();
-  }, [isGeneratingPdf, workspaceName, itinerary, dayLayers]);
+  }, [isGeneratingPdf, workspaceName, itinerary, dayLayers, routeSegmentsByDay]);
 
   // [추가] LeftPanel에서 경로 최적화 버튼 클릭 시 호출될 핸들러
   const handleOptimizeRoute = useCallback((dayId: string) => {
@@ -658,6 +658,7 @@ export function Workspace({
             workspaceName={workspaceName}
             itinerary={itinerary}
             dayLayers={dayLayers}
+            routeSegmentsByDay={routeSegmentsByDay}
           />
         </div>
       )}
