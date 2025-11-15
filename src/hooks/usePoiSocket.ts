@@ -339,6 +339,21 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
 
   const reorderPois = useCallback(
     (planDayId: string, poiIds: string[]) => {
+      // 1. [추가] 낙관적 업데이트: 서버를 기다리지 않고 UI를 즉시 변경합니다.
+      setPois((prevPois) => {
+        const newSequenceMap = new Map(poiIds.map((id, index) => [id, index]));
+        const otherPois = prevPois.filter(
+          (p) => p.planDayId !== planDayId && !newSequenceMap.has(p.id)
+        );
+        const reorderedPois = prevPois
+          .filter((p) => newSequenceMap.has(p.id))
+          .map((p) => ({ ...p, sequence: newSequenceMap.get(p.id)! }))
+          .sort((a, b) => a.sequence - b.sequence);
+
+        return [...otherPois, ...reorderedPois];
+      });
+
+      // 2. [기존 로직] 서버에 변경사항을 알립니다.
       socketRef.current?.emit(PoiSocketEvent.REORDER, {
         workspaceId,
         planDayId,
@@ -346,6 +361,26 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
       });
     },
     [workspaceId]
+  );
+
+  const reorderMarkedPois = useCallback(
+    (poiIds: string[]) => {
+      setPois((prevPois) => {
+        const newSequenceMap = new Map(poiIds.map((id, index) => [id, index]));
+        const scheduledPois = prevPois.filter(
+          (p) => p.status === 'SCHEDULED'
+        );
+        const reorderedMarkedPois = prevPois
+          .filter((p) => newSequenceMap.has(p.id))
+          .map((p) => ({ ...p, sequence: newSequenceMap.get(p.id)! }))
+          .sort((a, b) => a.sequence - b.sequence);
+
+        // 정렬되지 않은 나머지 MARKED POI가 있다면 여기에 추가하는 로직이 필요할 수 있으나,
+        // 현재 로직은 reorder 대상만 처리합니다.
+        return [...scheduledPois, ...reorderedMarkedPois];
+      });
+    },
+    [setPois]
   );
 
   const moveCursor = useCallback(
@@ -423,6 +458,7 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
     addSchedule,
     removeSchedule,
     reorderPois,
+    reorderMarkedPois,
     cursors,
     moveCursor,
     hoveredPoiInfo,

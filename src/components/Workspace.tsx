@@ -82,6 +82,7 @@ export function Workspace({
     addSchedule,
     removeSchedule,
     reorderPois,
+    reorderMarkedPois,
     cursors,
     moveCursor,
     hoveredPoiInfo,
@@ -295,19 +296,9 @@ export function Workspace({
           const newIndex = items.findIndex((item) => item.id === over.id);
 
           if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
-            const newItems = arrayMove(items, oldIndex, newIndex);
-            setPois((currentPois) => {
-              const otherPois = currentPois.filter(
-                (p) => p.status !== 'MARKED'
-              );
-              const updatedContainerPois = newItems.map((poi, index) => ({
-                ...poi,
-                status: 'MARKED' as const,
-                planDayId: undefined,
-                sequence: index,
-              }));
-              return [...otherPois, ...updatedContainerPois];
-            });
+            const newItems = arrayMove(items, oldIndex, newIndex); // 이제 newItems가 사용됩니다.
+            const newPoiIds = newItems.map((poi) => poi.id);
+            reorderMarkedPois(newPoiIds);
           }
         } else {
           // 여행 일정 날짜 컨테이너
@@ -319,17 +310,9 @@ export function Workspace({
 
           if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
             const newItems = arrayMove(items, oldIndex, newIndex);
+            // [개선] 상태를 직접 조작하는 대신, usePoiSocket 훅의 함수를 호출하여 "명령"만 내립니다.
+            // 훅 내부에서 낙관적 업데이트와 서버 이벤트 전송을 모두 처리합니다.
             const newPoiIds = newItems.map((poi) => poi.id);
-            setPois((currentPois) => {
-              const otherPois = currentPois.filter(
-                (p) => p.planDayId !== dayId
-              );
-              const updatedContainerPois = newItems.map((poi, index) => ({
-                ...poi,
-                sequence: index,
-              }));
-              return [...otherPois, ...updatedContainerPois];
-            });
             reorderPois(dayId, newPoiIds);
           }
         }
@@ -401,6 +384,7 @@ export function Workspace({
       setPois,
       reorderPois,
       removeSchedule,
+      reorderMarkedPois,
       addSchedule,
       dayLayers,
     ]
