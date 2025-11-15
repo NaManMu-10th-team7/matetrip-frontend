@@ -1,5 +1,7 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, GripVertical } from 'lucide-react';
+import html2canvas from 'html2canvas-pro';
+import jsPDF from 'jspdf';
 import {
   DndContext,
   DragOverlay,
@@ -19,6 +21,7 @@ import { type Poi, usePoiSocket } from '../hooks/usePoiSocket.ts';
 import { useChatSocket } from '../hooks/useChatSocket'; // useChatSocket import 추가
 import { useWorkspaceMembers } from '../hooks/useWorkspaceMembers.ts';
 import { API_BASE_URL } from '../api/client.ts';
+import { PdfDocument } from './PdfDocument';
 import { CATEGORY_INFO, type PlaceDto } from '../types/place.ts'; // useWorkspaceMembers 훅 import
 
 interface WorkspaceProps {
@@ -60,6 +63,10 @@ export function Workspace({
 }: WorkspaceProps) {
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
+
+  // PDF 생성을 위한 상태와 ref
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const pdfRef = useRef<HTMLDivElement>(null);
 
   const { members: membersWithoutColor } = useWorkspaceMembers(workspaceId);
 
@@ -223,6 +230,33 @@ export function Workspace({
     );
     map.panTo(moveLatLon);
   };
+
+  const handleExportToPdf = useCallback(async () => {
+    if (!pdfRef) return;
+    setIsGeneratingPdf(true);
+
+    // 잠시 기다려 PdfDocument 컴포넌트가 렌더링되고 카카오맵 이미지가 로드될 시간을 줍니다.
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    if (pdfRef.current) {
+      try {
+        const canvas = await html2canvas(pdfRef.current, {
+          scale: 2, // 고해상도 캡처
+          useCORS: true, // 프록시를 통해 가져온 이미지에 접근하기 위해 필요
+        });
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save(`${workspaceName}_여행계획.pdf`);
+      } catch (error) {
+        console.error('PDF 생성 중 오류가 발생했습니다.', error);
+        alert('PDF 생성에 실패했습니다. 잠시 후 다시 시도해주세요.');
+      }
+    }
+    setIsGeneratingPdf(false);
+  }, [workspaceName, itinerary, dayLayers]);
 
   // [추가] LeftPanel에서 경로 최적화 버튼 클릭 시 호출될 핸들러
   const handleOptimizeRoute = useCallback((dayId: string) => {
@@ -471,6 +505,8 @@ export function Workspace({
           onExit={onEndTrip}
           onBack={onEndTrip}
           isOwner={true}
+          onExportPdf={handleExportToPdf}
+          isGeneratingPdf={isGeneratingPdf}
           activeMembers={activeMembersForHeader}
         />
 
@@ -554,6 +590,18 @@ export function Workspace({
       <DragOverlay>
         {activePoi ? <DraggablePoiItem poi={activePoi} /> : null}
       </DragOverlay>
+
+      {/* PDF 생성 시에만 렌더링되는 숨겨진 문서 */}
+      {isGeneratingPdf && (
+        <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+          <PdfDocument
+            ref={pdfRef}
+            workspaceName={workspaceName}
+            itinerary={itinerary}
+            dayLayers={dayLayers}
+          />
+        </div>
+      )}
     </DndContext>
   );
 }
