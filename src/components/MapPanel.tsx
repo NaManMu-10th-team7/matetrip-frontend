@@ -1,18 +1,20 @@
-import { PlusCircle, X } from 'lucide-react'; // CheckCircle 아이콘 추가
+import { PlusCircle, X } from 'lucide-react';
 import React, { useEffect, useRef, useState, memo, useCallback } from 'react';
-import type { Poi } from '../hooks/usePoiSocket';
+import type { Poi, CreatePoiDto, HoveredPoiInfo } from '../hooks/usePoiSocket';
 import {
+  // prettier-ignore
   Map as KakaoMap,
   MapMarker,
   CustomOverlayMap,
   Polyline,
 } from 'react-kakao-maps-sdk';
 import { Button } from './ui/button';
-import { KAKAO_REST_API_KEY } from '../constants'; // KAKAO_REST_API_KEY import 추가
+import { KAKAO_REST_API_KEY } from '../constants';
 import { fetchPlacesInBounds } from '../api/places';
-import { usePlaceStore } from '../store/placeStore'; // placeStore import
+import { usePlaceStore } from '../store/placeStore';
 import type { PlaceDto } from '../types/place';
 import { CATEGORY_INFO } from '../types/place';
+import { findPoiByCoordinates } from '../utils/coordinates';
 
 import type {
   KakaoPlace,
@@ -22,28 +24,18 @@ import type {
   KakaoNaviGuide,
 } from '../types/map';
 
-export interface MapPanelProps {
+interface MapPanelProps {
   itinerary: Record<string, Poi[]>;
   dayLayers: { id: string; label: string; color: string }[];
   placesToRender: PlaceDto[]; // [수정] 렌더링할 장소 목록을 prop으로 받음
   pois: Poi[];
   isSyncing: boolean;
-  markPoi: (
-    poiData: Omit<
-      Poi,
-      'id' | 'workspaceId' | 'createdBy' | 'status' | 'sequence' | 'isPersisted'
-    >
-  ) => void;
+  markPoi: (poiData: Omit<CreatePoiDto, 'workspaceId' | 'createdBy'>) => void;
   unmarkPoi: (poiId: string) => void;
   selectedPlace: KakaoPlace | null;
   setSelectedPlace: (place: KakaoPlace | null) => void;
   mapRef: React.RefObject<kakao.maps.Map | null>;
-  hoveredPoiInfo: {
-    poiId: string;
-    userId: string;
-    userName: string;
-    userColor: string;
-  } | null;
+  hoveredPoiInfo: HoveredPoiInfo | null;
   onRouteInfoUpdate: (info: Record<string, RouteSegment[]>) => void;
   onRouteOptimized?: (dayId: string, poiIds: string[]) => void;
   optimizingDayId: string | null;
@@ -77,12 +69,7 @@ export interface MapPanelProps {
 export interface PlaceMarkerProps {
   place: PlaceDto;
   onPlaceClick: (place: PlaceDto) => void;
-  markPoi: (
-    poiData: Omit<
-      Poi,
-      'id' | 'workspaceId' | 'createdBy' | 'status' | 'sequence' | 'isPersisted'
-    >
-  ) => void;
+  markPoi: (poiData: Omit<CreatePoiDto, 'workspaceId' | 'createdBy'>) => void;
   unmarkPoi: (poiId: string) => void;
   pois: Poi[];
   isOverlayHoveredRef: React.MutableRefObject<boolean>;
@@ -98,12 +85,7 @@ export interface PoiMarkerProps {
   isHovered: boolean;
   place: PlaceDto | undefined; // PoiMarker가 원본 PlaceDto 정보를 받을 수 있도록 추가
   pois: Poi[];
-  markPoi: (
-    poiData: Omit<
-      Poi,
-      'id' | 'workspaceId' | 'createdBy' | 'status' | 'sequence' | 'isPersisted'
-    >
-  ) => void;
+  markPoi: (poiData: Omit<CreatePoiDto, 'workspaceId' | 'createdBy'>) => void;
 }
 
 export interface DayRouteRendererProps {
@@ -143,25 +125,17 @@ const PlaceInfoWindow = memo(
     unmarkPoi,
   }: {
     place: PlaceDto;
-    pois: Poi[];
+    pois: Poi[]; // isMarked 확인을 위해 필요
     isOverlayHoveredRef: React.MutableRefObject<boolean>;
     onClose: () => void;
-    markPoi: (
-      poiData: Omit<
-        Poi,
-        | 'id'
-        | 'workspaceId'
-        | 'createdBy'
-        | 'status'
-        | 'sequence'
-        | 'isPersisted'
-      >
-    ) => void;
+    markPoi: (poiData: Omit<CreatePoiDto, 'workspaceId' | 'createdBy'>) => void;
     unmarkPoi: (poiId: string) => void;
   }) => {
     const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
-    const markedPoi = pois.find(
-      (p) => p.latitude === place.latitude && p.longitude === place.longitude
+    const markedPoi = findPoiByCoordinates(
+      pois,
+      place.latitude,
+      place.longitude
     );
     const isMarked = !!markedPoi;
 
@@ -230,8 +204,9 @@ const PlaceInfoWindow = memo(
             className={`h-7 px-2.5 text-xs transition-colors ${isMarked ? 'bg-red-500 hover:bg-red-600' : 'bg-[#4caf50] hover:bg-[#45a049]'}`}
             onClick={(e) => {
               e.stopPropagation();
-              if (isMarked && markedPoi) unmarkPoi(markedPoi.id);
-              else
+              if (isMarked && markedPoi) {
+                unmarkPoi(markedPoi.id);
+              } else {
                 markPoi({
                   latitude: place.latitude,
                   longitude: place.longitude,
@@ -239,6 +214,7 @@ const PlaceInfoWindow = memo(
                   placeName: place.title,
                   categoryName: place.category,
                 });
+              }
               onClose();
             }}
           >
@@ -311,10 +287,7 @@ const PlaceMarker = memo(
       onPlaceClick(place);
     };
     // 카테고리에 따른 아이콘 이미지 URL 생성
-    const getMarkerImageSrc = (
-      place: PlaceDto,
-      markedPoi?: Poi
-    ): string => {
+    const getMarkerImageSrc = (place: PlaceDto, markedPoi?: Poi): string => {
       // 1. 장소가 일정에 포함되어 있는지 확인
       if (markedPoi?.id && scheduledPoiData.has(markedPoi.id)) {
         const scheduleInfo = scheduledPoiData.get(markedPoi.id)!;
@@ -410,18 +383,24 @@ const PlaceMarker = memo(
         ${iconSvg}
 
         <!-- [수정] '보관함' 상태일 때만 표시되는 별 아이콘 -->
-        ${isMarkedOnly ? `
+        ${
+          isMarkedOnly
+            ? `
           <path d="M35, -6 L38.5, 3 L48, 4 L41.5, 10 L44, 18 L35, 14 L26, 18 L28.5, 10 L22, 4 L31.5, 3 Z"
                 fill="#FFD700" stroke="white" stroke-width="2.5" />
-        ` : ''}
+        `
+            : ''
+        }
       </svg>
     `;
       return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
     };
 
     // 현재 장소가 보관함(pois)에 이미 추가되었는지 확인합니다.
-    const markedPoi = pois.find(
-      (p) => p.latitude === place.latitude && p.longitude === place.longitude
+    const markedPoi = findPoiByCoordinates(
+      pois,
+      place.latitude,
+      place.longitude
     );
     const markerImageSrc = getMarkerImageSrc(place, markedPoi);
     const markerImage = {
@@ -785,27 +764,30 @@ export function MapPanel({
   /**
    * 지도 영역 내의 장소 데이터를 가져오는 함수
    */
-  const fetchPlacesInView = useCallback(async (map: kakao.maps.Map) => {
-    try {
-      const bounds = map.getBounds();
-      const sw = bounds.getSouthWest(); // 남서쪽 좌표
-      const ne = bounds.getNorthEast(); // 북동쪽 좌표
+  const fetchPlacesInView = useCallback(
+    async (map: kakao.maps.Map) => {
+      try {
+        const bounds = map.getBounds();
+        const sw = bounds.getSouthWest(); // 남서쪽 좌표
+        const ne = bounds.getNorthEast(); // 북동쪽 좌표
 
-      const mapBounds = {
-        swLat: sw.getLat(),
-        swLng: sw.getLng(),
-        neLat: ne.getLat(),
-        neLng: ne.getLng(),
-      };
+        const mapBounds = {
+          swLat: sw.getLat(),
+          swLng: sw.getLng(),
+          neLat: ne.getLat(),
+          neLng: ne.getLng(),
+        };
 
-      console.log('Fetching places for bounds:', mapBounds);
-      const placesData = await fetchPlacesInBounds(mapBounds);
-      console.log('Received places:', placesData);
-      addPlacesToCache(placesData); // [수정] 로컬 상태 대신 스토어에 저장
-    } catch (error) {
-      console.error('Failed to fetch places:', error);
-    }
-  }, [addPlacesToCache]);
+        console.log('Fetching places for bounds:', mapBounds);
+        const placesData = await fetchPlacesInBounds(mapBounds);
+        console.log('Received places:', placesData);
+        addPlacesToCache(placesData); // [수정] 로컬 상태 대신 스토어에 저장
+      } catch (error) {
+        console.error('Failed to fetch places:', error);
+      }
+    },
+    [addPlacesToCache]
+  );
 
   /**
    * 지도 이동/줌 변경 시 디바운스된 장소 데이터 요청
@@ -1524,10 +1506,10 @@ export function MapPanel({
                   ]?.name || '기타'}
                 </div>
                 {(() => {
-                  const markedPoi = pois.find(
-                    (p) =>
-                      p.latitude === selectedBackendPlace.latitude &&
-                      p.longitude === selectedBackendPlace.longitude
+                  const markedPoi = findPoiByCoordinates(
+                    pois,
+                    selectedBackendPlace.latitude,
+                    selectedBackendPlace.longitude
                   );
                   const isMarked = !!markedPoi;
 
