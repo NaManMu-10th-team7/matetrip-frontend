@@ -34,7 +34,7 @@ export interface MapPanelProps {
       'id' | 'workspaceId' | 'createdBy' | 'status' | 'sequence' | 'isPersisted'
     >
   ) => void;
-  unmarkPoi: (poiId: string | number) => void;
+  unmarkPoi: (poiId: string) => void;
   selectedPlace: KakaoPlace | null;
   setSelectedPlace: (place: KakaoPlace | null) => void;
   mapRef: React.RefObject<kakao.maps.Map | null>;
@@ -83,7 +83,7 @@ export interface PlaceMarkerProps {
       'id' | 'workspaceId' | 'createdBy' | 'status' | 'sequence' | 'isPersisted'
     >
   ) => void;
-  unmarkPoi: (poiId: string | number) => void;
+  unmarkPoi: (poiId: string) => void;
   pois: Poi[];
   isOverlayHoveredRef: React.MutableRefObject<boolean>;
   scheduledPoiData: Map<string, { label: string; color: string }>;
@@ -93,7 +93,7 @@ export interface PoiMarkerProps {
   poi: Poi;
   markerLabel?: string;
   markerColor?: string;
-  unmarkPoi: (poiId: string | number) => void;
+  unmarkPoi: (poiId: string) => void;
   isOverlayHoveredRef: React.MutableRefObject<boolean>;
   isHovered: boolean;
   place: PlaceDto | undefined; // PoiMarker가 원본 PlaceDto 정보를 받을 수 있도록 추가
@@ -157,7 +157,7 @@ const PlaceInfoWindow = memo(
         | 'isPersisted'
       >
     ) => void;
-    unmarkPoi: (poiId: string | number) => void;
+    unmarkPoi: (poiId: string) => void;
   }) => {
     const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
     const markedPoi = pois.find(
