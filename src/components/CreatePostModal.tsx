@@ -131,7 +131,6 @@ export function CreatePostModal({ onClose }: CreatePostModalProps) {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
-    setErrorMessage('');
 
     if (!user) {
       setErrorMessage('로그인이 필요합니다. 다시 로그인해주세요.');
