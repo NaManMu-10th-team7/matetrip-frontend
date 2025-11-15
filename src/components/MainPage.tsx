@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { MapPin, SlidersHorizontal, Search } from 'lucide-react';
 import { Button } from './ui/button';
 import { ImageWithFallback } from './figma/ImageWithFallback';
@@ -8,6 +8,7 @@ import { MainPostCardSkeleton } from './MainPostCardSkeleton';
 import { MatchingCarousel } from './MatchingCarousel';
 import { useAuthStore } from '../store/authStore';
 import type { MatchingInfo, MatchCandidateDto } from '../types/matching';
+import { KEYWORD_OPTIONS, type KeywordValue } from '../utils/keyword';
 
 interface MainPageProps {
   onSearch: (params: {
@@ -15,6 +16,7 @@ interface MainPageProps {
     endDate?: string;
     location?: string;
     title?: string;
+    keyword?: string;
   }) => void;
   onViewPost: (postId: string) => void;
   onCreatePost: () => void;
@@ -135,6 +137,11 @@ export function MainPage({
     'recommended'
   );
   const [searchQuery, setSearchQuery] = useState('');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [selectedKeyword, setSelectedKeyword] = useState<KeywordValue | ''>('');
+  const filterContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (isAuthLoading) {
@@ -215,6 +222,24 @@ export function MainPage({
     }
   }, [isLoggedIn]);
 
+  useEffect(() => {
+    if (!isFilterOpen) {
+      return;
+    }
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        filterContainerRef.current &&
+        !filterContainerRef.current.contains(event.target as Node)
+      ) {
+        setIsFilterOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isFilterOpen]);
+
   const { recommendedPosts, matchingInfoByPostId } = useMemo(() => {
     const toPercent = (value?: number) => {
       if (value === undefined || value === null) {
@@ -283,11 +308,45 @@ export function MainPage({
   const featuredItems =
     activeFeaturedView === 'recommended' ? recommendedPosts : posts;
 
+  const normalizedFilters = {
+    startDate: startDate || undefined,
+    endDate: endDate || undefined,
+    keyword: selectedKeyword || undefined,
+  };
+
+  const runSearch = () => {
+    const titleQuery = searchQuery.trim();
+    const payload = {
+      ...normalizedFilters,
+      title: titleQuery || undefined,
+    };
+    if (
+      !payload.title &&
+      !payload.startDate &&
+      !payload.endDate &&
+      !payload.keyword
+    ) {
+      return;
+    }
+    onSearch(payload);
+  };
+
+  const handleFilterApply = () => {
+    runSearch();
+    setIsFilterOpen(false);
+  };
+
+  const handleFilterReset = () => {
+    setStartDate('');
+    setEndDate('');
+    setSelectedKeyword('');
+  };
+
+  const isFilterActive = Boolean(startDate || endDate || selectedKeyword);
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      onSearch({ title: searchQuery });
-    }
+    runSearch();
   };
 
   const handleCardClick = (post: Post) => {
@@ -313,7 +372,7 @@ export function MainPage({
 
         {/* Search Bar and Filters - 로그인한 사용자에게만 표시 */}
         {isLoggedIn && (
-          <div className="mb-10 flex items-center gap-3">
+          <div className="mb-10 flex items-start gap-3">
             <form onSubmit={handleSearchSubmit} className="flex-1 relative">
               <div className="relative">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -326,13 +385,92 @@ export function MainPage({
                 />
               </div>
             </form>
-            <Button
-              variant="outline"
-              className="gap-2 px-6 py-3 h-auto border-gray-200"
-            >
-              <SlidersHorizontal className="w-5 h-5" />
-              Filters
-            </Button>
+            <div className="relative" ref={filterContainerRef}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsFilterOpen((prev) => !prev)}
+                className={`gap-2 px-6 py-3 h-auto ${
+                  isFilterActive
+                    ? 'border-blue-500 text-blue-600 bg-blue-50'
+                    : 'border-gray-200'
+                }`}
+              >
+                <SlidersHorizontal className="w-5 h-5" />
+                Filters
+              </Button>
+              {isFilterOpen && (
+                <div className="absolute right-0 mt-3 w-80 rounded-2xl border border-gray-200 bg-white shadow-xl p-5 z-20 space-y-5">
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-900 mb-2">
+                      여행 기간
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      />
+                      <input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-900 mb-2">
+                      여행 키워드
+                    </h4>
+                    <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto pr-1">
+                      {KEYWORD_OPTIONS.map((option) => {
+                        const isSelected = selectedKeyword === option.value;
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() =>
+                              setSelectedKeyword(isSelected ? '' : option.value)
+                            }
+                            className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                              isSelected
+                                ? 'bg-blue-600 text-white border-blue-600'
+                                : 'border-gray-200 text-gray-700 hover:border-gray-300'
+                            }`}
+                          >
+                            {option.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                    <button
+                      type="button"
+                      onClick={handleFilterReset}
+                      className="text-sm font-medium text-gray-500 hover:text-gray-700"
+                    >
+                      초기화
+                    </button>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => setIsFilterOpen(false)}
+                        className="text-gray-600 hover:text-gray-900"
+                      >
+                        닫기
+                      </Button>
+                      <Button type="button" onClick={handleFilterApply}>
+                        필터 적용
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -380,17 +518,18 @@ export function MainPage({
             </div>
           ) : (
             <MatchingCarousel
-              posts={featuredItems.slice(0, 10)}
+              posts={recommendedPosts}
               matchingInfoByPostId={
                 activeFeaturedView === 'recommended'
                   ? matchingInfoByPostId
-                  : featuredItems.slice(0, 10).reduce(
-                      (acc, post, index) => {
-                        acc[post.id] = generateMockMatchingInfo(index);
-                        return acc;
-                      },
-                      {} as Record<string, MatchingInfo>
-                    )
+                  : undefined
+                // : featuredItems.slice(0, 10).reduce(
+                //     (acc, post, index) => {
+                //       acc[post.id] = generateMockMatchingInfo(index);
+                //       return acc;
+                //     },
+                //     {} as Record<string, MatchingInfo>
+                //   )
               }
               onCardClick={handleCardClick}
             />

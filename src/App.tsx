@@ -78,12 +78,14 @@ function MainPageWrapper({
     endDate?: string;
     location?: string;
     title?: string;
+    keyword?: string;
   }) => {
     const searchParams = new URLSearchParams();
     if (params.startDate) searchParams.set('startDate', params.startDate);
     if (params.endDate) searchParams.set('endDate', params.endDate);
     if (params.location) searchParams.set('location', params.location);
     if (params.title) searchParams.set('title', params.title);
+    if (params.keyword) searchParams.set('keyword', params.keyword);
     navigate(`/search?${searchParams.toString()}`);
   };
 
@@ -112,12 +114,14 @@ function AllPostsPageWrapper({
     endDate?: string;
     location?: string;
     title?: string;
+    keyword?: string;
   }) => {
     const searchParams = new URLSearchParams();
     if (params.startDate) searchParams.set('startDate', params.startDate);
     if (params.endDate) searchParams.set('endDate', params.endDate);
     if (params.location) searchParams.set('location', params.location);
     if (params.title) searchParams.set('title', params.title);
+    if (params.keyword) searchParams.set('keyword', params.keyword);
     navigate(`/search?${searchParams.toString()}`);
   };
 
@@ -140,6 +144,7 @@ function SearchResultsWrapper() {
     endDate: searchParams.get('endDate') || undefined,
     location: searchParams.get('location') || undefined,
     title: searchParams.get('title') || undefined,
+    keyword: searchParams.get('keyword') || undefined,
   };
 
   const handleViewPost = (postId: string) => {
