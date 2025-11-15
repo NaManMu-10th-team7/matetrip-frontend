@@ -128,7 +128,7 @@ export const PdfDocument = React.forwardRef<HTMLDivElement, PdfDocumentProps>(
                 className="text-lg font-semibold mb-4"
                 style={{ color: day.color }}
               >
-                {dayIndex + 1}일차 - {day.label}
+                {dayIndex + 1}일차 - {day.planDate}
               </h2>
 
               <PdfInteractiveMap pois={poisForDay} />

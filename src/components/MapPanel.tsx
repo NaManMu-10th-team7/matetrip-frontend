@@ -26,7 +26,8 @@ import type {
 
 interface MapPanelProps {
   itinerary: Record<string, Poi[]>;
-  dayLayers: { id: string; label: string; color: string }[];
+  recommendedItinerary: Record<string, Poi[]>;
+  dayLayers: { id: string; label: string; color: string; planDate: string }[];
   placesToRender: PlaceDto[]; // [수정] 렌더링할 장소 목록을 prop으로 받음
   pois: Poi[];
   isSyncing: boolean;
@@ -678,6 +679,7 @@ const DayRouteRenderer = memo(
 
 export function MapPanel({
   itinerary,
+  recommendedItinerary,
   dayLayers,
   placesToRender,
   pois,
@@ -705,6 +707,9 @@ export function MapPanel({
   // [추가] 오버레이 위에 마우스가 있는지 확인하기 위한 Ref
   const isOverlayHoveredRef = useRef(false);
   const [dailyRouteInfo, setDailyRouteInfo] = useState<
+    Record<string, RouteSegment[]>
+  >({});
+  const [recommendedRouteInfo, setRecommendedRouteInfo] = useState<
     Record<string, RouteSegment[]>
   >({});
 
@@ -1059,6 +1064,131 @@ export function MapPanel({
     drawStandardRoutes();
   }, [itinerary, dayLayers, onRouteInfoUpdate]);
 
+  useEffect(() => {
+    const drawRecommendedRoutes = async () => {
+      const newRecommendedRouteInfo: Record<string, RouteSegment[]> = {};
+
+      for (const dayId in recommendedItinerary) {
+        const dayPois = recommendedItinerary[dayId];
+        if (dayPois && dayPois.length >= 2) {
+          try {
+            const originPoi = dayPois[0];
+            const destinationPoi = dayPois[dayPois.length - 1];
+            const waypoints = dayPois.slice(1, dayPois.length - 1);
+
+            const originParam = `${originPoi.longitude},${originPoi.latitude}`;
+            const destinationParam = `${destinationPoi.longitude},${destinationPoi.latitude}`;
+            const waypointsParam = waypoints
+              .map((poi) => `${poi.longitude},${poi.latitude}`)
+              .join('|');
+
+            const queryParams = new URLSearchParams({
+              origin: originParam,
+              destination: destinationParam,
+              priority: 'RECOMMEND',
+              summary: 'false',
+              road_details: 'true',
+            });
+
+            if (waypointsParam) {
+              queryParams.append('waypoints', waypointsParam);
+            }
+
+            const response = await fetch(
+              `https://apis-navi.kakaomobility.com/v1/directions?${queryParams.toString()}`,
+              {
+                headers: {
+                  Authorization: `KakaoAK ${KAKAO_REST_API_KEY}`,
+                },
+              }
+            );
+            if (!response.ok)
+              throw new Error(`HTTP error! status: ${response.status}`);
+
+            const data = await response.json();
+
+            if (data.routes && data.routes[0]?.sections) {
+              const segmentsForDay: RouteSegment[] = [];
+              const poisForThisDay = [originPoi, ...waypoints, destinationPoi];
+
+              const findClosestPoi = (
+                lng: number,
+                lat: number,
+                poisToSearch: Poi[]
+              ): Poi | null => {
+                let closestPoi: Poi | null = null;
+                let minDistance = Infinity;
+                poisToSearch.forEach((poi) => {
+                  const dist =
+                    Math.pow(poi.longitude - lng, 2) +
+                    Math.pow(poi.latitude - lat, 2);
+                  if (dist < minDistance) {
+                    minDistance = dist;
+                    closestPoi = poi;
+                  }
+                });
+                return closestPoi;
+              };
+
+              data.routes[0].sections.forEach(
+                (section: KakaoNaviSection, index: number) => {
+                  const segmentPath: { lat: number; lng: number }[] = [];
+                  if (section.roads) {
+                    section.roads.forEach((road: KakaoNaviRoad) => {
+                      for (let i = 0; i < road.vertexes.length; i += 2) {
+                        segmentPath.push({
+                          lng: road.vertexes[i],
+                          lat: road.vertexes[i + 1],
+                        });
+                      }
+                    });
+                  }
+
+                  const guides = section.guides as KakaoNaviGuide[];
+                  if (!guides || guides.length === 0) {
+                    return;
+                  }
+                  const startGuide = guides[0];
+                  const endGuide = guides[guides.length - 1];
+
+                  const fromPoi = findClosestPoi(
+                    startGuide.x,
+                    startGuide.y,
+                    poisForThisDay
+                  );
+                  const toPoi = findClosestPoi(
+                    endGuide.x,
+                    endGuide.y,
+                    poisForThisDay
+                  );
+
+                  if (fromPoi && toPoi) {
+                    segmentsForDay.push({
+                      fromPoiId: fromPoi.id,
+                      toPoiId: toPoi.id,
+                      duration: section.duration,
+                      distance: section.distance,
+                      path: segmentPath,
+                    });
+                  }
+                }
+              );
+              newRecommendedRouteInfo[dayId] = segmentsForDay;
+            }
+          } catch (error) {
+            console.error(
+              `Error fetching directions for recommended day ${dayId}:`,
+              error
+            );
+          }
+        }
+      }
+      setRecommendedRouteInfo(newRecommendedRouteInfo);
+    };
+
+    drawRecommendedRoutes();
+  }, [recommendedItinerary]);
+
   // [추가] 경로 최적화 전용 useEffect: optimizingDayId가 변경될 때만 실행
   useEffect(() => {
     if (!optimizingDayId) return;
@@ -1407,6 +1537,20 @@ export function MapPanel({
             visibleDayIds={visibleDayIds}
           />
         ))}
+
+        {/* AI 추천 경로 렌더링 */}
+        {Object.entries(recommendedRouteInfo).map(([dayId, segments]) =>
+          segments.map((segment, index) => (
+            <Polyline
+              key={`rec-${dayId}-segment-${index}`}
+              path={segment.path}
+              strokeWeight={5}
+              strokeColor={'#FF00FF'} // 추천 경로는 다른 색상으로 표시 (예: 자홍색)
+              strokeOpacity={0.7}
+              strokeStyle={'dashed'} // 점선으로 표시
+            />
+          ))
+        )}
 
         {/* 선택된 백엔드 장소 상세 정보 사이드 패널 */}
         {selectedBackendPlace && (

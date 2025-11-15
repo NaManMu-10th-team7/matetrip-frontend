@@ -17,12 +17,13 @@ import { LeftPanel } from './LeftPanel';
 import { RightPanel } from './RightPanel';
 import { PlanRoomHeader } from './PlanRoomHeader';
 import { usePlaceStore } from '../store/placeStore'; // placeStore import
+import { useAuthStore } from '../store/authStore';
 import { type Poi, usePoiSocket } from '../hooks/usePoiSocket.ts';
 import { useChatSocket } from '../hooks/useChatSocket'; // useChatSocket import 추가
 import { useWorkspaceMembers } from '../hooks/useWorkspaceMembers.ts';
 import { API_BASE_URL } from '../api/client.ts';
-import { PdfDocument } from './PdfDocument';
 import { CATEGORY_INFO, type PlaceDto } from '../types/place.ts'; // useWorkspaceMembers 훅 import
+import { AddToItineraryModal } from './AddToItineraryModal.tsx'; // [신규] 모달 컴포넌트 임포트 (생성 필요)
 
 interface WorkspaceProps {
   workspaceId: string;
@@ -64,6 +65,18 @@ export function Workspace({
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
 
+  // [신규] AI 추천 일정 관련 상태
+  const [recommendedItinerary, setRecommendedItinerary] = useState<
+    Record<string, Poi[]>
+  >({});
+  const [isRecommendationLoading, setIsRecommendationLoading] = useState(true);
+
+  // [신규] '일정 추가' 모달 관련 상태
+  const [poiToAdd, setPoiToAdd] = useState<Poi | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  const { user } = useAuthStore();
+
   // PDF 생성을 위한 상태와 ref
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const pdfRef = useRef<HTMLDivElement>(null);
@@ -96,6 +109,7 @@ export function Workspace({
     hoverPoi,
     clickEffects, // 추가
     clickMap, // 추가
+    addRecommendedPoisToDay,
   } = usePoiSocket(workspaceId, members);
 
   const {
@@ -127,8 +141,68 @@ export function Workspace({
 
   // [추가] planDayDtos가 변경되면 visibleDayIds를 모든 날짜 ID로 초기화
   useEffect(() => {
+    if (planDayDtos.length === 0) return;
+
     setVisibleDayIds(new Set(planDayDtos.map((day) => day.id)));
-  }, [planDayDtos]);
+
+    // [신규] AI 추천 일정 가져오기
+    const generateAiPlan = async () => {
+      if (!user?.userId) return; // user와 userId가 모두 존재해야 함
+      setIsRecommendationLoading(true);
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/workspace/generate-ai-plan?userId=${user.userId}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              region: '서울', // TODO: 실제 워크스페이스의 지역 정보 사용
+              startDate: planDayDtos[0].planDate,
+              endDate: planDayDtos[planDayDtos.length - 1].planDate,
+            }),
+          }
+        );
+        const data = await response.json();
+
+        // [수정] API 응답이 비정상적일 경우를 대비한 방어 코드
+        if (!data || !data.recommendations) {
+          console.error('Invalid AI plan response:', data);
+          return;
+        }
+
+        const newRecommendedItinerary: Record<string, Poi[]> = {};
+        data.recommendations.forEach(
+          (rec: { pois: any[] }, index: number) => {
+            // 응답 데이터의 순서와 planDayDtos의 순서를 매칭
+            const planDay = planDayDtos[index];
+            if (!planDay || !rec || !rec.pois) return; // rec와 rec.pois가 유효한지 확인
+
+            const virtualPlanDayId = `rec-${workspaceId}-${planDay.planDate}`;
+            newRecommendedItinerary[virtualPlanDayId] = rec.pois
+              .filter((p) => p && p.id) // [수정] id가 없는 비정상적인 poi 데이터 필터링
+              .map((p: any) => ({
+                id: `rec-${p.id}`, // 실제 POI ID와 충돌 방지
+                placeName: p.title, // 필드명 매핑
+                categoryName: p.category, // 필드명 매핑
+                status: 'RECOMMENDED' as any, // 가상 상태 부여
+                planDayId: virtualPlanDayId,
+                ...p,
+              }));
+          }
+        );
+        setRecommendedItinerary(newRecommendedItinerary);
+      } catch (error) {
+        console.error('Failed to generate AI plan:', error);
+      } finally {
+        setIsRecommendationLoading(false);
+      }
+    };
+
+    // user.userId가 있을 때만 AI 추천 일정을 생성합니다.
+    if (user?.userId) {
+      generateAiPlan();
+    }
+  }, [planDayDtos, workspaceId, user?.userId]); // [수정] 의존성 배열에 user.userId 추가
 
   // [추가] 날짜 가시성 토글 핸들러
   const handleDayVisibilityChange = useCallback(
@@ -144,6 +218,35 @@ export function Workspace({
       });
     },
     []
+  );
+
+  // [신규] 추천 POI를 '내 일정'에 추가하는 핸들러
+  const handleAddRecommendedPoi = useCallback((poi: Poi) => {
+    setPoiToAdd(poi);
+    setIsAddModalOpen(true);
+  }, []);
+
+  // [신규] 모달에서 날짜를 선택하고 '확인'을 눌렀을 때 실행되는 함수
+  const handleConfirmAdd = useCallback(
+    (targetDayId: string) => {
+      if (!poiToAdd) return;
+
+      // [개선] 중복 추가 방지 로직
+      const isAlreadyAdded = pois.some(
+        (p) =>
+          p.latitude === poiToAdd.latitude && p.longitude === poiToAdd.longitude
+      );
+
+      if (isAlreadyAdded) {
+        alert('이미 일정 또는 보관함에 추가된 장소입니다.');
+        setIsAddModalOpen(false);
+        return;
+      }
+
+      // 1. 추천 POI의 정보로 새로운 '실제 POI'를 생성합니다.
+      markPoi({ ...poiToAdd, placeName: poiToAdd.placeName }, { targetDayId });
+    },
+    [poiToAdd, markPoi, pois]
   );
 
   // [수정] 패널 열기/닫기 시 지도 리렌더링을 위한 useEffect
@@ -198,7 +301,8 @@ export function Workspace({
     () =>
       planDayDtos.map((day) => ({
         id: day.id,
-        label: day.planDate,
+        planDate: day.planDate,
+        label: day.planDate, // label 속성 추가
         color: generateColorFromString(day.id),
       })),
     [planDayDtos]
@@ -378,6 +482,13 @@ export function Workspace({
       const isSameLogicalContainer =
         activeSortableContainerId === targetSortableContainerId;
 
+      // [개선] 추천 목록 내에서의 순서 변경 시도 방지
+      if (
+        isSameLogicalContainer &&
+        activeSortableContainerId?.startsWith('rec-')
+      ) {
+        return;
+      }
       if (isSameLogicalContainer) {
         console.log(`Reordering within container: ${targetDroppableId}`);
         if (targetDroppableId === 'marker-storage') {
@@ -571,8 +682,11 @@ export function Workspace({
 
         <div className="flex-1 flex relative overflow-hidden">
           <LeftPanel
+            isRecommendationLoading={isRecommendationLoading}
+            workspaceId={workspaceId}
             isOpen={isLeftPanelOpen}
             itinerary={itinerary}
+            recommendedItinerary={recommendedItinerary}
             dayLayers={dayLayers}
             markedPois={markedPois}
             unmarkPoi={unmarkPoi}
@@ -580,6 +694,8 @@ export function Workspace({
             onPlaceClick={setSelectedPlace}
             onPoiClick={handlePoiClick}
             onPoiHover={hoverPoi} // LeftPanel에 hover 핸들러 전달
+            onAddRecommendedPoi={handleAddRecommendedPoi}
+            onAddRecommendedPoiToDay={addRecommendedPoisToDay}
             onOptimizeRoute={handleOptimizeRoute} // [추가] 최적화 핸들러 전달
             routeSegmentsByDay={routeSegmentsByDay} // LeftPanel에 경로 정보 전달
             visibleDayIds={visibleDayIds} // [추가] 가시성 상태 전달
@@ -603,6 +719,7 @@ export function Workspace({
             <MapPanel
               placesToRender={placesToRender} // [수정] 계산된 최종 목록 전달
               itinerary={itinerary}
+              recommendedItinerary={recommendedItinerary}
               dayLayers={dayLayers}
               pois={pois}
               isSyncing={isSyncing}
@@ -649,6 +766,14 @@ export function Workspace({
       <DragOverlay>
         {activePoi ? <DraggablePoiItem poi={activePoi} /> : null}
       </DragOverlay>
+      {/* [신규] 일정 추가 모달 */}
+      <AddToItineraryModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        dayLayers={dayLayers}
+        onConfirm={handleConfirmAdd}
+        poiName={poiToAdd?.placeName}
+      />
 
       {/* PDF 생성 시에만 렌더링되는 숨겨진 문서 */}
       {isGeneratingPdf && (
