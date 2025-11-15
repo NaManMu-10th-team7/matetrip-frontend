@@ -14,10 +14,12 @@ import type { PlanDayDto } from '../types/workspace';
 import { LeftPanel } from './LeftPanel';
 import { RightPanel } from './RightPanel';
 import { PlanRoomHeader } from './PlanRoomHeader';
+import { usePlaceStore } from '../store/placeStore'; // placeStore import
 import { type Poi, usePoiSocket } from '../hooks/usePoiSocket.ts';
 import { useChatSocket } from '../hooks/useChatSocket'; // useChatSocket import 추가
 import { useWorkspaceMembers } from '../hooks/useWorkspaceMembers.ts';
-import { API_BASE_URL } from '../api/client.ts'; // useWorkspaceMembers 훅 import
+import { API_BASE_URL } from '../api/client.ts';
+import { CATEGORY_INFO, type PlaceDto } from '../types/place.ts'; // useWorkspaceMembers 훅 import
 
 interface WorkspaceProps {
   workspaceId: string;
@@ -80,6 +82,7 @@ export function Workspace({
     addSchedule,
     removeSchedule,
     reorderPois,
+    reorderMarkedPois,
     cursors,
     moveCursor,
     hoveredPoiInfo,
@@ -87,6 +90,7 @@ export function Workspace({
     clickEffects, // 추가
     clickMap, // 추가
   } = usePoiSocket(workspaceId, members);
+
   const {
     messages,
     sendMessage,
@@ -120,17 +124,20 @@ export function Workspace({
   }, [planDayDtos]);
 
   // [추가] 날짜 가시성 토글 핸들러
-  const handleDayVisibilityChange = useCallback((dayId: string, isVisible: boolean) => {
-    setVisibleDayIds(prevVisibleDayIds => {
-      const newVisibleDayIds = new Set(prevVisibleDayIds);
-      if (isVisible) {
-        newVisibleDayIds.add(dayId);
-      } else {
-        newVisibleDayIds.delete(dayId);
-      }
-      return newVisibleDayIds;
-    });
-  }, []);
+  const handleDayVisibilityChange = useCallback(
+    (dayId: string, isVisible: boolean) => {
+      setVisibleDayIds((prevVisibleDayIds) => {
+        const newVisibleDayIds = new Set(prevVisibleDayIds);
+        if (isVisible) {
+          newVisibleDayIds.add(dayId);
+        } else {
+          newVisibleDayIds.delete(dayId);
+        }
+        return newVisibleDayIds;
+      });
+    },
+    []
+  );
 
   // [수정] 패널 열기/닫기 시 지도 리렌더링을 위한 useEffect
   useEffect(() => {
@@ -289,19 +296,9 @@ export function Workspace({
           const newIndex = items.findIndex((item) => item.id === over.id);
 
           if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
-            const newItems = arrayMove(items, oldIndex, newIndex);
-            setPois((currentPois) => {
-              const otherPois = currentPois.filter(
-                (p) => p.status !== 'MARKED'
-              );
-              const updatedContainerPois = newItems.map((poi, index) => ({
-                ...poi,
-                status: 'MARKED' as const,
-                planDayId: undefined,
-                sequence: index,
-              }));
-              return [...otherPois, ...updatedContainerPois];
-            });
+            const newItems = arrayMove(items, oldIndex, newIndex); // 이제 newItems가 사용됩니다.
+            const newPoiIds = newItems.map((poi) => poi.id);
+            reorderMarkedPois(newPoiIds);
           }
         } else {
           // 여행 일정 날짜 컨테이너
@@ -313,17 +310,9 @@ export function Workspace({
 
           if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
             const newItems = arrayMove(items, oldIndex, newIndex);
+            // [개선] 상태를 직접 조작하는 대신, usePoiSocket 훅의 함수를 호출하여 "명령"만 내립니다.
+            // 훅 내부에서 낙관적 업데이트와 서버 이벤트 전송을 모두 처리합니다.
             const newPoiIds = newItems.map((poi) => poi.id);
-            setPois((currentPois) => {
-              const otherPois = currentPois.filter(
-                (p) => p.planDayId !== dayId
-              );
-              const updatedContainerPois = newItems.map((poi, index) => ({
-                ...poi,
-                sequence: index,
-              }));
-              return [...otherPois, ...updatedContainerPois];
-            });
             reorderPois(dayId, newPoiIds);
           }
         }
@@ -395,6 +384,7 @@ export function Workspace({
       setPois,
       reorderPois,
       removeSchedule,
+      reorderMarkedPois,
       addSchedule,
       dayLayers,
     ]
@@ -424,6 +414,44 @@ export function Workspace({
     },
     [itinerary, reorderPois]
   );
+
+  // [추가] 장소 캐시 스토어에서 데이터를 가져옵니다.
+  const placeCache = usePlaceStore((state) => state.placesById);
+
+  // [추가] 렌더링할 최종 장소 목록을 계산합니다. (pois + 캐시)
+  const placesToRender = useMemo(() => {
+    const combinedPlaces = new Map<string, PlaceDto>();
+    const getKey = (p: { latitude: number; longitude: number }) =>
+      `${p.latitude},${p.longitude}`;
+
+    // 1. 캐시에 있는 모든 장소를 추가합니다. (API로 불러온 추천 장소 포함)
+    placeCache.forEach((place) => {
+      combinedPlaces.set(getKey(place), place);
+    });
+
+    // 2. POI 목록을 기반으로 PlaceDto를 만듭니다.
+    // 이렇게 하면 캐시에 아직 없는 POI(예: 새로고침 직후)도 렌더링 목록에 포함됩니다.
+    // 또한, 캐시된 정보가 있다면 POI 정보와 병합됩니다.
+    pois.forEach((poi) => {
+      const existingPlace = combinedPlaces.get(getKey(poi)) || {};
+      const poiAsPlace: PlaceDto = {
+        id: poi.id,
+        latitude: poi.latitude,
+        longitude: poi.longitude,
+        title: poi.placeName || '이름 없는 장소',
+        address: poi.address,
+        // poi.categoryName이 유효한 카테고리인지 확인하고, 아니면 '기타'를 할당합니다.
+        category:
+          poi.categoryName && poi.categoryName in CATEGORY_INFO
+            ? (poi.categoryName as PlaceDto['category'])
+            : '기타',
+      };
+      // [수정] 캐시된 상세 정보(existingPlace)가 POI 기본 정보(poiAsPlace)를 덮어쓰도록 순서를 변경합니다.
+      combinedPlaces.set(getKey(poi), { ...poiAsPlace, ...existingPlace });
+    });
+
+    return Array.from(combinedPlaces.values());
+  }, [pois, placeCache]);
 
   return (
     <DndContext
@@ -457,11 +485,11 @@ export function Workspace({
             onPlaceClick={setSelectedPlace}
             onPoiClick={handlePoiClick}
             onPoiHover={hoverPoi} // LeftPanel에 hover 핸들러 전달
-            onPoiLeave={() => hoverPoi(null)} // onPoiLeave 핸들러 추가
             onOptimizeRoute={handleOptimizeRoute} // [추가] 최적화 핸들러 전달
             routeSegmentsByDay={routeSegmentsByDay} // LeftPanel에 경로 정보 전달
             visibleDayIds={visibleDayIds} // [추가] 가시성 상태 전달
             onDayVisibilityChange={handleDayVisibilityChange} // [추가] 가시성 변경 핸들러 전달
+            hoveredPoiId={hoveredPoiInfo?.poiId ?? null}
           />
 
           <button
@@ -478,6 +506,7 @@ export function Workspace({
 
           <div className="flex-1 bg-gray-100">
             <MapPanel
+              placesToRender={placesToRender} // [수정] 계산된 최종 목록 전달
               itinerary={itinerary}
               dayLayers={dayLayers}
               pois={pois}
@@ -493,8 +522,6 @@ export function Workspace({
               onOptimizationComplete={handleOptimizationComplete} // [추가] 최적화 완료 콜백 전달
               onRouteOptimized={handleRouteOptimized} // [추가] 최적화된 경로 콜백 전달
               latestChatMessage={latestChatMessage} // [추가] 최신 채팅 메시지 전달
-              workspaceId={workspaceId}
-              members={members}
               cursors={cursors} // cursors prop 전달
               moveCursor={moveCursor} // moveCursor prop 전달
               clickEffects={clickEffects} // clickEffects prop 전달
