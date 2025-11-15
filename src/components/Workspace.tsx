@@ -231,19 +231,72 @@ export function Workspace({
     map.panTo(moveLatLon);
   };
 
-  const handleExportToPdf = useCallback(async () => {
-    if (!pdfRef) return;
-    setIsGeneratingPdf(true);
+  // PDF 내보내기 버튼 클릭 핸들러
+  const handleExportToPdf = useCallback(() => {
+    if (isGeneratingPdf) return;
+    setIsGeneratingPdf(true); // PDF 생성 시작을 알림
+  }, [isGeneratingPdf]);
 
-    // 잠시 기다려 PdfDocument 컴포넌트가 렌더링되고 카카오맵 이미지가 로드될 시간을 줍니다.
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+  // isGeneratingPdf 상태가 true로 변경되면 PDF 생성 로직을 실행
+  useEffect(() => {
+    if (!isGeneratingPdf) return;
 
-    if (pdfRef.current) {
+    const generatePdf = async () => {
+      // ref가 준비될 때까지 잠시 기다립니다.
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      if (!pdfRef.current) {
+        alert('PDF 생성에 실패했습니다: 문서를 찾을 수 없습니다.');
+        setIsGeneratingPdf(false);
+        return;
+      }
+
+      const element = pdfRef.current;
       try {
-        const canvas = await html2canvas(pdfRef.current, {
-          scale: 2, // 고해상도 캡처
-          useCORS: true, // 프록시를 통해 가져온 이미지에 접근하기 위해 필요
+        // 지도 타일이 로드될 시간을 추가로 기다립니다.
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+
+        const images = Array.from(element.querySelectorAll('img'));
+        const crossOriginImages = images.filter(
+          (img) =>
+            img.src &&
+            (img.src.includes('daumcdn.net') ||
+              img.src.includes('kakaocdn.net'))
+        );
+
+        const promises = crossOriginImages.map((img) => {
+          return new Promise<void>((resolve) => {
+            const originalSrc = img.src;
+            if (originalSrc.startsWith('data:')) {
+              resolve();
+              return;
+            }
+            const proxyUrl = `${API_BASE_URL}/proxy/image?url=${encodeURIComponent(
+              originalSrc
+            )}`;
+
+            const newImg = new Image();
+            newImg.crossOrigin = 'Anonymous';
+            newImg.onload = () => {
+              const canvas = document.createElement('canvas');
+              canvas.width = newImg.naturalWidth;
+              canvas.height = newImg.naturalHeight;
+              const ctx = canvas.getContext('2d');
+              ctx?.drawImage(newImg, 0, 0);
+              img.src = canvas.toDataURL('image/png');
+              resolve();
+            };
+            newImg.onerror = () => {
+              console.error(`프록시 이미지 로드 실패: ${originalSrc}`);
+              resolve();
+            };
+            newImg.src = proxyUrl;
+          });
         });
+
+        await Promise.all(promises);
+
+        const canvas = await html2canvas(element, { scale: 2 });
         const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF('p', 'mm', 'a4');
         const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -253,10 +306,13 @@ export function Workspace({
       } catch (error) {
         console.error('PDF 생성 중 오류가 발생했습니다.', error);
         alert('PDF 생성에 실패했습니다. 잠시 후 다시 시도해주세요.');
+      } finally {
+        setIsGeneratingPdf(false); // 성공/실패 여부와 관계없이 상태를 리셋
       }
-    }
-    setIsGeneratingPdf(false);
-  }, [workspaceName, itinerary, dayLayers]);
+    };
+
+    generatePdf();
+  }, [isGeneratingPdf, workspaceName, itinerary, dayLayers]);
 
   // [추가] LeftPanel에서 경로 최적화 버튼 클릭 시 호출될 핸들러
   const handleOptimizeRoute = useCallback((dayId: string) => {
