@@ -1,6 +1,7 @@
 import type { TravelStyleType } from '../constants/travelStyle';
 import type { TravelTendencyType } from '../constants/travelTendencyType';
 import type { KeywordValue } from '../utils/keyword';
+import type { PostStatus, Participation } from './post';
 
 export type KeywordType = string;
 
@@ -12,6 +13,12 @@ export interface MatchRecruitingPostDto {
   endDate: string | null;
   maxParticipants: number;
   keywords: KeywordValue[];
+  status?: PostStatus;
+  imageId?: string | null;
+  writerId?: string;
+  createdAt?: string;
+  content?: string;
+  participations?: Participation[];
 }
 
 export interface MatchCandidateDto {
@@ -23,7 +30,7 @@ export interface MatchCandidateDto {
   overlappingTravelStyles: TravelStyleType[];
   overlappingTendencies: TravelTendencyType[];
   mbtiMatchScore: number;
-  recruitingPost?: MatchRecruitingPostDto | null;
+  recruitingPosts?: MatchRecruitingPostDto[];
 }
 
 export interface MatchResponseDto {

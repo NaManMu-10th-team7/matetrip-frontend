@@ -354,7 +354,7 @@ export function MainPage({
           </p>
         </div>
         {/* Search Bar and Filters - 로그인한 사용자에게만 표시 */}
-        {isLoggedIn && <SearchBar />};
+        {isLoggedIn && <SearchBar />}
         {/* {isLoggedIn && (
           <div className="mb-10 flex items-start gap-3">
             <form onSubmit={handleSearchSubmit} className="flex-1 relative">

@@ -11,7 +11,6 @@ interface SearchResultsProps {
     endDate?: string;
     location?: string;
     title?: string;
-    keyword?: string;
   };
   onViewPost: (postId: string) => void;
 }

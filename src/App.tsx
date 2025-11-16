@@ -29,7 +29,7 @@ import { Toaster } from 'sonner';
 import { Dialog, DialogContent } from './components/ui/dialog';
 import { ProfileModal } from './components/ProfileModal';
 import PublicOnlyRoute from './components/PublicOnlyRoute';
-
+import { MatchSearchResults } from './components/MatchSearchResults';
 // Layout component for pages with Sidebar
 function Layout({
   isLoggedIn,
@@ -363,6 +363,8 @@ export default function App() {
             }
           />
           <Route path="/search" element={<SearchResultsWrapper />} />
+          {/* 매칭용 검색 라우트 추가  */}
+          <Route path="/match-search" element={<MatchSearchResults />} />
           <Route
             path="/posts/:id"
             element={
