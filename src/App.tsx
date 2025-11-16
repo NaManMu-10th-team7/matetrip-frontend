@@ -14,6 +14,7 @@ import { MyTripsPage } from './components/MyTripsPage';
 import { AIChatPage } from './components/AIChatPage';
 import { AIChatPanel } from './components/AIChatPanel';
 import { InspirationPage } from './components/InspirationPage';
+import { InspirationDetail } from './components/InspirationDetail';
 import { SearchResults } from './components/SearchResults';
 import { PostDetail } from './components/PostDetail';
 import { Workspace } from './components/Workspace';
@@ -351,6 +352,7 @@ export default function App() {
           />
           <Route path="/ai-chat" element={<AIChatPage />} />
           <Route path="/inspiration" element={<InspirationPage />} />
+          <Route path="/inspiration/:placeId" element={<InspirationDetail />} />
           <Route
             path="/save"
             element={

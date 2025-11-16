@@ -37,12 +37,12 @@ export function InspirationCard({
       {/* 제목 및 주소 영역 */}
       <div className="flex flex-col gap-5 items-start w-full">
         <div className="flex flex-col gap-1.5 items-start w-full">
-          <h3 className="font-bold text-2xl text-black leading-[1.4] w-full">
+          <h3 className="font-bold text-lg text-black leading-[1.4] w-full">
             {title}
           </h3>
           <div className="flex items-center gap-1 w-full">
             <MapPin className="w-5 h-5 text-black flex-shrink-0" />
-            <p className="font-medium text-base text-black leading-[1.6]">
+            <p className="font-medium text-sm text-black leading-[1.6] overflow-hidden whitespace-nowrap text-ellipsis">
               {address}
             </p>
           </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Compass, Loader2 } from 'lucide-react';
 import { SearchBar } from './SearchBar';
 import { InspirationCard } from './InspirationCard';
@@ -27,6 +28,7 @@ interface InspirationPageProps {
 }
 
 export function InspirationPage({ onViewAccommodation }: InspirationPageProps) {
+  const navigate = useNavigate();
   const [places, setPlaces] = useState<Place[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -151,7 +153,8 @@ export function InspirationPage({ onViewAccommodation }: InspirationPageProps) {
     if (onViewAccommodation) {
       onViewAccommodation(placeId);
     }
-    console.log('장소 클릭:', placeId);
+    // InspirationDetail 페이지로 라우팅
+    navigate(`/inspiration/${placeId}`);
   };
 
   return (
@@ -161,10 +164,10 @@ export function InspirationPage({ onViewAccommodation }: InspirationPageProps) {
         {/* Header Section */}
         <div className="mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl font-medium text-gray-900 mb-2">
-            영감 얻기
+            당신을 위한 AI 장소추천
           </h1>
           <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
-            인기 있는 장소를 둘러보고 여행 영감을 얻으세요
+            인기 있는 장소를 둘러보고 여행 영감을 얻으세요.
           </p>
 
           {/* Search Bar */}
