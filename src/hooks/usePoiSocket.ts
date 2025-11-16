@@ -202,12 +202,14 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
 
     const handleMarked = (data: Poi & { tempId?: string }) => {
       console.log('[Event] MARKED 수신:', data);
-      if (!data || !data.id || !data.tempId) return;
+      if (!data || !data.id) return;
 
       const newPoiData = { ...data, isPersisted: true };
 
       // Check the ref for optimistic data, not the component state
-      const optimisticData = optimisticScheduleRef.current.get(data.tempId);
+      const optimisticData = data.tempId
+        ? optimisticScheduleRef.current.get(data.tempId)
+        : undefined;
 
       if (optimisticData) {
         console.log(
@@ -222,11 +224,12 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
         }, 0);
 
         // Clean up the ref
-        optimisticScheduleRef.current.delete(data.tempId);
+        optimisticScheduleRef.current.delete(data.tempId!);
       }
 
       setPois((prevPois) => {
-        const isTempPoiPresent = prevPois.some((p) => p.id === data.tempId);
+        const isTempPoiPresent =
+          data.tempId && prevPois.some((p) => p.id === data.tempId);
 
         if (isTempPoiPresent) {
           return prevPois.map((p) =>
@@ -250,6 +253,23 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
           const updatedPois = [...prevPois];
           updatedPois[existingPoiIndex] = {
             ...updatedPois[existingPoiIndex],
+            ...newPoiData,
+          };
+          return updatedPois;
+        }
+
+        // Fallback: match by coordinates when tempId is not provided
+        const COORDINATE_TOLERANCE = 0.000001;
+        const existingByCoordsIndex = prevPois.findIndex(
+          (p) =>
+            Math.abs(p.latitude - newPoiData.latitude) < COORDINATE_TOLERANCE &&
+            Math.abs(p.longitude - newPoiData.longitude) < COORDINATE_TOLERANCE
+        );
+
+        if (existingByCoordsIndex > -1) {
+          const updatedPois = [...prevPois];
+          updatedPois[existingByCoordsIndex] = {
+            ...updatedPois[existingByCoordsIndex],
             ...newPoiData,
           };
           return updatedPois;
