@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { MapPin, SlidersHorizontal, Search } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import { Button } from './ui/button';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import client from '../api/client';
@@ -8,8 +8,8 @@ import { MainPostCardSkeleton } from './MainPostCardSkeleton';
 import { MatchingCarousel } from './MatchingCarousel';
 import { useAuthStore } from '../store/authStore';
 import type { MatchingInfo, MatchCandidateDto } from '../types/matching';
-import { KEYWORD_OPTIONS, type KeywordValue } from '../utils/keyword';
-import { SearchBar } from './SearchBar';
+import { type KeywordValue } from '../utils/keyword';
+import { MatchingSearchBar } from './MatchingSearchBar';
 
 interface MainPageProps {
   onSearch: (params: {
@@ -298,22 +298,22 @@ export function MainPage({
     keyword: selectedKeyword || undefined,
   };
 
-  const runSearch = () => {
-    const titleQuery = searchQuery.trim();
-    const payload = {
-      ...normalizedFilters,
-      title: titleQuery || undefined,
-    };
-    if (
-      !payload.title &&
-      !payload.startDate &&
-      !payload.endDate &&
-      !payload.keyword
-    ) {
-      return;
-    }
-    onSearch(payload);
-  };
+  // const runSearch = () => {
+  //   const titleQuery = searchQuery.trim();
+  //   const payload = {
+  //     ...normalizedFilters,
+  //     title: titleQuery || undefined,
+  //   };
+  //   if (
+  //     !payload.title &&
+  //     !payload.startDate &&
+  //     !payload.endDate &&
+  //     !payload.keyword
+  //   ) {
+  //     return;
+  //   }
+  //   onSearch(payload);
+  // };
 
   // const handleFilterApply = () => {
   //   runSearch();
@@ -354,7 +354,7 @@ export function MainPage({
           </p>
         </div>
         {/* Search Bar and Filters - 로그인한 사용자에게만 표시 */}
-        {isLoggedIn && <SearchBar />}
+        {isLoggedIn && <MatchingSearchBar />}
         {/* {isLoggedIn && (
           <div className="mb-10 flex items-start gap-3">
             <form onSubmit={handleSearchSubmit} className="flex-1 relative">

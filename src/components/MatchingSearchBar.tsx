@@ -22,7 +22,7 @@ const KEYWORD_ENTRIES = Object.entries(KEYWORD_TYPES).map(([key, label]) => ({
 }));
 
 // 헤더에서 사용하는 통합 검색바. 입력한 조건으로 매칭 API를 직접 호출하고 결과를 즉시 MatchingCard로 보여준다.
-export function SearchBar() {
+export function MatchingSearchBar() {
   const [locationQuery, setLocationQuery] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -112,7 +112,7 @@ export function SearchBar() {
           ...params,
         },
         paramsSerializer: (requestParams) => {
-          console.log('직렬화 직전 params', requestParams);
+          //console.log('직렬화 직전 params', requestParams);
           const usp = new URLSearchParams();
           Object.entries(requestParams).forEach(([key, value]) => {
             if (value === undefined || value === null) {
