@@ -2,7 +2,7 @@ import { memo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { MessageCircle } from 'lucide-react';
 import { ChatPanel } from './ChatPanel';
-import { type ChatMessage, type AiPlace } from '../hooks/useChatSocket';
+import { type ChatMessage } from '../hooks/useChatSocket';
 import { type usePoiSocket } from '../hooks/usePoiSocket';
 
 interface RightPanelProps {
@@ -12,6 +12,8 @@ interface RightPanelProps {
   isChatConnected: boolean;
   workspaceId: string;
   markPoi: ReturnType<typeof usePoiSocket>['markPoi'];
+  onAddPoiToItinerary: (poi: any) => void;
+  onCardClick: (poi: any) => void;
 }
 
 export const RightPanel = memo(function RightPanel({
@@ -21,6 +23,8 @@ export const RightPanel = memo(function RightPanel({
   isChatConnected,
   workspaceId,
   markPoi,
+  onAddPoiToItinerary,
+  onCardClick,
 }: RightPanelProps) {
   if (!isOpen) {
     return null;
@@ -42,6 +46,8 @@ export const RightPanel = memo(function RightPanel({
             isChatConnected={isChatConnected}
             workspaceId={workspaceId}
             markPoi={markPoi}
+            onAddPoiToItinerary={onAddPoiToItinerary}
+            onCardClick={onCardClick}
           />
         </TabsContent>
       </Tabs>

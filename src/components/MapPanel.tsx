@@ -951,6 +951,11 @@ export function MapPanel({
               queryParams.append('waypoints', waypointsParam);
             }
 
+            // [추가] API 요청 URL 로깅
+            console.log(
+              `[DEBUG] Kakao Mobility API Request URL for day ${dayLayer.id}: https://apis-navi.kakaomobility.com/v1/directions?${queryParams.toString()}`
+            );
+
             const response = await fetch(
               `https://apis-navi.kakaomobility.com/v1/directions?${queryParams.toString()}`,
               {
@@ -959,8 +964,13 @@ export function MapPanel({
                 },
               }
             );
-            if (!response.ok)
+            if (!response.ok) {
+              // [추가] HTTP 오류 상태 로깅
+              console.error(
+                `[DEBUG] Kakao Mobility API HTTP Error for day ${dayLayer.id}: Status ${response.status}, Text: ${response.statusText}`
+              );
               throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
             const data = await response.json();
             console.log(
@@ -1036,6 +1046,18 @@ export function MapPanel({
                     poisForThisDay
                   );
 
+                  // [추가] findClosestPoi가 null을 반환하는 경우 로깅
+                  if (!fromPoi) {
+                    console.warn(
+                      `[DEBUG] From POI not found for section ${index} in day ${dayLayer.id} at coordinates (${startGuide.x}, ${startGuide.y})`
+                    );
+                  }
+                  if (!toPoi) {
+                    console.warn(
+                      `[DEBUG] To POI not found for section ${index} in day ${dayLayer.id} at coordinates (${endGuide.x}, ${endGuide.y})`
+                    );
+                  }
+
                   if (fromPoi && toPoi) {
                     segmentsForDay.push({
                       fromPoiId: fromPoi.id,
@@ -1048,6 +1070,20 @@ export function MapPanel({
                 }
               );
               newDailyRouteInfo[dayLayer.id] = segmentsForDay;
+            } else {
+              // [수정] API 응답에 routes 또는 sections가 없는 경우, 에러 코드와 메시지를 로깅
+              if (data.routes && data.routes[0]) {
+                const routeResult = data.routes[0];
+                console.warn(
+                  `[DEBUG] Kakao Mobility API did not return sections for day ${dayLayer.id}. Result Code: ${routeResult.result_code}, Message: ${routeResult.result_msg}`,
+                  data
+                );
+              } else {
+                console.warn(
+                  `[DEBUG] Kakao Mobility API response for day ${dayLayer.id} does not contain valid routes:`,
+                  data
+                );
+              }
             }
           } catch (error) {
             console.error(

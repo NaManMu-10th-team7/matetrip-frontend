@@ -826,7 +826,9 @@ export function Workspace({
             sendMessage={sendMessage}
             isChatConnected={isChatConnected}
             workspaceId={workspaceId}
-            markPoi={markPoi} // [추가] markPoi 함수 전달
+            markPoi={markPoi}
+            onAddPoiToItinerary={handleAddRecommendedPoi} // [신규] 일정 추가 모달 핸들러 전달
+            onCardClick={handlePoiClick} // [신규] 지도 이동 핸들러 전달
           />
         </div>
       </div>

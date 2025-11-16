@@ -14,7 +14,9 @@ interface ChatPanelProps {
   sendMessage: (message: string) => void;
   isChatConnected: boolean;
   workspaceId: string;
-  markPoi: (poiData: any, options?: any) => void; // [추가]
+  markPoi: (poiData: any, options?: any) => void;
+  onAddPoiToItinerary: (poi: any) => void;
+  onCardClick: (poi: any) => void;
 }
 
 export const ChatPanel = memo(function ChatPanel({
@@ -23,6 +25,8 @@ export const ChatPanel = memo(function ChatPanel({
   isChatConnected,
   workspaceId,
   markPoi, // [추가]
+  onAddPoiToItinerary,
+  onCardClick,
 }: ChatPanelProps) {
   const [isVCCallActive, setIsVCCallActive] = useState(false);
   const [hasVCCallBeenInitiated, setHasVCCallBeenInitiated] = useState(false);
@@ -179,6 +183,8 @@ export const ChatPanel = memo(function ChatPanel({
                             key={placeIndex}
                             place={place}
                             markPoi={markPoi}
+                            onAddPoiToItinerary={onAddPoiToItinerary}
+                            onCardClick={onCardClick}
                           />
                         ))}
                       </div>

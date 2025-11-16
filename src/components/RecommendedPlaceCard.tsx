@@ -1,20 +1,43 @@
 import { MapPin, PlusCircle } from 'lucide-react';
 import { type AiPlace } from '../hooks/useChatSocket';
 import { Button } from './ui/button';
+import { type Poi } from '../hooks/usePoiSocket';
 
 interface RecommendedPlaceCardProps {
   place: AiPlace;
+  onAddPoiToItinerary: (poi: Poi) => void;
+  onCardClick: (poi: Pick<Poi, 'latitude' | 'longitude'>) => void;
 }
 
-export function RecommendedPlaceCard({ place }: RecommendedPlaceCardProps) {
+export function RecommendedPlaceCard({
+  place,
+  onAddPoiToItinerary,
+  onCardClick,
+}: RecommendedPlaceCardProps) {
   const handleAddClick = () => {
-    // TODO: '일정에 추가' 또는 '마커 보관함에 추가' 기능 구현
-    // 예: usePoiSocket의 markPoi 함수 호출
-    alert(`'${place.title}'을(를) 일정에 추가하는 기능은 구현 예정입니다.`);
+    // AiPlace를 Poi 타입과 유사하게 변환하여 전달
+    const poiForModal: Poi = {
+      id: place.id,
+      placeName: place.title,
+      address: place.address,
+      latitude: place.latitude,
+      longitude: place.longitude,
+      categoryName: place.category,
+      status: 'RECOMMENDED',
+      // 나머지 Poi 필드는 Workspace의 모달 핸들러에서 처리하므로 필수값만 전달
+      workspaceId: '',
+      createdBy: '',
+      sequence: 0,
+      isPersisted: false,
+    };
+    onAddPoiToItinerary(poiForModal);
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-3 flex gap-3 text-gray-900 shadow-sm">
+    <div
+      className="bg-white rounded-lg border border-gray-200 p-3 flex gap-3 text-gray-900 shadow-sm cursor-pointer hover:shadow-md hover:border-gray-300 transition-all"
+      onClick={() => onCardClick(place)}
+    >
       {place.image_url && (
         <img
           src={place.image_url}
