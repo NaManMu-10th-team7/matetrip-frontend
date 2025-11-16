@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { MessageCircle } from 'lucide-react';
 import { ChatPanel } from './ChatPanel';
 import { type ChatMessage } from '../hooks/useChatSocket';
+import { type usePoiSocket } from '../hooks/usePoiSocket';
 
 interface RightPanelProps {
   isOpen: boolean;
@@ -10,6 +11,9 @@ interface RightPanelProps {
   sendMessage: (message: string) => void;
   isChatConnected: boolean;
   workspaceId: string;
+  markPoi: ReturnType<typeof usePoiSocket>['markPoi'];
+  onAddPoiToItinerary: (poi: any) => void;
+  onCardClick: (poi: any) => void;
 }
 
 export const RightPanel = memo(function RightPanel({
@@ -18,13 +22,16 @@ export const RightPanel = memo(function RightPanel({
   sendMessage,
   isChatConnected,
   workspaceId,
+  markPoi,
+  onAddPoiToItinerary,
+  onCardClick,
 }: RightPanelProps) {
   if (!isOpen) {
     return null;
   }
 
   return (
-    <div className="w-80 bg-white border-l border-gray-200 flex flex-col transition-all duration-300 ease-in-out">
+    <div className="w-96 bg-white border-l border-gray-200 flex flex-col transition-all duration-300 ease-in-out">
       <Tabs defaultValue="chat" className="flex-1 flex flex-col h-full">
         <TabsList className="w-full justify-around rounded-none bg-gray-50 border-b">
           <TabsTrigger value="chat" className="flex-1 gap-2">
@@ -38,6 +45,9 @@ export const RightPanel = memo(function RightPanel({
             sendMessage={sendMessage}
             isChatConnected={isChatConnected}
             workspaceId={workspaceId}
+            markPoi={markPoi}
+            onAddPoiToItinerary={onAddPoiToItinerary}
+            onCardClick={onCardClick}
           />
         </TabsContent>
       </Tabs>

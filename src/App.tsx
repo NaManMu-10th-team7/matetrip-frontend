@@ -225,13 +225,7 @@ export default function App() {
   const navigate = useNavigate();
 
   // Zustand 스토어에서 상태와 액션을 가져옵니다.
-  const {
-    isLoggedIn,
-    isAuthLoading,
-    user,
-    checkAuth,
-    logout: storeLogout,
-  } = useAuthStore();
+  const { isLoggedIn, user, checkAuth, logout: storeLogout } = useAuthStore();
 
   // 모달 상태
   const [showCreatePost, setShowCreatePost] = useState(false);
@@ -274,11 +268,6 @@ export default function App() {
       // navigate('/profile');
       setProfileModalState({ open: true, userId: user.userId });
     }
-  };
-
-  const handleSearch = (query: string) => {
-    const searchParams = new URLSearchParams({ title: query });
-    navigate(`/search?${searchParams.toString()}`);
   };
 
   const handleViewProfile = (userId: string) => {
