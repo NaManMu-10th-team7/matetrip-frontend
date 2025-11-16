@@ -3,7 +3,7 @@ import { Map, LogIn, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
 import { useAuthStore } from '../store/authStore';
 import { NotificationPanel } from './NotificationPanel'; // new-ui의 컴포넌트 사용
-import { SearchBar } from './MatchingSearchBar'; // new-ui의 컴포넌트 사용
+import { SearchBar } from './SearchBar'; // new-ui의 컴포넌트 사용
 import client from '../api/client';
 
 interface HeaderProps {
