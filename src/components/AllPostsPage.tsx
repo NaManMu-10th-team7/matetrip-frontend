@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { ClipboardList, Search, SlidersHorizontal } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { ClipboardList, Search, SlidersHorizontal, X } from 'lucide-react';
 import { Button } from './ui/button';
 import client from '../api/client';
 import { type Post } from '../types/post';
@@ -23,6 +23,13 @@ export function AllPostsPage({ onViewPost, onSearch, fetchTrigger }: AllPostsPag
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const { isAuthLoading } = useAuthStore();
+
+  // 필터 관련 상태
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [location, setLocation] = useState('');
+  const filterRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isAuthLoading) {
@@ -58,6 +65,44 @@ export function AllPostsPage({ onViewPost, onSearch, fetchTrigger }: AllPostsPag
     }
   };
 
+  // 필터 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
+        setIsFilterOpen(false);
+      }
+    };
+
+    if (isFilterOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isFilterOpen]);
+
+  // 필터 적용
+  const handleApplyFilters = () => {
+    onSearch({
+      startDate: startDate || undefined,
+      endDate: endDate || undefined,
+      location: location || undefined,
+      title: searchQuery || undefined,
+    });
+    setIsFilterOpen(false);
+  };
+
+  // 필터 초기화
+  const handleResetFilters = () => {
+    setStartDate('');
+    setEndDate('');
+    setLocation('');
+  };
+
+  // 활성화된 필터 개수
+  const activeFilterCount = [startDate, endDate, location].filter(Boolean).length;
+
   return (
     <div className="bg-white min-h-screen">
       <div className="max-w-7xl mx-auto px-16 py-12">
@@ -84,13 +129,93 @@ export function AllPostsPage({ onViewPost, onSearch, fetchTrigger }: AllPostsPag
                 />
               </div>
             </form>
-            <Button
-              variant="outline"
-              className="gap-2 px-6 py-3 h-auto border-gray-200"
-            >
-              <SlidersHorizontal className="w-5 h-5" />
-              Filters
-            </Button>
+            <div className="relative" ref={filterRef}>
+              <Button
+                variant="outline"
+                className="gap-2 px-6 py-3 h-auto border-gray-200 relative"
+                onClick={() => setIsFilterOpen(!isFilterOpen)}
+              >
+                <SlidersHorizontal className="w-5 h-5" />
+                Filters
+                {activeFilterCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </Button>
+
+              {/* 필터 드롭다운 */}
+              {isFilterOpen && (
+                <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">필터</h3>
+                    <button
+                      onClick={() => setIsFilterOpen(false)}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  {/* 시작일 */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      시작일
+                    </label>
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  {/* 종료일 */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      종료일
+                    </label>
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  {/* 위치 */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      위치
+                    </label>
+                    <input
+                      type="text"
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                      placeholder="예: 서울, 부산, 제주..."
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  {/* 버튼 영역 */}
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={handleResetFilters}
+                    >
+                      초기화
+                    </Button>
+                    <Button
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                      onClick={handleApplyFilters}
+                    >
+                      적용
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
