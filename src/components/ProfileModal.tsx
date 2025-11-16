@@ -21,9 +21,9 @@ import { translateKeyword } from '../utils/keyword';
 import { WorkspaceCard } from './WorkspaceCard';
 import { EditProfileModal } from './EditProfileModal'; // Import EditProfileModal
 import type { TravelStyleType } from '../constants/travelStyle';
-import type { TravelTendencyType } from '../constants/travelTendencyType';
-// import type { GenderType } from '../constants/gender';
-// import type { MbtiType } from '../constants/mbti';
+import type { TravelTendencyType } from '../constants/travelTendencyType'; // prettier-ignore
+import type { GenderType } from '../constants/gender';
+import type { MbtiType } from '../constants/mbti';
 
 interface ProfileModalProps {
   open: boolean;
@@ -525,22 +525,22 @@ export function ProfileModal({
             }
             setIsEditProfileModalOpen(open);
           }}
-          onProfileUpdated={(updates) => {
-            setProfile((prev) =>
-              prev
-                ? {
-                    ...prev,
-                    nickname: updates.nickname,
-                    intro: updates.intro,
-                    description: updates.description,
-                    travelStyles: updates.travelStyles,
-                    tendency: updates.tendency,
-                    profileImageId:
-                      updates.profileImageId ?? prev.profileImageId,
-                  }
-                : prev
-            );
-          }}
+          // onProfileUpdated={(updates) => {
+          //   setProfile((prev) =>
+          //     prev
+          //       ? {
+          //           ...prev,
+          //           nickname: updates.nickname,
+          //           intro: updates.intro,
+          //           description: updates.description,
+          //           travelStyles: updates.travelStyles,
+          //           tendency: updates.tendency,
+          //           profileImageId:
+          //             updates.profileImageId ?? prev.profileImageId,
+          //         }
+          //       : prev
+          //   );
+          // }}
           user={{
             id: profile.id,
             nickname: profile.nickname,
@@ -550,8 +550,8 @@ export function ProfileModal({
             description: profile.description || '', // profile.description을 description으로 직접 전달
             travelStyles: (profile.travelStyles || []) as TravelStyleType[],
             tendency: (profile.tendency || []) as TravelTendencyType[],
-            // gender: profile.gender as GenderType,
-            // mbtiTypes: profile.mbtiTypes  as MbtiType,
+            gender: profile.gender as GenderType,
+            mbtiTypes: profile.mbtiTypes as MbtiType,
           }}
         />
       )}

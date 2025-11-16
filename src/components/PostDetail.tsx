@@ -40,7 +40,6 @@ import client from '../api/client';
 import { type Post, type Participation } from '../types/post';
 import { translateKeyword } from '../utils/keyword';
 import { useAuthStore } from '../store/authStore';
-import { API_BASE_URL } from '../api/client';
 
 interface PostDetailProps {
   postId: string;

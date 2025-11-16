@@ -6,6 +6,7 @@ import { Badge } from './ui/badge';
 import { VideoChat } from './VideoChat';
 import { type ChatMessage } from '../hooks/useChatSocket';
 import { useAuthStore } from '../store/authStore';
+import { RecommendedPlaceCard } from './RecommendedPlaceCard'; // [신규] 추천 장소 카드 컴포넌트
 import { cn } from './ui/utils';
 
 interface ChatPanelProps {
@@ -13,6 +14,9 @@ interface ChatPanelProps {
   sendMessage: (message: string) => void;
   isChatConnected: boolean;
   workspaceId: string;
+  markPoi: (poiData: any, options?: any) => void;
+  onAddPoiToItinerary: (poi: any) => void;
+  onCardClick: (poi: any) => void;
 }
 
 export const ChatPanel = memo(function ChatPanel({
@@ -20,6 +24,9 @@ export const ChatPanel = memo(function ChatPanel({
   sendMessage,
   isChatConnected,
   workspaceId,
+  markPoi, // [추가]
+  onAddPoiToItinerary,
+  onCardClick,
 }: ChatPanelProps) {
   const [isVCCallActive, setIsVCCallActive] = useState(false);
   const [hasVCCallBeenInitiated, setHasVCCallBeenInitiated] = useState(false);
@@ -130,13 +137,23 @@ export const ChatPanel = memo(function ChatPanel({
         {messages.map((msg, index) => {
           const isMe = currentUserId != null && msg.userId === currentUserId;
           const isSystem = msg.username === 'System';
+          // [추가] AI 추천 메시지인지 확인
+          const isAiRecommendation =
+            msg.role === 'ai' &&
+            msg.recommendedPlaces &&
+            msg.recommendedPlaces.length > 0;
 
           return (
             <div
-              key={index}
+              key={msg.id || index} // [개선] key로 고유 ID 사용
               className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
             >
-              <div className={`max-w-[70%] ${isMe ? 'order-2' : ''}`}>
+              <div
+                className={cn(
+                  !isAiRecommendation && 'max-w-[70%]', // [수정] AI 추천이 아닐 때만 너비 제한
+                  isMe ? 'order-2' : ''
+                )}
+              >
                 {!isMe && !isSystem && (
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-sm text-gray-600">
@@ -145,15 +162,34 @@ export const ChatPanel = memo(function ChatPanel({
                   </div>
                 )}
                 <div
-                  className={`rounded-lg px-4 py-2 ${
+                  className={cn( // [수정] className 문법 오류 수정
+                    'rounded-lg px-4 py-2',
+                    isAiRecommendation && 'w-full bg-transparent p-0',
                     isMe
                       ? 'bg-blue-600 text-white'
                       : isSystem
                       ? 'bg-gray-100 text-gray-700 italic'
                       : 'bg-gray-100 text-gray-900'
-                  }`}
+                  )}
                 >
-                  <p className="text-sm">{msg.message}</p>
+                  {!isAiRecommendation && <p className="text-sm">{msg.message}</p>}
+                  {/* [신규] AI 추천 장소가 있을 경우 렌더링 */}
+                  {isAiRecommendation && (
+                    <div className="space-y-2">
+                      <p className="text-sm text-gray-900 bg-gray-100 rounded-lg px-4 py-2">{msg.message}</p>
+                      <div className="grid grid-cols-1 gap-2">
+                        {msg.recommendedPlaces.map((place, placeIndex) => (
+                          <RecommendedPlaceCard
+                            key={placeIndex}
+                            place={place}
+                            markPoi={markPoi}
+                            onAddPoiToItinerary={onAddPoiToItinerary}
+                            onCardClick={onCardClick}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <span
                   className={`text-xs text-gray-500 mt-1 block ${
