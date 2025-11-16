@@ -19,12 +19,13 @@ import { PlanRoomHeader } from './PlanRoomHeader';
 import { usePlaceStore } from '../store/placeStore'; // placeStore import
 import { useAuthStore } from '../store/authStore';
 import { type Poi, usePoiSocket } from '../hooks/usePoiSocket.ts';
-import { useChatSocket } from '../hooks/useChatSocket'; // useChatSocket import 추가
+import { useChatSocket } from '../hooks/useChatSocket';
 import { useWorkspaceMembers } from '../hooks/useWorkspaceMembers.ts';
-import { API_BASE_URL } from '../api/client.ts';
+import client, { API_BASE_URL } from '../api/client.ts';
 import { CATEGORY_INFO, type PlaceDto } from '../types/place.ts'; // useWorkspaceMembers 훅 import
 import { AddToItineraryModal } from './AddToItineraryModal.tsx';
 import { PdfDocument } from './PdfDocument.tsx'; // [신규] 모달 컴포넌트 임포트 (생성 필요)
+import { AIRecommendationLoadingModal } from './AIRecommendationLoadingModal.tsx';
 
 interface WorkspaceProps {
   workspaceId: string;
@@ -75,6 +76,15 @@ export function Workspace({
   // [신규] '일정 추가' 모달 관련 상태
   const [poiToAdd, setPoiToAdd] = useState<Poi | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  // [신규] 초기 지도 중심 좌표 상태
+  const [initialMapCenter, setInitialMapCenter] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+
+  // 게시글의 위치 정보를 저장할 상태
+  const [postLocation, setPostLocation] = useState<string | null>(null);
 
   const { user } = useAuthStore();
 
@@ -143,9 +153,45 @@ export function Workspace({
   // [추가] 지도에 표시할 날짜 ID를 관리하는 상태
   const [visibleDayIds, setVisibleDayIds] = useState<Set<string>>(new Set());
 
+  // 워크스페이스와 연결된 게시글 정보를 가져와서 postLocation을 설정합니다.
+  useEffect(() => {
+    const fetchPostData = async () => {
+      try {
+        const response = await client.get(`/workspace/${workspaceId}/post`);
+        if (response.data && response.data.location) {
+          setPostLocation(response.data.location);
+        }
+      } catch (error) {
+        console.error('Failed to fetch post data for workspace:', error);
+      }
+    };
+
+    fetchPostData();
+  }, [workspaceId]);
+
   // [추가] planDayDtos가 변경되면 visibleDayIds를 모든 날짜 ID로 초기화
   useEffect(() => {
+    // [디버그용] 워크스페이스 진입 시 게시글의 여행지(postLocation) 값 확인
+    console.log('[디버그] 워크스페이스 진입. 게시글 여행지:', postLocation);
+
     if (planDayDtos.length === 0) return;
+
+    // [수정] postLocation이 있으면 좌표로 변환하여 지도 초기 위치 설정
+    if (postLocation) {
+      const geocoder = new window.kakao.maps.services.Geocoder();
+      geocoder.addressSearch(postLocation, (result, status) => {
+        if (status === window.kakao.maps.services.Status.OK && result[0]) {
+          setInitialMapCenter({
+            lat: Number(result[0].y),
+            lng: Number(result[0].x),
+          });
+        } else {
+          console.warn(
+            `'${postLocation}'에 대한 좌표를 찾을 수 없습니다. 기본 위치로 지도를 표시합니다.`
+          );
+        }
+      });
+    }
 
     setVisibleDayIds(new Set(planDayDtos.map((day) => day.id)));
 
@@ -160,7 +206,7 @@ export function Workspace({
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              region: '서울', // TODO: 실제 워크스페이스의 지역 정보 사용
+              region: postLocation || '서울', // [수정] postLocation을 사용하고, 없으면 '서울'을 기본값으로
               startDate: planDayDtos[0].planDate,
               endDate: planDayDtos[planDayDtos.length - 1].planDate,
             }),
@@ -204,7 +250,7 @@ export function Workspace({
     if (user?.userId) {
       generateAiPlan();
     }
-  }, [planDayDtos, workspaceId, user?.userId]); // [수정] 의존성 배열에 user.userId 추가
+  }, [planDayDtos, workspaceId, user?.userId, postLocation]); // [수정] 의존성 배열에 postLocation 추가
 
   // [추가] 날짜 가시성 토글 핸들러
   const handleDayVisibilityChange = useCallback(
@@ -758,6 +804,7 @@ export function Workspace({
               clickEffects={clickEffects} // clickEffects prop 전달
               clickMap={clickMap} // clickMap prop 전달
               visibleDayIds={visibleDayIds} // [추가] 가시성 상태 전달
+              initialCenter={initialMapCenter} // [신규] 초기 지도 중심 좌표 전달
             />
           </div>
 
@@ -806,6 +853,9 @@ export function Workspace({
           />
         </div>
       )}
+
+      {/* AI 추천 로딩 모달 */}
+      <AIRecommendationLoadingModal isOpen={isRecommendationLoading} />
     </DndContext>
   );
 }

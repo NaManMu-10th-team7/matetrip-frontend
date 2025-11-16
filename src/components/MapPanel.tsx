@@ -65,6 +65,7 @@ interface MapPanelProps {
   }[];
   clickMap: (position: { lat: number; lng: number }) => void;
   visibleDayIds: Set<string>;
+  initialCenter: { lat: number; lng: number } | null;
 }
 
 export interface PlaceMarkerProps {
@@ -700,7 +701,9 @@ export function MapPanel({
   clickEffects, // props로 받음
   clickMap, // props로 받음
   visibleDayIds, // props로 받음
+  initialCenter, // props로 받음
 }: MapPanelProps) {
+  const defaultCenter = { lat: 33.450701, lng: 126.570667 }; // 제주도 기본 위치
   const [mapInstance, setMapInstance] = useState<kakao.maps.Map | null>(null);
   const addPlacesToCache = usePlaceStore((state) => state.addPlaces); // 스토어의 액션 가져오기
   const pendingSelectedPlaceRef = useRef<KakaoPlace | null>(null);
@@ -746,6 +749,17 @@ export function MapPanel({
       Object.values(chatBubbleTimers.current).forEach(clearTimeout);
     };
   }, [latestChatMessage]);
+
+  // [신규] initialCenter prop이 변경되면 지도를 해당 위치로 이동시킵니다.
+  useEffect(() => {
+    if (mapInstance && initialCenter) {
+      const newCenter = new window.kakao.maps.LatLng(
+        initialCenter.lat,
+        initialCenter.lng
+      );
+      mapInstance.panTo(newCenter);
+    }
+  }, [mapInstance, initialCenter]);
 
   useEffect(() => {
     if (!mapInstance) return;
@@ -1313,7 +1327,7 @@ export function MapPanel({
         `}
       </style>
       <KakaoMap
-        center={{ lat: 33.450701, lng: 126.570667 }}
+        center={initialCenter || defaultCenter}
         className="h-full w-full"
         level={3}
         onCreate={(map) => {
