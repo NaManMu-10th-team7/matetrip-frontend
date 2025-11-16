@@ -24,7 +24,7 @@ export const CATEGORY_INFO = {
   '기타': { name: '기타', color: '#9E9E9E' }, // 회색 (Grey)
 } as const;
 
-// 카테고리 : 레포츠, 추천코스, 인문(문화/예술/역사), 자연, 숙박
+// 카테고리 : 레포츠, 추천코스, 인문(문화/예술/역사), 자연, 숙박, 음식점
 
 export type CategoryCode = keyof typeof CATEGORY_INFO;
 
