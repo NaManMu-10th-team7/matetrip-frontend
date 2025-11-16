@@ -58,14 +58,16 @@ export function AIChatPanel({ open, onOpenChange }: AIChatPanelProps) {
     <>
       {/* 배경 오버레이 */}
       <div
-        className="fixed inset-0 bg-black/50 z-40 transition-opacity duration-300"
+        className={`fixed inset-0`}
         onClick={handleBackgroundClick}
         aria-label="Close chat panel"
       />
 
       {/* 우측 패널 */}
       <div
-        className="fixed right-0 top-0 h-screen w-[400px] bg-white shadow-2xl z-50 flex flex-col transform transition-transform duration-300 ease-in-out"
+        className={`fixed left-[186px] top-0 h-screen w-[400px] bg-white z-50 flex flex-col transition-transform duration-300 ease-in-out ${
+          open ? 'translate-x-0' : '-translate-x-full'
+        }`}
         onClick={handlePanelClick}
       >
         {/* 헤더 */}
@@ -108,9 +110,7 @@ export function AIChatPanel({ open, onOpenChange }: AIChatPanelProps) {
                 key={chat.id}
                 onClick={() => handleChatClick(chat.id)}
                 className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
-                  chat.isActive
-                    ? 'bg-gray-100 hover:bg-gray-200'
-                    : 'hover:bg-gray-50'
+                  'hover:bg-gray-50'
                 }`}
               >
                 <p className="text-sm font-medium text-gray-900">
