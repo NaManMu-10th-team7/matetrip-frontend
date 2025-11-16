@@ -811,7 +811,7 @@ export function Workspace({
           <button
             onClick={() => setIsRightPanelOpen(!isRightPanelOpen)}
             className="absolute top-1/2 -translate-y-1/2 z-20 w-6 h-12 bg-white hover:bg-gray-100 transition-colors flex items-center justify-center border border-gray-300 rounded-l-md shadow-md"
-            style={{ right: isRightPanelOpen ? '320px' : '0' }}
+            style={{ right: isRightPanelOpen ? '384px' : '0' }}
           >
             {isRightPanelOpen ? (
               <ChevronRight className="w-4 h-4 text-gray-600" />
@@ -826,6 +826,7 @@ export function Workspace({
             sendMessage={sendMessage}
             isChatConnected={isChatConnected}
             workspaceId={workspaceId}
+            markPoi={markPoi} // [추가] markPoi 함수 전달
           />
         </div>
       </div>
