@@ -26,12 +26,15 @@ const PoiSocketEvent = {
   'poi:hovered': 'poi:hovered',
   'map:click': 'map:click',
   'map:clicked': 'map:clicked',
+  'place:focus': 'place:focus',
+  'place:focused': 'place:focused',
 } as const;
 
 export type Poi = {
   id: string;
   workspaceId: string;
   createdBy: string;
+  placeId: string; // 필수로 변경
   latitude: number;
   longitude: number;
   address: string;
@@ -46,6 +49,7 @@ export type Poi = {
 export type CreatePoiDto = {
   workspaceId: string;
   createdBy: string;
+  placeId: string; // 필수로 변경
   longitude: number;
   latitude: number;
   address: string;
@@ -337,6 +341,14 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
       );
     };
 
+    const handlePlaceFocused = (data: { userId: string; userName: string; places?: any[] }) => {
+      console.log('[Event] PLACE_FOCUSED 수신:', data);
+      // 자신이 보낸 이벤트는 처리하지 않음 (이미 받았음)
+      if (data.userId === user?.userId) return;
+      // 다른 사용자의 focus 알림은 무시 (places가 없음)
+      // 본인만 places를 받음
+    };
+
     socket.on('connect', () => {
       console.log('Socket connected:', socket.id);
       socket.emit(PoiSocketEvent.JOIN, { workspaceId });
@@ -351,6 +363,7 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
     socket.on(PoiSocketEvent.CURSOR_MOVED, handleCursorMoved);
     socket.on(PoiSocketEvent['poi:hovered'], handlePoiHovered);
     socket.on(PoiSocketEvent['map:clicked'], handleMapClicked);
+    socket.on(PoiSocketEvent['place:focused'], handlePlaceFocused);
 
     return () => {
       console.log('Disconnecting socket...');
@@ -364,6 +377,7 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
       socket.off(PoiSocketEvent.CURSOR_MOVED, handleCursorMoved);
       socket.off(PoiSocketEvent['poi:hovered'], handlePoiHovered);
       socket.off(PoiSocketEvent['map:clicked'], handleMapClicked);
+      socket.off(PoiSocketEvent['place:focused'], handlePlaceFocused);
       socket.disconnect();
     };
   }, [workspaceId, user?.userId, handlePoiHovered, isAuthLoading, addSchedule]);
@@ -513,6 +527,32 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
     [workspaceId, user, members]
   );
 
+  const focusPlace = useCallback(
+    (bounds: { southWestLatitude: number; southWestLongitude: number; northEastLatitude: number; northEastLongitude: number }, callback: (places: any[]) => void) => {
+      if (!user || !socketRef.current?.connected) return;
+      const member = members.find((m) => m.id === user.userId);
+      const userName = member?.profile.nickname || 'Unknown';
+
+      // 이벤트 리스너를 한 번만 등록
+      const handleResponse = (data: { userId: string; userName: string; places?: any[] }) => {
+        if (data.userId === user.userId && data.places) {
+          callback(data.places);
+          socketRef.current?.off(PoiSocketEvent['place:focused'], handleResponse);
+        }
+      };
+
+      socketRef.current?.on(PoiSocketEvent['place:focused'], handleResponse);
+
+      socketRef.current?.emit(PoiSocketEvent['place:focus'], {
+        workspaceId,
+        userId: user.userId,
+        userName,
+        ...bounds,
+      });
+    },
+    [workspaceId, user, members]
+  );
+
   const addRecommendedPoisToDay = useCallback(
     (planDayId: string, recommendedPois: Poi[]) => {
       if (!user?.userId) return;
@@ -534,6 +574,7 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
         const payload: CreatePoiDto = {
             workspaceId,
             createdBy: user.userId,
+            placeId: poi.placeId, // [추가] placeId 필수
             latitude: poi.latitude,
             longitude: poi.longitude,
             address: poi.address,
@@ -588,5 +629,6 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
     clickEffects,
     clickMap,
     addRecommendedPoisToDay,
+    focusPlace,
   };
 }
