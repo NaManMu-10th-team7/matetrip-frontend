@@ -1,6 +1,7 @@
 import { useEffect, useState, type KeyboardEvent } from 'react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { MapPin, Calendar, CheckCircle, Sparkles } from 'lucide-react';
+import type { Post } from '../types/post';
 import { Badge } from './ui/badge';
 import { Progress } from './ui/progress'; // shadcn/ui의 Progress 컴포넌트를 import합니다.
 import type { MatchingInfo, MatchRecruitingPostDto } from '../types/matching';
@@ -8,7 +9,7 @@ import { API_BASE_URL } from '../api/client';
 
 interface MatchingCardProps {
   /** 추천 카드에 표시할 모집글 정보 */
-  post: MatchRecruitingPostDto;
+  post: Post;
   /** 이 카드에만 필요한 매칭 점보 */
   matchingInfo: MatchingInfo;
   /** 카드 클릭 이벤트 핸들러 */

@@ -134,7 +134,7 @@ export function MatchingSearchBar() {
       });
 
       const rawData = response.data;
-      console.log(rawData);
+      //console.log(rawData);
       //데이터 프론트가 이해하게끔
       const candidates: MatchCandidateDto[] = Array.isArray(rawData)
         ? (rawData as MatchCandidateDto[])
