@@ -9,6 +9,7 @@ import { MatchingCarousel } from './MatchingCarousel';
 import { useAuthStore } from '../store/authStore';
 import type { MatchingInfo, MatchCandidateDto } from '../types/matching';
 import { KEYWORD_OPTIONS, type KeywordValue } from '../utils/keyword';
+import { SearchBar } from './SearchBar';
 
 interface MainPageProps {
   onSearch: (params: {
@@ -133,9 +134,7 @@ export function MainPage({
   const { user, isAuthLoading } = useAuthStore();
   const [matches, setMatches] = useState<MatchCandidateDto[]>([]);
   const [isMatchesLoading, setIsMatchesLoading] = useState(true);
-  const [featuredView, setFeaturedView] = useState<'latest' | 'recommended'>(
-    'recommended'
-  );
+
   const [searchQuery, setSearchQuery] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [startDate, setStartDate] = useState('');
@@ -217,12 +216,6 @@ export function MainPage({
   }, [isAuthLoading, isLoggedIn, user?.userId]);
 
   useEffect(() => {
-    if (!isLoggedIn) {
-      setFeaturedView('latest');
-    }
-  }, [isLoggedIn]);
-
-  useEffect(() => {
     if (!isFilterOpen) {
       return;
     }
@@ -299,15 +292,6 @@ export function MainPage({
     };
   }, [matches, posts]);
 
-  const activeFeaturedView =
-    featuredView === 'recommended' && isLoggedIn ? 'recommended' : 'latest';
-
-  const isFeaturedLoading =
-    activeFeaturedView === 'recommended' ? isMatchesLoading : isLoading;
-
-  const featuredItems =
-    activeFeaturedView === 'recommended' ? recommendedPosts : posts;
-
   const normalizedFilters = {
     startDate: startDate || undefined,
     endDate: endDate || undefined,
@@ -331,23 +315,23 @@ export function MainPage({
     onSearch(payload);
   };
 
-  const handleFilterApply = () => {
-    runSearch();
-    setIsFilterOpen(false);
-  };
+  // const handleFilterApply = () => {
+  //   runSearch();
+  //   setIsFilterOpen(false);
+  // };
 
-  const handleFilterReset = () => {
-    setStartDate('');
-    setEndDate('');
-    setSelectedKeyword('');
-  };
+  // const handleFilterReset = () => {
+  //   setStartDate('');
+  //   setEndDate('');
+  //   setSelectedKeyword('');
+  // };
 
-  const isFilterActive = Boolean(startDate || endDate || selectedKeyword);
+  // const isFilterActive = Boolean(startDate || endDate || selectedKeyword);
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    runSearch();
-  };
+  // const handleSearchSubmit = (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   runSearch();
+  // };
 
   const handleCardClick = (post: Post) => {
     if (!isLoggedIn) {
@@ -369,9 +353,9 @@ export function MainPage({
             MateTrip AI가 추천하는 최적의 여행 파트너
           </p>
         </div>
-
         {/* Search Bar and Filters - 로그인한 사용자에게만 표시 */}
-        {isLoggedIn && (
+        {isLoggedIn && <SearchBar />};
+        {/* {isLoggedIn && (
           <div className="mb-10 flex items-start gap-3">
             <form onSubmit={handleSearchSubmit} className="flex-1 relative">
               <div className="relative">
@@ -469,11 +453,10 @@ export function MainPage({
                     </div>
                   </div>
                 </div>
-              )}
-            </div>
-          </div>
-        )}
-
+              )}*/}
+        {/* </div>
+          </div> 
+        )} */}
         {/* 로그인하지 않은 사용자를 위한 안내 배너 */}
         {!isLoggedIn && (
           <div className="mb-8 bg-gradient-to-r from-blue-50 to-pink-50 rounded-2xl p-6 border border-blue-100">
@@ -500,42 +483,37 @@ export function MainPage({
             </div>
           </div>
         )}
-
         {/* Recommended Posts Section - 모든 사용자에게 표시 */}
         <section className="mb-12">
           <h2 className="text-xl font-medium text-gray-900 mb-6">
             AI 추천 동행
           </h2>
-          {isFeaturedLoading ? (
+          {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
               {Array.from({ length: 5 }).map((_, index) => (
                 <MainPostCardSkeleton key={index} />
               ))}
             </div>
-          ) : featuredItems.length === 0 ? (
+          ) : recommendedPosts.length === 0 ? (
             <div className="text-center text-gray-500 py-10">
               추천할 동행이 없습니다.
             </div>
           ) : (
             <MatchingCarousel
               posts={recommendedPosts}
-              matchingInfoByPostId={
-                activeFeaturedView === 'recommended'
-                  ? matchingInfoByPostId
-                  : undefined
-                // : featuredItems.slice(0, 10).reduce(
-                //     (acc, post, index) => {
-                //       acc[post.id] = generateMockMatchingInfo(index);
-                //       return acc;
-                //     },
-                //     {} as Record<string, MatchingInfo>
-                //   )
-              }
+              matchingInfoByPostId={matchingInfoByPostId}
+              // : featuredItems.slice(0, 10).reduce(
+              //     (acc, post, index) => {
+              //       acc[post.id] = generateMockMatchingInfo(index);
+              //       return acc;
+              //     },
+              //     {} as Record<string, MatchingInfo>
+              //   )
+
               onCardClick={handleCardClick}
             />
           )}
         </section>
-
         {/* Region Categories Section */}
         <section>
           <div className="flex items-center gap-2 mb-6">
