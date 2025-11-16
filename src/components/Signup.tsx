@@ -57,7 +57,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showSuccessModal] = useState(false);
 
   // Form data
   const [formData, setFormData] = useState({

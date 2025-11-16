@@ -11,6 +11,9 @@ import { Sidebar } from './components/Sidebar';
 import { MainPage } from './components/MainPage';
 import { AllPostsPage } from './components/AllPostsPage';
 import { MyTripsPage } from './components/MyTripsPage';
+import { AIChatPage } from './components/AIChatPage';
+import { AIChatPanel } from './components/AIChatPanel';
+import { InspirationPage } from './components/InspirationPage';
 import { SearchResults } from './components/SearchResults';
 import { PostDetail } from './components/PostDetail';
 import { Workspace } from './components/Workspace';
@@ -36,11 +39,13 @@ function Layout({
   onLoginClick,
   onProfileClick,
   onCreatePost,
+  onAIChatClick,
 }: {
   isLoggedIn: boolean;
   onLoginClick: () => void;
   onProfileClick: () => void;
   onCreatePost: () => void;
+  onAIChatClick: () => void;
 }) {
   return (
     <div className="flex h-screen">
@@ -49,6 +54,7 @@ function Layout({
         onLoginClick={onLoginClick}
         onProfileClick={onProfileClick}
         onCreatePost={onCreatePost}
+        onAIChatClick={onAIChatClick}
       />
       <div className="flex-1 overflow-y-auto">
         <Outlet />
@@ -230,13 +236,7 @@ export default function App() {
   const navigate = useNavigate();
 
   // Zustand 스토어에서 상태와 액션을 가져옵니다.
-  const {
-    isLoggedIn,
-    isAuthLoading,
-    user,
-    checkAuth,
-    logout: storeLogout,
-  } = useAuthStore();
+  const { isLoggedIn, user, checkAuth, logout: storeLogout } = useAuthStore();
 
   // 모달 상태
   const [showCreatePost, setShowCreatePost] = useState(false);
@@ -253,6 +253,8 @@ export default function App() {
     open: boolean;
     postId: string | null;
   }>({ open: false, postId: null });
+
+  const [chatPanelOpen, setChatPanelOpen] = useState(false);
 
   const [fetchTrigger, setFetchTrigger] = useState(0);
 
@@ -281,11 +283,6 @@ export default function App() {
     }
   };
 
-  const handleSearch = (query: string) => {
-    const searchParams = new URLSearchParams({ title: query });
-    navigate(`/search?${searchParams.toString()}`);
-  };
-
   const handleViewProfile = (userId: string) => {
     setProfileModalState({ open: true, userId });
   };
@@ -300,6 +297,10 @@ export default function App() {
 
   const handleDeleteSuccess = () => {
     setFetchTrigger((prev) => prev + 1); // fetch 트리거 상태 변경
+  };
+
+  const handleAIChatClick = () => {
+    setChatPanelOpen(true);
   };
 
   return (
@@ -329,6 +330,7 @@ export default function App() {
               onLoginClick={() => navigate('/login')}
               onProfileClick={handleProfileClick}
               onCreatePost={() => setShowCreatePost(true)}
+              onAIChatClick={handleAIChatClick}
             />
           }
         >
@@ -352,8 +354,10 @@ export default function App() {
               />
             }
           />
+          <Route path="/ai-chat" element={<AIChatPage />} />
+          <Route path="/inspiration" element={<InspirationPage />} />
           <Route
-            path="/my-trips"
+            path="/save"
             element={
               <MyTripsPage
                 onViewPost={handleViewPost}
@@ -386,6 +390,10 @@ export default function App() {
         </Route>
       </Routes>
       {/* Modals */}
+      <AIChatPanel
+        open={chatPanelOpen}
+        onOpenChange={setChatPanelOpen}
+      />
       {showCreatePost && (
         <CreatePostModal onClose={() => setShowCreatePost(false)} />
       )}

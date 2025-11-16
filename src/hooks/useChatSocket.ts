@@ -2,17 +2,19 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from '../store/authStore';
 import { WEBSOCKET_CHAT_URL } from '../constants';
+import { type ToolCallData } from '../types/chat'; // ToolCallData 타입 가져오기
 
 // AI가 보내주는 장소 데이터 타입
 export type AiPlace = {
-  name: string;
+  id: string;
+  title: string;
   address: string;
-  road_address: string;
-  x: number; // longitude
-  y: number; // latitude
+  summary: string;
+  image_url: string;
+  longitude: number;
+  latitude: number;
   category: string;
 };
-import { type ToolCallData } from '../types/chat'; // ToolCallData 타입 가져오기
 const ChatEvent = {
   JOIN: 'join',
   JOINED: 'joined',
@@ -31,6 +33,7 @@ export type ChatMessage = {
   userId?: string; // userId 필드 추가
   role: 'user' | 'ai' | 'system'; // 메시지 역할 추가
   toolData?: ToolCallData[]; // AI 메시지인 경우 도구 데이터 추가
+  recommendedPlaces?: AiPlace[]; // [추가] AI가 추천한 장소 목록
   isLoading?: boolean; // AI 응답 대기 중 상태 표시
 };
 
@@ -123,8 +126,21 @@ export function useChatSocket(workspaceId: string) {
           role:
             payload.role || (payload.username === 'System' ? 'system' : 'user'), // 역할 지정
           toolData: payload.toolData,
+          recommendedPlaces: [], // [추가] 초기화
           isLoading: false, // 실제 메시지이므로 isLoading은 false
         };
+
+        // [추가] tool_data가 있고, 추천 장소 정보가 포함된 경우 파싱하여 추가
+        if (payload.toolData && payload.toolData.length > 0) {
+          const tool = payload.toolData[0];
+          // [수정] tool_output이 문자열이 아닌 객체 배열로 오므로 파싱 로직을 제거하고 직접 할당합니다.
+          if (
+            tool.tool_name === 'recommend_places_by_all_users' &&
+            Array.isArray(tool.tool_output)
+          ) {
+            newMessage.recommendedPlaces = tool.tool_output as AiPlace[];
+          }
+        }
 
         // 2. 내가 보낸 메시지(낙관적 업데이트)를 서버에서 받은 메시지로 교체
         if (optimisticMessageIndex > -1) {

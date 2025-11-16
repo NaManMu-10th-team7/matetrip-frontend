@@ -9,7 +9,7 @@ import {
   Polyline,
 } from 'react-kakao-maps-sdk';
 import { Button } from './ui/button';
-import { KAKAO_REST_API_KEY } from '../constants';
+import { AI_SERVER_URL, KAKAO_REST_API_KEY } from '../constants';
 import { fetchPlacesInBounds } from '../api/places';
 import { usePlaceStore } from '../store/placeStore';
 import type { PlaceDto } from '../types/place';
@@ -26,7 +26,8 @@ import type {
 
 interface MapPanelProps {
   itinerary: Record<string, Poi[]>;
-  dayLayers: { id: string; label: string; color: string }[];
+  recommendedItinerary: Record<string, Poi[]>;
+  dayLayers: { id: string; label: string; color: string; planDate: string }[];
   placesToRender: PlaceDto[]; // [수정] 렌더링할 장소 목록을 prop으로 받음
   pois: Poi[];
   isSyncing: boolean;
@@ -64,6 +65,7 @@ interface MapPanelProps {
   }[];
   clickMap: (position: { lat: number; lng: number }) => void;
   visibleDayIds: Set<string>;
+  initialCenter: { lat: number; lng: number } | null;
 }
 
 export interface PlaceMarkerProps {
@@ -365,12 +367,41 @@ const PlaceMarker = memo(
         `;
           break;
 
-        default:
-          // 기본 아이콘 - 위치 핀
+        case '숙박': // 숙박 - 침대 아이콘
           iconSvg = `
-          <circle cx="20" cy="18" r="7" fill="white"/>
-        `;
-      }
+            <g transform="translate(16, 16)">
+              <!-- 침대 머리판 -->
+              <rect x="-7" y="-4" width="2" height="6" fill="white" rx="0.5"/>
+              <!-- 침대 본체 -->
+              <rect x="-5" y="0" width="10" height="3" fill="white" rx="0.5"/>
+              <!-- 베개 -->
+              <rect x="-4" y="-2" width="3" height="2" fill="white" rx="0.5"/>
+              <!-- 침대 다리 -->
+              <rect x="-5" y="3" width="1.5" height="3" fill="white"/>
+              <rect x="3.5" y="3" width="1.5" height="3" fill="white"/>
+            </g>
+          `;
+          break;
+
+        case '음식': // 음식 - 식기 아이콘
+          iconSvg = `
+            <g transform="translate(20, 18)">
+              <!-- 포크 -->
+              <path d="M-5,-6 L-5,-1 M-6.5,-6 L-6.5,-2 C-6.5,-1 -5.5,-1 -5,-1 M-3.5,-6 L-3.5,-2 C-3.5,-1 -4.5,-1 -5,-1 M-5,-1 L-5,6"
+                    stroke="white" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+              <!-- 나이프 -->
+              <path d="M3,-6 L3,6 M3,-6 L5,-5 L5,-3 L3,-2"
+                    stroke="white" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </g>
+          `;
+          break;
+
+          default:
+            // 기본 아이콘 - 위치 핀
+            iconSvg = `
+              <circle cx="16" cy="16" r="6" fill="white"/>
+            `;
+          }
 
       // SVG로 마커 이미지 생성 (데이터 URI 방식)
       const svg = `
@@ -662,6 +693,7 @@ const DayRouteRenderer = memo(
 
 export function MapPanel({
   itinerary,
+  recommendedItinerary,
   dayLayers,
   placesToRender,
   pois,
@@ -682,13 +714,18 @@ export function MapPanel({
   clickEffects, // props로 받음
   clickMap, // props로 받음
   visibleDayIds, // props로 받음
+  initialCenter, // props로 받음
 }: MapPanelProps) {
+  const defaultCenter = { lat: 33.450701, lng: 126.570667 }; // 제주도 기본 위치
   const [mapInstance, setMapInstance] = useState<kakao.maps.Map | null>(null);
   const addPlacesToCache = usePlaceStore((state) => state.addPlaces); // 스토어의 액션 가져오기
   const pendingSelectedPlaceRef = useRef<KakaoPlace | null>(null);
   // [추가] 오버레이 위에 마우스가 있는지 확인하기 위한 Ref
   const isOverlayHoveredRef = useRef(false);
   const [dailyRouteInfo, setDailyRouteInfo] = useState<
+    Record<string, RouteSegment[]>
+  >({});
+  const [recommendedRouteInfo, setRecommendedRouteInfo] = useState<
     Record<string, RouteSegment[]>
   >({});
 
@@ -725,6 +762,17 @@ export function MapPanel({
       Object.values(chatBubbleTimers.current).forEach(clearTimeout);
     };
   }, [latestChatMessage]);
+
+  // [신규] initialCenter prop이 변경되면 지도를 해당 위치로 이동시킵니다.
+  useEffect(() => {
+    if (mapInstance && initialCenter) {
+      const newCenter = new window.kakao.maps.LatLng(
+        initialCenter.lat,
+        initialCenter.lng
+      );
+      mapInstance.panTo(newCenter);
+    }
+  }, [mapInstance, initialCenter]);
 
   useEffect(() => {
     if (!mapInstance) return;
@@ -916,6 +964,11 @@ export function MapPanel({
               queryParams.append('waypoints', waypointsParam);
             }
 
+            // [추가] API 요청 URL 로깅
+            console.log(
+              `[DEBUG] Kakao Mobility API Request URL for day ${dayLayer.id}: https://apis-navi.kakaomobility.com/v1/directions?${queryParams.toString()}`
+            );
+
             const response = await fetch(
               `https://apis-navi.kakaomobility.com/v1/directions?${queryParams.toString()}`,
               {
@@ -924,8 +977,13 @@ export function MapPanel({
                 },
               }
             );
-            if (!response.ok)
+            if (!response.ok) {
+              // [추가] HTTP 오류 상태 로깅
+              console.error(
+                `[DEBUG] Kakao Mobility API HTTP Error for day ${dayLayer.id}: Status ${response.status}, Text: ${response.statusText}`
+              );
               throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
             const data = await response.json();
             console.log(
@@ -1001,6 +1059,18 @@ export function MapPanel({
                     poisForThisDay
                   );
 
+                  // [추가] findClosestPoi가 null을 반환하는 경우 로깅
+                  if (!fromPoi) {
+                    console.warn(
+                      `[DEBUG] From POI not found for section ${index} in day ${dayLayer.id} at coordinates (${startGuide.x}, ${startGuide.y})`
+                    );
+                  }
+                  if (!toPoi) {
+                    console.warn(
+                      `[DEBUG] To POI not found for section ${index} in day ${dayLayer.id} at coordinates (${endGuide.x}, ${endGuide.y})`
+                    );
+                  }
+
                   if (fromPoi && toPoi) {
                     segmentsForDay.push({
                       fromPoiId: fromPoi.id,
@@ -1013,6 +1083,20 @@ export function MapPanel({
                 }
               );
               newDailyRouteInfo[dayLayer.id] = segmentsForDay;
+            } else {
+              // [수정] API 응답에 routes 또는 sections가 없는 경우, 에러 코드와 메시지를 로깅
+              if (data.routes && data.routes[0]) {
+                const routeResult = data.routes[0];
+                console.warn(
+                  `[DEBUG] Kakao Mobility API did not return sections for day ${dayLayer.id}. Result Code: ${routeResult.result_code}, Message: ${routeResult.result_msg}`,
+                  data
+                );
+              } else {
+                console.warn(
+                  `[DEBUG] Kakao Mobility API response for day ${dayLayer.id} does not contain valid routes:`,
+                  data
+                );
+              }
             }
           } catch (error) {
             console.error(
@@ -1043,6 +1127,129 @@ export function MapPanel({
     drawStandardRoutes();
   }, [itinerary, dayLayers, onRouteInfoUpdate]);
 
+  useEffect(() => {
+    const drawRecommendedRoutes = async () => {
+      const newRecommendedRouteInfo: Record<string, RouteSegment[]> = {};
+
+      for (const dayId in recommendedItinerary) {
+        const dayPois = recommendedItinerary[dayId];
+        if (dayPois && dayPois.length >= 2) {
+          try {
+            const originPoi = dayPois[0];
+            const destinationPoi = dayPois[dayPois.length - 1];
+            const waypoints = dayPois.slice(1, dayPois.length - 1);
+
+            const originParam = `${originPoi.longitude},${originPoi.latitude}`;
+            const destinationParam = `${destinationPoi.longitude},${destinationPoi.latitude}`;
+            const waypointsParam = waypoints
+              .map((poi) => `${poi.longitude},${poi.latitude}`)
+              .join('|');
+
+            const queryParams = new URLSearchParams({
+              origin: originParam,
+              destination: destinationParam,
+              priority: 'RECOMMEND',
+              summary: 'false',
+              road_details: 'true',
+            });
+
+            if (waypointsParam) {
+              queryParams.append('waypoints', waypointsParam);
+            }
+
+            const response = await fetch(
+              `https://apis-navi.kakaomobility.com/v1/directions?${queryParams.toString()}`,
+              {
+                headers: {
+                  Authorization: `KakaoAK ${KAKAO_REST_API_KEY}`,
+                },
+              }
+            );
+            if (!response.ok)
+              throw new Error(`HTTP error! status: ${response.status}`);
+
+            const data = await response.json();
+
+            if (data.routes && data.routes[0]?.sections) {
+              const segmentsForDay: RouteSegment[] = [];
+              const poisForThisDay = [originPoi, ...waypoints, destinationPoi];
+
+              const findClosestPoi = (
+                lng: number,
+                lat: number,
+                poisToSearch: Poi[]
+              ): Poi | null => {
+                let closestPoi: Poi | null = null;
+                let minDistance = Infinity;
+                poisToSearch.forEach((poi) => {
+                  const dist =
+                    Math.pow(poi.longitude - lng, 2) +
+                    Math.pow(poi.latitude - lat, 2);
+                  if (dist < minDistance) {
+                    minDistance = dist;
+                    closestPoi = poi;
+                  }
+                });
+                return closestPoi;
+              };
+
+              data.routes[0].sections.forEach((section: KakaoNaviSection) => {
+                const segmentPath: { lat: number; lng: number }[] = [];
+                if (section.roads) {
+                  section.roads.forEach((road: KakaoNaviRoad) => {
+                    for (let i = 0; i < road.vertexes.length; i += 2) {
+                      segmentPath.push({
+                        lng: road.vertexes[i],
+                        lat: road.vertexes[i + 1],
+                      });
+                    }
+                  });
+                }
+
+                const guides = section.guides as KakaoNaviGuide[];
+                if (!guides || guides.length === 0) {
+                  return;
+                }
+                const startGuide = guides[0];
+                const endGuide = guides[guides.length - 1];
+
+                const fromPoi = findClosestPoi(
+                  startGuide.x,
+                  startGuide.y,
+                  poisForThisDay
+                );
+                const toPoi = findClosestPoi(
+                  endGuide.x,
+                  endGuide.y,
+                  poisForThisDay
+                );
+
+                if (fromPoi && toPoi) {
+                  segmentsForDay.push({
+                    fromPoiId: fromPoi.id,
+                    toPoiId: toPoi.id,
+                    duration: section.duration,
+                    distance: section.distance,
+                    path: segmentPath,
+                  });
+                }
+              });
+              newRecommendedRouteInfo[dayId] = segmentsForDay;
+            }
+          } catch (error) {
+            console.error(
+              `Error fetching directions for recommended day ${dayId}:`,
+              error
+            );
+          }
+        }
+      }
+      setRecommendedRouteInfo(newRecommendedRouteInfo);
+    };
+
+    drawRecommendedRoutes();
+  }, [recommendedItinerary]);
+
   // [추가] 경로 최적화 전용 useEffect: optimizingDayId가 변경될 때만 실행
   useEffect(() => {
     if (!optimizingDayId) return;
@@ -1051,95 +1258,65 @@ export function MapPanel({
 
     const optimizeRoute = async () => {
       const dayPois = itinerary[optimizingDayId];
-      if (!dayPois || dayPois.length < 4) {
-        // 출발, 도착, 경유지 2개 이상
-        console.warn('[TSP] Not enough POIs to optimize.');
+      if (!dayPois) {
+        console.warn(
+          `[Optimization] No POIs found for day ${optimizingDayId}.`
+        );
         onOptimizationComplete?.();
         return;
       }
 
-      // 두 지점 간의 경로 정보를 가져오는 함수
-      const fetchDuration = async (
-        from: Poi,
-        to: Poi
-      ): Promise<{
-        from: string;
-        to: string;
-        duration: number;
-        distance: number;
-      } | null> => {
-        try {
-          // [수정] GET 요청으로 변경하고, 파라미터를 URL 쿼리 스트링으로 전달합니다.
-          const response = await fetch(
-            `https://apis-navi.kakaomobility.com/v1/directions?origin=${from.longitude},${from.latitude}&destination=${to.longitude},${to.latitude}&priority=TIME&summary=true`,
-            {
-              method: 'GET',
-              headers: {
-                Authorization: `KakaoAK ${KAKAO_REST_API_KEY}`,
-              },
-            }
-          );
-          if (!response.ok) return null;
-          const data = await response.json();
-          if (data.routes && data.routes[0] && data.routes[0].summary) {
-            return {
-              from: from.id,
-              to: to.id,
-              duration: data.routes[0].summary.duration,
-              distance: data.routes[0].summary.distance,
-            };
-          }
-          return null;
-        } catch (error) {
-          console.error(
-            `Error fetching duration between ${from.placeName} and ${to.placeName}:`,
-            error
-          );
-          return null;
-        }
-      };
+      // [추가] 최적화할 POI들의 이름을 로그로 출력합니다.
+      console.log(
+        '[Optimization] POIs to be optimized:',
+        dayPois.map((p) => p.placeName)
+      );
 
       try {
-        const originPoi = dayPois[0];
-        const destinationPoi = dayPois[dayPois.length - 1];
-        const waypoints = dayPois.slice(1, dayPois.length - 1);
+        // API에 보낼 poi_list를 구성합니다.
+        const poi_list = dayPois.map((poi) => ({
+          id: poi.id,
+          latitude: poi.latitude,
+          longitude: poi.longitude,
+        }));
+
+        const payload = { poi_list };
         console.log(
-          `[TSP] Starting optimization for day ${optimizingDayId} with ${waypoints.length} waypoints.`
+          `[Optimization] Calling API for day ${optimizingDayId} with payload:`,
+          payload
         );
-        const allPoints = [originPoi, ...waypoints, destinationPoi];
-        const promises: ReturnType<typeof fetchDuration>[] = [];
 
-        // 1. 모든 지점 쌍(pair)에 대한 API 호출 Promise 생성
-        for (let i = 0; i < allPoints.length; i++) {
-          for (let j = 0; j < allPoints.length; j++) {
-            if (i === j) continue;
-            promises.push(fetchDuration(allPoints[i], allPoints[j]));
-          }
-        }
-
-        console.log(`[TSP] Created ${promises.length} API call promises.`);
-
-        // 2. Promise.all로 모든 API를 병렬 호출
-        const results = await Promise.all(promises);
-
-        // 3. 결과로 이동 시간 행렬(Matrix) 생성
-        const durationMatrix: Record<string, Record<string, number>> = {};
-        results.forEach((result) => {
-          if (result) {
-            if (!durationMatrix[result.from]) durationMatrix[result.from] = {};
-            durationMatrix[result.from][result.to] = result.duration;
-          }
+        const response = await fetch(`${AI_SERVER_URL}/optimization/route`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
         });
 
-        console.log('[TSP] Duration Matrix created:', durationMatrix);
+        if (!response.ok) {
+          throw new Error(`API call failed with status: ${response.status}`);
+        }
 
-        // --- 여기부터는 생성된 durationMatrix를 TSP 솔버에 전달하는 부분 ---
-        // 예시: console.log만 하고, 실제 솔버 연동은 서버에서 수행하는 것을 권장합니다.
-        // const optimizedOrder = await solveTspOnServer(durationMatrix, originPoi.id, destinationPoi.id);
-        // onRouteOptimized?.(optimizingDayId, optimizedOrder);
+        const result = await response.json();
+        console.log('[Optimization] API Response:', result);
+
+        // API 응답에서 최적화된 POI ID 순서를 추출하여 부모 컴포넌트로 전달합니다.
+        if (result.ids && onRouteOptimized) {
+          // [추가] 최적화된 순서에 해당하는 POI 이름을 로그로 출력합니다.
+          const optimizedPoiNames = result.ids.map(
+            (id: string) => dayPois.find((p) => p.id === id)?.placeName
+          );
+          console.log(
+            '[Optimization] Optimized POI order (names):',
+            optimizedPoiNames
+          );
+
+          onRouteOptimized(optimizingDayId, result.ids);
+        }
       } catch (error) {
         console.error(
-          `[TSP] Error during optimization for day ${optimizingDayId}:`,
+          `[Optimization] Error during optimization for day ${optimizingDayId}:`,
           error
         );
       } finally {
@@ -1199,7 +1376,7 @@ export function MapPanel({
         `}
       </style>
       <KakaoMap
-        center={{ lat: 33.450701, lng: 126.570667 }}
+        center={initialCenter || defaultCenter}
         className="h-full w-full"
         level={3}
         onCreate={(map) => {
@@ -1421,6 +1598,20 @@ export function MapPanel({
             visibleDayIds={visibleDayIds}
           />
         ))}
+
+        {/* AI 추천 경로 렌더링 */}
+        {Object.entries(recommendedRouteInfo).map(([dayId, segments]) =>
+          segments.map((segment, index) => (
+            <Polyline
+              key={`rec-${dayId}-segment-${index}`}
+              path={segment.path}
+              strokeWeight={5}
+              strokeColor={'#FF00FF'} // 추천 경로는 다른 색상으로 표시 (예: 자홍색)
+              strokeOpacity={0.7}
+              strokeStyle={'dashed'} // 점선으로 표시
+            />
+          ))
+        )}
 
         {/* 선택된 백엔드 장소 상세 정보 사이드 패널 */}
         {selectedBackendPlace && (
