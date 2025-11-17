@@ -27,11 +27,11 @@ import { CategoryIcon } from './CategoryIcon';
 // [신규] 요청된 새로운 카테고리 색상 팔레트
 const NEW_CATEGORY_COLORS: Record<string, string> = {
   '인문(문화/예술/역사)': '#DAA520', // Gold
-  '레포츠': '#E67E22', // Orange
-  '자연': '#27AE60', // Green
-  '숙박': '#2980B9', // Blue
-  '음식': '#E74C3C', // Red-Orange
-  '기타': '#7F8C8D', // Gray
+  레포츠: '#E67E22', // Orange
+  자연: '#27AE60', // Green
+  숙박: '#2980B9', // Blue
+  음식: '#E74C3C', // Red-Orange
+  기타: '#7F8C8D', // Gray
 };
 
 interface MapPanelProps {
@@ -77,7 +77,15 @@ interface MapPanelProps {
   clickMap: (position: { lat: number; lng: number }) => void;
   visibleDayIds: Set<string>;
   initialCenter: { lat: number; lng: number } | null;
-  focusPlace: (bounds: { southWestLatitude: number; southWestLongitude: number; northEastLatitude: number; northEastLongitude: number }, callback: (places: any[]) => void) => void;
+  focusPlace: (
+    bounds: {
+      southWestLatitude: number;
+      southWestLongitude: number;
+      northEastLatitude: number;
+      northEastLongitude: number;
+    },
+    callback: (places: any[]) => void
+  ) => void;
 }
 
 export interface PlaceMarkerProps {
@@ -292,7 +300,9 @@ const PlaceMarker = memo(
       // '보관함' 또는 '일반' 상태에 대한 아이콘 생성
       const categoryCode = place.category;
       const isMarkedOnly = markedPoi && markedPoi.status === 'MARKED';
-      const scheduleInfo = markedPoi?.id ? scheduledPoiData.get(markedPoi.id) : undefined;
+      const scheduleInfo = markedPoi?.id
+        ? scheduledPoiData.get(markedPoi.id)
+        : undefined;
       // [신규] AI 추천 경로의 라벨 정보를 가져옵니다.
       const recommendedLabelInfo = recommendedPoiLabelData.get(place.id);
       // '내 일정'과 'AI 추천' 중 하나를 선택하여 배지 정보를 설정합니다.
@@ -395,12 +405,12 @@ const PlaceMarker = memo(
           `;
           break;
 
-          default:
-            // 기본 아이콘 - 위치 핀
-            iconSvg = `
+        default:
+          // 기본 아이콘 - 위치 핀
+          iconSvg = `
               <circle cx="16" cy="16" r="6" fill="white"/>
             `;
-          }
+      }
 
       // SVG로 마커 이미지 생성 (데이터 URI 방식)
       const svg = `
@@ -1426,7 +1436,9 @@ export function MapPanel({
     );
     // [수정] '내 일정'에 포함되어 있고, 해당 날짜의 경로가 켜져 있는 경우
     if (
-      markedPoi && markedPoi.planDayId && visibleDayIds.has(markedPoi.planDayId)
+      markedPoi &&
+      markedPoi.planDayId &&
+      visibleDayIds.has(markedPoi.planDayId)
     ) {
       return true;
     }
@@ -1490,11 +1502,11 @@ export function MapPanel({
         }}
       >
         {/* 카테고리 필터 버튼 */}
-        <div className="absolute top-2.5 left-1/2 -translate-x-1/2 z-20 flex gap-2 p-1.5 bg-white/80 backdrop-blur-sm rounded-lg shadow-md">
+        <div className="absolute top-2.5 right-2.5 z-20 flex gap-2 p-1.5 bg-white/80 backdrop-blur-sm rounded-lg shadow-md">
           {/* [신규] 전체 토글 버튼 */}
           <button
             onClick={handleToggleAllCategories}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 flex justify-center items-center gap-1.5 ${
               visibleCategories.size === Object.keys(CATEGORY_INFO).length
                 ? 'bg-gray-800 text-white shadow-sm'
                 : 'bg-white text-gray-600 hover:bg-gray-100'
@@ -1503,33 +1515,28 @@ export function MapPanel({
             전체
           </button>
           {/* 구분선 */}
-          <div className="border-l border-gray-300 mx-1" />
+          <div className="border-b border-gray-300 my-1" />
 
-          {Object.entries(CATEGORY_INFO).map(
-            ([key, { name, color, icon }]) => (
-              <button
-                key={key}
-                onClick={() => handleCategoryToggle(key)}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 flex items-center gap-1.5 ${
-                  visibleCategories.has(key)
-                    ? 'text-white shadow-sm'
-                    : 'bg-white text-gray-600 hover:bg-gray-100'
-                }`}
-                style={{
-                  // [수정] 새로운 색상 팔레트를 적용합니다.
-                  backgroundColor: visibleCategories.has(key)
-                    ? NEW_CATEGORY_COLORS[key] || color
-                    : undefined,
-                }}
-              >
-                <CategoryIcon
-                  category={key as Category}
-                  className="w-4 h-4"
-                />
-                {name}
-              </button>
-            )
-          )}
+          {Object.entries(CATEGORY_INFO).map(([key, { name, color, icon }]) => (
+            <button
+              key={key}
+              onClick={() => handleCategoryToggle(key)}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 flex justify-center items-center gap-1.5 ${
+                visibleCategories.has(key)
+                  ? 'text-white shadow-sm'
+                  : 'bg-white text-gray-600 hover:bg-gray-100'
+              }`}
+              style={{
+                // [수정] 새로운 색상 팔레트를 적용합니다.
+                backgroundColor: visibleCategories.has(key)
+                  ? NEW_CATEGORY_COLORS[key] || color
+                  : undefined,
+              }}
+            >
+              <CategoryIcon category={key as Category} className="w-4 h-4" />
+              {name}
+            </button>
+          ))}
         </div>
         {/* [수정] 부모로부터 받은 placesToRender를 사용하여 마커를 렌더링합니다. */}
         {filteredPlacesToRender.map((place) => (
