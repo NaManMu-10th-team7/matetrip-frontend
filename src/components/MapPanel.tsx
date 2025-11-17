@@ -12,7 +12,7 @@ import { Button } from './ui/button';
 import { AI_SERVER_URL, KAKAO_REST_API_KEY } from '../constants';
 import { usePlaceStore } from '../store/placeStore';
 import type { PlaceDto } from '../types/place';
-import { CATEGORY_INFO } from '../types/place';
+import { CATEGORY_INFO, Category } from '../types/place';
 import { findPoiByCoordinates } from '../utils/coordinates';
 
 import type {
@@ -22,6 +22,7 @@ import type {
   KakaoNaviSection,
   KakaoNaviGuide,
 } from '../types/map';
+import { CategoryIcon } from './CategoryIcon';
 
 interface MapPanelProps {
   itinerary: Record<string, Poi[]>;
@@ -727,6 +728,10 @@ export function MapPanel({
   const [dailyRouteInfo, setDailyRouteInfo] = useState<
     Record<string, RouteSegment[]>
   >({});
+  const [visibleCategories, setVisibleCategories] = useState<Set<string>>(
+    new Set(Object.keys(CATEGORY_INFO))
+  );
+
   const [recommendedRouteInfo, setRecommendedRouteInfo] = useState<
     Record<string, RouteSegment[]>
   >({});
@@ -1348,6 +1353,21 @@ export function MapPanel({
     }
   });
 
+  const handleCategoryToggle = (categoryKey: string) => {
+    setVisibleCategories((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(categoryKey)) {
+        newSet.delete(categoryKey);
+      } else {
+        newSet.add(categoryKey);
+      }
+      return newSet;
+    });
+  };
+
+  const filteredPlacesToRender = placesToRender.filter((place) =>
+    visibleCategories.has(place.category)
+  );
   return (
     <div style={{ width: '100%', height: '100%' }}>
       <style>
@@ -1402,23 +1422,45 @@ export function MapPanel({
           });
         }}
       >
+        {/* 카테고리 필터 버튼 */}
+        <div className="absolute top-2.5 left-1/2 -translate-x-1/2 z-20 flex gap-2 p-1.5 bg-white/80 backdrop-blur-sm rounded-lg shadow-md">
+          {Object.entries(CATEGORY_INFO).map(
+            ([key, { name, color, icon }]) => (
+              <button
+                key={key}
+                onClick={() => handleCategoryToggle(key)}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 flex items-center gap-1.5 ${
+                  visibleCategories.has(key)
+                    ? 'text-white shadow-sm'
+                    : 'bg-white text-gray-600 hover:bg-gray-100'
+                }`}
+                style={{
+                  backgroundColor: visibleCategories.has(key) ? color : undefined,
+                }}
+              >
+                <CategoryIcon
+                  category={key as Category}
+                  className="w-4 h-4"
+                />
+                {name}
+              </button>
+            )
+          )}
+        </div>
         {/* [수정] 부모로부터 받은 placesToRender를 사용하여 마커를 렌더링합니다. */}
-        {placesToRender.map((place) => {
-          // ID가 임시 ID인 경우 key가 중복될 수 있으므로 좌표를 추가하여 고유성을 보장합니다.
-          const key = `${place.id}-${place.latitude}-${place.longitude}`;
-          return (
-            <PlaceMarker
-              key={key}
-              place={place}
-              onPlaceClick={handlePlaceClick}
-              markPoi={markPoi}
-              unmarkPoi={unmarkPoi}
-              pois={pois}
-              isOverlayHoveredRef={isOverlayHoveredRef}
-              scheduledPoiData={scheduledPoiData}
-            />
-          );
-        })}
+        {filteredPlacesToRender.map((place) => (
+          <PlaceMarker
+            // ID가 임시 ID인 경우 key가 중복될 수 있으므로 좌표를 추가하여 고유성을 보장합니다.
+            key={`${place.id}-${place.latitude}-${place.longitude}`}
+            place={place}
+            onPlaceClick={handlePlaceClick}
+            markPoi={markPoi}
+            unmarkPoi={unmarkPoi}
+            pois={pois}
+            isOverlayHoveredRef={isOverlayHoveredRef}
+            scheduledPoiData={scheduledPoiData}
+          />
+        ))}
 
         {/* 지도 클릭 물결 효과 렌더링 */}
         {clickEffects.map((effect) => (
@@ -1744,7 +1786,10 @@ export function MapPanel({
 
       {isSyncing && (
         <div className="absolute left-2.5 top-2.5 z-20 rounded bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-md">
-          데이터 동기화 중...
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-blue-500 animate-ping"></div>
+            <span>데이터 동기화 중...</span>
+          </div>
         </div>
       )}
     </div>
