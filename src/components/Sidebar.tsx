@@ -113,7 +113,7 @@ export function Sidebar({
               <Plane className="w-5 h-5 shrink-0" />
               {isExpanded && (
                 <span className="font-normal text-base whitespace-nowrap">
-                  AI 동행 찾기
+                  MAIN
                 </span>
               )}
             </button>
