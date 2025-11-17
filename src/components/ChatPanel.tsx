@@ -6,7 +6,7 @@ import { Badge } from './ui/badge';
 import { VideoChat } from './VideoChat';
 import { type ChatMessage } from '../hooks/useChatSocket';
 import { useAuthStore } from '../store/authStore';
-import { RecommendedPlaceCard } from './RecommendedPlaceCard'; // [신규] 추천 장소 카드 컴포넌트
+import { RecommendedPlaceCard } from './RecommendedPlaceCard';
 import { cn } from './ui/utils';
 
 interface ChatPanelProps {
@@ -60,8 +60,10 @@ export const ChatPanel = memo(function ChatPanel({
   const handleToggleVideoCall = useCallback(() => {
     if (!hasVCCallBeenInitiated) {
       setHasVCCallBeenInitiated(true);
+      setIsVCCallActive(true);
+    } else {
+      setIsVCCallActive((prev) => !prev);
     }
-    setIsVCCallActive((prev) => !prev);
   }, [hasVCCallBeenInitiated]);
 
   const handleCloseVideoCall = useCallback(() => {
@@ -86,7 +88,7 @@ export const ChatPanel = memo(function ChatPanel({
               className="w-8 h-8"
               onClick={handleToggleVideoCall}
             >
-              <Video className="w-4 h-4 text-gray-600" />
+              <Video className="w-4 h-4" />
             </Button>
           </div>
         </div>
@@ -135,7 +137,6 @@ export const ChatPanel = memo(function ChatPanel({
         {messages.map((msg, index) => {
           const isMe = currentUserId != null && msg.userId === currentUserId;
           const isSystem = msg.username === 'System';
-          // [추가] AI 추천 메시지인지 확인
           const isAiRecommendation =
             msg.role === 'ai' &&
             msg.recommendedPlaces &&
@@ -143,12 +144,12 @@ export const ChatPanel = memo(function ChatPanel({
 
           return (
             <div
-              key={msg.id || index} // [개선] key로 고유 ID 사용
+              key={msg.id || index}
               className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
             >
               <div
                 className={cn(
-                  !isAiRecommendation && 'max-w-[70%]', // [수정] AI 추천이 아닐 때만 너비 제한
+                  !isAiRecommendation && 'max-w-[70%]',
                   isMe ? 'order-2' : ''
                 )}
               >
@@ -160,7 +161,7 @@ export const ChatPanel = memo(function ChatPanel({
                   </div>
                 )}
                 <div
-                  className={cn( // [수정] className 문법 오류 수정
+                  className={cn(
                     'rounded-lg px-4 py-2',
                     isAiRecommendation && 'w-full bg-transparent p-0',
                     isMe
@@ -171,7 +172,6 @@ export const ChatPanel = memo(function ChatPanel({
                   )}
                 >
                   {!isAiRecommendation && <p className="text-sm">{msg.message}</p>}
-                  {/* [신규] AI 추천 장소가 있을 경우 렌더링 */}
                   {isAiRecommendation && (
                     <div className="space-y-2">
                       <p className="text-sm text-gray-900 bg-gray-100 rounded-lg px-4 py-2">{msg.message}</p>

@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { SimpleToggle } from './ui/SimpleToggle';
 import {
-  Search,
   ListOrdered,
   GripVertical,
   ChevronDown,
@@ -13,7 +12,8 @@ import {
   PlusCircle,
   Clock,
   Car,
-  MessageCircle, // [추가] 아이콘 임포트
+  MessageCircle,
+  ChevronRight,
 } from 'lucide-react';
 import {
   SortableContext,
@@ -24,23 +24,10 @@ import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import type { Poi } from '../hooks/usePoiSocket';
 import type { DayLayer, KakaoPlace, RouteSegment } from '../types/map';
-import { Input } from './ui/input';
 import { Button } from './ui/button';
 import React from 'react';
-import { ChatPanel } from './ChatPanel'; // [추가] ChatPanel 임포트
-import { type ChatMessage } from '../hooks/useChatSocket'; // [추가] ChatMessage 타입 임포트
-
-const KAKAO_MAP_SERVICES_STATUS = window.kakao?.maps.services.Status;
-type KakaoPagination = kakao.maps.Pagination;
-type PlacesSearchResult = kakao.maps.services.PlacesSearchResult;
-type PlacesSearchResultStatus = kakao.maps.services.Status;
-
-interface PageInfo {
-  current: number;
-  last: number;
-  hasPrevPage: boolean;
-  hasNextPage: boolean;
-}
+import { ChatPanel } from './ChatPanel';
+import { type ChatMessage } from '../hooks/useChatSocket';
 
 interface PoiItemProps {
   poi: Poi;
@@ -112,7 +99,9 @@ function PoiItem({
         <div
           {...attributes}
           {...listeners}
-          className={`cursor-grab touch-none p-1 ${isRecommended ? 'cursor-not-allowed' : ''}`}
+          className={`cursor-grab touch-none p-1 ${
+            isRecommended ? 'cursor-not-allowed' : ''
+          }`}
         >
           <GripVertical className="w-4 h-4 text-gray-400" />
         </div>
@@ -221,7 +210,6 @@ function MarkerStorage({
 function DayItineraryItem({
   layer,
   itinerary,
-  recommendedPois,
   visibleDayIds,
   routeSegmentsByDay,
   onDayVisibilityChange,
@@ -231,12 +219,9 @@ function DayItineraryItem({
   unmarkPoi,
   removeSchedule,
   hoveredPoiId,
-  onAddRecommendedPoi,
-  onAddRecommendedPoiToDay,
 }: {
   layer: DayLayer;
   itinerary: Record<string, Poi[]>;
-  recommendedPois: Poi[];
   visibleDayIds: Set<string>;
   routeSegmentsByDay: Record<string, RouteSegment[]>;
   onDayVisibilityChange: (dayId: string, isVisible: boolean) => void;
@@ -246,8 +231,6 @@ function DayItineraryItem({
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
   hoveredPoiId: string | null;
-  onAddRecommendedPoi: (poi: Poi) => void;
-  onAddRecommendedPoiToDay: (planDayId: string, pois: Poi[]) => void;
 }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { setNodeRef } = useDroppable({ id: layer.id });
@@ -295,101 +278,64 @@ function DayItineraryItem({
 
       <div className={`mt-2 ${containerBodyClasses}`}>
         {!isCollapsed && (
-          <>
-            <SortableContext
-              id={`${layer.id}-sortable`}
-              items={pois.map((p) => p.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              <ul className="space-y-2 min-h-[2rem]">
-                {pois.length > 0 ? (
-                  pois.map((poi, index) => (
-                    <React.Fragment key={poi.id}>
-                      <PoiItem
-                        poi={poi}
-                        color={layer.color}
-                        index={index}
-                        onPoiClick={onPoiClick}
-                        onPoiHover={onPoiHover}
-                        unmarkPoi={unmarkPoi}
-                        removeSchedule={removeSchedule}
-                        isHovered={hoveredPoiId === poi.id}
-                      />
-                      {index < pois.length - 1 &&
-                        (() => {
-                          const nextPoi = pois[index + 1];
-                          const segment = segmentsForThisDay.find(
-                            (s) =>
-                              s.fromPoiId === poi.id && s.toPoiId === nextPoi.id
-                          );
-                          if (!segment) return null;
-
-                          const totalMinutes = Math.ceil(
-                            segment.duration / 60
-                          );
-                          const totalKilometers = (
-                            segment.distance / 1000
-                          ).toFixed(1);
-
-                          return (
-                            <div className="relative flex items-center h-8 pl-8">
-                              <div className="absolute left-4 w-0.5 h-full bg-gray-300" />
-                              <div className="flex items-center text-xs text-gray-600">
-                                <span className="mr-2 flex items-center">
-                                  <Clock className="w-3 h-3 mr-1" />
-                                  {`${totalMinutes}분`}
-                                </span>
-                                <span className="flex items-center">
-                                  <Car className="w-3 h-3 mr-1" />
-                                  {`${totalKilometers}km`}
-                                </span>
-                              </div>
-                            </div>
-                          );
-                        })()}
-                    </React.Fragment>
-                  ))
-                ) : (
-                  <p className="text-xs text-gray-500 p-2">
-                    마커를 드래그하여 추가하세요.
-                  </p>
-                )}
-              </ul>
-            </SortableContext>
-            {recommendedPois.length > 0 && (
-              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                <div className="flex justify-between items-center mb-2">
-                  <h4 className="text-sm font-semibold text-blue-800 flex items-center gap-2">
-                    <Lightbulb className="w-4 h-4" />
-                    AI 추천 경로
-                  </h4>
-                  <Button
-                    size="sm"
-                    className="h-7 text-xs bg-blue-500 hover:bg-blue-600"
-                    onClick={() =>
-                      onAddRecommendedPoiToDay(layer.id, recommendedPois)
-                    }
-                  >
-                    이 일정으로 채우기
-                  </Button>
-                </div>
-                <ul className="space-y-1">
-                  {recommendedPois.map((poi) => (
+          <SortableContext
+            id={`${layer.id}-sortable`}
+            items={pois.map((p) => p.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <ul className="space-y-2 min-h-[2rem]">
+              {pois.length > 0 ? (
+                pois.map((poi, index) => (
+                  <React.Fragment key={poi.id}>
                     <PoiItem
-                      key={poi.id}
                       poi={poi}
+                      color={layer.color}
+                      index={index}
                       onPoiClick={onPoiClick}
                       onPoiHover={onPoiHover}
                       unmarkPoi={unmarkPoi}
                       removeSchedule={removeSchedule}
                       isHovered={hoveredPoiId === poi.id}
-                      onAddRecommendedPoi={onAddRecommendedPoi}
                     />
-                  ))}
-                </ul>
-              </div>
-            )}
-          </>
+                    {index < pois.length - 1 &&
+                      (() => {
+                        const nextPoi = pois[index + 1];
+                        const segment = segmentsForThisDay.find(
+                          (s) =>
+                            s.fromPoiId === poi.id && s.toPoiId === nextPoi.id
+                        );
+                        if (!segment) return null;
+
+                        const totalMinutes = Math.ceil(segment.duration / 60);
+                        const totalKilometers = (
+                          segment.distance / 1000
+                        ).toFixed(1);
+
+                        return (
+                          <div className="relative flex items-center h-8 pl-8">
+                            <div className="absolute left-4 w-0.5 h-full bg-gray-300" />
+                            <div className="flex items-center text-xs text-gray-600">
+                              <span className="mr-2 flex items-center">
+                                <Clock className="w-3 h-3 mr-1" />
+                                {`${totalMinutes}분`}
+                              </span>
+                              <span className="flex items-center">
+                                <Car className="w-3 h-3 mr-1" />
+                                {`${totalKilometers}km`}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                  </React.Fragment>
+                ))
+              ) : (
+                <p className="text-xs text-gray-500 p-2">
+                  마커를 드래그하여 추가하세요.
+                </p>
+              )}
+            </ul>
+          </SortableContext>
         )}
       </div>
     </div>
@@ -399,7 +345,6 @@ function DayItineraryItem({
 function ItineraryPanel({
   workspaceId,
   itinerary,
-  recommendedItinerary,
   dayLayers,
   onPoiClick,
   onPoiHover,
@@ -411,13 +356,10 @@ function ItineraryPanel({
   onDayVisibilityChange,
   hoveredPoiId,
   isRecommendationLoading,
-  onAddRecommendedPoi,
-  onAddRecommendedPoiToDay,
 }: {
   workspaceId: string;
   isRecommendationLoading: boolean;
   itinerary: Record<string, Poi[]>;
-  recommendedItinerary: Record<string, Poi[]>;
   dayLayers: DayLayer[];
   onPoiClick: (poi: Poi) => void;
   onPoiHover: (poiId: string | null) => void;
@@ -428,8 +370,6 @@ function ItineraryPanel({
   visibleDayIds: Set<string>;
   onDayVisibilityChange: (dayId: string, isVisible: boolean) => void;
   hoveredPoiId: string | null;
-  onAddRecommendedPoi: (poi: Poi) => void;
-  onAddRecommendedPoiToDay: (planDayId: string, pois: Poi[]) => void;
 }) {
   return (
     <div className="p-3 space-y-3">
@@ -438,147 +378,23 @@ function ItineraryPanel({
           AI 추천 일정을 불러오는 중...
         </div>
       ) : (
-        dayLayers.map((layer) => {
-          const virtualPlanDayId = `rec-${workspaceId}-${layer.label}`;
-          const recommendedPois =
-            recommendedItinerary[virtualPlanDayId] || [];
-          return (
-            <DayItineraryItem
-              key={layer.id}
-              layer={layer}
-              itinerary={itinerary}
-              recommendedPois={recommendedPois}
-              visibleDayIds={visibleDayIds}
-              routeSegmentsByDay={routeSegmentsByDay}
-              onDayVisibilityChange={onDayVisibilityChange}
-              onOptimizeRoute={onOptimizeRoute}
-              onPoiClick={onPoiClick}
-              onPoiHover={onPoiHover}
-              unmarkPoi={unmarkPoi}
-              removeSchedule={removeSchedule}
-              hoveredPoiId={hoveredPoiId}
-              onAddRecommendedPoi={onAddRecommendedPoi}
-              onAddRecommendedPoiToDay={onAddRecommendedPoiToDay}
-            />
-          );
-        })
+        dayLayers.map((layer) => (
+          <DayItineraryItem
+            key={layer.id}
+            layer={layer}
+            itinerary={itinerary}
+            visibleDayIds={visibleDayIds}
+            routeSegmentsByDay={routeSegmentsByDay}
+            onDayVisibilityChange={onDayVisibilityChange}
+            onOptimizeRoute={onOptimizeRoute}
+            onPoiClick={onPoiClick}
+            onPoiHover={onPoiHover}
+            unmarkPoi={unmarkPoi}
+            removeSchedule={removeSchedule}
+            hoveredPoiId={hoveredPoiId}
+          />
+        ))
       )}
-    </div>
-  );
-}
-
-interface SearchPanelProps {
-  onPlaceClick: (place: KakaoPlace) => void;
-}
-
-function SearchPanel({ onPlaceClick }: SearchPanelProps) {
-  const [keyword, setKeyword] = useState('');
-  const [results, setResults] = useState<KakaoPlace[]>([]);
-  const [pageInfo, setPageInfo] = useState<PageInfo | null>(null);
-
-  const placesRef = useRef<kakao.maps.services.Places | null>(null);
-  const paginationRef = useRef<KakaoPagination | null>(null);
-
-  useEffect(() => {
-    if (window.kakao && window.kakao.maps && window.kakao.maps.services) {
-      placesRef.current = new window.kakao.maps.services.Places();
-    }
-  }, []);
-
-  const searchCallback = useCallback(
-    (
-      result: PlacesSearchResult,
-      status: PlacesSearchResultStatus,
-      pagination: KakaoPagination
-    ) => {
-      if (status === KAKAO_MAP_SERVICES_STATUS.OK) {
-        setResults(result as KakaoPlace[]);
-        paginationRef.current = pagination;
-        setPageInfo({
-          current: pagination.current,
-          last: pagination.last,
-          hasPrevPage: pagination.hasPrevPage,
-          hasNextPage: pagination.hasNextPage,
-        });
-      } else {
-        setResults([]);
-        setPageInfo(null);
-      }
-    },
-    []
-  );
-
-  const handleSearch = useCallback(() => {
-    if (!keyword.trim() || !placesRef.current) return;
-    placesRef.current.keywordSearch(keyword, searchCallback, { page: 1 });
-  }, [keyword, searchCallback]);
-
-  return (
-    <div className="p-4 h-full flex flex-col gap-4">
-      <div className="flex-shrink-0 flex gap-2">
-        <Input
-          type="text"
-          placeholder="장소, 주소 검색"
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-          className="h-9"
-        />
-        <Button size="sm" onClick={handleSearch} className="h-9">
-          검색
-        </Button>
-      </div>
-      <div className="flex-1 flex flex-col min-h-0 border-t pt-4">
-        <ul className="flex-1 overflow-y-auto space-y-2 pr-2">
-          {results.length > 0 ? (
-            results.map((place) => (
-              <li
-                key={place.id}
-                className="p-2 rounded-md hover:bg-gray-100 cursor-pointer"
-                onClick={() => onPlaceClick(place)}
-              >
-                <div className="text-sm font-semibold truncate">
-                  {place.place_name}
-                </div>
-                <div className="text-xs text-gray-500 truncate">
-                  {place.road_address_name || place.address_name}
-                </div>
-              </li>
-            ))
-          ) : (
-            <div className="h-full flex items-center justify-center text-gray-500">
-              검색어를 입력해주세요.
-            </div>
-          )}
-        </ul>
-        {pageInfo && results.length > 0 && (
-          <div className="flex-shrink-0 flex justify-center items-center gap-3 pt-2 mt-2 border-t">
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() =>
-                paginationRef.current?.gotoPage(pageInfo.current - 1)
-              }
-              disabled={!pageInfo.hasPrevPage}
-            >
-              이전
-            </Button>
-            <span>
-              {pageInfo.current} / {pageInfo.last}
-            </span>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() =>
-                paginationRef.current?.gotoPage(pageInfo.current + 1)
-              }
-              disabled={!pageInfo.hasNextPage}
-            >
-              다음
-            </Button>
-          </div>
-        )}
-      </div>
     </div>
   );
 }
@@ -593,7 +409,6 @@ interface LeftPanelProps {
   markedPois: Poi[];
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
-  onPlaceClick: (place: KakaoPlace) => void;
   onPoiClick: (poi: Poi) => void;
   onPoiHover: (poiId: string | null) => void;
   onAddRecommendedPoi: (poi: Poi) => void;
@@ -604,7 +419,6 @@ interface LeftPanelProps {
   onDayVisibilityChange: (dayId: string, isVisible: boolean) => void;
   hoveredPoiId: string | null;
   isOptimizationProcessing: boolean;
-  // [추가] ChatPanel을 위한 props
   messages: ChatMessage[];
   sendMessage: (message: string) => void;
   isChatConnected: boolean;
@@ -628,7 +442,7 @@ const formatDurationChange = (seconds: number) => {
   const prefix = isNegative ? '' : '+';
   const absSeconds = Math.abs(seconds);
   const minutes = Math.floor(absSeconds / 60);
-  
+
   if (minutes === 0 && absSeconds > 0) {
     return seconds > 0 ? '+1분 미만' : '-1분 미만';
   }
@@ -682,7 +496,11 @@ function OptimizationModal({
     ? calculateTotals(optimizedData.segments)
     : null;
 
-  const renderRouteList = (pois: Poi[], segments: RouteSegment[], color: string) => (
+  const renderRouteList = (
+    pois: Poi[],
+    segments: RouteSegment[],
+    color: string
+  ) => (
     <ul className="space-y-1">
       {pois.map((poi, index) => (
         <React.Fragment key={poi.id}>
@@ -695,27 +513,30 @@ function OptimizationModal({
             </span>
             <span className="truncate">{poi.placeName}</span>
           </li>
-          {index < pois.length - 1 && (() => {
-            const nextPoi = pois[index + 1];
-            if (!nextPoi) return null;
-            const segment = segments.find(s => s.fromPoiId === poi.id && s.toPoiId === nextPoi.id);
-            if (!segment) return null;
-            return (
-              <div className="relative flex h-8 items-center pl-8">
-                <div className="absolute left-4 h-full w-0.5 bg-gray-300" />
-                <div className="flex items-center text-xs text-gray-600">
-                  <span className="mr-2 flex items-center">
-                    <Clock className="h-3 w-3 mr-1" />
-                    {formatDuration(segment.duration)}
-                  </span>
-                  <span className="flex items-center">
-                    <Car className="h-3 w-3 mr-1" />
-                    {formatDistance(segment.distance)}
-                  </span>
+          {index < pois.length - 1 &&
+            (() => {
+              const nextPoi = pois[index + 1];
+              if (!nextPoi) return null;
+              const segment = segments.find(
+                (s) => s.fromPoiId === poi.id && s.toPoiId === nextPoi.id
+              );
+              if (!segment) return null;
+              return (
+                <div className="relative flex h-8 items-center pl-8">
+                  <div className="absolute left-4 h-full w-0.5 bg-gray-300" />
+                  <div className="flex items-center text-xs text-gray-600">
+                    <span className="mr-2 flex items-center">
+                      <Clock className="h-3 w-3 mr-1" />
+                      {formatDuration(segment.duration)}
+                    </span>
+                    <span className="flex items-center">
+                      <Car className="h-3 w-3 mr-1" />
+                      {formatDistance(segment.distance)}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            );
-          })()}
+              );
+            })()}
         </React.Fragment>
       ))}
     </ul>
@@ -731,51 +552,83 @@ function OptimizationModal({
           </Button>
         </div>
         <div className="grid grid-cols-2 divide-x">
-          {/* Original Route */}
           <div className="p-4">
             <h3 className="font-semibold mb-3 text-center">기존 경로</h3>
             <div className="text-sm mb-4 p-2 bg-gray-50 rounded-md">
-              <p><strong>총 거리:</strong> {formatDistance(originalTotals.totalDistance)}</p>
-              <p><strong>총 소요 시간:</strong> {formatDuration(originalTotals.totalDuration)}</p>
+              <p>
+                <strong>총 거리:</strong>{' '}
+                {formatDistance(originalTotals.totalDistance)}
+              </p>
+              <p>
+                <strong>총 소요 시간:</strong>{' '}
+                {formatDuration(originalTotals.totalDuration)}
+              </p>
             </div>
             <div className="max-h-80 overflow-y-auto pr-2">
-              {renderRouteList(originalData.pois, originalData.segments, dayLayer.color)}
+              {renderRouteList(
+                originalData.pois,
+                originalData.segments,
+                dayLayer.color
+              )}
             </div>
           </div>
 
-          {/* Optimized Route */}
           <div className="p-4">
             <h3 className="font-semibold mb-3 text-center">최적 경로</h3>
             {optimizedData && optimizedTotals ? (
               <>
                 <div className="text-sm mb-4 p-2 bg-blue-50 rounded-md">
                   <p>
-                    <strong>총 거리:</strong> {formatDistance(optimizedTotals.totalDistance)}
-                    <span className={`ml-2 text-xs font-semibold ${
-                        optimizedTotals.totalDistance < originalTotals.totalDistance
-                        ? 'text-blue-600'
-                        : optimizedTotals.totalDistance > originalTotals.totalDistance
-                        ? 'text-red-600'
-                        : 'text-gray-500'
-                    }`}>
-                        ({formatDistanceChange(optimizedTotals.totalDistance - originalTotals.totalDistance)})
+                    <strong>총 거리:</strong>{' '}
+                    {formatDistance(optimizedTotals.totalDistance)}
+                    <span
+                      className={`ml-2 text-xs font-semibold ${
+                        optimizedTotals.totalDistance <
+                        originalTotals.totalDistance
+                          ? 'text-blue-600'
+                          : optimizedTotals.totalDistance >
+                            originalTotals.totalDistance
+                          ? 'text-red-600'
+                          : 'text-gray-500'
+                      }`}
+                    >
+                      (
+                      {formatDistanceChange(
+                        optimizedTotals.totalDistance -
+                          originalTotals.totalDistance
+                      )}
+                      )
                     </span>
                   </p>
                   <p>
-                    <strong>총 소요 시간:</strong> {formatDuration(optimizedTotals.totalDuration)}
-                     <span className={`ml-2 text-xs font-semibold ${
-                        optimizedTotals.totalDuration < originalTotals.totalDuration
-                        ? 'text-blue-600'
-                        : optimizedTotals.totalDuration > originalTotals.totalDuration
-                        ? 'text-red-600'
-                        : 'text-gray-500'
-                    }`}>
-                        ({formatDurationChange(optimizedTotals.totalDuration - originalTotals.totalDuration)})
+                    <strong>총 소요 시간:</strong>{' '}
+                    {formatDuration(optimizedTotals.totalDuration)}
+                    <span
+                      className={`ml-2 text-xs font-semibold ${
+                        optimizedTotals.totalDuration <
+                        originalTotals.totalDuration
+                          ? 'text-blue-600'
+                          : optimizedTotals.totalDuration >
+                            originalTotals.totalDuration
+                          ? 'text-red-600'
+                          : 'text-gray-500'
+                      }`}
+                    >
+                      (
+                      {formatDurationChange(
+                        optimizedTotals.totalDuration -
+                          originalTotals.totalDuration
+                      )}
+                      )
                     </span>
                   </p>
                 </div>
                 <div className="max-h-80 overflow-y-auto pr-2">
-                  {renderRouteList(optimizedData.pois, optimizedData.segments, dayLayer.color)}
+                  {renderRouteList(
+                    optimizedData.pois,
+                    optimizedData.segments,
+                    dayLayer.color
+                  )}
                 </div>
               </>
             ) : (
@@ -787,8 +640,91 @@ function OptimizationModal({
           </div>
         </div>
         <div className="p-4 border-t text-right">
-            <Button onClick={onClose}>닫기</Button>
+          <Button onClick={onClose}>닫기</Button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function RecommendationSidebar({
+  workspaceId,
+  dayLayers,
+  recommendedItinerary,
+  onPoiClick,
+  onPoiHover,
+  unmarkPoi,
+  removeSchedule,
+  hoveredPoiId,
+  onAddRecommendedPoi,
+  onAddRecommendedPoiToDay,
+  onClose,
+}: {
+  workspaceId: string;
+  dayLayers: DayLayer[];
+  recommendedItinerary: Record<string, Poi[]>;
+  onPoiClick: (poi: Poi) => void;
+  onPoiHover: (poiId: string | null) => void;
+  unmarkPoi: (poiId: string | number) => void;
+  removeSchedule: (poiId: string, planDayId: string) => void;
+  hoveredPoiId: string | null;
+  onAddRecommendedPoi: (poi: Poi) => void;
+  onAddRecommendedPoiToDay: (planDayId: string, pois: Poi[]) => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="w-96 bg-gray-50 border-l border-gray-200 flex flex-col h-full">
+      <div className="p-4 border-b flex justify-between items-center">
+        <h2 className="text-lg font-bold flex items-center gap-2">
+          <Lightbulb className="w-5 h-5 text-blue-500" />
+          AI 추천 일정
+        </h2>
+        <Button variant="ghost" size="icon" onClick={onClose}>
+          <X className="w-4 h-4" />
+        </Button>
+      </div>
+      <div className="overflow-y-auto flex-1">
+        {dayLayers.map((layer) => {
+          const virtualPlanDayId = `rec-${workspaceId}-${layer.label}`;
+          const recommendedPois = recommendedItinerary[virtualPlanDayId] || [];
+          if (recommendedPois.length === 0) return null;
+
+          return (
+            <div key={layer.id} className="p-4 border-b">
+              <div className="flex justify-between items-center mb-3">
+                <h3
+                  className="text-sm font-bold"
+                  style={{ color: layer.color }}
+                >
+                  {layer.label}
+                </h3>
+                <Button
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() =>
+                    onAddRecommendedPoiToDay(layer.id, recommendedPois)
+                  }
+                >
+                  이 일정으로 채우기
+                </Button>
+              </div>
+              <ul className="space-y-1">
+                {recommendedPois.map((poi) => (
+                  <PoiItem
+                    key={poi.id}
+                    poi={poi}
+                    onPoiClick={onPoiClick}
+                    onPoiHover={onPoiHover}
+                    unmarkPoi={unmarkPoi}
+                    removeSchedule={removeSchedule}
+                    isHovered={hoveredPoiId === poi.id}
+                    onAddRecommendedPoi={onAddRecommendedPoi}
+                  />
+                ))}
+              </ul>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -804,7 +740,6 @@ export function LeftPanel({
   markedPois,
   unmarkPoi,
   removeSchedule,
-  onPlaceClick,
   onPoiClick,
   onPoiHover,
   onAddRecommendedPoi,
@@ -815,7 +750,6 @@ export function LeftPanel({
   onDayVisibilityChange,
   hoveredPoiId,
   isOptimizationProcessing,
-  // [추가] ChatPanel props
   messages,
   sendMessage,
   isChatConnected,
@@ -823,8 +757,15 @@ export function LeftPanel({
 }: LeftPanelProps) {
   const optimizingRef = useRef(false);
   const [isOptimizationModalOpen, setIsOptimizationModalOpen] = useState(false);
-  const [optimizationDayId, setOptimizationDayId] = useState<string | null>(null);
-  const [originalRouteData, setOriginalRouteData] = useState<{ pois: Poi[], segments: RouteSegment[] } | null>(null);
+  const [optimizationDayId, setOptimizationDayId] = useState<string | null>(
+    null
+  );
+  const [originalRouteData, setOriginalRouteData] = useState<{
+    pois: Poi[];
+    segments: RouteSegment[];
+  } | null>(null);
+  const [activeTab, setActiveTab] = useState('itinerary');
+  const [isRecommendationOpen, setIsRecommendationOpen] = useState(false);
 
   if (!isOpen) {
     return null;
@@ -847,90 +788,121 @@ export function LeftPanel({
     optimizingRef.current = false;
   };
 
-  const dayLayerForModal = optimizationDayId ? (dayLayers.find(l => l.id === optimizationDayId) ?? null) : null;
+  const dayLayerForModal = optimizationDayId
+    ? dayLayers.find((l) => l.id === optimizationDayId) ?? null
+    : null;
   const optimizedPois = optimizationDayId ? itinerary[optimizationDayId] : [];
-  const optimizedSegments = optimizationDayId ? routeSegmentsByDay[optimizationDayId] : [];
+  const optimizedSegments = optimizationDayId
+    ? routeSegmentsByDay[optimizationDayId]
+    : [];
 
   return (
     <>
-      <div className="w-96 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out">
-        <Tabs defaultValue="itinerary" className="flex-1 flex flex-col min-h-0">
-          <TabsList className="w-full justify-around rounded-none bg-gray-50 border-b">
-            <TabsTrigger value="itinerary" className="flex-1 gap-2">
-              <ListOrdered className="w-4 h-4" />
-              <span>내 일정</span>
-            </TabsTrigger>
-            <TabsTrigger value="search" className="flex-1 gap-2">
-              <Search className="w-4 h-4" />
-              <span>장소 검색</span>
-            </TabsTrigger>
-            {/* [추가] 채팅 탭 */}
-            <TabsTrigger value="chat" className="flex-1 gap-2">
-              <MessageCircle className="w-4 h-4" />
-              <span>채팅</span>
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent
-            value="itinerary"
-            className="flex-1 m-0 overflow-y-auto"
+      <div className="flex h-full">
+        <div className="w-96 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out">
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="flex-1 flex flex-col min-h-0"
           >
-            <MarkerStorage
-              {...{
-                pois: markedPois,
-                onPoiClick,
-                onPoiHover,
-                unmarkPoi,
-                removeSchedule,
-                hoveredPoiId,
-              }}
-            />
-            <ItineraryPanel
-              {...{
-                workspaceId,
-                itinerary,
-                recommendedItinerary,
-                dayLayers,
-                onPoiClick,
-                onPoiHover,
-                unmarkPoi,
-                removeSchedule,
-                routeSegmentsByDay,
-                onOptimizeRoute: handleOptimizeRoute,
-                visibleDayIds,
-                onDayVisibilityChange,
-                hoveredPoiId,
-                isRecommendationLoading,
-                onAddRecommendedPoi,
-                onAddRecommendedPoiToDay,
-              }}
-            />
-          </TabsContent>
+            <TabsList className="w-full justify-around rounded-none bg-gray-50 border-b">
+              <TabsTrigger value="itinerary" className="flex-1 gap-2">
+                <ListOrdered className="w-4 h-4" />
+                <span>내 일정</span>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-6 w-6"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsRecommendationOpen(!isRecommendationOpen);
+                  }}
+                >
+                  <ChevronRight
+                    className={`w-4 h-4 text-gray-400 transition-transform ${
+                      isRecommendationOpen ? 'rotate-180' : ''
+                    }`}
+                  />
+                </Button>
+              </TabsTrigger>
+              <TabsTrigger value="chat" className="flex-1 gap-2">
+                <MessageCircle className="w-4 h-4" />
+                <span>채팅</span>
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="search" className="flex-1 relative m-0">
-            <div className="absolute inset-0">
-              <SearchPanel onPlaceClick={onPlaceClick} />
-            </div>
-          </TabsContent>
+            <TabsContent
+              value="itinerary"
+              className="flex-1 m-0 overflow-y-auto"
+            >
+              <MarkerStorage
+                {...{
+                  pois: markedPois,
+                  onPoiClick,
+                  onPoiHover,
+                  unmarkPoi,
+                  removeSchedule,
+                  hoveredPoiId,
+                }}
+              />
+              <ItineraryPanel
+                {...{
+                  workspaceId,
+                  itinerary,
+                  dayLayers,
+                  onPoiClick,
+                  onPoiHover,
+                  unmarkPoi,
+                  removeSchedule,
+                  routeSegmentsByDay,
+                  onOptimizeRoute: handleOptimizeRoute,
+                  visibleDayIds,
+                  onDayVisibilityChange,
+                  hoveredPoiId,
+                  isRecommendationLoading,
+                }}
+              />
+            </TabsContent>
 
-          {/* [추가] 채팅 탭 콘텐츠 */}
-          <TabsContent value="chat" className="flex-1 overflow-auto m-0">
-            <ChatPanel
-              messages={messages}
-              sendMessage={sendMessage}
-              isChatConnected={isChatConnected}
-              workspaceId={workspaceId}
-              onAddPoiToItinerary={onAddRecommendedPoi}
-              onCardClick={onCardClick}
-            />
-          </TabsContent>
-        </Tabs>
+            <TabsContent value="chat" className="flex-1 overflow-auto m-0">
+              <ChatPanel
+                messages={messages}
+                sendMessage={sendMessage}
+                isChatConnected={isChatConnected}
+                workspaceId={workspaceId}
+                onAddPoiToItinerary={onAddRecommendedPoi}
+                onCardClick={onCardClick}
+              />
+            </TabsContent>
+          </Tabs>
+        </div>
+        {isRecommendationOpen && (
+          <RecommendationSidebar
+            {...{
+              workspaceId,
+              dayLayers,
+              recommendedItinerary,
+              onPoiClick,
+              onPoiHover,
+              unmarkPoi,
+              removeSchedule,
+              hoveredPoiId,
+              onAddRecommendedPoi,
+              onAddRecommendedPoiToDay,
+              onClose: () => setIsRecommendationOpen(false),
+            }}
+          />
+        )}
       </div>
       <OptimizationModal
         isOpen={isOptimizationModalOpen}
         onClose={handleCloseModal}
         originalData={originalRouteData}
-        optimizedData={!isOptimizationProcessing ? { pois: optimizedPois, segments: optimizedSegments } : null}
+        optimizedData={
+          !isOptimizationProcessing
+            ? { pois: optimizedPois, segments: optimizedSegments }
+            : null
+        }
         dayLayer={dayLayerForModal}
       />
     </>

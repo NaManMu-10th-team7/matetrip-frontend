@@ -213,6 +213,9 @@ export function Workspace({
         );
         const data = await response.json();
 
+        // [추가] 디버그용: AI 추천 API 응답 전체를 콘솔에 출력
+        console.log('[디버그] AI 추천 경로 API 응답:', data);
+
         // [수정] API 응답이 비정상적일 경우를 대비한 방어 코드
         if (!data || !data.recommendations) {
           console.error('Invalid AI plan response:', data);
@@ -224,6 +227,9 @@ export function Workspace({
           // 응답 데이터의 순서와 planDayDtos의 순서를 매칭
           const planDay = planDayDtos[index];
           if (!planDay || !rec || !rec.pois) return; // rec와 rec.pois가 유효한지 확인
+
+          // [추가] 디버그용: 각 날짜별 추천 장소 목록을 콘솔에 출력
+          console.log(`[디버그] AI 추천 Day ${index + 1} 장소 목록:`, rec.pois);
 
           const virtualPlanDayId = `rec-${workspaceId}-${planDay.planDate}`;
           newRecommendedItinerary[virtualPlanDayId] = rec.pois
