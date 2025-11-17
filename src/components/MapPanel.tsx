@@ -109,22 +109,6 @@ export interface DayRouteRendererProps {
 }
 
 /**
- * POI 순번과 색상을 포함하는 커스텀 SVG 마커 아이콘을 생성합니다.
- * @param label - 마커에 표시될 텍스트 ('출발', '경유', '도착' 등)
- * @param color - 마커의 배경색
- * @returns 데이터 URI 형식의 SVG 문자열
- */
-const createCustomMarkerIcon = (label: string, color: string) => {
-  // 텍스트 길이에 따라 폰트 크기 동적 조절
-  const fontSize = label.length > 1 ? 14 : 16;
-  const svg = `<svg width="36" height="48" viewBox="0 0 36 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M18 0C8.058 0 0 8.058 0 18C0 28.296 15.66 46.404 16.596 47.544C17.328 48.456 18.672 48.456 19.404 47.544C20.34 46.404 36 28.296 36 18C36 8.058 27.942 0 18 0Z" fill="${color}"/>
-    <text x="18" y="21" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="bold" fill="white" text-anchor="middle" alignment-baseline="central">${label}</text>
-  </svg>`;
-  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
-};
-
-/**
  * 장소 정보창(인포윈도우) 컴포넌트
  * PlaceMarker와 PoiMarker에서 재사용됩니다.
  */
@@ -302,17 +286,10 @@ const PlaceMarker = memo(
     };
     // 카테고리에 따른 아이콘 이미지 URL 생성
     const getMarkerImageSrc = (place: PlaceDto, markedPoi?: Poi): string => {
-      // 1. 장소가 일정에 포함되어 있는지 확인
-      if (markedPoi?.id && scheduledPoiData.has(markedPoi.id)) {
-        const scheduleInfo = scheduledPoiData.get(markedPoi.id)!;
-        // '출발/경유/도착' 아이콘 생성 로직을 호출
-        return createCustomMarkerIcon(scheduleInfo.label, scheduleInfo.color);
-      }
-
-      // 2. '보관함' 또는 '일반' 상태에 대한 아이콘 생성
+      // '보관함' 또는 '일반' 상태에 대한 아이콘 생성
       const categoryCode = place.category;
       const isMarkedOnly = markedPoi && markedPoi.status === 'MARKED';
-
+      const scheduleInfo = markedPoi?.id ? scheduledPoiData.get(markedPoi.id) : undefined;
       // 카테고리별 색상 가져오기
       const categoryInfo =
         CATEGORY_INFO[categoryCode as keyof typeof CATEGORY_INFO];
@@ -424,6 +401,20 @@ const PlaceMarker = memo(
         <path d="M20 0C11 0 4 8 4 18c0 12 16 28 16 28s16-16 16-28C36 8 29 0 20 0z"
               fill="${color}" 
               stroke="${strokeColor}" stroke-width="${strokeWidth}"/>
+
+        <!-- [수정] 일정에 포함된 경우, 우측 상단에 숫자 배지 추가 -->
+        ${
+          scheduleInfo
+            ? `
+          <g transform="translate(34, 4)">
+            <circle cx="0" cy="0" r="10" fill="${scheduleInfo.color}" stroke="white" stroke-width="2"/>
+            <text x="0" y="0" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white" text-anchor="middle" alignment-baseline="central">
+              ${scheduleInfo.label}
+            </text>
+          </g>
+        `
+            : ''
+        }
 
         <!-- 카테고리별 아이콘 -->
         ${iconSvg}
@@ -1347,16 +1338,9 @@ export function MapPanel({
   dayLayers.forEach((dayLayer) => {
     const dayPois = itinerary[dayLayer.id];
     if (dayPois) {
-      const totalPois = dayPois.length;
       dayPois.forEach((poi, index) => {
-        let label: string;
-        if (index === 0) {
-          label = '출발';
-        } else if (index === totalPois - 1) {
-          label = '도착';
-        } else {
-          label = '경유';
-        }
+        // [수정] '출발/경유/도착' 대신 순서대로 숫자를 라벨로 사용합니다.
+        const label = String(index + 1);
 
         scheduledPoiData.set(poi.id, {
           label,
