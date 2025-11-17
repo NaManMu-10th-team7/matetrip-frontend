@@ -216,27 +216,13 @@ export function Workspace({
     const generateAiPlan = async () => {
       setIsRecommendationLoading(true);
       try {
-        // const response = await fetch(
-        //   `${API_BASE_URL}/workspace/generate-ai-plan`,
-        //   {
-        //     method: 'POST',
-        //     headers: { 'Content-Type': 'application/json' },
-        //     body: JSON.stringify({
-        //       workspaceId: workspaceId,
-        //       region: postLocation || '서울',
-        //       startDate: planDayDtos[0].planDate,
-        //       endDate: planDayDtos[planDayDtos.length - 1].planDate,
-        //     }),
-        //   }
-        // );
-        const userId = user?.userId;
         const response = await fetch(
-          `${API_BASE_URL}/workspace/generate-ai-plan?userId=${userId}`,
+          `${API_BASE_URL}/workspace/generate-ai-plan`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              // workspaceId: workspaceId,
+              workspaceId: workspaceId,
               region: postLocation || '서울',
               startDate: planDayDtos[0].planDate,
               endDate: planDayDtos[planDayDtos.length - 1].planDate,
@@ -249,13 +235,13 @@ export function Workspace({
         console.log('[디버그] AI 추천 경로 API 응답:', data);
 
         // [수정] API 응답이 비정상적일 경우를 대비한 방어 코드
-        if (!data || !data.recommendations) {
+        if (!data) {
           console.error('Invalid AI plan response:', data);
           return;
         }
 
         const newRecommendedItinerary: Record<string, Poi[]> = {};
-        data.recommendations.forEach((rec: { pois: any[] }, index: number) => {
+        data.forEach((rec: { pois: any[] }, index: number) => {
           // 응답 데이터의 순서와 planDayDtos의 순서를 매칭
           const planDay = planDayDtos[index];
           if (!planDay || !rec || !rec.pois) return; // rec와 rec.pois가 유효한지 확인
