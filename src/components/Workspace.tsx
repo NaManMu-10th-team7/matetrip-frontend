@@ -14,7 +14,6 @@ import { MapPanel } from './MapPanel';
 import type { KakaoPlace, RouteSegment, ChatMessage } from '../types/map';
 import type { PlanDayDto } from '../types/workspace';
 import { LeftPanel } from './LeftPanel';
-import { RightPanel } from './RightPanel';
 import { PlanRoomHeader } from './PlanRoomHeader';
 import { usePlaceStore } from '../store/placeStore'; // placeStore import
 import { useAuthStore } from '../store/authStore';
@@ -65,7 +64,6 @@ export function Workspace({
   onEndTrip,
 }: WorkspaceProps) {
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
-  const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
 
   // [신규] AI 추천 일정 관련 상태
   const [recommendedItinerary, setRecommendedItinerary] = useState<
@@ -322,7 +320,7 @@ export function Workspace({
       }, 310); // transition 시간보다 약간 길게 설정
       return () => clearTimeout(timer);
     }
-  }, [isLeftPanelOpen, isRightPanelOpen]);
+  }, [isLeftPanelOpen]);
   // PlanRoomHeader에 전달할 activeMembers 데이터 형식으로 변환
   const activeMembersForHeader = useMemo(() => {
     return members.map((member) => ({
@@ -768,12 +766,17 @@ export function Workspace({
             onDayVisibilityChange={handleDayVisibilityChange} // [추가] 가시성 변경 핸들러 전달
             hoveredPoiId={hoveredPoiInfo?.poiId ?? null}
             isOptimizationProcessing={isOptimizationProcessing} // New prop
+            // [수정] ChatPanel을 위해 props 전달
+            messages={messages}
+            sendMessage={sendMessage}
+            isChatConnected={isChatConnected}
+            onCardClick={handlePoiClick}
           />
 
           <button
             onClick={() => setIsLeftPanelOpen(!isLeftPanelOpen)}
             className="absolute top-1/2 -translate-y-1/2 z-20 w-6 h-12 bg-white hover:bg-gray-100 transition-colors flex items-center justify-center border border-gray-300 rounded-r-md shadow-md"
-            style={{ left: isLeftPanelOpen ? '320px' : '0' }}
+            style={{ left: isLeftPanelOpen ? '384px' : '0' }}
           >
             {isLeftPanelOpen ? (
               <ChevronLeft className="w-4 h-4 text-gray-600" />
@@ -810,28 +813,6 @@ export function Workspace({
               focusPlace={focusPlace} // [추가] focusPlace 전달
             />
           </div>
-
-          <button
-            onClick={() => setIsRightPanelOpen(!isRightPanelOpen)}
-            className="absolute top-1/2 -translate-y-1/2 z-20 w-6 h-12 bg-white hover:bg-gray-100 transition-colors flex items-center justify-center border border-gray-300 rounded-l-md shadow-md"
-            style={{ right: isRightPanelOpen ? '384px' : '0' }}
-          >
-            {isRightPanelOpen ? (
-              <ChevronRight className="w-4 h-4 text-gray-600" />
-            ) : (
-              <ChevronLeft className="w-4 h-4 text-gray-600" />
-            )}
-          </button>
-
-          <RightPanel
-            isOpen={isRightPanelOpen}
-            messages={messages}
-            sendMessage={sendMessage}
-            isChatConnected={isChatConnected}
-            workspaceId={workspaceId}
-            onAddPoiToItinerary={handleAddRecommendedPoi} // [신규] 일정 추가 모달 핸들러 전달
-            onCardClick={handlePoiClick} // [신규] 지도 이동 핸들러 전달
-          />
         </div>
       </div>
       <DragOverlay>

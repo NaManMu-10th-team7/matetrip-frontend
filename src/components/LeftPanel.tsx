@@ -13,6 +13,7 @@ import {
   PlusCircle,
   Clock,
   Car,
+  MessageCircle, // [추가] 아이콘 임포트
 } from 'lucide-react';
 import {
   SortableContext,
@@ -26,6 +27,8 @@ import type { DayLayer, KakaoPlace, RouteSegment } from '../types/map';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import React from 'react';
+import { ChatPanel } from './ChatPanel'; // [추가] ChatPanel 임포트
+import { type ChatMessage } from '../hooks/useChatSocket'; // [추가] ChatMessage 타입 임포트
 
 const KAKAO_MAP_SERVICES_STATUS = window.kakao?.maps.services.Status;
 type KakaoPagination = kakao.maps.Pagination;
@@ -600,7 +603,12 @@ interface LeftPanelProps {
   visibleDayIds: Set<string>;
   onDayVisibilityChange: (dayId: string, isVisible: boolean) => void;
   hoveredPoiId: string | null;
-  isOptimizationProcessing: boolean; // New prop
+  isOptimizationProcessing: boolean;
+  // [추가] ChatPanel을 위한 props
+  messages: ChatMessage[];
+  sendMessage: (message: string) => void;
+  isChatConnected: boolean;
+  onCardClick: (poi: any) => void;
 }
 
 const formatDuration = (seconds: number) => {
@@ -806,21 +814,17 @@ export function LeftPanel({
   visibleDayIds,
   onDayVisibilityChange,
   hoveredPoiId,
-  isOptimizationProcessing, // New prop
+  isOptimizationProcessing,
+  // [추가] ChatPanel props
+  messages,
+  sendMessage,
+  isChatConnected,
+  onCardClick,
 }: LeftPanelProps) {
   const optimizingRef = useRef(false);
   const [isOptimizationModalOpen, setIsOptimizationModalOpen] = useState(false);
   const [optimizationDayId, setOptimizationDayId] = useState<string | null>(null);
   const [originalRouteData, setOriginalRouteData] = useState<{ pois: Poi[], segments: RouteSegment[] } | null>(null);
-  // const [isOptimizationComplete, setIsOptimizationComplete] = useState(false); // Removed
-
-  // Removed the useEffect that depended on routeSegmentsByDay
-  // useEffect(() => {
-  //   if (isOptimizationModalOpen && optimizingRef.current) {
-  //     setIsOptimizationComplete(true);
-  //     optimizingRef.current = false;
-  //   }
-  // }, [routeSegmentsByDay]);
 
   if (!isOpen) {
     return null;
@@ -831,7 +835,6 @@ export function LeftPanel({
     const segments = routeSegmentsByDay[dayId] || [];
     setOriginalRouteData(JSON.parse(JSON.stringify({ pois, segments })));
     setOptimizationDayId(dayId);
-    // setIsOptimizationComplete(false); // Removed
     setIsOptimizationModalOpen(true);
     optimizingRef.current = true;
     onOptimizeRoute(dayId);
@@ -841,7 +844,6 @@ export function LeftPanel({
     setIsOptimizationModalOpen(false);
     setOptimizationDayId(null);
     setOriginalRouteData(null);
-    // setIsOptimizationComplete(false); // Removed
     optimizingRef.current = false;
   };
 
@@ -851,7 +853,7 @@ export function LeftPanel({
 
   return (
     <>
-      <div className="w-80 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out">
+      <div className="w-96 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out">
         <Tabs defaultValue="itinerary" className="flex-1 flex flex-col min-h-0">
           <TabsList className="w-full justify-around rounded-none bg-gray-50 border-b">
             <TabsTrigger value="itinerary" className="flex-1 gap-2">
@@ -861,6 +863,11 @@ export function LeftPanel({
             <TabsTrigger value="search" className="flex-1 gap-2">
               <Search className="w-4 h-4" />
               <span>장소 검색</span>
+            </TabsTrigger>
+            {/* [추가] 채팅 탭 */}
+            <TabsTrigger value="chat" className="flex-1 gap-2">
+              <MessageCircle className="w-4 h-4" />
+              <span>채팅</span>
             </TabsTrigger>
           </TabsList>
 
@@ -905,13 +912,25 @@ export function LeftPanel({
               <SearchPanel onPlaceClick={onPlaceClick} />
             </div>
           </TabsContent>
+
+          {/* [추가] 채팅 탭 콘텐츠 */}
+          <TabsContent value="chat" className="flex-1 overflow-auto m-0">
+            <ChatPanel
+              messages={messages}
+              sendMessage={sendMessage}
+              isChatConnected={isChatConnected}
+              workspaceId={workspaceId}
+              onAddPoiToItinerary={onAddRecommendedPoi}
+              onCardClick={onCardClick}
+            />
+          </TabsContent>
         </Tabs>
       </div>
       <OptimizationModal
         isOpen={isOptimizationModalOpen}
         onClose={handleCloseModal}
         originalData={originalRouteData}
-        optimizedData={!isOptimizationProcessing ? { pois: optimizedPois, segments: optimizedSegments } : null} // Use isOptimizationProcessing
+        optimizedData={!isOptimizationProcessing ? { pois: optimizedPois, segments: optimizedSegments } : null}
         dayLayer={dayLayerForModal}
       />
     </>
