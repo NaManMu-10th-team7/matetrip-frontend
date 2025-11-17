@@ -38,7 +38,7 @@ interface PoiItemProps {
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
   isHovered: boolean;
-  onAddRecommendedPoi?: (poi: Poi) => void;
+  onAddRecommendedPoi?: (poi: Poi, planDayId?: string) => void;
 }
 
 function PoiItem({
@@ -52,6 +52,7 @@ function PoiItem({
   isHovered,
   onAddRecommendedPoi,
 }: PoiItemProps) {
+  const isRecommended = poi.status === ('RECOMMENDED' as any);
   const {
     attributes,
     listeners,
@@ -59,7 +60,7 @@ function PoiItem({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: poi.id });
+  } = useSortable({ id: poi.id, disabled: isRecommended });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -67,8 +68,6 @@ function PoiItem({
     zIndex: isDragging ? 10 : undefined,
     opacity: isDragging ? 0 : 1,
   };
-
-  const isRecommended = poi.status === ('RECOMMENDED' as any);
 
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -81,7 +80,7 @@ function PoiItem({
 
   const handleAddClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onAddRecommendedPoi?.(poi);
+    onAddRecommendedPoi?.(poi, poi.planDayId);
   };
 
   return (
@@ -99,9 +98,7 @@ function PoiItem({
         <div
           {...attributes}
           {...listeners}
-          className={`cursor-grab touch-none p-1 ${
-            isRecommended ? 'cursor-not-allowed' : ''
-          }`}
+          className={`touch-none p-1 ${!isRecommended ? 'cursor-grab' : ''}`}
         >
           <GripVertical className="w-4 h-4 text-gray-400" />
         </div>
@@ -411,7 +408,7 @@ interface LeftPanelProps {
   removeSchedule: (poiId: string, planDayId: string) => void;
   onPoiClick: (poi: Poi) => void;
   onPoiHover: (poiId: string | null) => void;
-  onAddRecommendedPoi: (poi: Poi) => void;
+  onAddRecommendedPoi: (poi: Poi, planDayId?: string) => void;
   onAddRecommendedPoiToDay: (planDayId: string, pois: Poi[]) => void;
   routeSegmentsByDay: Record<string, RouteSegment[]>;
   onOptimizeRoute: (dayId: string) => void;
@@ -668,7 +665,7 @@ function RecommendationSidebar({
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
   hoveredPoiId: string | null;
-  onAddRecommendedPoi: (poi: Poi) => void;
+  onAddRecommendedPoi: (poi: Poi, planDayId?: string) => void;
   onAddRecommendedPoiToDay: (planDayId: string, pois: Poi[]) => void;
   onClose: () => void;
 }) {
@@ -708,20 +705,25 @@ function RecommendationSidebar({
                   이 일정으로 채우기
                 </Button>
               </div>
-              <ul className="space-y-1">
-                {recommendedPois.map((poi) => (
-                  <PoiItem
-                    key={poi.id}
-                    poi={poi}
-                    onPoiClick={onPoiClick}
-                    onPoiHover={onPoiHover}
-                    unmarkPoi={unmarkPoi}
-                    removeSchedule={removeSchedule}
-                    isHovered={hoveredPoiId === poi.id}
-                    onAddRecommendedPoi={onAddRecommendedPoi}
-                  />
-                ))}
-              </ul>
+              <SortableContext
+                items={recommendedPois.map((p) => p.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <ul className="space-y-1">
+                  {recommendedPois.map((poi) => (
+                    <PoiItem
+                      key={poi.id}
+                      poi={{ ...poi, planDayId: layer.id }}
+                      onPoiClick={onPoiClick}
+                      onPoiHover={onPoiHover}
+                      unmarkPoi={unmarkPoi}
+                      removeSchedule={removeSchedule}
+                      isHovered={hoveredPoiId === poi.id}
+                      onAddRecommendedPoi={onAddRecommendedPoi}
+                    />
+                  ))}
+                </ul>
+              </SortableContext>
             </div>
           );
         })}

@@ -198,13 +198,27 @@ export function Workspace({
     const generateAiPlan = async () => {
       setIsRecommendationLoading(true);
       try {
+        // const response = await fetch(
+        //   `${API_BASE_URL}/workspace/generate-ai-plan`,
+        //   {
+        //     method: 'POST',
+        //     headers: { 'Content-Type': 'application/json' },
+        //     body: JSON.stringify({
+        //       workspaceId: workspaceId,
+        //       region: postLocation || '서울',
+        //       startDate: planDayDtos[0].planDate,
+        //       endDate: planDayDtos[planDayDtos.length - 1].planDate,
+        //     }),
+        //   }
+        // );
+        const userId = user?.userId;
         const response = await fetch(
-          `${API_BASE_URL}/workspace/generate-ai-plan`,
+          `${API_BASE_URL}/workspace/generate-ai-plan?userId=${userId}`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              workspaceId: workspaceId,
+              // workspaceId: workspaceId,
               region: postLocation || '서울',
               startDate: planDayDtos[0].planDate,
               endDate: planDayDtos[planDayDtos.length - 1].planDate,
@@ -253,7 +267,7 @@ export function Workspace({
 
     // AI 추천 일정을 생성합니다.
     generateAiPlan();
-  }, [planDayDtos, workspaceId, postLocation]); // [수정] 의존성 배열에 postLocation 추가
+  }, [planDayDtos, workspaceId, postLocation, user?.userId]); // [수정] 의존성 배열에 postLocation 추가
 
   // [추가] 날짜 가시성 토글 핸들러
   const handleDayVisibilityChange = useCallback(
@@ -271,18 +285,27 @@ export function Workspace({
     []
   );
 
-  // [신규] 추천 POI를 '내 일정'에 추가하는 핸들러
-  const handleAddRecommendedPoi = useCallback((poi: Poi) => {
-    setPoiToAdd(poi);
-    setIsAddModalOpen(true);
-  }, []);
+  // [수정] 추천 POI를 '내 일정'에 추가하는 핸들러
+  const handleAddRecommendedPoi = useCallback(
+    (poi: Poi, planDayId?: string) => {
+      // '+' 버튼 클릭 시 planDayId가 존재
+      if (planDayId) {
+        // "이 일정으로 채우기"에서 사용하는, 검증된 함수를 재사용
+        addRecommendedPoisToDay(planDayId, [poi]);
+      } else {
+        // planDayId가 없는 경우 (e.g., 채팅 패널에서 추가), 기존의 모달 방식 사용
+        setPoiToAdd(poi);
+        setIsAddModalOpen(true);
+      }
+    },
+    [addRecommendedPoisToDay] // 의존성 배열 수정
+  );
 
-  // [신규] 모달에서 날짜를 선택하고 '확인'을 눌렀을 때 실행되는 함수
+  // [유지] 모달에서 날짜를 선택하고 '확인'을 눌렀을 때 실행되는 함수 (채팅 등에서 사용)
   const handleConfirmAdd = useCallback(
     (targetDayId: string) => {
       if (!poiToAdd) return;
 
-      // [개선] 중복 추가 방지 로직
       const isAlreadyAdded = pois.some(
         (p) =>
           p.latitude === poiToAdd.latitude && p.longitude === poiToAdd.longitude
@@ -294,7 +317,6 @@ export function Workspace({
         return;
       }
 
-      // FIX: markPoi에 필요한 데이터만 추출하여 전달
       const { placeId, latitude, longitude, address, placeName, categoryName } =
         poiToAdd;
       const poiToCreate = {
@@ -308,7 +330,6 @@ export function Workspace({
 
       markPoi(poiToCreate, { targetDayId });
 
-      // 모달 닫기
       setIsAddModalOpen(false);
     },
     [poiToAdd, markPoi, pois]
