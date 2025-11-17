@@ -1366,6 +1366,18 @@ export function MapPanel({
     }
   });
 
+  const handleToggleAllCategories = () => {
+    setVisibleCategories((prev) => {
+      const allCategoryKeys = Object.keys(CATEGORY_INFO);
+      // 일부만 선택되었거나 모두 선택되지 않았을 경우 -> 모두 선택
+      if (prev.size < allCategoryKeys.length) {
+        return new Set(allCategoryKeys);
+      }
+      // 모두 선택되었을 경우 -> 모두 해제
+      return new Set<string>();
+    });
+  };
+
   const handleCategoryToggle = (categoryKey: string) => {
     setVisibleCategories((prev) => {
       const newSet = new Set(prev);
@@ -1437,6 +1449,20 @@ export function MapPanel({
       >
         {/* 카테고리 필터 버튼 */}
         <div className="absolute top-2.5 left-1/2 -translate-x-1/2 z-20 flex gap-2 p-1.5 bg-white/80 backdrop-blur-sm rounded-lg shadow-md">
+          {/* [신규] 전체 토글 버튼 */}
+          <button
+            onClick={handleToggleAllCategories}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 flex items-center gap-1.5 ${
+              visibleCategories.size === Object.keys(CATEGORY_INFO).length
+                ? 'bg-gray-800 text-white shadow-sm'
+                : 'bg-white text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            전체
+          </button>
+          {/* 구분선 */}
+          <div className="border-l border-gray-300 mx-1" />
+
           {Object.entries(CATEGORY_INFO).map(
             ([key, { name, color, icon }]) => (
               <button
