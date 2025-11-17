@@ -1677,12 +1677,19 @@ export function MapPanel({
         {/* AI 추천 경로 렌더링 */}
         {Object.entries(recommendedRouteInfo).map(([dayId, segments]) => {
           const isVisible = visibleDayIds.has(dayId);
+          // [수정] 추천 경로의 dayId에서 날짜 정보를 찾아 해당하는 dayLayer의 색상을 사용합니다.
+          // dayId 형식: rec-workspaceId-YYYY-MM-DD
+          const dayLayer = dayLayers.find((layer) =>
+            dayId.endsWith(layer.planDate)
+          );
+          const routeColor = dayLayer ? dayLayer.color : '#FF00FF'; // 일치하는 색상이 없으면 기본 자홍색 사용
+
           return segments.map((segment, index) => (
             <Polyline
               key={`rec-${dayId}-segment-${index}`}
               path={segment.path}
               strokeWeight={5}
-              strokeColor={'#FF00FF'} // 추천 경로는 다른 색상으로 표시 (예: 자홍색)
+              strokeColor={routeColor} // [수정] 각 날짜별 색상 적용
               strokeOpacity={isVisible ? 0.7 : 0}
               strokeStyle={'dashed'} // 점선으로 표시
             />

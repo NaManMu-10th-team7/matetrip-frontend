@@ -51,7 +51,6 @@ const generateColorFromString = (str: string) => {
 const DAY_COLORS = [
   '#E53935', // 선명한 빨강
   '#FB8C00', // 주황
-  '#FDD835', // 노랑
   '#43A047', // 녹색
   '#1E88E5', // 파랑
   '#5E35B1', // 남보라 (인디고)
@@ -805,7 +804,9 @@ export function Workspace({
             visibleDayIds={visibleDayIds} // [추가] 가시성 상태 전달
             onDayVisibilityChange={handleDayVisibilityChange} // [추가] 가시성 변경 핸들러 전달
             onMyItineraryVisibilityChange={handleMyItineraryVisibilityChange} // [수정] '내 일정'용 핸들러 전달
-            onRecommendedItineraryVisibilityChange={handleRecommendedItineraryVisibilityChange} // [수정] 'AI 추천'용 핸들러 전달
+            onRecommendedItineraryVisibilityChange={
+              handleRecommendedItineraryVisibilityChange
+            } // [수정] 'AI 추천'용 핸들러 전달
             hoveredPoiId={hoveredPoiInfo?.poiId ?? null}
             isOptimizationProcessing={isOptimizationProcessing} // New prop
             // [수정] ChatPanel을 위해 props 전달
