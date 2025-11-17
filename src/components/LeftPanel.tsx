@@ -17,6 +17,7 @@ import {
   MessageCircle,
   ChevronRight,
   Check,
+  RefreshCw,
 } from 'lucide-react';
 import {
   SortableContext,
@@ -523,6 +524,7 @@ interface LeftPanelProps {
   onMyItineraryVisibilityChange: () => void; // [수정] '내 일정' 전체 토글 핸들러 prop
   onRecommendedItineraryVisibilityChange: () => void; // [수정] 'AI 추천' 전체 토글 핸들러 prop
   hoveredPoiId: string | null;
+  onGenerateAiPlan: () => void;
   isOptimizationProcessing: boolean;
   messages: ChatMessage[];
   sendMessage: (message: string) => void;
@@ -868,6 +870,7 @@ function RecommendationSidebar({
   visibleDayIds,
   onDayVisibilityChange,
   onRecommendedItineraryVisibilityChange, // [수정] 'AI 추천' 전체 토글 핸들러 prop
+  onGenerateAiPlan,
 }: {
   workspaceId: string;
   dayLayers: DayLayer[];
@@ -884,6 +887,7 @@ function RecommendationSidebar({
   visibleDayIds: Set<string>;
   onDayVisibilityChange: (dayId: string, isVisible: boolean) => void;
   onRecommendedItineraryVisibilityChange: () => void; // [수정] 'AI 추천' 전체 토글 핸들러 prop
+  onGenerateAiPlan: () => void;
 }) {
   // [신규] 'AI 추천'의 접기/펼치기 상태 관리
   const [collapsedDayIds, setCollapsedDayIds] = useState<Set<string>>(
@@ -918,6 +922,16 @@ function RecommendationSidebar({
         </h2>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <X className="w-4 h-4" />
+        </Button>
+      </div>
+      <div className="p-4 border-b">
+        <Button
+          className="w-full"
+          onClick={onGenerateAiPlan}
+          variant="default" // [수정] 버튼 스타일을 기본(채워진 형태)으로 변경
+        >
+          <RefreshCw className="w-4 h-4 mr-2" />
+          다시 추천받기
         </Button>
       </div>
       <div className="overflow-y-auto flex-1">
@@ -995,6 +1009,7 @@ export function LeftPanel({
   onMyItineraryVisibilityChange,
   onRecommendedItineraryVisibilityChange,
   hoveredPoiId,
+  onGenerateAiPlan,
   isOptimizationProcessing,
   messages,
   sendMessage,
@@ -1176,6 +1191,7 @@ export function LeftPanel({
               visibleDayIds,
               onDayVisibilityChange,
               onRecommendedItineraryVisibilityChange, // [수정] 'AI 추천'용 핸들러 전달
+              onGenerateAiPlan,
             }}
           />
         )}

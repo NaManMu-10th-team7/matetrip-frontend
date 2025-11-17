@@ -185,6 +185,64 @@ export function Workspace({
     fetchPostData();
   }, [workspaceId]);
 
+  // [신규] AI 추천 일정 가져오기 함수
+  const generateAiPlan = useCallback(async () => {
+    if (!postLocation || planDayDtos.length === 0) {
+      console.log(
+        'Cannot generate AI plan: missing postLocation or planDayDtos'
+      );
+      return;
+    }
+    setIsRecommendationLoading(true);
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/workspace/generate-ai-plan`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            workspaceId: workspaceId,
+            region: postLocation,
+            startDate: planDayDtos[0].planDate,
+            endDate: planDayDtos[planDayDtos.length - 1].planDate,
+          }),
+        }
+      );
+      const data = await response.json();
+
+      if (!data) {
+        console.error('Invalid AI plan response:', data);
+        setRecommendedItinerary({}); // 에러 시 기존 추천 초기화
+        return;
+      }
+
+      const newRecommendedItinerary: Record<string, Poi[]> = {};
+      data.forEach((rec: { pois: any[] }, index: number) => {
+        const planDay = planDayDtos[index];
+        if (!planDay || !rec || !rec.pois) return;
+
+        const virtualPlanDayId = `rec-${workspaceId}-${planDay.planDate}`;
+        newRecommendedItinerary[virtualPlanDayId] = rec.pois
+          .filter((p) => p && p.id)
+          .map((p: any) => ({
+            ...p,
+            id: `rec-${p.id}`,
+            placeId: p.id,
+            placeName: p.title,
+            categoryName: p.category,
+            status: 'RECOMMENDED' as any,
+            planDayId: virtualPlanDayId,
+          }));
+      });
+      setRecommendedItinerary(newRecommendedItinerary);
+    } catch (error) {
+      console.error('Failed to generate AI plan:', error);
+      setRecommendedItinerary({}); // 에러 시 기존 추천 초기화
+    } finally {
+      setIsRecommendationLoading(false);
+    }
+  }, [workspaceId, postLocation, planDayDtos]);
+
   // [추가] planDayDtos가 변경되면 visibleDayIds를 모든 날짜 ID로 초기화
   useEffect(() => {
     // [디버그용] 워크스페이스 진입 시 게시글의 여행지(postLocation) 값 확인
@@ -211,67 +269,9 @@ export function Workspace({
 
     setVisibleDayIds(new Set(planDayDtos.map((day) => day.id)));
 
-    // [신규] AI 추천 일정 가져오기
-    const generateAiPlan = async () => {
-      setIsRecommendationLoading(true);
-      try {
-        const response = await fetch(
-          `${API_BASE_URL}/workspace/generate-ai-plan`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              workspaceId: workspaceId,
-              region: postLocation || '서울',
-              startDate: planDayDtos[0].planDate,
-              endDate: planDayDtos[planDayDtos.length - 1].planDate,
-            }),
-          }
-        );
-        const data = await response.json();
-
-        // [추가] 디버그용: AI 추천 API 응답 전체를 콘솔에 출력
-        console.log('[디버그] AI 추천 경로 API 응답:', data);
-
-        // [수정] API 응답이 비정상적일 경우를 대비한 방어 코드
-        if (!data) {
-          console.error('Invalid AI plan response:', data);
-          return;
-        }
-
-        const newRecommendedItinerary: Record<string, Poi[]> = {};
-        data.forEach((rec: { pois: any[] }, index: number) => {
-          // 응답 데이터의 순서와 planDayDtos의 순서를 매칭
-          const planDay = planDayDtos[index];
-          if (!planDay || !rec || !rec.pois) return; // rec와 rec.pois가 유효한지 확인
-
-          // [추가] 디버그용: 각 날짜별 추천 장소 목록을 콘솔에 출력
-          console.log(`[디버그] AI 추천 Day ${index + 1} 장소 목록:`, rec.pois);
-
-          const virtualPlanDayId = `rec-${workspaceId}-${planDay.planDate}`;
-          newRecommendedItinerary[virtualPlanDayId] = rec.pois
-            .filter((p) => p && p.id) // [수정] id가 없는 비정상적인 poi 데이터 필터링
-            .map((p: any) => ({
-              ...p,
-              id: `rec-${p.id}`, // 실제 POI ID와 충돌 방지
-              placeId: p.id, // [수정] AI 응답의 id를 placeId로 명시적으로 매핑
-              placeName: p.title, // 필드명 매핑
-              categoryName: p.category, // 필드명 매핑
-              status: 'RECOMMENDED' as any, // 가상 상태 부여
-              planDayId: virtualPlanDayId,
-            }));
-        });
-        setRecommendedItinerary(newRecommendedItinerary);
-      } catch (error) {
-        console.error('Failed to generate AI plan:', error);
-      } finally {
-        setIsRecommendationLoading(false);
-      }
-    };
-
     // AI 추천 일정을 생성합니다.
     generateAiPlan();
-  }, [planDayDtos, workspaceId, postLocation, user?.userId]); // [수정] 의존성 배열에 postLocation 추가
+  }, [planDayDtos, generateAiPlan]); // [수정] 의존성 배열에 generateAiPlan 추가
 
   // [추가] 날짜 가시성 토글 핸들러
   const handleDayVisibilityChange = useCallback(
@@ -828,6 +828,7 @@ export function Workspace({
             onRecommendedItineraryVisibilityChange={
               handleRecommendedItineraryVisibilityChange
             } // [수정] 'AI 추천'용 핸들러 전달
+            onGenerateAiPlan={generateAiPlan} // [신규] AI 추천 재생성 함수 전달
             hoveredPoiId={hoveredPoiInfo?.poiId ?? null}
             isOptimizationProcessing={isOptimizationProcessing} // New prop
             // [수정] ChatPanel을 위해 props 전달
