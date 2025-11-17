@@ -48,6 +48,24 @@ const generateColorFromString = (str: string) => {
   return color.toUpperCase();
 };
 
+const DAY_COLORS = [
+  '#E53935', // 선명한 빨강
+  '#FB8C00', // 주황
+  '#FDD835', // 노랑
+  '#43A047', // 녹색
+  '#1E88E5', // 파랑
+  '#5E35B1', // 남보라 (인디고)
+  '#8E24AA', // 보라
+  '#D81B60', // 짙은 핑크 (마젠타)
+  '#6D4C41', // 갈색
+  '#757575', // 회색
+  '#00897B', // 짙은 녹색 (틸)
+  '#00ACC1', // 청록 (사이언)
+  '#7CB342', // 연두
+  '#E65100', // 짙은 주황
+  '#C0CA33', // 라임
+];
+
 function DraggablePoiItem({ poi }: { poi: Poi }) {
   return (
     <div className="flex items-center gap-2 text-xs p-1 rounded-md bg-white shadow-lg">
@@ -287,14 +305,11 @@ export function Workspace({
   );
 
   // [수정] 추천 POI를 '내 일정'에 추가하는 핸들러
-  const handleAddRecommendedPoi = useCallback(
-    (poi: Poi) => {
-      // 항상 모달을 띄워서 날짜를 선택하게 함
-      setPoiToAdd(poi);
-      setIsAddModalOpen(true);
-    },
-    []
-  );
+  const handleAddRecommendedPoi = useCallback((poi: Poi) => {
+    // 항상 모달을 띄워서 날짜를 선택하게 함
+    setPoiToAdd(poi);
+    setIsAddModalOpen(true);
+  }, []);
 
   // [수정] 모달에서 날짜를 선택하고 '확인'을 눌렀을 때 실행되는 함수
   const handleConfirmAdd = useCallback(
@@ -361,11 +376,11 @@ export function Workspace({
 
   const dayLayers = useMemo(
     () =>
-      planDayDtos.map((day) => ({
+      planDayDtos.map((day, index) => ({
         id: day.id,
         planDate: day.planDate,
-        label: day.planDate, // label 속성 추가
-        color: generateColorFromString(day.id),
+        label: day.planDate,
+        color: DAY_COLORS[index % DAY_COLORS.length],
       })),
     [planDayDtos]
   );
