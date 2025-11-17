@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { SimpleToggle } from './ui/SimpleToggle';
 import {
@@ -14,6 +14,7 @@ import {
   Car,
   MessageCircle,
   ChevronRight,
+  Check,
 } from 'lucide-react';
 import {
   SortableContext,
@@ -38,7 +39,8 @@ interface PoiItemProps {
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
   isHovered: boolean;
-  onAddRecommendedPoi?: (poi: Poi, planDayId?: string) => void;
+  onAddRecommendedPoi?: (poi: Poi) => void;
+  allAddedPois?: Poi[];
 }
 
 function PoiItem({
@@ -51,6 +53,7 @@ function PoiItem({
   removeSchedule,
   isHovered,
   onAddRecommendedPoi,
+  allAddedPois,
 }: PoiItemProps) {
   const isRecommended = poi.status === ('RECOMMENDED' as any);
   const {
@@ -61,6 +64,18 @@ function PoiItem({
     transition,
     isDragging,
   } = useSortable({ id: poi.id, disabled: isRecommended });
+
+  const isAdded = useMemo(() => {
+    if (!isRecommended || !allAddedPois) return false;
+    // Using toFixed to avoid floating point inaccuracies
+    const poiCoord = `${poi.latitude.toFixed(5)},${poi.longitude.toFixed(5)}`;
+    return allAddedPois.some((p) => {
+      const addedPoiCoord = `${p.latitude.toFixed(5)},${p.longitude.toFixed(
+        5
+      )}`;
+      return addedPoiCoord === poiCoord;
+    });
+  }, [poi, allAddedPois, isRecommended]);
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -80,7 +95,7 @@ function PoiItem({
 
   const handleAddClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onAddRecommendedPoi?.(poi, poi.planDayId);
+    onAddRecommendedPoi?.(poi);
   };
 
   return (
@@ -113,15 +128,27 @@ function PoiItem({
       </div>
       <span className="truncate flex-grow ml-2">{poi.placeName}</span>
       {isRecommended ? (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleAddClick}
-          className="w-6 h-6 p-0 flex-shrink-0 text-blue-500 hover:bg-blue-100"
-          aria-label="내 일정에 담기"
-        >
-          <PlusCircle className="w-4 h-4" />
-        </Button>
+        isAdded ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            disabled
+            className="w-6 h-6 p-0 flex-shrink-0 text-green-500 cursor-default"
+            aria-label="이미 추가됨"
+          >
+            <Check className="w-4 h-4" />
+          </Button>
+        ) : (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleAddClick}
+            className="w-6 h-6 p-0 flex-shrink-0 text-blue-500 hover:bg-blue-100"
+            aria-label="내 일정에 담기"
+          >
+            <PlusCircle className="w-4 h-4" />
+          </Button>
+        )
       ) : (
         <Button
           variant="ghost"
@@ -408,7 +435,7 @@ interface LeftPanelProps {
   removeSchedule: (poiId: string, planDayId: string) => void;
   onPoiClick: (poi: Poi) => void;
   onPoiHover: (poiId: string | null) => void;
-  onAddRecommendedPoi: (poi: Poi, planDayId?: string) => void;
+  onAddRecommendedPoi: (poi: Poi) => void;
   onAddRecommendedPoiToDay: (planDayId: string, pois: Poi[]) => void;
   routeSegmentsByDay: Record<string, RouteSegment[]>;
   onOptimizeRoute: (dayId: string) => void;
@@ -656,6 +683,7 @@ function RecommendationSidebar({
   onAddRecommendedPoi,
   onAddRecommendedPoiToDay,
   onClose,
+  allAddedPois,
 }: {
   workspaceId: string;
   dayLayers: DayLayer[];
@@ -665,9 +693,10 @@ function RecommendationSidebar({
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
   hoveredPoiId: string | null;
-  onAddRecommendedPoi: (poi: Poi, planDayId?: string) => void;
+  onAddRecommendedPoi: (poi: Poi) => void;
   onAddRecommendedPoiToDay: (planDayId: string, pois: Poi[]) => void;
   onClose: () => void;
+  allAddedPois: Poi[];
 }) {
   return (
     <div className="w-96 bg-gray-50 border-l border-gray-200 flex flex-col h-full">
@@ -713,13 +742,14 @@ function RecommendationSidebar({
                   {recommendedPois.map((poi) => (
                     <PoiItem
                       key={poi.id}
-                      poi={{ ...poi, planDayId: layer.id }}
+                      poi={poi}
                       onPoiClick={onPoiClick}
                       onPoiHover={onPoiHover}
                       unmarkPoi={unmarkPoi}
                       removeSchedule={removeSchedule}
                       isHovered={hoveredPoiId === poi.id}
                       onAddRecommendedPoi={onAddRecommendedPoi}
+                      allAddedPois={allAddedPois}
                     />
                   ))}
                 </ul>
@@ -768,6 +798,11 @@ export function LeftPanel({
   } | null>(null);
   const [activeTab, setActiveTab] = useState('itinerary');
   const [isRecommendationOpen, setIsRecommendationOpen] = useState(false);
+
+  const allAddedPois = useMemo(
+    () => [...markedPois, ...Object.values(itinerary).flat()],
+    [markedPois, itinerary]
+  );
 
   if (!isOpen) {
     return null;
@@ -892,6 +927,7 @@ export function LeftPanel({
               onAddRecommendedPoi,
               onAddRecommendedPoiToDay,
               onClose: () => setIsRecommendationOpen(false),
+              allAddedPois,
             }}
           />
         )}

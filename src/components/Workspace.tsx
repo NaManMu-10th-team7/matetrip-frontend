@@ -287,52 +287,31 @@ export function Workspace({
 
   // [수정] 추천 POI를 '내 일정'에 추가하는 핸들러
   const handleAddRecommendedPoi = useCallback(
-    (poi: Poi, planDayId?: string) => {
-      // '+' 버튼 클릭 시 planDayId가 존재
-      if (planDayId) {
-        // "이 일정으로 채우기"에서 사용하는, 검증된 함수를 재사용
-        addRecommendedPoisToDay(planDayId, [poi]);
-      } else {
-        // planDayId가 없는 경우 (e.g., 채팅 패널에서 추가), 기존의 모달 방식 사용
-        setPoiToAdd(poi);
-        setIsAddModalOpen(true);
-      }
+    (poi: Poi) => {
+      // 항상 모달을 띄워서 날짜를 선택하게 함
+      setPoiToAdd(poi);
+      setIsAddModalOpen(true);
     },
-    [addRecommendedPoisToDay] // 의존성 배열 수정
+    []
   );
 
-  // [유지] 모달에서 날짜를 선택하고 '확인'을 눌렀을 때 실행되는 함수 (채팅 등에서 사용)
+  // [수정] 모달에서 날짜를 선택하고 '확인'을 눌렀을 때 실행되는 함수
   const handleConfirmAdd = useCallback(
     (targetDayId: string) => {
       if (!poiToAdd) return;
 
-      const isAlreadyAdded = pois.some(
-        (p) =>
-          p.latitude === poiToAdd.latitude && p.longitude === poiToAdd.longitude
-      );
+      // addRecommendedPoisToDay 함수를 사용하여 POI를 추가하고 결과를 받음
+      const result = addRecommendedPoisToDay(targetDayId, [poiToAdd]);
 
-      if (isAlreadyAdded) {
-        alert('이미 일정 또는 보관함에 추가된 장소입니다.');
-        setIsAddModalOpen(false);
-        return;
+      // 결과에 따라 사용자에게 알림
+      if (!result.success && result.message) {
+        alert(result.message);
       }
 
-      const { placeId, latitude, longitude, address, placeName, categoryName } =
-        poiToAdd;
-      const poiToCreate = {
-        placeId,
-        latitude,
-        longitude,
-        address,
-        placeName,
-        categoryName,
-      };
-
-      markPoi(poiToCreate, { targetDayId });
-
+      // 모달 닫기
       setIsAddModalOpen(false);
     },
-    [poiToAdd, markPoi, pois]
+    [poiToAdd, addRecommendedPoisToDay]
   );
 
   // [수정] 패널 열기/닫기 시 지도 리렌더링을 위한 useEffect
