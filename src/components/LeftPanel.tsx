@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { usePlaceStore } from '../store/placeStore'; // [추가] 장소 캐시를 사용하기 위해 import
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { SimpleToggle } from './ui/SimpleToggle';
 import {
@@ -28,6 +29,7 @@ import type { DayLayer, KakaoPlace, RouteSegment } from '../types/map';
 import { Button } from './ui/button';
 import React from 'react';
 import { ChatPanel } from './ChatPanel';
+import { CategoryIcon } from './CategoryIcon'; // [추가] CategoryIcon 임포트
 import { type ChatMessage } from '../hooks/useChatSocket';
 
 interface PoiItemProps {
@@ -126,7 +128,11 @@ function PoiItem({
           </span>
         )}
       </div>
-      <span className="truncate flex-grow ml-2">{poi.placeName}</span>
+      {/* [수정] 아이콘과 장소 이름을 함께 표시 */}
+      <div className="flex items-center gap-2 flex-grow ml-2 min-w-0">
+        <CategoryIcon category={poi.categoryName} className="w-4 h-4 text-gray-500 flex-shrink-0" />
+        <span className="truncate">{poi.placeName}</span>
+      </div>
       {isRecommended ? (
         isAdded ? (
           <Button
@@ -813,6 +819,21 @@ export function LeftPanel({
   const [activeTab, setActiveTab] = useState('itinerary');
   const [isRecommendationOpen, setIsRecommendationOpen] = useState(false);
 
+  // [추가] 장소 캐시에서 모든 장소 정보를 가져옵니다.
+  const placeCache = usePlaceStore((state) => state.placesById);
+
+  // [추가] 서버에서 받은 POI 목록에 캐시된 카테고리 정보를 병합합니다.
+  const poisWithCategory = useMemo(() => {
+    const allPois = [...markedPois, ...Object.values(itinerary).flat()];
+    return allPois.map((poi) => {
+      // POI에 categoryName이 이미 있으면 그대로 사용합니다.
+      if (poi.categoryName) return poi;
+      // categoryName이 없으면, placeCache에서 placeId를 기준으로 찾아 채워줍니다.
+      const cachedPlace = placeCache.get(poi.placeId);
+      return cachedPlace ? { ...poi, categoryName: cachedPlace.category } : poi;
+    });
+  }, [markedPois, itinerary, placeCache]);
+
   const allAddedPois = useMemo(
     () => [...markedPois, ...Object.values(itinerary).flat()],
     [markedPois, itinerary]
@@ -821,6 +842,20 @@ export function LeftPanel({
   if (!isOpen) {
     return null;
   }
+
+  // [추가] poisWithCategory를 사용하여 markedPois와 itinerary를 재생성합니다.
+  const enrichedMarkedPois = useMemo(
+    () =>
+      poisWithCategory.filter((p) => p.status === 'MARKED'),
+    [poisWithCategory]
+  );
+  const enrichedItinerary = useMemo(() => {
+    const newItinerary: Record<string, Poi[]> = {};
+    dayLayers.forEach((layer) => {
+      newItinerary[layer.id] = poisWithCategory.filter((p) => p.planDayId === layer.id);
+    });
+    return newItinerary;
+  }, [poisWithCategory, dayLayers]);
 
   const handleOptimizeRoute = (dayId: string) => {
     const pois = itinerary[dayId] || [];
@@ -887,8 +922,8 @@ export function LeftPanel({
               className="flex-1 m-0 overflow-y-auto"
             >
               <MarkerStorage
+                pois={enrichedMarkedPois} // [수정] 카테고리 정보가 보강된 데이터 사용
                 {...{
-                  pois: markedPois,
                   onPoiClick,
                   onPoiHover,
                   unmarkPoi,
@@ -898,8 +933,8 @@ export function LeftPanel({
               />
               <ItineraryPanel
                 {...{
+                  itinerary: enrichedItinerary, // [수정] 카테고리 정보가 보강된 데이터 사용
                   workspaceId,
-                  itinerary,
                   dayLayers,
                   onPoiClick,
                   onPoiHover,

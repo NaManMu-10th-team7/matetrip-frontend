@@ -621,6 +621,7 @@ export function Workspace({
                   status: 'SCHEDULED',
                   planDayId: dayId,
                   sequence: 999,
+                  categoryName: p.categoryName, // [추가] categoryName 유지
                 };
               }
             }
@@ -761,7 +762,6 @@ export function Workspace({
             markedPois={markedPois}
             unmarkPoi={unmarkPoi}
             removeSchedule={removeSchedule}
-            onPlaceClick={setSelectedPlace}
             onPoiClick={handlePoiClick}
             onPoiHover={hoverPoi} // LeftPanel에 hover 핸들러 전달
             onAddRecommendedPoi={handleAddRecommendedPoi}

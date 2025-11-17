@@ -241,6 +241,7 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
                   ...newPoiData,
                   planDayId: optimisticData?.planDayId || p.planDayId,
                   status: optimisticData?.planDayId ? 'SCHEDULED' : newPoiData.status,
+                  categoryName: p.categoryName, // [추가] 임시 POI의 categoryName을 유지합니다.
                 }
               : p
           );
@@ -250,7 +251,10 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
         const existingPoiIndex = prevPois.findIndex((p) => p.id === newPoiData.id);
         if (existingPoiIndex > -1) {
           return prevPois.map((p, index) =>
-            index === existingPoiIndex ? { ...p, ...newPoiData } : p
+            // [수정] 다른 사용자의 POI 업데이트 시에도 categoryName이 누락되지 않도록 병합합니다.
+            index === existingPoiIndex
+              ? { ...p, ...newPoiData, categoryName: p.categoryName || newPoiData.categoryName }
+              : p
           );
         }
 
@@ -276,7 +280,7 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
       setPois((prevPois) =>
         prevPois.map((p) =>
           p.id === data.poiId
-            ? { ...p, planDayId: data.planDayId, status: 'SCHEDULED' }
+            ? { ...p, planDayId: data.planDayId, status: 'SCHEDULED', categoryName: p.categoryName }
             : p
         )
       );
