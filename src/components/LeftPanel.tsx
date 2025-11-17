@@ -297,14 +297,16 @@ function DayItineraryItem({
           <h3 className="text-sm font-bold truncate">{layer.label}</h3>
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7 text-xs "
-            onClick={() => onOptimizeRoute(layer.id)}
-          >
-            경로 최적화
-          </Button>
+          {pois.length >= 2 && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs "
+              onClick={() => onOptimizeRoute(layer.id)}
+            >
+              경로 최적화
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
