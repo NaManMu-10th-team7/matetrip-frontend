@@ -196,7 +196,7 @@ function MarkerStorage({
       <div className="flex justify-between items-center mb-2">
         <div className="flex items-center gap-2">
           <MapPin className="w-5 h-5 text-gray-600" />
-          <h3 className="text-base font-bold">마커 보관함</h3>
+          <h3 className="text-base font-bold">장소 보관함</h3>
         </div>
         <Button
           variant="ghost"
@@ -231,7 +231,7 @@ function MarkerStorage({
               ))
             ) : (
               <p className="text-xs text-gray-500 p-2">
-                지도에 마커를 추가하여 보관하세요.
+                지도에 장소를 추가하여 보관하세요.
               </p>
             )}
           </ul>
@@ -371,7 +371,7 @@ function DayItineraryItem({
                 ))
               ) : (
                 <p className="text-xs text-gray-500 p-2">
-                  마커를 드래그하여 추가하세요.
+                  장소를 보관함에서 드래그하여 추가하세요.
                 </p>
               )}
             </ul>
