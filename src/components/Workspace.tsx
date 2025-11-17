@@ -290,6 +290,51 @@ export function Workspace({
     []
   );
 
+  const dayLayers = useMemo(
+    () =>
+      planDayDtos.map((day, index) => ({
+        id: day.id,
+        planDate: day.planDate,
+        label: day.planDate,
+        color: DAY_COLORS[index % DAY_COLORS.length],
+      })),
+    [planDayDtos]
+  );
+
+  // [수정] '내 일정'의 모든 경로 가시성을 토글하는 핸들러
+  const handleMyItineraryVisibilityChange = useCallback(() => {
+    const allDayIds = dayLayers.map((day) => day.id);
+    setVisibleDayIds((prev) => {
+      const newSet = new Set(prev);
+      const areAllVisible = allDayIds.every((id) => newSet.has(id));
+      if (areAllVisible) {
+        // 모두 켜져 있으면 모두 끄기
+        allDayIds.forEach((id) => newSet.delete(id));
+      } else {
+        // 하나라도 꺼져 있으면 모두 켜기
+        allDayIds.forEach((id) => newSet.add(id));
+      }
+      return newSet;
+    });
+  }, [dayLayers]);
+
+  // [신규] 'AI 추천 일정'의 모든 경로 가시성을 토글하는 핸들러
+  const handleRecommendedItineraryVisibilityChange = useCallback(() => {
+    const allRecommendedDayIds = Object.keys(recommendedItinerary);
+    setVisibleDayIds((prev) => {
+      const newSet = new Set(prev);
+      const areAllVisible = allRecommendedDayIds.every((id) => newSet.has(id));
+      if (areAllVisible) {
+        // 모두 켜져 있으면 모두 끄기
+        allRecommendedDayIds.forEach((id) => newSet.delete(id));
+      } else {
+        // 하나라도 꺼져 있으면 모두 켜기
+        allRecommendedDayIds.forEach((id) => newSet.add(id));
+      }
+      return newSet;
+    });
+  }, [recommendedItinerary]);
+
   // [수정] 추천 POI를 '내 일정'에 추가하는 핸들러
   const handleAddRecommendedPoi = useCallback((poi: Poi) => {
     // 항상 모달을 띄워서 날짜를 선택하게 함
@@ -359,17 +404,6 @@ export function Workspace({
       });
     }
   }, [lastMessage, activeMembersForHeader]);
-
-  const dayLayers = useMemo(
-    () =>
-      planDayDtos.map((day, index) => ({
-        id: day.id,
-        planDate: day.planDate,
-        label: day.planDate,
-        color: DAY_COLORS[index % DAY_COLORS.length],
-      })),
-    [planDayDtos]
-  );
 
   const { markedPois, itinerary } = useMemo(() => {
     const marked = pois
@@ -766,10 +800,12 @@ export function Workspace({
             onPoiHover={hoverPoi} // LeftPanel에 hover 핸들러 전달
             onAddRecommendedPoi={handleAddRecommendedPoi}
             onAddRecommendedPoiToDay={addRecommendedPoisToDay}
-            onOptimizeRoute={handleOptimizeRoute} // [추가] 최적화 핸들러 전달
+            onOptimizeRoute={handleOptimizeRoute}
             routeSegmentsByDay={routeSegmentsByDay} // LeftPanel에 경로 정보 전달
             visibleDayIds={visibleDayIds} // [추가] 가시성 상태 전달
             onDayVisibilityChange={handleDayVisibilityChange} // [추가] 가시성 변경 핸들러 전달
+            onMyItineraryVisibilityChange={handleMyItineraryVisibilityChange} // [수정] '내 일정'용 핸들러 전달
+            onRecommendedItineraryVisibilityChange={handleRecommendedItineraryVisibilityChange} // [수정] 'AI 추천'용 핸들러 전달
             hoveredPoiId={hoveredPoiInfo?.poiId ?? null}
             isOptimizationProcessing={isOptimizationProcessing} // New prop
             // [수정] ChatPanel을 위해 props 전달

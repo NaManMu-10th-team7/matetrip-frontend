@@ -386,6 +386,7 @@ function ItineraryPanel({
   onDayVisibilityChange,
   hoveredPoiId,
   isRecommendationLoading,
+  onMyItineraryVisibilityChange, // [수정] '내 일정' 전체 토글 핸들러 prop
 }: {
   workspaceId: string;
   isRecommendationLoading: boolean;
@@ -400,6 +401,7 @@ function ItineraryPanel({
   visibleDayIds: Set<string>;
   onDayVisibilityChange: (dayId: string, isVisible: boolean) => void;
   hoveredPoiId: string | null;
+  onMyItineraryVisibilityChange: () => void; // [수정] '내 일정' 전체 토글 핸들러 prop
 }) {
   return (
     <div className="p-3 space-y-3">
@@ -408,22 +410,35 @@ function ItineraryPanel({
           AI 추천 일정을 불러오는 중...
         </div>
       ) : (
-        dayLayers.map((layer) => (
-          <DayItineraryItem
-            key={layer.id}
-            layer={layer}
-            itinerary={itinerary}
-            visibleDayIds={visibleDayIds}
-            routeSegmentsByDay={routeSegmentsByDay}
-            onDayVisibilityChange={onDayVisibilityChange}
-            onOptimizeRoute={onOptimizeRoute}
-            onPoiClick={onPoiClick}
-            onPoiHover={onPoiHover}
-            unmarkPoi={unmarkPoi}
-            removeSchedule={removeSchedule}
-            hoveredPoiId={hoveredPoiId}
-          />
-        ))
+        <>
+          {/* [신규] 전체 경로 토글 스위치 */}
+          <div className="flex items-center justify-between p-2 border-b">
+            <h3 className="text-sm font-bold">전체 경로</h3>
+            <SimpleToggle
+              // '내 일정'의 모든 경로가 켜져 있을 때만 ON
+              checked={dayLayers.every((layer) =>
+                visibleDayIds.has(layer.id)
+              )}
+              onChange={onMyItineraryVisibilityChange}
+            />
+          </div>
+          {dayLayers.map((layer) => (
+            <DayItineraryItem
+              key={layer.id}
+              layer={layer}
+              itinerary={itinerary}
+              visibleDayIds={visibleDayIds}
+              routeSegmentsByDay={routeSegmentsByDay}
+              onDayVisibilityChange={onDayVisibilityChange}
+              onOptimizeRoute={onOptimizeRoute}
+              onPoiClick={onPoiClick}
+              onPoiHover={onPoiHover}
+              unmarkPoi={unmarkPoi}
+              removeSchedule={removeSchedule}
+              hoveredPoiId={hoveredPoiId}
+            />
+          ))}
+        </>
       )}
     </div>
   );
@@ -447,6 +462,8 @@ interface LeftPanelProps {
   onOptimizeRoute: (dayId: string) => void;
   visibleDayIds: Set<string>;
   onDayVisibilityChange: (dayId: string, isVisible: boolean) => void;
+  onMyItineraryVisibilityChange: () => void; // [수정] '내 일정' 전체 토글 핸들러 prop
+  onRecommendedItineraryVisibilityChange: () => void; // [수정] 'AI 추천' 전체 토글 핸들러 prop
   hoveredPoiId: string | null;
   isOptimizationProcessing: boolean;
   messages: ChatMessage[];
@@ -692,6 +709,7 @@ function RecommendationSidebar({
   allAddedPois,
   visibleDayIds,
   onDayVisibilityChange,
+  onRecommendedItineraryVisibilityChange, // [수정] 'AI 추천' 전체 토글 핸들러 prop
 }: {
   workspaceId: string;
   dayLayers: DayLayer[];
@@ -707,6 +725,7 @@ function RecommendationSidebar({
   allAddedPois: Poi[];
   visibleDayIds: Set<string>;
   onDayVisibilityChange: (dayId: string, isVisible: boolean) => void;
+  onRecommendedItineraryVisibilityChange: () => void; // [수정] 'AI 추천' 전체 토글 핸들러 prop
 }) {
   return (
     <div className="w-96 bg-gray-50 border-l border-gray-200 flex flex-col h-full">
@@ -720,6 +739,19 @@ function RecommendationSidebar({
         </Button>
       </div>
       <div className="overflow-y-auto flex-1">
+        {/* [신규] 전체 추천 경로 토글 */}
+        <div className="flex items-center justify-between p-4 border-b">
+          <h3 className="text-sm font-bold">전체 추천 경로</h3>
+          <SimpleToggle
+            // 모든 추천 경로가 켜져 있을 때만 ON
+            checked={
+              Object.keys(recommendedItinerary).every((id) =>
+                visibleDayIds.has(id)
+              )
+            }
+            onChange={onRecommendedItineraryVisibilityChange}
+          />
+        </div>
         {dayLayers.map((layer) => {
           const virtualPlanDayId = `rec-${workspaceId}-${layer.label}`;
           const recommendedPois = recommendedItinerary[virtualPlanDayId] || [];
@@ -728,7 +760,7 @@ function RecommendationSidebar({
           const isDayVisible = visibleDayIds.has(virtualPlanDayId);
 
           return (
-            <div key={layer.id} className="p-4 border-b">
+            <div key={virtualPlanDayId} className="p-4 border-b">
               <div className="flex justify-between items-center mb-3">
                 <div className="flex items-center gap-2">
                   <SimpleToggle
@@ -800,6 +832,8 @@ export function LeftPanel({
   onOptimizeRoute,
   visibleDayIds,
   onDayVisibilityChange,
+  onMyItineraryVisibilityChange,
+  onRecommendedItineraryVisibilityChange,
   hoveredPoiId,
   isOptimizationProcessing,
   messages,
@@ -944,6 +978,7 @@ export function LeftPanel({
                   onOptimizeRoute: handleOptimizeRoute,
                   visibleDayIds,
                   onDayVisibilityChange,
+                  onMyItineraryVisibilityChange,
                   hoveredPoiId,
                   isRecommendationLoading,
                 }}
@@ -979,6 +1014,7 @@ export function LeftPanel({
               allAddedPois,
               visibleDayIds,
               onDayVisibilityChange,
+              onRecommendedItineraryVisibilityChange, // [수정] 'AI 추천'용 핸들러 전달
             }}
           />
         )}
