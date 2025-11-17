@@ -7,7 +7,8 @@ import {
   GripVertical,
   ChevronDown,
   Lightbulb,
-  ChevronUp,
+  ChevronUp, // [수정] ChevronsUpDown 아이콘으로 변경
+  ChevronsUpDown,
   MapPin,
   X,
   PlusCircle,
@@ -130,7 +131,10 @@ function PoiItem({
       </div>
       {/* [수정] 아이콘과 장소 이름을 함께 표시 */}
       <div className="flex items-center gap-2 flex-grow ml-2 min-w-0">
-        <CategoryIcon category={poi.categoryName} className="w-4 h-4 text-gray-500 flex-shrink-0" />
+        <CategoryIcon
+          category={poi.categoryName}
+          className="w-4 h-4 text-gray-500 flex-shrink-0"
+        />
         <span className="truncate">{poi.placeName}</span>
       </div>
       {isRecommended ? (
@@ -248,6 +252,8 @@ function DayItineraryItem({
   onPoiHover,
   unmarkPoi,
   removeSchedule,
+  onToggleCollapse,
+  isCollapsed,
   hoveredPoiId,
 }: {
   layer: DayLayer;
@@ -260,9 +266,10 @@ function DayItineraryItem({
   onPoiHover: (poiId: string | null) => void;
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
+  isCollapsed: boolean;
+  onToggleCollapse: () => void;
   hoveredPoiId: string | null;
 }) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const { setNodeRef } = useDroppable({ id: layer.id });
 
   const pois = itinerary[layer.id] || [];
@@ -273,37 +280,40 @@ function DayItineraryItem({
   }`;
 
   return (
-    <div className="border-b pb-2">
-      <div ref={setNodeRef} className="flex items-center gap-2">
-        <div className="flex items-center gap-2">
+    <div className="border-b pb-2 px-3">
+      <div
+        ref={setNodeRef}
+        className="flex items-center justify-between gap-2 "
+      >
+        <div className="flex items-center gap-2 flex-shrink min-w-0 ">
           <SimpleToggle
             checked={isDayVisible}
             onChange={(checked) => onDayVisibilityChange(layer.id, checked)}
           />
           <h3 className="text-sm font-bold truncate">{layer.label}</h3>
         </div>
-        <div className="flex-grow">
+        <div className="flex items-center gap-1 flex-shrink-0">
           <Button
             variant="outline"
             size="sm"
-            className="h-7 text-xs"
+            className="h-7 text-xs "
             onClick={() => onOptimizeRoute(layer.id)}
           >
             경로 최적화
           </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="flex-shrink-0 "
+            onClick={onToggleCollapse}
+          >
+            {isCollapsed ? (
+              <ChevronDown className="h-4 w-4" />
+            ) : (
+              <ChevronUp className="h-4 w-4" />
+            )}
+          </Button>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="flex-shrink-0"
-          onClick={() => setIsCollapsed(!isCollapsed)}
-        >
-          {isCollapsed ? (
-            <ChevronDown className="h-4 w-4" />
-          ) : (
-            <ChevronUp className="h-4 w-4" />
-          )}
-        </Button>
       </div>
 
       <div className={`mt-2 ${containerBodyClasses}`}>
@@ -403,8 +413,34 @@ function ItineraryPanel({
   hoveredPoiId: string | null;
   onMyItineraryVisibilityChange: () => void; // [수정] '내 일정' 전체 토글 핸들러 prop
 }) {
+  // [신규] '내 일정'의 접기/펼치기 상태 관리
+  const [collapsedDayIds, setCollapsedDayIds] = useState<Set<string>>(
+    new Set()
+  );
+
+  const handleToggleDayCollapse = (dayId: string) => {
+    setCollapsedDayIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(dayId)) {
+        newSet.delete(dayId);
+      } else {
+        newSet.add(dayId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleToggleAllCollapse = () => {
+    // 모든 날짜가 접혀있으면 모두 펴고, 그렇지 않으면 모두 접습니다.
+    if (collapsedDayIds.size === dayLayers.length) {
+      setCollapsedDayIds(new Set());
+    } else {
+      setCollapsedDayIds(new Set(dayLayers.map((l) => l.id)));
+    }
+  };
+
   return (
-    <div className="p-3 space-y-3">
+    <div className="p-3 space-y-3 flex flex-col">
       {isRecommendationLoading ? (
         <div className="flex justify-center items-center h-full text-sm text-gray-500">
           AI 추천 일정을 불러오는 중...
@@ -413,17 +449,32 @@ function ItineraryPanel({
         <>
           {/* [신규] 전체 경로 토글 스위치 */}
           <div className="flex items-center justify-between p-2 border-b">
-            <h3 className="text-sm font-bold">전체 경로</h3>
-            <SimpleToggle
-              // '내 일정'의 모든 경로가 켜져 있을 때만 ON
-              checked={dayLayers.every((layer) =>
-                visibleDayIds.has(layer.id)
-              )}
-              onChange={onMyItineraryVisibilityChange}
-            />
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-bold">전체 경로</h3>
+              <SimpleToggle
+                // '내 일정'의 모든 경로가 켜져 있을 때만 ON
+                checked={dayLayers.every((layer) =>
+                  visibleDayIds.has(layer.id)
+                )}
+                onChange={onMyItineraryVisibilityChange}
+              />
+            </div>
+            {/* [신규] 모두 접기/펴기 버튼 */}
+            <Button
+              variant="link"
+              size="sm"
+              className="text-sm text-gray-500"
+              onClick={handleToggleAllCollapse}
+            >
+              <ChevronsUpDown className="w-3.5 h-3.5 mr-1" />
+              {collapsedDayIds.size === dayLayers.length
+                ? '일정 모두 펴기'
+                : '일정 모두 접기'}
+            </Button>
           </div>
           {dayLayers.map((layer) => (
             <DayItineraryItem
+              isCollapsed={collapsedDayIds.has(layer.id)} // [수정] isCollapsed prop 전달
               key={layer.id}
               layer={layer}
               itinerary={itinerary}
@@ -435,6 +486,7 @@ function ItineraryPanel({
               onPoiHover={onPoiHover}
               unmarkPoi={unmarkPoi}
               removeSchedule={removeSchedule}
+              onToggleCollapse={() => handleToggleDayCollapse(layer.id)}
               hoveredPoiId={hoveredPoiId}
             />
           ))}
@@ -634,9 +686,9 @@ function OptimizationModal({
                         originalTotals.totalDistance
                           ? 'text-blue-600'
                           : optimizedTotals.totalDistance >
-                            originalTotals.totalDistance
-                          ? 'text-red-600'
-                          : 'text-gray-500'
+                              originalTotals.totalDistance
+                            ? 'text-red-600'
+                            : 'text-gray-500'
                       }`}
                     >
                       (
@@ -656,9 +708,9 @@ function OptimizationModal({
                         originalTotals.totalDuration
                           ? 'text-blue-600'
                           : optimizedTotals.totalDuration >
-                            originalTotals.totalDuration
-                          ? 'text-red-600'
-                          : 'text-gray-500'
+                              originalTotals.totalDuration
+                            ? 'text-red-600'
+                            : 'text-gray-500'
                       }`}
                     >
                       (
@@ -690,6 +742,106 @@ function OptimizationModal({
           <Button onClick={onClose}>닫기</Button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function RecommendedDayItem({
+  layer,
+  workspaceId,
+  recommendedItinerary,
+  visibleDayIds,
+  onDayVisibilityChange,
+  onAddRecommendedPoiToDay,
+  onPoiClick,
+  onPoiHover,
+  unmarkPoi,
+  removeSchedule,
+  onToggleCollapse,
+  isCollapsed,
+  hoveredPoiId,
+  onAddRecommendedPoi,
+  allAddedPois,
+}: {
+  layer: DayLayer;
+  workspaceId: string;
+  recommendedItinerary: Record<string, Poi[]>;
+  visibleDayIds: Set<string>;
+  onDayVisibilityChange: (dayId: string, isVisible: boolean) => void;
+  onAddRecommendedPoiToDay: (planDayId: string, pois: Poi[]) => void;
+  onPoiClick: (poi: Poi) => void;
+  onPoiHover: (poiId: string | null) => void;
+  unmarkPoi: (poiId: string | number) => void;
+  removeSchedule: (poiId: string, planDayId: string) => void;
+  onToggleCollapse: () => void;
+  isCollapsed: boolean;
+  hoveredPoiId: string | null;
+  onAddRecommendedPoi: (poi: Poi) => void;
+  allAddedPois: Poi[];
+}) {
+  const virtualPlanDayId = `rec-${workspaceId}-${layer.label}`;
+  const recommendedPois = recommendedItinerary[virtualPlanDayId] || [];
+
+  if (recommendedPois.length === 0) return null;
+
+  const isDayVisible = visibleDayIds.has(virtualPlanDayId);
+
+  return (
+    <div className="border-b pb-2 px-3">
+      <div className="flex justify-between items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink min-w-0 ">
+          <SimpleToggle
+            checked={isDayVisible}
+            onChange={(checked) =>
+              onDayVisibilityChange(virtualPlanDayId, checked)
+            }
+          />
+          <h3
+            className="text-sm font-bold truncate"
+            style={{ color: layer.color }}
+          >
+            {layer.label}
+          </h3>
+        </div>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <Button
+            size="sm"
+            className="h-7 text-xs "
+            onClick={() => onAddRecommendedPoiToDay(layer.id, recommendedPois)}
+          >
+            이 일정으로 채우기
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="flex-shrink-0 "
+            onClick={onToggleCollapse}
+          >
+            {isCollapsed ? (
+              <ChevronDown className="h-4 w-4" />
+            ) : (
+              <ChevronUp className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+      </div>
+      {!isCollapsed && (
+        <ul className="space-y-1 mt-2">
+          {recommendedPois.map((poi) => (
+            <PoiItem
+              key={poi.id}
+              poi={poi}
+              onPoiClick={onPoiClick}
+              onPoiHover={onPoiHover}
+              unmarkPoi={unmarkPoi}
+              removeSchedule={removeSchedule}
+              isHovered={hoveredPoiId === poi.id}
+              onAddRecommendedPoi={onAddRecommendedPoi}
+              allAddedPois={allAddedPois}
+            />
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
@@ -727,6 +879,30 @@ function RecommendationSidebar({
   onDayVisibilityChange: (dayId: string, isVisible: boolean) => void;
   onRecommendedItineraryVisibilityChange: () => void; // [수정] 'AI 추천' 전체 토글 핸들러 prop
 }) {
+  // [신규] 'AI 추천'의 접기/펼치기 상태 관리
+  const [collapsedDayIds, setCollapsedDayIds] = useState<Set<string>>(
+    new Set()
+  );
+
+  const handleToggleDayCollapse = (dayId: string) => {
+    setCollapsedDayIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(dayId)) {
+        newSet.delete(dayId);
+      } else {
+        newSet.add(dayId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleToggleAllCollapse = () => {
+    if (collapsedDayIds.size === dayLayers.length) {
+      setCollapsedDayIds(new Set());
+    } else {
+      setCollapsedDayIds(new Set(dayLayers.map((l) => l.id)));
+    }
+  };
   return (
     <div className="w-96 bg-gray-50 border-l border-gray-200 flex flex-col h-full">
       <div className="p-4 border-b flex justify-between items-center">
@@ -741,74 +917,52 @@ function RecommendationSidebar({
       <div className="overflow-y-auto flex-1">
         {/* [신규] 전체 추천 경로 토글 */}
         <div className="flex items-center justify-between p-4 border-b">
-          <h3 className="text-sm font-bold">전체 추천 경로</h3>
-          <SimpleToggle
-            // 모든 추천 경로가 켜져 있을 때만 ON
-            checked={
-              Object.keys(recommendedItinerary).every((id) =>
-                visibleDayIds.has(id)
-              )
-            }
-            onChange={onRecommendedItineraryVisibilityChange}
-          />
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-bold">전체 추천 경로</h3>
+            <SimpleToggle
+              // 모든 추천 경로가 켜져 있을 때만 ON
+              checked={
+                Object.keys(recommendedItinerary).length > 0 &&
+                Object.keys(recommendedItinerary).every((id) =>
+                  visibleDayIds.has(id)
+                )
+              }
+              onChange={onRecommendedItineraryVisibilityChange}
+            />
+          </div>
+          {/* [신규] 모두 접기/펴기 버튼 */}
+          <Button
+            variant="link"
+            size="sm"
+            className="text-xs text-gray-500"
+            onClick={handleToggleAllCollapse}
+          >
+            <ChevronsUpDown className="w-3.5 h-3.5 mr-1" />
+            {collapsedDayIds.size === dayLayers.length
+              ? '일정 모두 펴기'
+              : '일정 모두 접기'}
+          </Button>
         </div>
-        {dayLayers.map((layer) => {
-          const virtualPlanDayId = `rec-${workspaceId}-${layer.label}`;
-          const recommendedPois = recommendedItinerary[virtualPlanDayId] || [];
-          if (recommendedPois.length === 0) return null;
-
-          const isDayVisible = visibleDayIds.has(virtualPlanDayId);
-
-          return (
-            <div key={virtualPlanDayId} className="p-4 border-b">
-              <div className="flex justify-between items-center mb-3">
-                <div className="flex items-center gap-2">
-                  <SimpleToggle
-                    checked={isDayVisible}
-                    onChange={(checked) =>
-                      onDayVisibilityChange(virtualPlanDayId, checked)
-                    }
-                  />
-                  <h3
-                    className="text-sm font-bold"
-                    style={{ color: layer.color }}
-                  >
-                    {layer.label}
-                  </h3>
-                </div>
-                <Button
-                  size="sm"
-                  className="h-7 text-xs"
-                  onClick={() =>
-                    onAddRecommendedPoiToDay(layer.id, recommendedPois)
-                  }
-                >
-                  이 일정으로 채우기
-                </Button>
-              </div>
-              <SortableContext
-                items={recommendedPois.map((p) => p.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                <ul className="space-y-1">
-                  {recommendedPois.map((poi) => (
-                    <PoiItem
-                      key={poi.id}
-                      poi={poi}
-                      onPoiClick={onPoiClick}
-                      onPoiHover={onPoiHover}
-                      unmarkPoi={unmarkPoi}
-                      removeSchedule={removeSchedule}
-                      isHovered={hoveredPoiId === poi.id}
-                      onAddRecommendedPoi={onAddRecommendedPoi}
-                      allAddedPois={allAddedPois}
-                    />
-                  ))}
-                </ul>
-              </SortableContext>
-            </div>
-          );
-        })}
+        {dayLayers.map((layer) => (
+          <RecommendedDayItem
+            key={layer.id}
+            layer={layer}
+            workspaceId={workspaceId}
+            isCollapsed={collapsedDayIds.has(layer.id)}
+            recommendedItinerary={recommendedItinerary}
+            visibleDayIds={visibleDayIds}
+            onDayVisibilityChange={onDayVisibilityChange}
+            onAddRecommendedPoiToDay={onAddRecommendedPoiToDay}
+            onPoiClick={onPoiClick}
+            onPoiHover={onPoiHover}
+            unmarkPoi={unmarkPoi}
+            removeSchedule={removeSchedule}
+            onToggleCollapse={() => handleToggleDayCollapse(layer.id)}
+            hoveredPoiId={hoveredPoiId}
+            onAddRecommendedPoi={onAddRecommendedPoi}
+            allAddedPois={allAddedPois}
+          />
+        ))}
       </div>
     </div>
   );
@@ -879,14 +1033,15 @@ export function LeftPanel({
 
   // [추가] poisWithCategory를 사용하여 markedPois와 itinerary를 재생성합니다.
   const enrichedMarkedPois = useMemo(
-    () =>
-      poisWithCategory.filter((p) => p.status === 'MARKED'),
+    () => poisWithCategory.filter((p) => p.status === 'MARKED'),
     [poisWithCategory]
   );
   const enrichedItinerary = useMemo(() => {
     const newItinerary: Record<string, Poi[]> = {};
     dayLayers.forEach((layer) => {
-      newItinerary[layer.id] = poisWithCategory.filter((p) => p.planDayId === layer.id);
+      newItinerary[layer.id] = poisWithCategory.filter(
+        (p) => p.planDayId === layer.id
+      );
     });
     return newItinerary;
   }, [poisWithCategory, dayLayers]);
@@ -909,7 +1064,7 @@ export function LeftPanel({
   };
 
   const dayLayerForModal = optimizationDayId
-    ? dayLayers.find((l) => l.id === optimizationDayId) ?? null
+    ? (dayLayers.find((l) => l.id === optimizationDayId) ?? null)
     : null;
   const optimizedPois = optimizationDayId ? itinerary[optimizationDayId] : [];
   const optimizedSegments = optimizationDayId
