@@ -113,13 +113,17 @@ function PoiItem({
       onMouseLeave={() => onPoiHover(null)}
     >
       <div className="flex items-center w-12 flex-shrink-0 gap-1">
-        <div
-          {...attributes}
-          {...listeners}
-          className={`touch-none p-1 ${!isRecommended ? 'cursor-grab' : ''}`}
-        >
-          <GripVertical className="w-4 h-4 text-gray-400" />
-        </div>
+        {!isRecommended ? (
+          <div
+            {...attributes}
+            {...listeners}
+            className="touch-none p-1 cursor-grab"
+          >
+            <GripVertical className="w-4 h-4 text-gray-400" />
+          </div>
+        ) : (
+          <div className="w-6 h-6 p-1" /> // 아이콘이 없을 때 레이아웃 유지를 위한 빈 div
+        )}
         {color && index !== undefined && (
           <span
             className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full text-white text-xs"
