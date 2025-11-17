@@ -196,16 +196,16 @@ export function Workspace({
 
     // [신규] AI 추천 일정 가져오기
     const generateAiPlan = async () => {
-      if (!user?.userId) return; // user와 userId가 모두 존재해야 함
       setIsRecommendationLoading(true);
       try {
         const response = await fetch(
-          `${API_BASE_URL}/workspace/generate-ai-plan?userId=${user.userId}`,
+          `${API_BASE_URL}/workspace/generate-ai-plan`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              region: postLocation || '서울', // [수정] postLocation을 사용하고, 없으면 '서울'을 기본값으로
+              workspaceId: workspaceId,
+              region: postLocation || '서울',
               startDate: planDayDtos[0].planDate,
               endDate: planDayDtos[planDayDtos.length - 1].planDate,
             }),
@@ -251,11 +251,9 @@ export function Workspace({
       }
     };
 
-    // user.userId가 있을 때만 AI 추천 일정을 생성합니다.
-    if (user?.userId) {
-      generateAiPlan();
-    }
-  }, [planDayDtos, workspaceId, user?.userId, postLocation]); // [수정] 의존성 배열에 postLocation 추가
+    // AI 추천 일정을 생성합니다.
+    generateAiPlan();
+  }, [planDayDtos, workspaceId, postLocation]); // [수정] 의존성 배열에 postLocation 추가
 
   // [추가] 날짜 가시성 토글 핸들러
   const handleDayVisibilityChange = useCallback(
