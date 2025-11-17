@@ -18,7 +18,11 @@ interface AllPostsPageProps {
   fetchTrigger: number;
 }
 
-export function AllPostsPage({ onViewPost, onSearch, fetchTrigger }: AllPostsPageProps) {
+export function AllPostsPage({
+  onViewPost,
+  onSearch,
+  fetchTrigger,
+}: AllPostsPageProps) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -114,7 +118,7 @@ export function AllPostsPage({ onViewPost, onSearch, fetchTrigger }: AllPostsPag
           <p className="text-base text-gray-600 mb-6">
             최신 동행 모집 게시글을 확인하세요
           </p>
-          
+
           {/* Search Bar and Filters */}
           <div className="flex items-center gap-3">
             <form onSubmit={handleSearchSubmit} className="flex-1 relative">
@@ -257,4 +261,3 @@ export function AllPostsPage({ onViewPost, onSearch, fetchTrigger }: AllPostsPag
     </div>
   );
 }
-

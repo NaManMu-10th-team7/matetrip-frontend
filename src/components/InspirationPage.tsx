@@ -244,7 +244,7 @@ export function InspirationPage({ onViewAccommodation }: InspirationPageProps) {
                     badgeText={place.badgeText}
                     title={place.title}
                     address={place.address}
-                    onClick={() => handleCardClick(place)}
+                    onClick={() => handleCardClick(place.id)}
                   />
                 ))}
               </div>

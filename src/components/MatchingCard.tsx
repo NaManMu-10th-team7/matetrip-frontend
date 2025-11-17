@@ -1,14 +1,14 @@
 import { useEffect, useState, type KeyboardEvent } from 'react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { MapPin, Calendar, CheckCircle, Sparkles } from 'lucide-react';
+import type { Post } from '../types/post';
 import { Badge } from './ui/badge';
 import { Progress } from './ui/progress'; // shadcn/ui의 Progress 컴포넌트를 import합니다.
-import type { Post } from '../types/post';
-import type { MatchingInfo } from '../types/matching';
+import type { MatchingInfo, MatchRecruitingPostDto } from '../types/matching';
 import { API_BASE_URL } from '../api/client';
 
 interface MatchingCardProps {
-  /** 기존 WorkspaceCard와 동일한 Post 데이터 */
+  /** 추천 카드에 표시할 모집글 정보 */
   post: Post;
   /** 이 카드에만 필요한 매칭 점보 */
   matchingInfo: MatchingInfo;
@@ -30,7 +30,7 @@ export function MatchingCard({
   onClick,
   rank,
 }: MatchingCardProps) {
-  const { title, location, startDate, endDate, status } = post;
+  const { title, location, startDate, endDate, status = '모집중' } = post;
   const { score, tendency, style, vectorscore } = matchingInfo;
   const formatMatchText = (value?: string, fallback = '[ ]') =>
     value && value.trim().length > 0 ? value : fallback;
@@ -72,6 +72,12 @@ export function MatchingCard({
   };
 
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
+  const renderDateText = () => {
+    if (!startDate || !endDate) {
+      return '일정 미정';
+    }
+    return `${startDate} ~ ${endDate} (${calculateDays()}일)`;
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -161,9 +167,7 @@ export function MatchingCard({
 
         <div className="flex items-center gap-2 text-gray-600">
           <Calendar className="w-4 h-4" />
-          <span>
-            {startDate} ~ {endDate} ({calculateDays()}일)
-          </span>
+          <span>{renderDateText()}</span>
         </div>
 
         <div className="pt-3 space-y-2">

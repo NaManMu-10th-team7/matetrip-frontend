@@ -144,24 +144,39 @@ export function Sidebar({
             title={!isExpanded ? 'Inspiration' : ''}
           >
             <Sparkles className="w-5 h-5 shrink-0" />
-            {isExpanded && <span className="font-normal text-base whitespace-nowrap">Inspiration</span>}
+            {isExpanded && <span className="font-medium whitespace-nowrap">Inspiration</span>}
+          </button>
+
+          {/* 모든 동행 */}
+          <button
+            onClick={() => navigate('/all-posts')}
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+              isActive('/all-posts')
+                ? 'bg-gray-900 text-white'
+                : 'text-gray-700 hover:bg-gray-100'
+            }`}
+            title={!isExpanded ? '모든 동행' : ''}
+          >
+            <FileText className="w-5 h-5 shrink-0" />
+            {isExpanded && <span className="font-medium whitespace-nowrap">모든 동행</span>}
           </button>
         </div>
-
-        {/* Vertical Mate Trip Text */}
-        <div className="flex justify-center py-4">
-          <div 
-            className="text-2xl text-[#101828] whitespace-nowrap" 
-            style={{ 
-              fontFamily: 'Princess Sofia, cursive',
-              writingMode: 'vertical-rl',
-              transform: 'rotate(180deg)'
-            }}
-          >
-            Mate Trip
-          </div>
-        </div>
       </nav>
+
+      {/* Toggle Button */}
+      <div className="px-4 py-2">
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="w-full flex items-center justify-center p-2 rounded-lg hover:bg-gray-100 transition-colors"
+          title={isExpanded ? '사이드바 축소' : '사이드바 확장'}
+        >
+          {isExpanded ? (
+            <ChevronLeft className="w-5 h-5 text-gray-600" />
+          ) : (
+            <ChevronRight className="w-5 h-5 text-gray-600" />
+          )}
+        </button>
+      </div>
 
       {/* Bottom Section */}
       <div className="border-t border-gray-200 px-4 py-4">
