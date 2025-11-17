@@ -201,80 +201,60 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
     };
 
     const handleMarked = (data: Poi & { tempId?: string }) => {
-      console.log('[Event] MARKED 수신:', data);
-      if (!data || !data.id) return;
-
       const newPoiData = { ...data, isPersisted: true };
 
-      // Check the ref for optimistic data, not the component state
-      const optimisticData = data.tempId
-        ? optimisticScheduleRef.current.get(data.tempId)
-        : undefined;
-
-      if (optimisticData) {
-        console.log(
-          `[handleMarked] Found optimistic data for tempId ${data.tempId}:`,
-          optimisticData
-        );
-        const { planDayId } = optimisticData;
-
-        // Fire the event to add it to the schedule permanently
-        setTimeout(() => {
-          addSchedule(newPoiData.id, planDayId);
-        }, 0);
-
-        // Clean up the ref
-        optimisticScheduleRef.current.delete(data.tempId!);
-      }
-
       setPois((prevPois) => {
-        const isTempPoiPresent =
-          data.tempId && prevPois.some((p) => p.id === data.tempId);
+        // Find the temporary POI by tempId or coordinates
+        let tempPoi: Poi | undefined;
+        if (data.tempId) {
+          tempPoi = prevPois.find((p) => p.id === data.tempId);
+        }
+        if (!tempPoi) {
+          const COORDINATE_TOLERANCE = 0.000001;
+          tempPoi = prevPois.find(
+            (p) =>
+              !p.isPersisted &&
+              Math.abs(p.latitude - newPoiData.latitude) <
+                COORDINATE_TOLERANCE &&
+              Math.abs(p.longitude - newPoiData.longitude) <
+                COORDINATE_TOLERANCE
+          );
+        }
 
-        if (isTempPoiPresent) {
+        if (tempPoi) {
+          const tempId = tempPoi.id;
+          const optimisticData = optimisticScheduleRef.current.get(tempId);
+
+          if (optimisticData) {
+            // This was an optimistic add-to-schedule
+            setTimeout(() => {
+              addSchedule(newPoiData.id, optimisticData.planDayId);
+            }, 0);
+            optimisticScheduleRef.current.delete(tempId);
+          }
+
+          // Replace the temporary POI with the permanent one,
+          // but preserve the optimistic state to prevent flicker.
           return prevPois.map((p) =>
-            p.id === data.tempId
+            p.id === tempId
               ? {
                   ...newPoiData,
-                  // Preserve the planDayId from the optimistic UI to prevent flicker
-                  planDayId: optimisticData?.planDayId || newPoiData.planDayId,
-                  status: optimisticData?.planDayId
-                    ? 'SCHEDULED'
-                    : newPoiData.status,
+                  planDayId: optimisticData?.planDayId || p.planDayId,
+                  status: optimisticData?.planDayId ? 'SCHEDULED' : newPoiData.status,
                 }
               : p
           );
         }
 
-        const existingPoiIndex = prevPois.findIndex(
-          (p) => p.id === newPoiData.id
-        );
+        // If no temporary POI was found, it's an update or a new POI from another user
+        const existingPoiIndex = prevPois.findIndex((p) => p.id === newPoiData.id);
         if (existingPoiIndex > -1) {
-          const updatedPois = [...prevPois];
-          updatedPois[existingPoiIndex] = {
-            ...updatedPois[existingPoiIndex],
-            ...newPoiData,
-          };
-          return updatedPois;
+          return prevPois.map((p, index) =>
+            index === existingPoiIndex ? { ...p, ...newPoiData } : p
+          );
         }
 
-        // Fallback: match by coordinates when tempId is not provided
-        const COORDINATE_TOLERANCE = 0.000001;
-        const existingByCoordsIndex = prevPois.findIndex(
-          (p) =>
-            Math.abs(p.latitude - newPoiData.latitude) < COORDINATE_TOLERANCE &&
-            Math.abs(p.longitude - newPoiData.longitude) < COORDINATE_TOLERANCE
-        );
-
-        if (existingByCoordsIndex > -1) {
-          const updatedPois = [...prevPois];
-          updatedPois[existingByCoordsIndex] = {
-            ...updatedPois[existingByCoordsIndex],
-            ...newPoiData,
-          };
-          return updatedPois;
-        }
-
+        // It's a new POI from another user, just add it.
         return [...prevPois, newPoiData];
       });
     };
@@ -404,6 +384,9 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
 
   const unmarkPoi = useCallback(
     (poiId: number | string) => {
+      // Optimistic update: remove the POI from the local state immediately.
+      setPois((prevPois) => prevPois.filter((p) => p.id !== poiId));
+      // Emit the event to the server.
       socketRef.current?.emit(PoiSocketEvent.UNMARK, { workspaceId, poiId });
     },
     [workspaceId]
@@ -411,6 +394,15 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
 
   const removeSchedule = useCallback(
     (poiId: string, planDayId: string) => {
+      // Optimistic update: move the POI to 'MARKED' status immediately.
+      setPois((prevPois) =>
+        prevPois.map((p) =>
+          p.id === poiId
+            ? { ...p, planDayId: undefined, status: 'MARKED' }
+            : p
+        )
+      );
+      // Emit the event to the server.
       socketRef.current?.emit(PoiSocketEvent.REMOVE_SCHEDULE, {
         workspaceId,
         poiId,
@@ -589,7 +581,7 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
         pois.map((p) => `${p.latitude.toFixed(5)},${p.longitude.toFixed(5)}`)
       );
 
-      const poisToCreate: { tempId: string; payload: CreatePoiDto }[] = [];
+      const poisToCreate: { tempId: string; payload: Omit<CreatePoiDto, 'planDayId'> }[] = [];
       const newPoisForState: Poi[] = [];
       const skippedPois: string[] = [];
 
@@ -609,7 +601,7 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
         const payload: CreatePoiDto = {
           workspaceId,
           createdBy: user.userId,
-          placeId: poi.placeId, // [추가] placeId 필수
+          placeId: poi.placeId,
           latitude: poi.latitude,
           longitude: poi.longitude,
           address: poi.address,
@@ -617,12 +609,15 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
           categoryName: poi.categoryName,
           planDayId: planDayId,
         };
+        
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { planDayId: _, ...payloadForMark } = payload;
 
         // For emitting to socket
         poisToCreate.push({
           tempId,
-          payload: { ...payload, planDayId: undefined },
-        }); // `planDayId` is handled by `optimisticScheduleRef`
+          payload: payloadForMark,
+        });
 
         // For optimistic update
         newPoisForState.push({

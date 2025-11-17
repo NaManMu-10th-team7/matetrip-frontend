@@ -249,12 +249,13 @@ export function Workspace({
           newRecommendedItinerary[virtualPlanDayId] = rec.pois
             .filter((p) => p && p.id) // [수정] id가 없는 비정상적인 poi 데이터 필터링
             .map((p: any) => ({
+              ...p,
               id: `rec-${p.id}`, // 실제 POI ID와 충돌 방지
+              placeId: p.id, // [수정] AI 응답의 id를 placeId로 명시적으로 매핑
               placeName: p.title, // 필드명 매핑
               categoryName: p.category, // 필드명 매핑
               status: 'RECOMMENDED' as any, // 가상 상태 부여
               planDayId: virtualPlanDayId,
-              ...p,
             }));
         });
         setRecommendedItinerary(newRecommendedItinerary);
