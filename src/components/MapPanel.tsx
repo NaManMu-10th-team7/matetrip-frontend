@@ -35,6 +35,7 @@ const NEW_CATEGORY_COLORS: Record<string, string> = {
 };
 
 interface MapPanelProps {
+  workspaceId: string; // [신규] workspaceId를 prop으로 받습니다.
   itinerary: Record<string, Poi[]>;
   recommendedItinerary: Record<string, Poi[]>;
   dayLayers: { id: string; label: string; color: string; planDate: string }[];
@@ -87,6 +88,7 @@ export interface PlaceMarkerProps {
   pois: Poi[];
   isOverlayHoveredRef: React.MutableRefObject<boolean>;
   scheduledPoiData: Map<string, { label: string; color: string }>;
+  recommendedPoiLabelData: Map<string, { label: string; color: string }>;
 }
 
 export interface PoiMarkerProps {
@@ -241,6 +243,7 @@ const PlaceMarker = memo(
     pois,
     isOverlayHoveredRef,
     scheduledPoiData,
+    recommendedPoiLabelData,
   }: PlaceMarkerProps) => {
     const [isInfoWindowOpen, setIsInfoWindowOpen] = useState(false);
     const infoWindowTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
@@ -290,6 +293,11 @@ const PlaceMarker = memo(
       const categoryCode = place.category;
       const isMarkedOnly = markedPoi && markedPoi.status === 'MARKED';
       const scheduleInfo = markedPoi?.id ? scheduledPoiData.get(markedPoi.id) : undefined;
+      // [신규] AI 추천 경로의 라벨 정보를 가져옵니다.
+      const recommendedLabelInfo = recommendedPoiLabelData.get(place.id);
+      // '내 일정'과 'AI 추천' 중 하나를 선택하여 배지 정보를 설정합니다.
+      const badgeInfo = scheduleInfo || recommendedLabelInfo;
+
       // 카테고리별 색상 가져오기
       const categoryInfo =
         CATEGORY_INFO[categoryCode as keyof typeof CATEGORY_INFO];
@@ -404,12 +412,12 @@ const PlaceMarker = memo(
 
         <!-- [수정] 일정에 포함된 경우, 우측 상단에 숫자 배지 추가 -->
         ${
-          scheduleInfo
+          badgeInfo
             ? `
           <g transform="translate(34, 4)">
-            <circle cx="0" cy="0" r="10" fill="${scheduleInfo.color}" stroke="white" stroke-width="2"/>
+            <circle cx="0" cy="0" r="10" fill="${badgeInfo.color}" stroke="white" stroke-width="2"/>
             <text x="0" y="0" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white" text-anchor="middle" alignment-baseline="central">
-              ${scheduleInfo.label}
+              ${badgeInfo.label}
             </text>
           </g>
         `
@@ -698,6 +706,7 @@ const DayRouteRenderer = memo(
 );
 
 export function MapPanel({
+  workspaceId, // [신규]
   itinerary,
   recommendedItinerary,
   dayLayers,
@@ -739,6 +748,17 @@ export function MapPanel({
   const [recommendedRouteInfo, setRecommendedRouteInfo] = useState<
     Record<string, RouteSegment[]>
   >({});
+
+  // [신규] 추천 POI를 빠르게 조회하기 위해 Map으로 변환합니다.
+  const recommendedPoiMap = React.useMemo(() => {
+    const map = new Map<string, string>(); // key: placeId, value: dayId
+    Object.entries(recommendedItinerary).forEach(([dayId, pois]) => {
+      pois.forEach((poi) => {
+        map.set(poi.placeId, dayId);
+      });
+    });
+    return map;
+  }, [recommendedItinerary]);
 
   // 채팅 말풍선 상태와 타이머 Ref를 추가합니다.
   const [chatBubbles, setChatBubbles] = useState<Record<string, string>>({});
@@ -1350,6 +1370,24 @@ export function MapPanel({
     }
   });
 
+  // [신규] AI 추천 경로의 마커에 표시할 숫자 라벨 데이터를 생성합니다.
+  const recommendedPoiLabelData = new Map<
+    string,
+    { label: string; color: string }
+  >();
+  dayLayers.forEach((dayLayer) => {
+    const virtualDayId = `rec-${workspaceId}-${dayLayer.planDate}`; // 'rec-workspaceId-YYYY-MM-DD' 형식으로 수정
+    const dayPois = recommendedItinerary[virtualDayId];
+    if (dayPois) {
+      dayPois.forEach((poi, index) => {
+        recommendedPoiLabelData.set(poi.placeId, {
+          label: String(index + 1),
+          color: dayLayer.color,
+        });
+      });
+    }
+  });
+
   const handleToggleAllCategories = () => {
     setVisibleCategories((prev) => {
       const allCategoryKeys = Object.keys(CATEGORY_INFO);
@@ -1375,18 +1413,28 @@ export function MapPanel({
   };
 
   const filteredPlacesToRender = placesToRender.filter((place) => {
-    // [수정] 카테고리 필터가 켜져 있거나, 일정에 포함된 장소는 항상 보이도록 합니다.
+    // 조건 1: 카테고리 필터가 켜져 있는 경우
     if (visibleCategories.has(place.category)) {
       return true;
     }
+
+    // 조건 2: '내 일정'에 포함된 장소인 경우
     const markedPoi = findPoiByCoordinates(
       pois,
       place.latitude,
       place.longitude
     );
-    return !!markedPoi && scheduledPoiData.has(markedPoi.id);
-  }
-  );
+    // [수정] '내 일정'에 포함되어 있고, 해당 날짜의 경로가 켜져 있는 경우
+    if (
+      markedPoi && markedPoi.planDayId && visibleDayIds.has(markedPoi.planDayId)
+    ) {
+      return true;
+    }
+
+    // [신규] 조건 3: 'AI 추천 일정'에 포함되어 있고, 해당 날짜의 경로가 보이는 경우
+    const recommendedDayId = recommendedPoiMap.get(place.id);
+    return !!recommendedDayId && visibleDayIds.has(recommendedDayId);
+  });
   return (
     <div style={{ width: '100%', height: '100%' }}>
       <style>
@@ -1495,6 +1543,7 @@ export function MapPanel({
             pois={pois}
             isOverlayHoveredRef={isOverlayHoveredRef}
             scheduledPoiData={scheduledPoiData}
+            recommendedPoiLabelData={recommendedPoiLabelData}
           />
         ))}
 

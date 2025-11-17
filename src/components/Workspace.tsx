@@ -758,8 +758,29 @@ export function Workspace({
       combinedPlaces.set(getKey(poi), { ...poiAsPlace, ...existingPlace });
     });
 
+    // 3. AI 추천 POI 목록을 기반으로 PlaceDto를 만듭니다.
+    Object.values(recommendedItinerary)
+      .flat()
+      .forEach((poi) => {
+        // 이미 추가된 장소는 건너뜁니다.
+        if (combinedPlaces.has(getKey(poi))) return;
+
+        const poiAsPlace: PlaceDto = {
+          id: poi.id,
+          latitude: poi.latitude,
+          longitude: poi.longitude,
+          title: poi.placeName || '이름 없는 장소',
+          address: poi.address,
+          category:
+            poi.categoryName && poi.categoryName in CATEGORY_INFO
+              ? (poi.categoryName as PlaceDto['category'])
+              : '기타',
+        };
+        combinedPlaces.set(getKey(poi), poiAsPlace);
+      });
+
     return Array.from(combinedPlaces.values());
-  }, [pois, placeCache]);
+  }, [pois, placeCache, recommendedItinerary]);
 
   return (
     <DndContext
@@ -830,6 +851,7 @@ export function Workspace({
 
           <div className="flex-1 bg-gray-100">
             <MapPanel
+              workspaceId={workspaceId} // [신규] workspaceId 전달
               placesToRender={placesToRender} // [수정] 계산된 최종 목록 전달
               itinerary={itinerary}
               recommendedItinerary={recommendedItinerary}
