@@ -1390,8 +1390,18 @@ export function MapPanel({
     });
   };
 
-  const filteredPlacesToRender = placesToRender.filter((place) =>
-    visibleCategories.has(place.category)
+  const filteredPlacesToRender = placesToRender.filter((place) => {
+    // [수정] 카테고리 필터가 켜져 있거나, 일정에 포함된 장소는 항상 보이도록 합니다.
+    if (visibleCategories.has(place.category)) {
+      return true;
+    }
+    const markedPoi = findPoiByCoordinates(
+      pois,
+      place.latitude,
+      place.longitude
+    );
+    return !!markedPoi && scheduledPoiData.has(markedPoi.id);
+  }
   );
   return (
     <div style={{ width: '100%', height: '100%' }}>
