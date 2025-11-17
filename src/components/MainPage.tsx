@@ -26,51 +26,6 @@ interface MainPageProps {
   fetchTrigger: number;
 }
 
-const REGION_CATEGORIES = [
-  {
-    id: 1,
-    name: '제주도',
-    image:
-      'https://images.unsplash.com/photo-1614088459293-5669fadc3448?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHx0cmF2ZWwlMjBkZXN0aW5hdGlvbnxlbnwxfHx8fDE3NjE4NjQwNzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    description: '힐링 여행의 성지',
-  },
-  {
-    id: 2,
-    name: '부산',
-    image:
-      'https://images.unsplash.com/photo-1665231342828-229205867d94?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxiZWFjaCUyMHBhcmFhZGlzZfGVufDF8fHx8MTc2MTg4Mzg2MHww&ixlib=rb-4.1.0&q=80&w=1080',
-    description: '바다와 도시의 조화',
-  },
-  {
-    id: 3,
-    name: '서울',
-    image:
-      'https://images.unsplash.com/photo-1597552661064-af143a5f3bee?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxzZW91bCUyMGtvcmVhfGVufDF8fHx8MTc2MTk4MjQzNHww&ixlib=rb-4.1.0&q=80&w=1080',
-    description: '트렌디한 도심 여행',
-  },
-  {
-    id: 4,
-    name: '경주',
-    image:
-      'https://images.unsplash.com/photo-1668850443435-c01eec56c4e5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxnYnllb25namUlMjBrb3JlYXxlbnwxfHx8fDE3NjE5ODI0MzR8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    description: '역사 문화 탐방',
-  },
-  {
-    id: 5,
-    name: '강릉',
-    image:
-      'https://images.unsplash.com/photo-1684042229029-8a99193a8e4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxnYW5nbmV1bmclMjBrb3JlYXxlbnwxfHx8fDE3NjE5ODI0MzV8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    description: '동해안의 낭만',
-  },
-  {
-    id: 6,
-    name: '전주',
-    image:
-      'https://images.unsplash.com/photo-1520645521318-f03a12f0e67?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxjaXR5JTIwdHJhdmVsfGVufDF8fHx8MTc2MTkxMjEzMXww&ixlib=rb-4.1.0&q=80&w=1080',
-    description: '맛집 투어의 메카',
-  },
-];
-
 const normalizeOverlapText = (values?: unknown): string | undefined => {
   if (!values) {
     return undefined;
@@ -293,47 +248,6 @@ export function MainPage({
     };
   }, [matches, posts]);
 
-  // const normalizedFilters = {
-  //   startDate: startDate || undefined,
-  //   endDate: endDate || undefined,
-  //   keyword: selectedKeyword || undefined,
-  // };
-
-  // const runSearch = () => {
-  //   const titleQuery = searchQuery.trim();
-  //   const payload = {
-  //     ...normalizedFilters,
-  //     title: titleQuery || undefined,
-  //   };
-  //   if (
-  //     !payload.title &&
-  //     !payload.startDate &&
-  //     !payload.endDate &&
-  //     !payload.keyword
-  //   ) {
-  //     return;
-  //   }
-  //   onSearch(payload);
-  // };
-
-  // const handleFilterApply = () => {
-  //   runSearch();
-  //   setIsFilterOpen(false);
-  // };
-
-  // const handleFilterReset = () => {
-  //   setStartDate('');
-  //   setEndDate('');
-  //   setSelectedKeyword('');
-  // };
-
-  // const isFilterActive = Boolean(startDate || endDate || selectedKeyword);
-
-  // const handleSearchSubmit = (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   runSearch();
-  // };
-
   const handleCardClick = (post: Post) => {
     if (!isLoggedIn) {
       window.location.href = '/login';
@@ -356,108 +270,6 @@ export function MainPage({
         </div>
         {/* Search Bar and Filters - 로그인한 사용자에게만 표시 */}
         {isLoggedIn && <MatchingSearchBar />}
-        {/* {isLoggedIn && (
-          <div className="mb-10 flex items-start gap-3">
-            <form onSubmit={handleSearchSubmit} className="flex-1 relative">
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="여행지, 관심사, 여행 스타일로 검색..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </form>
-            <div className="relative" ref={filterContainerRef}>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsFilterOpen((prev) => !prev)}
-                className={`gap-2 px-6 py-3 h-auto ${
-                  isFilterActive
-                    ? 'border-blue-500 text-blue-600 bg-blue-50'
-                    : 'border-gray-200'
-                }`}
-              >
-                <SlidersHorizontal className="w-5 h-5" />
-                Filters
-              </Button>
-              {isFilterOpen && (
-                <div className="absolute right-0 mt-3 w-80 rounded-2xl border border-gray-200 bg-white shadow-xl p-5 z-20 space-y-5">
-                  <div>
-                    <h4 className="text-sm font-semibold text-gray-900 mb-2">
-                      여행 기간
-                    </h4>
-                    <div className="grid grid-cols-2 gap-3">
-                      <input
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                      />
-                      <input
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-gray-900 mb-2">
-                      여행 키워드
-                    </h4>
-                    <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto pr-1">
-                      {KEYWORD_OPTIONS.map((option) => {
-                        const isSelected = selectedKeyword === option.value;
-                        return (
-                          <button
-                            key={option.value}
-                            type="button"
-                            onClick={() =>
-                              setSelectedKeyword(isSelected ? '' : option.value)
-                            }
-                            className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-                              isSelected
-                                ? 'bg-blue-600 text-white border-blue-600'
-                                : 'border-gray-200 text-gray-700 hover:border-gray-300'
-                            }`}
-                          >
-                            {option.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                    <button
-                      type="button"
-                      onClick={handleFilterReset}
-                      className="text-sm font-medium text-gray-500 hover:text-gray-700"
-                    >
-                      초기화
-                    </button>
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => setIsFilterOpen(false)}
-                        className="text-gray-600 hover:text-gray-900"
-                      >
-                        닫기
-                      </Button>
-                      <Button type="button" onClick={handleFilterApply}>
-                        필터 적용
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}*/}
-        {/* </div>
-          </div> 
-        )} */}
         {/* 로그인하지 않은 사용자를 위한 안내 배너 */}
         {!isLoggedIn && (
           <div className="mb-8 bg-gradient-to-r from-blue-50 to-pink-50 rounded-2xl p-6 border border-blue-100">
@@ -503,44 +315,9 @@ export function MainPage({
             <MatchingCarousel
               posts={recommendedPosts}
               matchingInfoByPostId={matchingInfoByPostId}
-              // : featuredItems.slice(0, 10).reduce(
-              //     (acc, post, index) => {
-              //       acc[post.id] = generateMockMatchingInfo(index);
-              //       return acc;
-              //     },
-              //     {} as Record<string, MatchingInfo>
-              //   )
-
               onCardClick={handleCardClick}
             />
           )}
-        </section>
-        {/* Region Categories Section */}
-        <section>
-          <div className="flex items-center gap-2 mb-6">
-            <MapPin className="w-5 h-5 text-blue-600" />
-            <h2 className="text-xl font-bold text-gray-900">인기 여행지</h2>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {REGION_CATEGORIES.map((region) => (
-              <button
-                key={region.id}
-                onClick={() => onSearch({ location: region.name })}
-                className="group relative aspect-[3/4] rounded-xl overflow-hidden hover:shadow-lg transition-all"
-              >
-                <ImageWithFallback
-                  src={region.image}
-                  alt={region.name}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                  <h3 className="mb-1">{region.name}</h3>
-                  <p className="text-xs text-gray-200">{region.description}</p>
-                </div>
-              </button>
-            ))}
-          </div>
         </section>
       </div>
     </div>
