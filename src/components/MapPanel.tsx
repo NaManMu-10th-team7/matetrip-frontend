@@ -24,6 +24,16 @@ import type {
 } from '../types/map';
 import { CategoryIcon } from './CategoryIcon';
 
+// [신규] 요청된 새로운 카테고리 색상 팔레트
+const NEW_CATEGORY_COLORS: Record<string, string> = {
+  '인문(문화/예술/역사)': '#DAA520', // Gold
+  '레포츠': '#E67E22', // Orange
+  '자연': '#27AE60', // Green
+  '숙박': '#2980B9', // Blue
+  '음식': '#E74C3C', // Red-Orange
+  '기타': '#7F8C8D', // Gray
+};
+
 interface MapPanelProps {
   itinerary: Record<string, Poi[]>;
   recommendedItinerary: Record<string, Poi[]>;
@@ -306,7 +316,9 @@ const PlaceMarker = memo(
       // 카테고리별 색상 가져오기
       const categoryInfo =
         CATEGORY_INFO[categoryCode as keyof typeof CATEGORY_INFO];
-      const color = categoryInfo?.color || '#808080';
+      // [수정] 새로운 색상 팔레트를 적용합니다.
+      const color =
+        NEW_CATEGORY_COLORS[categoryCode] || categoryInfo?.color || '#808080';
       // [수정] '보관함' 상태일 때의 테두리 스타일은 기본으로 되돌리고, 후광 효과로 대체합니다.
       const strokeColor = 'white';
       const strokeWidth = '2';
@@ -371,16 +383,16 @@ const PlaceMarker = memo(
 
         case '숙박': // 숙박 - 침대 아이콘
           iconSvg = `
-            <g transform="translate(16, 16)">
+            <g transform="translate(20, 18)">
               <!-- 침대 머리판 -->
-              <rect x="-7" y="-4" width="2" height="6" fill="white" rx="0.5"/>
+              <rect x="-8" y="-5" width="2.5" height="7" fill="white" rx="0.5"/>
               <!-- 침대 본체 -->
-              <rect x="-5" y="0" width="10" height="3" fill="white" rx="0.5"/>
+              <rect x="-5.5" y="-0.5" width="12" height="4" fill="white" rx="0.5"/>
               <!-- 베개 -->
-              <rect x="-4" y="-2" width="3" height="2" fill="white" rx="0.5"/>
+              <rect x="-4.5" y="-3" width="4" height="2.5" fill="white" rx="0.5"/>
               <!-- 침대 다리 -->
-              <rect x="-5" y="3" width="1.5" height="3" fill="white"/>
-              <rect x="3.5" y="3" width="1.5" height="3" fill="white"/>
+              <rect x="-5.5" y="3.5" width="2" height="3.5" fill="white"/>
+              <rect x="4.5" y="3.5" width="2" height="3.5" fill="white"/>
             </g>
           `;
           break;
@@ -389,11 +401,11 @@ const PlaceMarker = memo(
           iconSvg = `
             <g transform="translate(20, 18)">
               <!-- 포크 -->
-              <path d="M-5,-6 L-5,-1 M-6.5,-6 L-6.5,-2 C-6.5,-1 -5.5,-1 -5,-1 M-3.5,-6 L-3.5,-2 C-3.5,-1 -4.5,-1 -5,-1 M-5,-1 L-5,6"
-                    stroke="white" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M-5.5,-7 L-5.5,-1 M-7,-7 L-7,-2 C-7,-1 -6,-1 -5.5,-1 M-4,-7 L-4,-2 C-4,-1 -5,-1 -5.5,-1 M-5.5,-1 L-5.5,7"
+                    stroke="white" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
               <!-- 나이프 -->
-              <path d="M3,-6 L3,6 M3,-6 L5,-5 L5,-3 L3,-2"
-                    stroke="white" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M3.5,-7 L3.5,7 M3.5,-7 L6,-6 L6,-4 L3.5,-2.5"
+                    stroke="white" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
             </g>
           `;
           break;
@@ -408,9 +420,10 @@ const PlaceMarker = memo(
       // SVG로 마커 이미지 생성 (데이터 URI 방식)
       const svg = `
       <svg width="48" height="52" viewBox="0 -6 48 52" xmlns="http://www.w3.org/2000/svg">
-        <!-- 핀 모양 배경 -->
+        {/* 핀 모양 배경 - [수정] 새로운 색상 팔레트를 적용합니다. */}
         <path d="M20 0C11 0 4 8 4 18c0 12 16 28 16 28s16-16 16-28C36 8 29 0 20 0z"
-              fill="${color}" stroke="${strokeColor}" stroke-width="${strokeWidth}"/>
+              fill="${color}" 
+              stroke="${strokeColor}" stroke-width="${strokeWidth}"/>
 
         <!-- 카테고리별 아이콘 -->
         ${iconSvg}
@@ -1435,7 +1448,10 @@ export function MapPanel({
                     : 'bg-white text-gray-600 hover:bg-gray-100'
                 }`}
                 style={{
-                  backgroundColor: visibleCategories.has(key) ? color : undefined,
+                  // [수정] 새로운 색상 팔레트를 적용합니다.
+                  backgroundColor: visibleCategories.has(key)
+                    ? NEW_CATEGORY_COLORS[key] || color
+                    : undefined,
                 }}
               >
                 <CategoryIcon
