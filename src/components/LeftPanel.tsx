@@ -530,6 +530,8 @@ interface LeftPanelProps {
   sendMessage: (message: string) => void;
   isChatConnected: boolean;
   onCardClick: (poi: any) => void;
+  isRecommendationOpen: boolean;
+  setIsRecommendationOpen: (isOpen: boolean) => void;
 }
 
 const formatDuration = (seconds: number) => {
@@ -954,7 +956,7 @@ function RecommendationSidebar({
           <Button
             variant="link"
             size="sm"
-            className="text-xs text-gray-500"
+            className="text-sm text-gray-500"
             onClick={handleToggleAllCollapse}
           >
             <ChevronsUpDown className="w-3.5 h-3.5 mr-1" />
@@ -1015,8 +1017,9 @@ export function LeftPanel({
   sendMessage,
   isChatConnected,
   onCardClick,
+  isRecommendationOpen,
+  setIsRecommendationOpen,
 }: LeftPanelProps) {
-  const optimizingRef = useRef(false);
   const [isOptimizationModalOpen, setIsOptimizationModalOpen] = useState(false);
   const [optimizationDayId, setOptimizationDayId] = useState<string | null>(
     null
@@ -1026,7 +1029,6 @@ export function LeftPanel({
     segments: RouteSegment[];
   } | null>(null);
   const [activeTab, setActiveTab] = useState('itinerary');
-  const [isRecommendationOpen, setIsRecommendationOpen] = useState(false);
 
   // [추가] 장소 캐시에서 모든 장소 정보를 가져옵니다.
   const placeCache = usePlaceStore((state) => state.placesById);
@@ -1048,9 +1050,19 @@ export function LeftPanel({
     [markedPois, itinerary]
   );
 
-  if (!isOpen) {
-    return null;
-  }
+  const handleOptimizeRoute = (dayId: string) => {
+    const pois = itinerary[dayId] || [];
+    const segments = routeSegmentsByDay[dayId] || [];
+    setOriginalRouteData(JSON.parse(JSON.stringify({ pois, segments })));
+    setOptimizationDayId(dayId);
+    setIsOptimizationModalOpen(true); // 모달 열기
+    onOptimizeRoute(dayId);
+  };
+
+  const handleCloseModal = () => {
+    setIsOptimizationModalOpen(false);
+    setOriginalRouteData(null);
+  };
 
   // [추가] poisWithCategory를 사용하여 markedPois와 itinerary를 재생성합니다.
   const enrichedMarkedPois = useMemo(
@@ -1067,22 +1079,10 @@ export function LeftPanel({
     return newItinerary;
   }, [poisWithCategory, dayLayers]);
 
-  const handleOptimizeRoute = (dayId: string) => {
-    const pois = itinerary[dayId] || [];
-    const segments = routeSegmentsByDay[dayId] || [];
-    setOriginalRouteData(JSON.parse(JSON.stringify({ pois, segments })));
-    setOptimizationDayId(dayId);
-    setIsOptimizationModalOpen(true);
-    optimizingRef.current = true;
-    onOptimizeRoute(dayId);
-  };
-
-  const handleCloseModal = () => {
-    setIsOptimizationModalOpen(false);
-    setOptimizationDayId(null);
-    setOriginalRouteData(null);
-    optimizingRef.current = false;
-  };
+  // [수정] 모든 Hook이 호출된 후에 조기 리턴을 수행합니다.
+  if (!isOpen) {
+    return null;
+  }
 
   const dayLayerForModal = optimizationDayId
     ? (dayLayers.find((l) => l.id === optimizationDayId) ?? null)
@@ -1101,28 +1101,19 @@ export function LeftPanel({
             onValueChange={setActiveTab}
             className="flex-1 flex flex-col min-h-0"
           >
-            <TabsList className="w-full justify-around rounded-none bg-gray-50 border-b">
-              <TabsTrigger value="itinerary" className="flex-1 gap-2">
-                <ListOrdered className="w-4 h-4" />
+            <TabsList className="w-full justify-around rounded-none bg-black h-14">
+              <TabsTrigger
+                value="itinerary"
+                className="flex-1 gap-2 text-base text-gray-400 rounded-none data-[state=active]:text-white data-[state=active]:bg-gray-800"
+              >
+                <ListOrdered className="w-5 h-5" />
                 <span>내 일정</span>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-6 w-6"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsRecommendationOpen(!isRecommendationOpen);
-                  }}
-                >
-                  <ChevronRight
-                    className={`w-4 h-4 text-gray-400 transition-transform ${
-                      isRecommendationOpen ? 'rotate-180' : ''
-                    }`}
-                  />
-                </Button>
               </TabsTrigger>
-              <TabsTrigger value="chat" className="flex-1 gap-2">
-                <MessageCircle className="w-4 h-4" />
+              <TabsTrigger
+                value="chat"
+                className="flex-1 gap-2 text-base text-gray-400 rounded-none data-[state=active]:text-white data-[state=active]:bg-gray-800"
+              >
+                <MessageCircle className="w-5 h-5" />
                 <span>채팅</span>
               </TabsTrigger>
             </TabsList>
@@ -1184,7 +1175,7 @@ export function LeftPanel({
               unmarkPoi,
               removeSchedule,
               hoveredPoiId,
-              onAddRecommendedPoi,
+              onAddRecommendedPoi: onAddRecommendedPoi,
               onAddRecommendedPoiToDay,
               onClose: () => setIsRecommendationOpen(false),
               allAddedPois,

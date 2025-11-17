@@ -1,5 +1,12 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, GripVertical } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  GripVertical,
+  Lightbulb,
+} from 'lucide-react';
 import html2canvas from 'html2canvas-pro';
 import jsPDF from 'jspdf';
 import {
@@ -12,6 +19,7 @@ import {
 import { arrayMove } from '@dnd-kit/sortable';
 import { MapPanel } from './MapPanel';
 import type { KakaoPlace, RouteSegment, ChatMessage } from '../types/map';
+import { Button } from './ui/button';
 import type { PlanDayDto } from '../types/workspace';
 import { LeftPanel } from './LeftPanel';
 import { PlanRoomHeader } from './PlanRoomHeader';
@@ -86,6 +94,7 @@ export function Workspace({
   const [recommendedItinerary, setRecommendedItinerary] = useState<
     Record<string, Poi[]>
   >({});
+  const [isRecommendationOpen, setIsRecommendationOpen] = useState(false);
   const [isRecommendationLoading, setIsRecommendationLoading] = useState(true);
 
   // [신규] '일정 추가' 모달 관련 상태
@@ -535,165 +544,152 @@ export function Workspace({
     }
   };
 
-  const handleDragEnd = useCallback(
-    (event: DragEndEvent) => {
-      console.log('handleDragEnd called.');
-      setActivePoi(null);
-      const { active, over } = event;
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    console.log('handleDragEnd called.');
+    setActivePoi(null);
+    const { active, over } = event;
 
-      if (!over) {
-        console.log('Drag ended outside of any droppable area.');
+    if (!over) {
+      console.log('Drag ended outside of any droppable area.');
+      return;
+    }
+
+    const activeId = String(active.id);
+    const activeSortableContainerId =
+      active.data.current?.sortable?.containerId; // 드래그 시작된 SortableContext의 ID
+
+    let targetDroppableId: string | undefined; // 최종적으로 마커가 드롭된 Droppable 컨테이너의 ID
+    let targetSortableContainerId: string | undefined; // 최종적으로 마커가 드롭된 SortableContext의 ID (아이템 위일 경우)
+
+    if (over.data.current?.sortable) {
+      // 드롭된 대상이 Sortable 아이템인 경우 (예: 이미 일정에 있는 다른 마커 위)
+      targetSortableContainerId = String(
+        over.data.current.sortable.containerId
+      );
+      // Sortable 아이템이 속한 Droppable 컨테이너의 ID를 유추
+      targetDroppableId = targetSortableContainerId.replace('-sortable', '');
+    } else {
+      // 드롭된 대상이 Droppable 컨테이너인 경우 (예: 비어있는 날짜 컨테이너 또는 마커 보관함)
+      targetDroppableId = String(over.id);
+      // 이 경우 SortableContext ID는 Droppable ID에 '-sortable'을 붙인 형태일 수 있음
+      targetSortableContainerId =
+        targetDroppableId === 'marker-storage'
+          ? 'marker-storage-sortable'
+          : targetDroppableId + '-sortable';
+    }
+
+    console.log(
+      `Drag event: activeId=${activeId}, overId=${over.id}, activeSortableContainerId=${activeSortableContainerId}, targetDroppableId=${targetDroppableId}, targetSortableContainerId=${targetSortableContainerId}`
+    );
+
+    if (!activeSortableContainerId || !activeId || !targetDroppableId) {
+      console.log(
+        'Missing activeSortableContainerId, activeId, or targetDroppableId information.'
+      );
+      return;
+    }
+
+    // 드래그 시작된 컨테이너와 드롭된 컨테이너가 같은 논리적 컨테이너인 경우 (내부에서 순서 변경)
+    const isSameLogicalContainer =
+      activeSortableContainerId === targetSortableContainerId;
+
+    // [개선] 추천 목록 내에서의 순서 변경 시도 방지
+    if (
+      isSameLogicalContainer &&
+      activeSortableContainerId?.startsWith('rec-')
+    ) {
+      return;
+    }
+    if (isSameLogicalContainer) {
+      console.log(`Reordering within container: ${targetDroppableId}`);
+      if (targetDroppableId === 'marker-storage') {
+        const items = markedPois;
+        const oldIndex = items.findIndex((item) => item.id === activeId);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+
+        if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+          const newItems = arrayMove(items, oldIndex, newIndex); // 이제 newItems가 사용됩니다.
+          const newPoiIds = newItems.map((poi) => poi.id);
+          reorderMarkedPois(newPoiIds);
+        }
+      } else {
+        // 여행 일정 날짜 컨테이너
+        const dayId = targetDroppableId;
+        const items = itinerary[dayId];
+        if (!items) return;
+        const oldIndex = items.findIndex((item) => item.id === activeId);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+
+        if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+          const newItems = arrayMove(items, oldIndex, newIndex);
+          // [개선] 상태를 직접 조작하는 대신, usePoiSocket 훅의 함수를 호출하여 "명령"만 내립니다.
+          // 훅 내부에서 낙관적 업데이트와 서버 이벤트 전송을 모두 처리합니다.
+          const newPoiIds = newItems.map((poi) => poi.id);
+          reorderPois(dayId, newPoiIds);
+        }
+      }
+    } else {
+      // 컨테이너 간 이동 (마커 보관함 <-> 여행 일정)
+      console.log(
+        `Moving POI between containers: from ${activeSortableContainerId} to ${targetDroppableId}`
+      );
+      const activePoi = pois.find((p) => p.id === activeId);
+      if (!activePoi) {
+        console.log(`Active POI with ID ${activeId} not found.`);
         return;
       }
 
-      const activeId = String(active.id);
-      const activeSortableContainerId =
-        active.data.current?.sortable?.containerId; // 드래그 시작된 SortableContext의 ID
-
-      let targetDroppableId: string | undefined; // 최종적으로 마커가 드롭된 Droppable 컨테이너의 ID
-      let targetSortableContainerId: string | undefined; // 최종적으로 마커가 드롭된 SortableContext의 ID (아이템 위일 경우)
-
-      if (over.data.current?.sortable) {
-        // 드롭된 대상이 Sortable 아이템인 경우 (예: 이미 일정에 있는 다른 마커 위)
-        targetSortableContainerId = String(
-          over.data.current.sortable.containerId
-        );
-        // Sortable 아이템이 속한 Droppable 컨테이너의 ID를 유추
-        targetDroppableId = targetSortableContainerId.replace('-sortable', '');
-      } else {
-        // 드롭된 대상이 Droppable 컨테이너인 경우 (예: 비어있는 날짜 컨테이너 또는 마커 보관함)
-        targetDroppableId = String(over.id);
-        // 이 경우 SortableContext ID는 Droppable ID에 '-sortable'을 붙인 형태일 수 있음
-        targetSortableContainerId =
-          targetDroppableId === 'marker-storage'
-            ? 'marker-storage-sortable'
-            : targetDroppableId + '-sortable';
-      }
-
-      console.log(
-        `Drag event: activeId=${activeId}, overId=${over.id}, activeSortableContainerId=${activeSortableContainerId}, targetDroppableId=${targetDroppableId}, targetSortableContainerId=${targetSortableContainerId}`
+      const isDroppingToMarkerStorage =
+        targetDroppableId === 'marker-storage';
+      const isDroppingToItineraryDay = dayLayers.some(
+        (layer) => layer.id === targetDroppableId
       );
 
-      if (!activeSortableContainerId || !activeId || !targetDroppableId) {
-        console.log(
-          'Missing activeSortableContainerId, activeId, or targetDroppableId information.'
-        );
-        return;
-      }
-
-      // 드래그 시작된 컨테이너와 드롭된 컨테이너가 같은 논리적 컨테이너인 경우 (내부에서 순서 변경)
-      const isSameLogicalContainer =
-        activeSortableContainerId === targetSortableContainerId;
-
-      // [개선] 추천 목록 내에서의 순서 변경 시도 방지
-      if (
-        isSameLogicalContainer &&
-        activeSortableContainerId?.startsWith('rec-')
-      ) {
-        return;
-      }
-      if (isSameLogicalContainer) {
-        console.log(`Reordering within container: ${targetDroppableId}`);
-        if (targetDroppableId === 'marker-storage') {
-          const items = markedPois;
-          const oldIndex = items.findIndex((item) => item.id === activeId);
-          const newIndex = items.findIndex((item) => item.id === over.id);
-
-          if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
-            const newItems = arrayMove(items, oldIndex, newIndex); // 이제 newItems가 사용됩니다.
-            const newPoiIds = newItems.map((poi) => poi.id);
-            reorderMarkedPois(newPoiIds);
-          }
-        } else {
-          // 여행 일정 날짜 컨테이너
-          const dayId = targetDroppableId;
-          const items = itinerary[dayId];
-          if (!items) return;
-          const oldIndex = items.findIndex((item) => item.id === activeId);
-          const newIndex = items.findIndex((item) => item.id === over.id);
-
-          if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
-            const newItems = arrayMove(items, oldIndex, newIndex);
-            // [개선] 상태를 직접 조작하는 대신, usePoiSocket 훅의 함수를 호출하여 "명령"만 내립니다.
-            // 훅 내부에서 낙관적 업데이트와 서버 이벤트 전송을 모두 처리합니다.
-            const newPoiIds = newItems.map((poi) => poi.id);
-            reorderPois(dayId, newPoiIds);
-          }
-        }
-      } else {
-        // 컨테이너 간 이동 (마커 보관함 <-> 여행 일정)
-        console.log(
-          `Moving POI between containers: from ${activeSortableContainerId} to ${targetDroppableId}`
-        );
-        const activePoi = pois.find((p) => p.id === activeId);
-        if (!activePoi) {
-          console.log(`Active POI with ID ${activeId} not found.`);
-          return;
-        }
-
-        const isDroppingToMarkerStorage =
-          targetDroppableId === 'marker-storage';
-        const isDroppingToItineraryDay = dayLayers.some(
-          (layer) => layer.id === targetDroppableId
-        );
-
-        setPois((currentPois) => {
-          return currentPois.map((p) => {
-            if (p.id === activeId) {
-              if (isDroppingToMarkerStorage) {
-                return {
-                  ...p,
-                  status: 'MARKED',
-                  planDayId: undefined,
-                  sequence: 0,
-                };
-              } else if (isDroppingToItineraryDay) {
-                const dayId = targetDroppableId;
-                return {
-                  ...p,
-                  status: 'SCHEDULED',
-                  planDayId: dayId,
-                  sequence: 999,
-                  categoryName: p.categoryName, // [추가] categoryName 유지
-                };
-              }
+      setPois((currentPois) => {
+        return currentPois.map((p) => {
+          if (p.id === activeId) {
+            if (isDroppingToMarkerStorage) {
+              return {
+                ...p,
+                status: 'MARKED',
+                planDayId: undefined,
+                sequence: 0,
+              };
+            } else if (isDroppingToItineraryDay) {
+              const dayId = targetDroppableId;
+              return {
+                ...p,
+                status: 'SCHEDULED',
+                planDayId: dayId,
+                sequence: 999,
+                categoryName: p.categoryName, // [추가] categoryName 유지
+              };
             }
-            return p;
-          });
+          }
+          return p;
         });
+      });
 
-        if (activePoi.planDayId) {
-          console.log(
-            `Removing POI ${activeId} from previous schedule day ${activePoi.planDayId}`
-          );
-          removeSchedule(activeId, activePoi.planDayId);
-        }
-
-        if (isDroppingToItineraryDay) {
-          const dayId = targetDroppableId;
-          console.log(
-            `ADD_SCHEDULE event: Adding POI ${activeId} to schedule day ${dayId}`
-          );
-          addSchedule(activeId, dayId);
-        } else if (isDroppingToMarkerStorage) {
-          console.log(
-            `POI ${activeId} moved to marker-storage. No ADD_SCHEDULE event.`
-          );
-        }
+      if (activePoi.planDayId) {
+        console.log(
+          `Removing POI ${activeId} from previous schedule day ${activePoi.planDayId}`
+        );
+        removeSchedule(activeId, activePoi.planDayId);
       }
-    },
-    [
-      markedPois,
-      itinerary,
-      pois,
-      setPois,
-      reorderPois,
-      removeSchedule,
-      reorderMarkedPois,
-      addSchedule,
-      dayLayers,
-    ]
-  );
+
+      if (isDroppingToItineraryDay) {
+        const dayId = targetDroppableId;
+        console.log(
+          `ADD_SCHEDULE event: Adding POI ${activeId} to schedule day ${dayId}`
+        );
+        addSchedule(activeId, dayId);
+      } else if (isDroppingToMarkerStorage) {
+        console.log(
+          `POI ${activeId} moved to marker-storage. No ADD_SCHEDULE event.`
+        );
+      }
+    }
+  }, [markedPois, itinerary, pois, setPois, reorderPois, removeSchedule, reorderMarkedPois, addSchedule, dayLayers]);
 
   // MapPanel로부터 경로 정보를 받아 상태를 업데이트하는 콜백 함수
   const handleRouteInfoUpdate = useCallback(
@@ -835,9 +831,39 @@ export function Workspace({
             messages={messages}
             sendMessage={sendMessage}
             isChatConnected={isChatConnected}
-            onCardClick={handlePoiClick}
+            onCardClick={handlePoiClick} // 채팅 카드 클릭 핸들러
+            isRecommendationOpen={isRecommendationOpen}
+            setIsRecommendationOpen={setIsRecommendationOpen}
           />
 
+          {/* AI 추천 일정 버튼 */}
+          <div
+            className="absolute top-0 z-30 transition-all duration-300 ease-in-out"
+            style={{
+              left: isLeftPanelOpen
+                ? isRecommendationOpen
+                  ? '768px'
+                  : '384px'
+                : '0px',
+            }}
+          >
+            <Button
+              variant={isRecommendationOpen ? 'default' : 'outline'}
+              className={`h-14 w-auto px-4 shadow-lg rounded-none rounded-tr-lg flex items-center gap-2 ${
+                isRecommendationOpen
+                  ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white border-transparent shadow-indigo-500/50'
+                  : 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white border-transparent shadow-indigo-500/50'
+              }`}
+              onClick={() => setIsRecommendationOpen(!isRecommendationOpen)}
+            >
+              <span className="text-sm font-semibold">AI 추천</span>
+              {isRecommendationOpen ? (
+                <ChevronsLeft className="w-5 h-5" />
+              ) : (
+                <ChevronsRight className="w-5 h-5" />
+              )}
+            </Button>
+          </div>
           <button
             onClick={() => setIsLeftPanelOpen(!isLeftPanelOpen)}
             className="absolute top-1/2 -translate-y-1/2 z-20 w-6 h-12 bg-white hover:bg-gray-100 transition-colors flex items-center justify-center border border-gray-300 rounded-r-md shadow-md"
@@ -877,6 +903,8 @@ export function Workspace({
               visibleDayIds={visibleDayIds} // [추가] 가시성 상태 전달
               initialCenter={initialMapCenter} // [신규] 초기 지도 중심 좌표 전달
               focusPlace={focusPlace} // [추가] focusPlace 전달
+              isRecommendationOpen={isRecommendationOpen}
+              setIsRecommendationOpen={setIsRecommendationOpen}
             />
           </div>
         </div>

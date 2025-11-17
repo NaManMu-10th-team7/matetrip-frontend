@@ -86,6 +86,8 @@ interface MapPanelProps {
     },
     callback: (places: any[]) => void
   ) => void;
+  isRecommendationOpen: boolean;
+  setIsRecommendationOpen: (isOpen: boolean) => void;
 }
 
 export interface PlaceMarkerProps {
@@ -741,6 +743,8 @@ export function MapPanel({
   visibleDayIds, // props로 받음
   initialCenter, // props로 받음
   focusPlace, // [추가] focusPlace prop
+  isRecommendationOpen,
+  setIsRecommendationOpen,
 }: MapPanelProps) {
   const defaultCenter = { lat: 33.450701, lng: 126.570667 }; // 제주도 기본 위치
   const [mapInstance, setMapInstance] = useState<kakao.maps.Map | null>(null);
