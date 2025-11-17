@@ -1597,18 +1597,19 @@ export function MapPanel({
         ))}
 
         {/* AI 추천 경로 렌더링 */}
-        {Object.entries(recommendedRouteInfo).map(([dayId, segments]) =>
-          segments.map((segment, index) => (
+        {Object.entries(recommendedRouteInfo).map(([dayId, segments]) => {
+          const isVisible = visibleDayIds.has(dayId);
+          return segments.map((segment, index) => (
             <Polyline
               key={`rec-${dayId}-segment-${index}`}
               path={segment.path}
               strokeWeight={5}
               strokeColor={'#FF00FF'} // 추천 경로는 다른 색상으로 표시 (예: 자홍색)
-              strokeOpacity={0.7}
+              strokeOpacity={isVisible ? 0.7 : 0}
               strokeStyle={'dashed'} // 점선으로 표시
             />
-          ))
-        )}
+          ));
+        })}
 
         {/* 선택된 백엔드 장소 상세 정보 사이드 패널 */}
         {selectedBackendPlace && (

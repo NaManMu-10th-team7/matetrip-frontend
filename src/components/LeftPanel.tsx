@@ -684,6 +684,8 @@ function RecommendationSidebar({
   onAddRecommendedPoiToDay,
   onClose,
   allAddedPois,
+  visibleDayIds,
+  onDayVisibilityChange,
 }: {
   workspaceId: string;
   dayLayers: DayLayer[];
@@ -697,6 +699,8 @@ function RecommendationSidebar({
   onAddRecommendedPoiToDay: (planDayId: string, pois: Poi[]) => void;
   onClose: () => void;
   allAddedPois: Poi[];
+  visibleDayIds: Set<string>;
+  onDayVisibilityChange: (dayId: string, isVisible: boolean) => void;
 }) {
   return (
     <div className="w-96 bg-gray-50 border-l border-gray-200 flex flex-col h-full">
@@ -715,15 +719,25 @@ function RecommendationSidebar({
           const recommendedPois = recommendedItinerary[virtualPlanDayId] || [];
           if (recommendedPois.length === 0) return null;
 
+          const isDayVisible = visibleDayIds.has(virtualPlanDayId);
+
           return (
             <div key={layer.id} className="p-4 border-b">
               <div className="flex justify-between items-center mb-3">
-                <h3
-                  className="text-sm font-bold"
-                  style={{ color: layer.color }}
-                >
-                  {layer.label}
-                </h3>
+                <div className="flex items-center gap-2">
+                  <SimpleToggle
+                    checked={isDayVisible}
+                    onChange={(checked) =>
+                      onDayVisibilityChange(virtualPlanDayId, checked)
+                    }
+                  />
+                  <h3
+                    className="text-sm font-bold"
+                    style={{ color: layer.color }}
+                  >
+                    {layer.label}
+                  </h3>
+                </div>
                 <Button
                   size="sm"
                   className="h-7 text-xs"
@@ -928,6 +942,8 @@ export function LeftPanel({
               onAddRecommendedPoiToDay,
               onClose: () => setIsRecommendationOpen(false),
               allAddedPois,
+              visibleDayIds,
+              onDayVisibilityChange,
             }}
           />
         )}
