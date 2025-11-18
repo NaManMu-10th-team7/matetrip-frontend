@@ -916,7 +916,7 @@ export function Workspace({
               }`}
               onClick={() => setIsRecommendationOpen(!isRecommendationOpen)}
             >
-              <span className="text-sm font-semibold">AI 추천</span>
+              <span className="text-sm font-semibold">채팅</span>
               {isRecommendationOpen ? (
                 <ChevronsLeft className="w-5 h-5" />
               ) : (
