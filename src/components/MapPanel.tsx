@@ -31,6 +31,7 @@ const NEW_CATEGORY_COLORS: Record<string, string> = {
   자연: '#27AE60', // Green
   숙박: '#2980B9', // Blue
   음식: '#E74C3C', // Red-Orange
+  추천코스: '#9B59B6', // Purple
   기타: '#7F8C8D', // Gray
 };
 
