@@ -14,7 +14,8 @@ export function RecommendedPlaceCard({
   onAddPoiToItinerary,
   onCardClick,
 }: RecommendedPlaceCardProps) {
-  const handleAddClick = () => {
+  const handleAddClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // 이벤트 전파를 막습니다.
     // AiPlace를 Poi 타입과 유사하게 변환하여 전달
     const poiForModal: Poi = {
       id: place.id,
@@ -34,10 +35,14 @@ export function RecommendedPlaceCard({
     onAddPoiToItinerary(poiForModal);
   };
 
+  const handleCardClick = () => {
+    onCardClick({ latitude: place.latitude, longitude: place.longitude });
+  };
+
   return (
     <div
       className="bg-white rounded-lg border border-gray-200 p-3 flex gap-3 text-gray-900 shadow-sm cursor-pointer hover:shadow-md hover:border-gray-300 transition-all"
-      onClick={() => onCardClick(place)}
+      onClick={handleCardClick}
     >
       {place.image_url && (
         <img

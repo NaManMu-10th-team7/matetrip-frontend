@@ -1367,7 +1367,7 @@ export function MapPanel({
               key={`rec-highlight-${place.id}`}
               position={{ lat: place.latitude, lng: place.longitude }}
               xAnchor={0.5}
-              yAnchor={0.93}
+              yAnchor={0.5}
               zIndex={0}
               clickable={false}
             >
@@ -1381,7 +1381,7 @@ export function MapPanel({
             key={`chat-rec-highlight-${place.id}`}
             position={{ lat: place.latitude, lng: place.longitude }}
             xAnchor={0.5}
-            yAnchor={0.93}
+            yAnchor={0.5}
             zIndex={0}
             clickable={false}
           >

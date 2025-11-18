@@ -165,19 +165,15 @@ export function Workspace({
   useEffect(() => {
     if (lastMessage?.recommendedPlaces) {
       setChatAiPlaces(lastMessage.recommendedPlaces);
-      if (!initialBoundsSet) {
-        const map = mapRef.current;
-        if (map && lastMessage.recommendedPlaces.length > 0) {
-          isProgrammaticMove.current = true;
-          const bounds = new window.kakao.maps.LatLngBounds();
-          lastMessage.recommendedPlaces.forEach((place) => {
-            bounds.extend(
-              new window.kakao.maps.LatLng(place.latitude, place.longitude)
-            );
-          });
-          map.setBounds(bounds);
-          setInitialBoundsSet(true);
-        }
+      const map = mapRef.current;
+      if (map && lastMessage.recommendedPlaces.length > 0) {
+        const firstPlace = lastMessage.recommendedPlaces[0];
+        const moveLatLon = new window.kakao.maps.LatLng(
+          firstPlace.latitude,
+          firstPlace.longitude
+        );
+        isProgrammaticMove.current = true;
+        map.panTo(moveLatLon);
       }
     }
   }, [lastMessage]);
@@ -467,7 +463,7 @@ export function Workspace({
   const endDate =
     planDayDtos.length > 0 ? planDayDtos[planDayDtos.length - 1].planDate : '';
 
-  const handlePoiClick = (poi: Poi | AiPlace) => {
+  const handlePoiClick = (poi: Pick<Poi, 'latitude' | 'longitude'>) => {
     const map = mapRef.current;
     if (!map) return;
     isProgrammaticMove.current = true;
@@ -475,7 +471,7 @@ export function Workspace({
       poi.latitude,
       poi.longitude
     );
-    map.setLevel(5);
+    map.setLevel(3);
     map.panTo(moveLatLon);
   };
 
