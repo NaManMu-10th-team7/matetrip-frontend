@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { MapPin, Calendar, Users } from 'lucide-react';
 import { Badge } from './ui/badge';
@@ -30,6 +30,21 @@ export function WorkspaceCard({
     participations,
     status,
   } = post;
+
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const [isTitleOverflowing, setIsTitleOverflowing] = useState(false);
+  const [scrollAmount, setScrollAmount] = useState(0);
+
+  useEffect(() => {
+    const titleElement = titleRef.current;
+    if (titleElement) {
+      const isOverflowing = titleElement.scrollWidth > titleElement.clientWidth;
+      setIsTitleOverflowing(isOverflowing);
+      if (isOverflowing) {
+        setScrollAmount(titleElement.clientWidth - titleElement.scrollWidth);
+      }
+    }
+  }, [title]);
 
   // 총 일수 계산
   const calculateDays = () => {
@@ -216,8 +231,14 @@ export function WorkspaceCard({
       {/* 콘텐츠 */}
       <div className="flex flex-col gap-2 px-2 pt-2 flex-grow">
         {/* 제목 */}
-        <div className="relative overflow-hidden">
-          <h3 className="text-lg font-bold text-black leading-tight truncate">
+        <div className="relative overflow-hidden group">
+          <h3
+            ref={titleRef}
+            className={`text-lg font-bold text-black leading-tight whitespace-nowrap ${
+              isTitleOverflowing ? 'marquee-on-hover' : 'truncate'
+            }`}
+            style={{ '--scroll-x': `${scrollAmount}px` } as React.CSSProperties}
+          >
             {title}
           </h3>
         </div>
