@@ -21,6 +21,7 @@ import type {
   KakaoNaviRoad,
   KakaoNaviSection,
   KakaoNaviGuide,
+  AiPlace,
 } from '../types/map';
 import { CategoryIcon } from './CategoryIcon';
 
@@ -89,6 +90,7 @@ interface MapPanelProps {
   ) => void;
   isRecommendationOpen: boolean;
   setIsRecommendationOpen: (isOpen: boolean) => void;
+  recommendedPlaces: AiPlace[] | undefined;
 }
 
 export interface PlaceMarkerProps {
@@ -746,6 +748,7 @@ export function MapPanel({
   focusPlace, // [추가] focusPlace prop
   isRecommendationOpen,
   setIsRecommendationOpen,
+  recommendedPlaces,
 }: MapPanelProps) {
   const defaultCenter = { lat: 33.450701, lng: 126.570667 }; // 제주도 기본 위치
   const [mapInstance, setMapInstance] = useState<kakao.maps.Map | null>(null);
@@ -1490,6 +1493,19 @@ export function MapPanel({
     const recommendedDayId = recommendedPoiMap.get(place.id);
     return !!recommendedDayId && visibleDayIds.has(recommendedDayId);
   });
+
+  useEffect(() => {
+    if (mapInstance && recommendedPlaces && recommendedPlaces.length > 0) {
+      const bounds = new window.kakao.maps.LatLngBounds();
+      recommendedPlaces.forEach((place) => {
+        bounds.extend(
+          new window.kakao.maps.LatLng(place.latitude, place.longitude)
+        );
+      });
+      mapInstance.setBounds(bounds);
+    }
+  }, [mapInstance, recommendedPlaces]);
+
   return (
     <div style={{ width: '100%', height: '100%' }}>
       <style>

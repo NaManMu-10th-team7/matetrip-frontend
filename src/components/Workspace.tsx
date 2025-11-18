@@ -18,7 +18,12 @@ import {
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import { MapPanel } from './MapPanel';
-import type { KakaoPlace, RouteSegment, ChatMessage } from '../types/map';
+import type {
+  KakaoPlace,
+  RouteSegment,
+  ChatMessage,
+  AiPlace,
+} from '../types/map';
 import { Button } from './ui/button';
 import type { PlanDayDto } from '../types/workspace';
 import { LeftPanel } from './LeftPanel';
@@ -430,7 +435,7 @@ export function Workspace({
   const endDate =
     planDayDtos.length > 0 ? planDayDtos[planDayDtos.length - 1].planDate : '';
 
-  const handlePoiClick = (poi: Poi) => {
+  const handlePoiClick = (poi: AiPlace) => {
     const map = mapRef.current;
     if (!map) return;
     const moveLatLon = new window.kakao.maps.LatLng(
@@ -905,6 +910,9 @@ export function Workspace({
               focusPlace={focusPlace} // [추가] focusPlace 전달
               isRecommendationOpen={isRecommendationOpen}
               setIsRecommendationOpen={setIsRecommendationOpen}
+              recommendedPlaces={
+                messages[messages.length - 1]?.recommendedPlaces
+              }
             />
           </div>
         </div>

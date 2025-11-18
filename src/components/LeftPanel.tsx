@@ -27,7 +27,7 @@ import {
 import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import type { Poi } from '../hooks/usePoiSocket';
-import type { DayLayer, KakaoPlace, RouteSegment } from '../types/map';
+import type { DayLayer, KakaoPlace, RouteSegment, AiPlace } from '../types/map';
 import { Button } from './ui/button';
 import React from 'react';
 import { ChatPanel } from './ChatPanel';
@@ -38,7 +38,7 @@ interface PoiItemProps {
   poi: Poi;
   color?: string;
   index?: number;
-  onPoiClick: (poi: Poi) => void;
+  onPoiClick: (poi: Poi | AiPlace) => void;
   onPoiHover: (poiId: string | null) => void;
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
@@ -187,7 +187,7 @@ function MarkerStorage({
   hoveredPoiId,
 }: {
   pois: Poi[];
-  onPoiClick: (poi: Poi) => void;
+  onPoiClick: (poi: Poi | AiPlace) => void;
   onPoiHover: (poiId: string | null) => void;
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
@@ -267,7 +267,7 @@ function DayItineraryItem({
   routeSegmentsByDay: Record<string, RouteSegment[]>;
   onDayVisibilityChange: (dayId: string, isVisible: boolean) => void;
   onOptimizeRoute: (dayId: string) => void;
-  onPoiClick: (poi: Poi) => void;
+  onPoiClick: (poi: Poi | AiPlace) => void;
   onPoiHover: (poiId: string | null) => void;
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
@@ -409,7 +409,7 @@ function ItineraryPanel({
   isRecommendationLoading: boolean;
   itinerary: Record<string, Poi[]>;
   dayLayers: DayLayer[];
-  onPoiClick: (poi: Poi) => void;
+  onPoiClick: (poi: Poi | AiPlace) => void;
   onPoiHover: (poiId: string | null) => void;
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
@@ -513,7 +513,7 @@ interface LeftPanelProps {
   markedPois: Poi[];
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
-  onPoiClick: (poi: Poi) => void;
+  onPoiClick: (poi: Poi | AiPlace) => void;
   onPoiHover: (poiId: string | null) => void;
   onAddRecommendedPoi: (poi: Poi) => void;
   onAddRecommendedPoiToDay: (planDayId: string, pois: Poi[]) => void;
@@ -779,7 +779,7 @@ function RecommendedDayItem({
   visibleDayIds: Set<string>;
   onDayVisibilityChange: (dayId: string, isVisible: boolean) => void;
   onAddRecommendedPoiToDay: (planDayId: string, pois: Poi[]) => void;
-  onPoiClick: (poi: Poi) => void;
+  onPoiClick: (poi: Poi | AiPlace) => void;
   onPoiHover: (poiId: string | null) => void;
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
@@ -877,7 +877,7 @@ function RecommendationSidebar({
   workspaceId: string;
   dayLayers: DayLayer[];
   recommendedItinerary: Record<string, Poi[]>;
-  onPoiClick: (poi: Poi) => void;
+  onPoiClick: (poi: Poi | AiPlace) => void;
   onPoiHover: (poiId: string | null) => void;
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
