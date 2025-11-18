@@ -204,8 +204,9 @@ const PlaceInfoWindow = memo(
 
         <div className="mt-2 flex items-center justify-between">
           <div className="inline-block rounded bg-[#f5f5f5] px-2 py-1 text-[11px] text-[#999]">
-            {CATEGORY_INFO[place.category as keyof typeof CATEGORY_INFO]
-              ?.name || '기타'}
+            {(place.category &&
+              CATEGORY_INFO[place.category as keyof typeof CATEGORY_INFO]
+                ?.name) || '기타'}
           </div>
           <Button
             size="sm"
@@ -1204,16 +1205,19 @@ export function MapPanel({
     const allPois = [
       ...Object.values(itinerary).flat(),
       ...Object.values(recommendedItinerary).flat(),
+      ...(chatAiPlaces || []),
     ];
 
     return allPois.map(
       (poi): PlaceDto => ({
-        id: poi.placeId,
-        title: poi.placeName || '이름 없는 장소',
+        id: (poi as Poi).placeId || (poi as AiPlace).id,
+        title:
+          (poi as Poi).placeName || (poi as AiPlace).title || '이름 없는 장소',
         address: poi.address,
         latitude: poi.latitude,
         longitude: poi.longitude,
-        category: (poi.categoryName as CategoryCode) || '기타',
+        category:
+          ((poi as any).categoryName as CategoryCode) || ((poi as any).category as CategoryCode) || '기타',
         image_url: '',
         summary: '',
       })

@@ -54,6 +54,7 @@ export function RecommendedPlaceCard({
       <div className="flex-1 flex flex-col justify-between min-w-0">
         <div>
           <p className="font-semibold truncate text-sm">{place.title}</p>
+          <p className="text-gray-500 text-xs mt-1">{place.category}</p>
           <div className="flex items-start gap-1 text-xs text-gray-500 mt-1">
             <MapPin className="w-3 h-3 mt-0.5 flex-shrink-0" />
             <p className="truncate">{place.address}</p>

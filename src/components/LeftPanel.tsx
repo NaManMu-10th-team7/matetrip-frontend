@@ -958,7 +958,11 @@ export function LeftPanel({
 
   // [추가] 서버에서 받은 POI 목록에 캐시된 카테고리 정보를 병합합니다.
   const poisWithCategory = useMemo(() => {
-    const allPois = [...markedPois, ...Object.values(itinerary).flat()];
+    const allPois = [
+      ...markedPois,
+      ...Object.values(itinerary).flat(),
+      ...Object.values(recommendedItinerary).flat(),
+    ];
     return allPois.map((poi) => {
       // POI에 categoryName이 이미 있으면 그대로 사용합니다.
       if (poi.categoryName) return poi;
@@ -966,7 +970,7 @@ export function LeftPanel({
       const cachedPlace = placeCache.get(poi.placeId);
       return cachedPlace ? { ...poi, categoryName: cachedPlace.category } : poi;
     });
-  }, [markedPois, itinerary, placeCache]);
+  }, [markedPois, itinerary, recommendedItinerary, placeCache]);
 
   const allAddedPois = useMemo(
     () => [...markedPois, ...Object.values(itinerary).flat()],
@@ -1001,6 +1005,30 @@ export function LeftPanel({
     });
     return newItinerary;
   }, [poisWithCategory, dayLayers]);
+  const enrichedRecommendedItinerary = useMemo(() => {
+    const newItinerary: Record<string, Poi[]> = {};
+    dayLayers.forEach((layer) => {
+      const virtualDayId = `rec-${workspaceId}-${layer.planDate}`;
+      const poisForDay = recommendedItinerary[virtualDayId] || [];
+      if (poisForDay.length > 0) {
+        const poiIdsForDay = new Set(poisForDay.map((p) => p.id));
+        newItinerary[virtualDayId] = poisWithCategory.filter((p) =>
+          poiIdsForDay.has(p.id)
+        );
+      }
+    });
+    return newItinerary;
+  }, [poisWithCategory, recommendedItinerary, workspaceId, dayLayers]);
+
+  const enrichedChatAiPlaces = useMemo(() => {
+    return chatAiPlaces.map((place) => {
+      if (place.category) return place;
+      const cachedPlace = placeCache.get(place.id);
+      return cachedPlace
+        ? { ...place, categoryName: cachedPlace.category }
+        : place;
+    });
+  }, [chatAiPlaces, placeCache]);
 
   // [수정] 모든 Hook이 호출된 후에 조기 리턴을 수행합니다.
   if (!isOpen) {
@@ -1055,7 +1083,7 @@ export function LeftPanel({
             {...{
               layer,
               workspaceId,
-              recommendedItinerary,
+              recommendedItinerary: enrichedRecommendedItinerary,
               visibleDayIds,
               onDayVisibilityChange,
               onAddRecommendedPoiToDay,
@@ -1192,7 +1220,7 @@ export function LeftPanel({
           onAddPoiToItinerary={onAddRecommendedPoi}
           onCardClick={onCardClick}
           setChatAiPlaces={setChatAiPlaces}
-          chatAiPlaces={chatAiPlaces}
+          chatAiPlaces={enrichedChatAiPlaces}
         />
       </div>
       <OptimizationModal

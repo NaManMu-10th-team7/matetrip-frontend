@@ -1,12 +1,5 @@
 import { useState, useEffect, useRef, useCallback, memo } from 'react';
-import {
-  Send,
-  Phone,
-  Video,
-  ChevronUp,
-  ChevronDown,
-  X,
-} from 'lucide-react';
+import { Send, Phone, Video, ChevronUp, ChevronDown } from 'lucide-react';
 import { Button } from './ui/button';
 import type { Poi } from '../hooks/usePoiSocket';
 import { Input } from './ui/input';
@@ -36,7 +29,6 @@ export const ChatPanel = memo(function ChatPanel({
   workspaceId,
   onAddPoiToItinerary,
   onCardClick,
-  setChatAiPlaces,
 }: ChatPanelProps) {
   const [isVCCallActive, setIsVCCallActive] = useState(false);
   const [hasVCCallBeenInitiated, setHasVCCallBeenInitiated] = useState(false);
@@ -202,7 +194,7 @@ export const ChatPanel = memo(function ChatPanel({
                       <div className="flex justify-end mt-2">
                         <Button
                           variant="ghost"
-                          size="xs"
+                          size="sm"
                           onClick={() => setIsAiCardCollapsed((prev) => !prev)}
                         >
                           {isAiCardCollapsed ? '펼치기' : '접기'}
