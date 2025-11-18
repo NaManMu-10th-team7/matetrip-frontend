@@ -54,6 +54,7 @@ export function WorkspaceCard({
 
   const resolveProfileImageId = useCallback(
     (ownerId?: string, originalId?: string | null) => {
+      // 내 카드에서는 최신 프로필 이미지 ID를 우선 사용해 stale presigned URL을 방지한다.
       if (ownerId && ownerId === user?.userId) {
         return user?.profile?.profileImageId ?? null;
       }
@@ -72,23 +73,14 @@ export function WorkspaceCard({
       }
 
       try {
-        const response = await fetch(
-          `${API_BASE_URL}/binary-content/${post.imageId}/presigned-url`,
-          {
-            credentials: 'include',
-            //cache: 'no-store',
-          }
+        const response = await client.get(
+          `/binary-content/${post.imageId}/presigned-url`
         );
-
-        if (!response.ok) {
-          throw new Error('게시글 이미지를 불러오지 못했습니다.');
-        }
-
-        const payload = await response.json();
-        //console.log('WorkspaceCard presigned payload', post.imageId, payload);
-        const { url } = payload;
+        // const payload = await data.json();
+        // //console.log('WorkspaceCard presigned payload', post.imageId, payload);
+        // const { url } = payload;
         if (!cancelled) {
-          setCoverImageUrl(url);
+          setCoverImageUrl(response.data.url);
         }
       } catch (error) {
         console.error('WorkspaceCard cover image load failed:', error);
@@ -219,9 +211,9 @@ export function WorkspaceCard({
             <div className="absolute left-2 bottom-2 w-[250px] overflow-hidden">
               <div className="flex gap-1 overflow-x-auto no-scrollbar">
                 {keywords.map((keyword, index) => (
-                  <Badge 
-                    key={index} 
-                    variant="secondary" 
+                  <Badge
+                    key={index}
+                    variant="secondary"
                     className="text-xs px-2 py-1 bg-gray-50 border border-gray-200 flex-shrink-0 whitespace-nowrap"
                   >
                     #{translateKeyword(keyword)}
@@ -243,22 +235,24 @@ export function WorkspaceCard({
             </div>
           )} */}
         </div>
-      {/* 상태 배지 */}
-      {(status === '모집중' || status === '완료') && (
-        <Badge
-          className="absolute top-4 right-4 z-10 px-3 py-1 text-sm font-semibold"
-          variant={status === '모집중' ? 'default' : 'secondary'}
-        >
-          {status === '모집중' ? '모집중' : '모집완료'}
-        </Badge>
-      )}
+        {/* 상태 배지 */}
+        {(status === '모집중' || status === '완료') && (
+          <Badge
+            className="absolute top-4 right-4 z-10 px-3 py-1 text-sm font-semibold"
+            variant={status === '모집중' ? 'default' : 'secondary'}
+          >
+            {status === '모집중' ? '모집중' : '모집완료'}
+          </Badge>
+        )}
       </div>
 
       {/* 콘텐츠 */}
       <div className="flex flex-col gap-2 px-2">
         {/* 제목 */}
         <div className="relative overflow-hidden">
-          <h3 className="text-lg font-bold text-black leading-tight whitespace-nowrap">{title}</h3>
+          <h3 className="text-lg font-bold text-black leading-tight whitespace-nowrap">
+            {title}
+          </h3>
           {/* 오른쪽 fade 효과 */}
           <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-white to-transparent pointer-events-none" />
         </div>
@@ -300,7 +294,7 @@ export function WorkspaceCard({
             );
           })}
         </div>
-        
+
         {/* 모집 인원 */}
         <div className="flex items-center gap-1">
           <Users className="w-6 h-6 text-[#4e4a65]" />
@@ -312,11 +306,13 @@ export function WorkspaceCard({
 
       {/* 상태 배지 - 우측 상단 */}
       {status && (
-        <div className={`absolute top-3 right-3 px-3 py-1 rounded-lg text-xs font-medium ${
-          status === '모집중' 
-            ? 'bg-[#101828] text-white' 
-            : 'bg-gray-100 text-[#101828]'
-        }`}>
+        <div
+          className={`absolute top-3 right-3 px-3 py-1 rounded-lg text-xs font-medium ${
+            status === '모집중'
+              ? 'bg-[#101828] text-white'
+              : 'bg-gray-100 text-[#101828]'
+          }`}
+        >
           {status}
         </div>
       )}
