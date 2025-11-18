@@ -420,12 +420,13 @@ export function NewMainPage({
                 }
                 onCreatePost();
               }}
-              className="absolute bottom-6 right-6 z-[9999] bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
+              className="absolute bottom-6 left-6 z-[9999] bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
             >
               여행 만들기
             </Button>
           </div>
         ) : (
+<<<<<<< HEAD
           <div className="relative h-full w-full bg-gray-100 flex items-center justify-center">
             {/* 초기 안내 화면 */}
             <div className="text-center px-8">
@@ -450,6 +451,29 @@ export function NewMainPage({
                 상세 정보를 확인할 수 있습니다
               </p>
             </div>
+=======
+          <div className="relative h-full w-full">
+            {/* 기본값: 서울 중심 지도 */}
+            <SimpleKakaoMap
+              latitude={37.5665}
+              longitude={126.9780}
+              placeName="서울특별시"
+            />
+            
+            {/* 여행 만들기 버튼 */}
+            <Button
+              onClick={() => {
+                if (!isLoggedIn) {
+                  navigate('/login');
+                  return;
+                }
+                onCreatePost();
+              }}
+              className="absolute bottom-6 left-6 z-[9999] bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
+            >
+              여행 만들기
+            </Button>
+>>>>>>> 7ebf524a90c421351cc59dcad57ad7f2d95ff553
           </div>
         )}
       </div>

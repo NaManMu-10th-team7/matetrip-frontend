@@ -38,14 +38,16 @@ export function PlaceRecommendationSection({ onPlaceClick }: PlaceRecommendation
       return;
     }
 
-    const fetchPlaces = async () => {
+    const fetchBehaviorPlaces = async () => {
       setIsLoading(true);
       try {
-        const response = await client.post<BehaviorRecommendationResponse[]>(
+        const response = await client.get<BehaviorRecommendationResponse[]>(
           '/places/recommendation/behavior',
           {
-            userId: user.userId,
-            limit: 3,
+            params: {
+              userId: user.userId,
+              limit: 3,
+            },
           }
         );
         
@@ -72,7 +74,7 @@ export function PlaceRecommendationSection({ onPlaceClick }: PlaceRecommendation
       }
     };
 
-    fetchPlaces();
+    fetchBehaviorPlaces();
   }, [isAuthLoading, isLoggedIn, user?.userId]);
 
   const handlePlaceClick = (placeId: string) => {
@@ -154,4 +156,3 @@ export function PlaceRecommendationSection({ onPlaceClick }: PlaceRecommendation
     </section>
   );
 }
-
