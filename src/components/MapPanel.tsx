@@ -1427,7 +1427,45 @@ export function MapPanel({
     });
   };
 
-  const filteredPlacesToRender = placesToRender.filter((place) => {
+  // [신규] itinerary와 recommendedItinerary에 포함된 모든 POI를 PlaceDto 형태로 변환합니다.
+  // 이렇게 하면 지도 범위와 상관없이 항상 마커를 표시할 수 있습니다.
+  const allPoisAsPlaces = React.useMemo(() => {
+    const allPois = [
+      ...Object.values(itinerary).flat(),
+      ...Object.values(recommendedItinerary).flat(),
+    ];
+
+    return allPois.map(
+      (poi): PlaceDto => ({
+        id: poi.placeId, // POI의 placeId를 PlaceDto의 id로 사용
+        title: poi.placeName,
+        address: poi.address,
+        latitude: poi.latitude,
+        longitude: poi.longitude,
+        category: poi.categoryName,
+        image_url: '', // POI에는 이미지 URL 정보가 없으므로 빈 값으로 설정
+        summary: '', // POI에는 요약 정보가 없으므로 빈 값으로 설정
+        content_id: '', // 필요 시 추가 정보 매핑
+        content_type_id: '', // 필요 시 추가 정보 매핑
+      })
+    );
+  }, [itinerary, recommendedItinerary]);
+
+  // [신규] 지도 범위 기반 장소와, 일정에 포함된 모든 장소를 합치고 중복을 제거합니다.
+  const allPlacesToRender = React.useMemo(() => {
+    const combined = [...placesToRender, ...allPoisAsPlaces];
+    const uniquePlaces = new Map<string, PlaceDto>();
+    combined.forEach((place) => {
+      // placesToRender의 정보가 더 상세하므로, 중복 시 기존 값을 유지합니다.
+      if (!uniquePlaces.has(place.id)) {
+        uniquePlaces.set(place.id, place);
+      }
+    });
+    return Array.from(uniquePlaces.values());
+  }, [placesToRender, allPoisAsPlaces]);
+
+  // [수정] 필터링 대상을 allPlacesToRender로 변경하여 모든 마커에 필터가 적용되도록 합니다.
+  const filteredPlacesToRender = allPlacesToRender.filter((place) => {
     // 조건 1: 카테고리 필터가 켜져 있는 경우
     if (visibleCategories.has(place.category)) {
       return true;
@@ -1439,7 +1477,7 @@ export function MapPanel({
       place.latitude,
       place.longitude
     );
-    // [수정] '내 일정'에 포함되어 있고, 해당 날짜의 경로가 켜져 있는 경우
+    // '내 일정'에 포함되어 있고, 해당 날짜의 경로가 켜져 있는 경우
     if (
       markedPoi &&
       markedPoi.planDayId &&
@@ -1448,7 +1486,7 @@ export function MapPanel({
       return true;
     }
 
-    // [신규] 조건 3: 'AI 추천 일정'에 포함되어 있고, 해당 날짜의 경로가 보이는 경우
+    // 조건 3: 'AI 추천 일정'에 포함되어 있고, 해당 날짜의 경로가 보이는 경우
     const recommendedDayId = recommendedPoiMap.get(place.id);
     return !!recommendedDayId && visibleDayIds.has(recommendedDayId);
   });
@@ -1543,7 +1581,7 @@ export function MapPanel({
             </button>
           ))}
         </div>
-        {/* [수정] 부모로부터 받은 placesToRender를 사용하여 마커를 렌더링합니다. */}
+        {/* [수정] 필터링된 최종 목록인 filteredPlacesToRender를 사용하여 마커를 렌더링합니다. */}
         {filteredPlacesToRender.map((place) => (
           <PlaceMarker
             // ID가 임시 ID인 경우 key가 중복될 수 있으므로 좌표를 추가하여 고유성을 보장합니다.
