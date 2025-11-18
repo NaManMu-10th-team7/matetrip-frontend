@@ -106,7 +106,7 @@ function PoiItem({
     <li
       ref={setNodeRef}
       style={style}
-      className={`flex items-center text-xs p-1 rounded-md cursor-pointer ${
+      className={`flex items-center text-sm p-1 rounded-md cursor-pointer ${
         isHovered ? 'bg-blue-100' : 'hover:bg-gray-100'
       }`}
       onClick={() => onPoiClick(poi)}
@@ -127,7 +127,7 @@ function PoiItem({
         )}
         {color && index !== undefined && (
           <span
-            className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full text-white text-xs"
+            className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full text-white text-sm"
             style={{ backgroundColor: color }}
           >
             {index + 1}
@@ -201,7 +201,7 @@ function MarkerStorage({
       <div className="flex justify-between items-center mb-2">
         <div className="flex items-center gap-2">
           <MapPin className="w-5 h-5 text-gray-600" />
-          <h3 className="text-base font-bold">장소 보관함</h3>
+          <h3 className="text-lg font-bold">장소 보관함</h3>
         </div>
         <Button
           variant="ghost"
@@ -235,7 +235,7 @@ function MarkerStorage({
                 />
               ))
             ) : (
-              <p className="text-xs text-gray-500 p-2">
+              <p className="text-sm text-gray-500 p-2">
                 지도에 장소를 추가하여 보관하세요.
               </p>
             )}
@@ -295,14 +295,14 @@ function DayItineraryItem({
             checked={isDayVisible}
             onChange={(checked) => onDayVisibilityChange(layer.id, checked)}
           />
-          <h3 className="text-sm font-bold truncate">{layer.label}</h3>
+          <h3 className="text-base font-bold truncate">{layer.label}</h3>
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
           {pois.length >= 2 && (
             <Button
               variant="outline"
-              size="sm"
-              className="h-7 text-xs "
+              size="sm" // size="sm"에 text-sm이 포함되어 있지만 명시적으로 변경
+              className="h-7 text-sm "
               onClick={() => onOptimizeRoute(layer.id)}
             >
               경로 최적화
@@ -361,7 +361,7 @@ function DayItineraryItem({
                         return (
                           <div className="relative flex items-center h-8 pl-8">
                             <div className="absolute left-4 w-0.5 h-full bg-gray-300" />
-                            <div className="flex items-center text-xs text-gray-600">
+                            <div className="flex items-center text-sm text-gray-600">
                               <span className="mr-2 flex items-center">
                                 <Clock className="w-3 h-3 mr-1" />
                                 {`${totalMinutes}분`}
@@ -377,7 +377,7 @@ function DayItineraryItem({
                   </React.Fragment>
                 ))
               ) : (
-                <p className="text-xs text-gray-500 p-2">
+                <p className="text-sm text-gray-500 p-2">
                   장소를 보관함에서 드래그하여 추가하세요.
                 </p>
               )}
@@ -449,7 +449,7 @@ function ItineraryPanel({
   return (
     <div className="p-3 space-y-3 flex flex-col">
       {isRecommendationLoading ? (
-        <div className="flex justify-center items-center h-full text-sm text-gray-500">
+        <div className="flex justify-center items-center h-full text-base text-gray-500">
           AI 추천 일정을 불러오는 중...
         </div>
       ) : (
@@ -457,7 +457,7 @@ function ItineraryPanel({
           {/* [신규] 전체 경로 토글 스위치 */}
           <div className="flex items-center justify-between p-2 border-b">
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold">전체 경로</h3>
+              <h3 className="text-base font-bold">전체 경로</h3>
               <SimpleToggle
                 // '내 일정'의 모든 경로가 켜져 있을 때만 ON
                 checked={dayLayers.every((layer) =>
@@ -470,7 +470,7 @@ function ItineraryPanel({
             <Button
               variant="link"
               size="sm"
-              className="text-sm text-gray-500"
+              className="text-base text-gray-500"
               onClick={handleToggleAllCollapse}
             >
               <ChevronsUpDown className="w-3.5 h-3.5 mr-1" />
@@ -613,9 +613,9 @@ function OptimizationModal({
     <ul className="space-y-1">
       {pois.map((poi, index) => (
         <React.Fragment key={poi.id}>
-          <li className="flex items-center text-sm">
+          <li className="flex items-center text-base">
             <span
-              className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full text-white text-xs mr-3"
+              className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full text-white text-sm mr-3"
               style={{ backgroundColor: color }}
             >
               {index + 1}
@@ -633,7 +633,7 @@ function OptimizationModal({
               return (
                 <div className="relative flex h-8 items-center pl-8">
                   <div className="absolute left-4 h-full w-0.5 bg-gray-300" />
-                  <div className="flex items-center text-xs text-gray-600">
+                  <div className="flex items-center text-sm text-gray-600">
                     <span className="mr-2 flex items-center">
                       <Clock className="h-3 w-3 mr-1" />
                       {formatDuration(segment.duration)}
@@ -655,7 +655,7 @@ function OptimizationModal({
     <div className="fixed inset-0 bg-black/30 flex justify-center items-center z-50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl">
         <div className="p-4 border-b flex justify-between items-center">
-          <h2 className="text-lg font-bold">경로 최적화 결과</h2>
+          <h2 className="text-xl font-bold">경로 최적화 결과</h2>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="w-4 h-4" />
           </Button>
@@ -663,7 +663,7 @@ function OptimizationModal({
         <div className="grid grid-cols-2 divide-x">
           <div className="p-4">
             <h3 className="font-semibold mb-3 text-center">기존 경로</h3>
-            <div className="text-sm mb-4 p-2 bg-gray-50 rounded-md">
+            <div className="text-base mb-4 p-2 bg-gray-50 rounded-md">
               <p>
                 <strong>총 거리:</strong>{' '}
                 {formatDistance(originalTotals.totalDistance)}
@@ -686,12 +686,12 @@ function OptimizationModal({
             <h3 className="font-semibold mb-3 text-center">최적 경로</h3>
             {optimizedData && optimizedTotals ? (
               <>
-                <div className="text-sm mb-4 p-2 bg-blue-50 rounded-md">
+                <div className="text-base mb-4 p-2 bg-blue-50 rounded-md">
                   <p>
                     <strong>총 거리:</strong>{' '}
                     {formatDistance(optimizedTotals.totalDistance)}
                     <span
-                      className={`ml-2 text-xs font-semibold ${
+                      className={`ml-2 text-sm font-semibold ${
                         optimizedTotals.totalDistance <
                         originalTotals.totalDistance
                           ? 'text-blue-600'
@@ -713,7 +713,7 @@ function OptimizationModal({
                     <strong>총 소요 시간:</strong>{' '}
                     {formatDuration(optimizedTotals.totalDuration)}
                     <span
-                      className={`ml-2 text-xs font-semibold ${
+                      className={`ml-2 text-sm font-semibold ${
                         optimizedTotals.totalDuration <
                         originalTotals.totalDuration
                           ? 'text-blue-600'
@@ -806,8 +806,8 @@ function RecommendedDayItem({
               onDayVisibilityChange(virtualPlanDayId, checked)
             }
           />
-          <h3
-            className="text-sm font-bold truncate"
+          <h3 // [수정] text-sm -> text-base
+            className="text-base font-bold truncate"
             style={{ color: layer.color }}
           >
             {layer.label}
@@ -816,7 +816,7 @@ function RecommendedDayItem({
         <div className="flex items-center gap-1 flex-shrink-0">
           <Button
             size="sm"
-            className="h-7 text-xs "
+            className="h-7 text-sm "
             onClick={() => onAddRecommendedPoiToDay(layer.id, recommendedPois)}
           >
             이 일정으로 채우기
@@ -918,7 +918,7 @@ function RecommendationSidebar({
   return (
     <div className="w-96 bg-gray-50 border-l border-gray-200 flex flex-col h-full">
       <div className="p-4 border-b flex justify-between items-center">
-        <h2 className="text-lg font-bold flex items-center gap-2">
+        <h2 className="text-xl font-bold flex items-center gap-2">
           <Lightbulb className="w-5 h-5 text-blue-500" />
           AI 추천 일정
         </h2>
@@ -940,7 +940,7 @@ function RecommendationSidebar({
         {/* [신규] 전체 추천 경로 토글 */}
         <div className="flex items-center justify-between p-4 border-b">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-bold">전체 추천 경로</h3>
+            <h3 className="text-base font-bold">전체 추천 경로</h3>
             <SimpleToggle
               // 모든 추천 경로가 켜져 있을 때만 ON
               checked={
@@ -956,7 +956,7 @@ function RecommendationSidebar({
           <Button
             variant="link"
             size="sm"
-            className="text-sm text-gray-500"
+            className="text-base text-gray-500"
             onClick={handleToggleAllCollapse}
           >
             <ChevronsUpDown className="w-3.5 h-3.5 mr-1" />
@@ -1104,14 +1104,14 @@ export function LeftPanel({
             <TabsList className="w-full justify-around rounded-none bg-black h-14">
               <TabsTrigger
                 value="itinerary"
-                className="flex-1 gap-2 text-base text-gray-400 rounded-none data-[state=active]:text-white data-[state=active]:bg-gray-800"
+                className="flex-1 gap-2 text-lg text-gray-400 rounded-none data-[state=active]:text-white data-[state=active]:bg-gray-800"
               >
                 <ListOrdered className="w-5 h-5" />
                 <span>내 일정</span>
               </TabsTrigger>
               <TabsTrigger
                 value="chat"
-                className="flex-1 gap-2 text-base text-gray-400 rounded-none data-[state=active]:text-white data-[state=active]:bg-gray-800"
+                className="flex-1 gap-2 text-lg text-gray-400 rounded-none data-[state=active]:text-white data-[state=active]:bg-gray-800"
               >
                 <MessageCircle className="w-5 h-5" />
                 <span>채팅</span>
