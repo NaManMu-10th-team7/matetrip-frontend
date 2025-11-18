@@ -139,30 +139,8 @@ function AllPostsPageWrapper({
   onViewPost: (postId: string) => void;
   fetchTrigger: number;
 }) {
-  const navigate = useNavigate();
-
-  const handleSearch = (params: {
-    startDate?: string;
-    endDate?: string;
-    location?: string;
-    title?: string;
-    keyword?: string;
-  }) => {
-    const searchParams = new URLSearchParams();
-    if (params.startDate) searchParams.set('startDate', params.startDate);
-    if (params.endDate) searchParams.set('endDate', params.endDate);
-    if (params.location) searchParams.set('location', params.location);
-    if (params.title) searchParams.set('title', params.title);
-    if (params.keyword) searchParams.set('keyword', params.keyword);
-    navigate(`/search?${searchParams.toString()}`);
-  };
-
   return (
-    <AllPostsPage
-      onViewPost={onViewPost}
-      onSearch={handleSearch}
-      fetchTrigger={fetchTrigger}
-    />
+    <AllPostsPage onViewPost={onViewPost} fetchTrigger={fetchTrigger} />
   );
 }
 

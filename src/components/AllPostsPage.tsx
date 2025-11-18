@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { ClipboardList, Search, SlidersHorizontal, X } from 'lucide-react';
 import { Button } from './ui/button';
 import client from '../api/client';
@@ -7,20 +7,20 @@ import { MainPostCardSkeleton } from './AIMatchingSkeletion';
 import { WorkspaceCard } from './WorkspaceCard';
 import { useAuthStore } from '../store/authStore';
 
+type SearchParams = {
+  startDate?: string;
+  endDate?: string;
+  location?: string;
+  title?: string;
+};
+
 interface AllPostsPageProps {
   onViewPost: (postId: string) => void;
-  onSearch: (params: {
-    startDate?: string;
-    endDate?: string;
-    location?: string;
-    title?: string;
-  }) => void;
   fetchTrigger: number;
 }
 
 export function AllPostsPage({
   onViewPost,
-  onSearch,
   fetchTrigger,
 }: AllPostsPageProps) {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -35,38 +35,60 @@ export function AllPostsPage({
   const [location, setLocation] = useState('');
   const filterRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (isAuthLoading) {
+  const fetchPosts = useCallback(
+    async (params?: SearchParams) => {
       setIsLoading(true);
-      return;
-    }
+      // 빈 값은 쿼리에서 제거
+      const filteredParams = params
+        ? Object.entries(params).reduce(
+            (acc, [key, value]) => {
+              if (value) acc[key as keyof SearchParams] = value;
+              return acc;
+            },
+            {} as SearchParams
+          )
+        : {};
+      const query = new URLSearchParams(
+        filteredParams as Record<string, string>
+      ).toString();
 
-    const fetchAllPosts = async () => {
-      setIsLoading(true);
+      const endpoint = query ? `/posts/search?${query}` : '/posts';
+
       try {
-        const initialPostsResponse = await client.get<Post[]>('/posts');
-
-        const sortedInitialPosts = initialPostsResponse.data.sort(
+        const response = await client.get<Post[]>(endpoint);
+        const sortedPosts = response.data.sort(
           (a, b) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
-        setPosts(sortedInitialPosts);
-        console.log(`최신 동행 글 목록`, sortedInitialPosts);
+        setPosts(sortedPosts);
+        console.log('동행 글 목록', sortedPosts);
       } catch (error) {
         console.error('Failed to fetch posts:', error);
       } finally {
         setIsLoading(false);
       }
-    };
+    },
+    []
+  );
 
-    fetchAllPosts();
-  }, [isAuthLoading, fetchTrigger]);
+  useEffect(() => {
+    if (isAuthLoading) {
+      setIsLoading(true);
+      return;
+    }
+    fetchPosts();
+  }, [isAuthLoading, fetchPosts, fetchTrigger]);
+
+  const handleSearch = (params?: SearchParams) => {
+    fetchPosts(params);
+  };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      onSearch({ title: searchQuery });
-    }
+    const trimmed = searchQuery.trim();
+    // 검색어가 없으면 목록을 다시 불러오지 않는다.
+    if (!trimmed) return;
+    handleSearch({ title: trimmed });
   };
 
   // 필터 외부 클릭 시 닫기
@@ -88,7 +110,7 @@ export function AllPostsPage({
 
   // 필터 적용
   const handleApplyFilters = () => {
-    onSearch({
+    handleSearch({
       startDate: startDate || undefined,
       endDate: endDate || undefined,
       location: location || undefined,
@@ -102,6 +124,7 @@ export function AllPostsPage({
     setStartDate('');
     setEndDate('');
     setLocation('');
+    handleSearch(searchQuery ? { title: searchQuery } : undefined);
   };
 
   // 활성화된 필터 개수
