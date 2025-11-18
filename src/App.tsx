@@ -30,7 +30,7 @@ import { NotificationListener } from './components/NotificationListener';
 import client from './api/client';
 import type { CreateWorkspaceResponse } from './types/workspace';
 import type { Post } from './types/post';
-import { Toaster } from 'sonner';
+import { Toaster, toast } from 'sonner';
 import { Dialog, DialogContent } from './components/ui/dialog';
 import { ProfileModal } from './components/ProfileModal';
 import PublicOnlyRoute from './components/PublicOnlyRoute';
@@ -333,7 +333,7 @@ export default function App() {
     <div className="h-screen bg-gray-50">
       {' '}
       {/* h-screen 유지 */}
-      <Toaster position="top-right" />
+      <Toaster richColors position="top-right" />
       {isLoggedIn && <NotificationListener />}
       <Routes>
         {/* Routes without Header */}
@@ -480,10 +480,7 @@ export default function App() {
         </Route>
       </Routes>
       {/* Modals */}
-      <AIChatPanel
-        open={chatPanelOpen}
-        onOpenChange={setChatPanelOpen}
-      />
+      <AIChatPanel open={chatPanelOpen} onOpenChange={setChatPanelOpen} />
       {showCreatePost && (
         <CreatePostModal onClose={() => setShowCreatePost(false)} />
       )}
@@ -554,7 +551,9 @@ export default function App() {
                     });
                   } catch (error) {
                     console.error('Failed to create or join workspace:', error);
-                    alert('워크스페이스에 입장하는 중 오류가 발생했습니다.');
+                    toast.error(
+                      '워크스페이스에 입장하는 중 오류가 발생했습니다.'
+                    );
                   }
                 };
                 createAndNavigate();

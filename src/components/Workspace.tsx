@@ -31,6 +31,7 @@ import { CATEGORY_INFO, type PlaceDto } from '../types/place.ts'; // useWorkspac
 import { AddToItineraryModal } from './AddToItineraryModal.tsx';
 import { PdfDocument } from './PdfDocument.tsx'; // [신규] 모달 컴포넌트 임포트 (생성 필요)
 import { AIRecommendationLoadingModal } from './AIRecommendationLoadingModal.tsx';
+import { toast } from 'sonner';
 
 interface WorkspaceProps {
   workspaceId: string;
@@ -402,7 +403,7 @@ export function Workspace({
 
       // 결과에 따라 사용자에게 알림
       if (!result.success && result.message) {
-        alert(result.message);
+        toast.warning(result.message);
       }
 
       // 모달 닫기
@@ -499,7 +500,7 @@ export function Workspace({
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       if (!pdfRef.current) {
-        alert('PDF 생성에 실패했습니다: 문서를 찾을 수 없습니다.');
+        toast.warning('PDF 생성에 실패했습니다: 문서를 찾을 수 없습니다.');
         setIsGeneratingPdf(false);
         return;
       }
@@ -558,7 +559,7 @@ export function Workspace({
         pdf.save(`${workspaceName}_여행계획.pdf`);
       } catch (error) {
         console.error('PDF 생성 중 오류가 발생했습니다.', error);
-        alert('PDF 생성에 실패했습니다. 잠시 후 다시 시도해주세요.');
+        toast.warning('PDF 생성에 실패했습니다. 잠시 후 다시 시도해주세요.');
       } finally {
         setIsGeneratingPdf(false); // 성공/실패 여부와 관계없이 상태를 리셋
       }
