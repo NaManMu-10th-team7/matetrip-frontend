@@ -86,11 +86,11 @@ export function Workspace({
   const [recommendedItinerary, setRecommendedItinerary] = useState<
     Record<string, Poi[]>
   >({});
-  const [isRecommendationOpen, setIsRecommendationOpen] = useState(false);
+  const [isRecommendationOpen, _setIsRecommendationOpen] = useState(false);
   const [isRecommendationLoading, setIsRecommendationLoading] = useState(true);
   const [itineraryAiPlaces, setItineraryAiPlaces] = useState<AiPlace[]>([]);
   const [chatAiPlaces, setChatAiPlaces] = useState<AiPlace[]>([]);
-  const [initialBoundsSet, setInitialBoundsSet] = useState(false);
+  const [_initialBoundsSet, setInitialBoundsSet] = useState(false);
 
   // [신규] '일정 추가' 모달 관련 상태
   const [poiToAdd, setPoiToAdd] = useState<Poi | null>(null);
@@ -161,6 +161,14 @@ export function Workspace({
     }
     sendMessage(message);
   };
+
+  // [버그 수정] POI가 삭제된 후에도 hover 효과(파란색 원)가 남아있는 문제 해결
+  // pois 목록이 변경될 때, 현재 hoveredPoiId가 더 이상 존재하지 않으면 hover 상태를 초기화합니다.
+  useEffect(() => {
+    if (hoveredPoiInfo && !pois.find((p) => p.id === hoveredPoiInfo.poiId)) {
+      hoverPoi(null);
+    }
+  }, [pois, hoveredPoiInfo, hoverPoi]);
 
   useEffect(() => {
     if (lastMessage?.recommendedPlaces) {

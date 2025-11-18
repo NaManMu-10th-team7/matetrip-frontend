@@ -388,16 +388,26 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
 
   const unmarkPoi = useCallback(
     (poiId: number | string) => {
+      // [버그 수정] 삭제되는 POI가 현재 hover된 POI일 경우, hover 상태를 초기화합니다.
+      if (hoveredPoiInfo?.poiId === poiId) {
+        setHoveredPoiInfo(null);
+      }
+
       // Optimistic update: remove the POI from the local state immediately.
       setPois((prevPois) => prevPois.filter((p) => p.id !== poiId));
       // Emit the event to the server.
       socketRef.current?.emit(PoiSocketEvent.UNMARK, { workspaceId, poiId });
     },
-    [workspaceId]
+    [workspaceId, hoveredPoiInfo?.poiId] // [버그 수정] 의존성 배열에 hoveredPoiInfo.poiId 추가
   );
 
   const removeSchedule = useCallback(
     (poiId: string, planDayId: string) => {
+      // [버그 수정] 삭제되는 POI가 현재 hover된 POI일 경우, hover 상태를 초기화합니다.
+      if (hoveredPoiInfo?.poiId === poiId) {
+        setHoveredPoiInfo(null);
+      }
+
       // Optimistic update: move the POI to 'MARKED' status immediately.
       setPois((prevPois) =>
         prevPois.map((p) =>
@@ -406,6 +416,7 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
             : p
         )
       );
+
       // Emit the event to the server.
       socketRef.current?.emit(PoiSocketEvent.REMOVE_SCHEDULE, {
         workspaceId,
@@ -413,7 +424,7 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
         planDayId,
       });
     },
-    [workspaceId]
+    [workspaceId, hoveredPoiInfo?.poiId] // [버그 수정] 의존성 배열에 hoveredPoiInfo.poiId 추가
   );
 
   const reorderPois = useCallback(

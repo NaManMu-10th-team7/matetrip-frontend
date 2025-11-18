@@ -1436,7 +1436,12 @@ export function MapPanel({
         {hoveredPoiInfo &&
           (() => {
             const poi = pois.find((p) => p.id === hoveredPoiInfo.poiId);
-            if (!poi) return null;
+            // [수정] poi가 pois 배열에 존재하지 않으면 파란색 원을 렌더링하지 않음
+            // 이렇게 하면 POI가 삭제되었을 때 파란색 원이 즉시 사라집니다.
+            if (!poi) {
+              // 이상적으로는 부모 컴포넌트에서 hoveredPoiInfo를 null로 설정해야 합니다.
+              return null;
+            }
 
             return (
               <CustomOverlayMap
