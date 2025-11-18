@@ -78,7 +78,7 @@ export function Sidebar({
       <nav className="flex-1 px-4 py-4 flex flex-col justify-between">
         <div className="flex flex-col gap-1">
           {/* AI Chat */}
-          <button
+          {/* <button
             onClick={handleAIChatClick}
             className={`flex items-center gap-3 h-12 rounded-[10px] transition-colors ${
               isExpanded ? 'px-4' : 'justify-center'
@@ -91,9 +91,12 @@ export function Sidebar({
           >
             <MessageSquare className="w-5 h-5 shrink-0" />
             {isExpanded && <span className="font-normal text-base whitespace-nowrap">AI Chat</span>}
-          </button>
+          </button> */}
 
-          {/* AI 동행 찾기 */}
+          {/* 여행 모두보기 */}
+
+
+          {/* Main */}
           <button
             onClick={() => navigate('/')}
             className={`flex items-center gap-3 h-12 rounded-[10px] transition-colors ${
