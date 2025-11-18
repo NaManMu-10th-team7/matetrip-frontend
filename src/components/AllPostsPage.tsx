@@ -3,7 +3,7 @@ import { ClipboardList, Search, SlidersHorizontal, X } from 'lucide-react';
 import { Button } from './ui/button';
 import client from '../api/client';
 import { type Post } from '../types/post';
-import { MainPostCardSkeleton } from './MainPostCardSkeleton';
+import { MainPostCardSkeleton } from './AIMatchingSkeletion';
 import { WorkspaceCard } from './WorkspaceCard';
 import { useAuthStore } from '../store/authStore';
 

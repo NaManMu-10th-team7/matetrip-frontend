@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { ClipboardList } from 'lucide-react';
 import client from '../api/client';
 import { type Post } from '../types/post';
-import { MainPostCardSkeleton } from './MainPostCardSkeleton';
+import { MainPostCardSkeleton } from './AIMatchingSkeletion';
 import { WorkspaceCarousel } from './WorkspaceCarousel';
 import { useAuthStore } from '../store/authStore';
 

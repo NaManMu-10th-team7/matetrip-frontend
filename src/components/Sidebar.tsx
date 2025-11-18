@@ -74,48 +74,40 @@ export function Sidebar({
           </div>
         </div>
 
-        {/* Navigation Menu */}
-        <nav className="flex-1 px-4 py-4 flex flex-col justify-between ">
-          <div className="flex flex-col gap-1">
-            {/* AI Chat */}
-            <button
-              onClick={handleAIChatClick}
-              className={`flex items-center gap-3 h-12 rounded-[10px] transition-colors ${
-                isExpanded ? 'px-4' : 'justify-center'
-              } ${
-                isActive('/ai-chat')
-                  ? 'bg-[#101828] text-white'
-                  : 'text-[#364153] hover:bg-gray-100'
-              }`}
-              title={!isExpanded ? 'AI Chat' : ''}
-            >
-              <MessageSquare className="w-5 h-5 shrink-0" />
-              {isExpanded && (
-                <span className="font-normal text-base whitespace-nowrap">
-                  MAIN
-                </span>
-              )}
-            </button>
+      {/* Navigation Menu */}
+      <nav className="flex-1 px-4 py-4 flex flex-col justify-between">
+        <div className="flex flex-col gap-1">
+          {/* AI Chat */}
+          <button
+            onClick={handleAIChatClick}
+            className={`flex items-center gap-3 h-12 rounded-[10px] transition-colors ${
+              isExpanded ? 'px-4' : 'justify-center'
+            } ${
+              isActive('/ai-chat')
+                ? 'bg-[#101828] text-white'
+                : 'text-[#364153] hover:bg-gray-100'
+            }`}
+            title={!isExpanded ? 'AI Chat' : ''}
+          >
+            <MessageSquare className="w-5 h-5 shrink-0" />
+            {isExpanded && <span className="font-normal text-base whitespace-nowrap">AI Chat</span>}
+          </button>
 
-            {/* AI 동행 찾기 */}
-            <button
-              onClick={() => navigate('/')}
-              className={`flex items-center gap-3 h-12 rounded-[10px] transition-colors ${
-                isExpanded ? 'px-4' : 'justify-center'
-              } ${
-                isActive('/')
-                  ? 'bg-[#101828] text-white'
-                  : 'text-[#364153] hover:bg-gray-100'
-              }`}
-              title={!isExpanded ? 'AI 동행 찾기' : ''}
-            >
-              <Plane className="w-5 h-5 shrink-0" />
-              {isExpanded && (
-                <span className="font-normal text-base whitespace-nowrap">
-                  AI 동행 찾기
-                </span>
-              )}
-            </button>
+          {/* AI 동행 찾기 */}
+          <button
+            onClick={() => navigate('/')}
+            className={`flex items-center gap-3 h-12 rounded-[10px] transition-colors ${
+              isExpanded ? 'px-4' : 'justify-center'
+            } ${
+              isActive('/')
+                ? 'bg-[#101828] text-white'
+                : 'text-[#364153] hover:bg-gray-100'
+            }`}
+            title={!isExpanded ? 'AI 동행 찾기' : ''}
+          >
+            <Plane className="w-5 h-5 shrink-0" />
+            {isExpanded && <span className="font-normal text-base whitespace-nowrap">AI 동행 찾기</span>}
+          </button>
 
             {/* 모든 동행 */}
             <button
@@ -266,3 +258,4 @@ export function Sidebar({
     </div>
   );
 }
+

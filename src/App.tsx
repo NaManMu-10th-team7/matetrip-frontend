@@ -8,7 +8,8 @@ import {
   useParams,
 } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
-import { MainPage } from './components/MainPage';
+import { MainPage as AIMatchingPageComponent } from './components/AIMatchingPage';
+import { NewMainPage } from './components/NewMainPage';
 import { AllPostsPage } from './components/AllPostsPage';
 import { MyTripsPage } from './components/MyTripsPage';
 import { AIChatPage } from './components/AIChatPage';
@@ -65,7 +66,31 @@ function Layout({
 }
 
 // Wrapper components for route handling
-function MainPageWrapper({
+function NewMainPageWrapper({
+  onCreatePost,
+  onJoinWorkspace,
+  onViewProfile,
+  onEditPost,
+  onDeleteSuccess,
+}: {
+  onCreatePost: () => void;
+  onJoinWorkspace: (postId: string, workspaceName: string) => void;
+  onViewProfile: (userId: string) => void;
+  onEditPost: (post: Post) => void;
+  onDeleteSuccess?: () => void;
+}) {
+  return (
+    <NewMainPage
+      onCreatePost={onCreatePost}
+      onJoinWorkspace={onJoinWorkspace}
+      onViewProfile={onViewProfile}
+      onEditPost={onEditPost}
+      onDeleteSuccess={onDeleteSuccess}
+    />
+  );
+}
+
+function AIMatchingPageWrapper({
   isLoggedIn,
   onCreatePost,
   onViewPost,
@@ -97,7 +122,7 @@ function MainPageWrapper({
   };
 
   return (
-    <MainPage
+    <AIMatchingPageComponent
       onSearch={handleSearch}
       onViewPost={onViewPost}
       isLoggedIn={finalIsLoggedIn}
@@ -338,7 +363,44 @@ export default function App() {
           <Route
             path="/"
             element={
-              <MainPageWrapper
+              <NewMainPageWrapper
+                onCreatePost={() => setShowCreatePost(true)}
+                onJoinWorkspace={(postId, workspaceName) => {
+                  const createAndNavigate = async () => {
+                    try {
+                      const response = await client.post<CreateWorkspaceResponse>(
+                        '/workspace',
+                        { postId, workspaceName }
+                      );
+                      const { planDayDtos, workspaceResDto } = response.data;
+                      const { id, workspaceName: resWorkspaceName } =
+                        workspaceResDto;
+                      navigate(`/workspace/${id}`, {
+                        state: {
+                          workspaceName: resWorkspaceName,
+                          planDayDtos,
+                        },
+                      });
+                    } catch (error) {
+                      console.error('Failed to create or join workspace:', error);
+                      alert('워크스페이스에 입장하는 중 오류가 발생했습니다.');
+                    }
+                  };
+                  createAndNavigate();
+                }}
+                onViewProfile={handleViewProfile}
+                onEditPost={(post) => {
+                  setSelectedPostForEdit(post);
+                  setShowEditPost(true);
+                }}
+                onDeleteSuccess={handleDeleteSuccess}
+              />
+            }
+          />
+          <Route
+            path="/ai-matching"
+            element={
+              <AIMatchingPageWrapper
                 isLoggedIn={isLoggedIn}
                 onViewPost={handleViewPost}
                 onCreatePost={() => setShowCreatePost(true)}
@@ -376,11 +438,37 @@ export default function App() {
             element={
               <>
                 {/* 배경으로 메인 페이지를 렌더링합니다. */}
-                <MainPageWrapper
-                  isLoggedIn={isLoggedIn}
-                  onViewPost={handleViewPost}
+                <NewMainPageWrapper
                   onCreatePost={() => setShowCreatePost(true)}
-                  fetchTrigger={fetchTrigger}
+                  onJoinWorkspace={(postId, workspaceName) => {
+                    const createAndNavigate = async () => {
+                      try {
+                        const response = await client.post<CreateWorkspaceResponse>(
+                          '/workspace',
+                          { postId, workspaceName }
+                        );
+                        const { planDayDtos, workspaceResDto } = response.data;
+                        const { id, workspaceName: resWorkspaceName } =
+                          workspaceResDto;
+                        navigate(`/workspace/${id}`, {
+                          state: {
+                            workspaceName: resWorkspaceName,
+                            planDayDtos,
+                          },
+                        });
+                      } catch (error) {
+                        console.error('Failed to create or join workspace:', error);
+                        alert('워크스페이스에 입장하는 중 오류가 발생했습니다.');
+                      }
+                    };
+                    createAndNavigate();
+                  }}
+                  onViewProfile={handleViewProfile}
+                  onEditPost={(post) => {
+                    setSelectedPostForEdit(post);
+                    setShowEditPost(true);
+                  }}
+                  onDeleteSuccess={handleDeleteSuccess}
                 />
                 <PostDetailModalTrigger onViewPost={handleViewPost} />
               </>

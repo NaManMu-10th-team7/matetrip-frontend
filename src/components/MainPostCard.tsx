@@ -1,95 +1,119 @@
-import { Calendar, MapPin } from 'lucide-react';
-// Temporarily redefine Post type locally to include writerProfile,
-// as ../types/post is not provided for modification.
-// This should ideally be updated in ../types/post directly.
-interface WriterProfile {
-  id: string;
-  nickname: string;
-  gender?: string;
-  description?: string;
-  intro?: string;
-  mbtiTypes?: string;
-  travelStyles?: string[];
-}
-
-interface Post {
-  id: string;
-  writerId: string;
-  writerProfile: WriterProfile;
-  createdAt: string;
-  title: string;
-  status: '모집중' | '모집완료' | '여행중' | '여행완료';
-  location: string;
-  maxParticipants: number;
-  keywords: string[];
-  startDate: string;
-  endDate: string;
-}
-import { translateKeyword } from '../utils/keyword';
-import { Badge } from './ui/badge';
-import { Card } from './ui/card';
+import { useState, useEffect } from 'react';
+import { type Post } from '../types/post';
+import client from '../api/client';
 
 interface MainPostCardProps {
   post: Post;
+  matchingScore?: number;
+  imageUrl?: string;
   onClick: (postId: string) => void;
 }
 
-export function MainPostCard({ post, onClick }: MainPostCardProps) {
-  const getStatusBadgeClass = (status: string) => {
-    switch (status) {
-      case '모집중':
-        return 'bg-blue-100 text-blue-800';
-      case '모집완료':
-        return 'bg-gray-100 text-gray-800';
-      case '여행중':
-        return 'bg-green-100 text-green-800';
-      case '여행완료':
-        return 'bg-purple-100 text-purple-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+export function MainPostCard({ 
+  post, 
+  matchingScore, 
+  imageUrl, 
+  onClick 
+}: MainPostCardProps) {
+  const [isHovered, setIsHovered] = useState(false);
+  const [actualImageUrl, setActualImageUrl] = useState<string | null>(null);
+
+  // imageUrl이 UUID 형태인지 확인 (해시값)
+  const isImageId = imageUrl && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(imageUrl);
+
+  useEffect(() => {
+    if (!imageUrl) {
+      setActualImageUrl(null);
+      return;
     }
-  };
+
+    // UUID 형태라면 API로 실제 이미지 URL 가져오기
+    if (isImageId) {
+      const fetchImageUrl = async () => {
+        try {
+          const response = await client.get(`/binary-content/${imageUrl}/presigned-url`);
+          setActualImageUrl(response.data.url || response.data.presignedUrl || response.data);
+        } catch (error) {
+          console.error('Failed to fetch image URL:', error);
+          setActualImageUrl(null);
+        }
+      };
+      fetchImageUrl();
+    } else {
+      // 이미 URL 형태라면 그대로 사용
+      setActualImageUrl(imageUrl);
+    }
+  }, [imageUrl, isImageId]);
 
   return (
-    <Card
-      className="p-6 hover:shadow-lg transition-shadow cursor-pointer flex flex-col justify-between"
-      onClick={() => onClick(post.id)}
+    <div
+      className="relative w-full aspect-[203/241] rounded-[16px] overflow-hidden cursor-pointer group"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onClick={(e) => {
+        console.log('🔵 MainPostCard 클릭됨!', { 
+          postId: post.id, 
+          postTitle: post.title,
+          event: e 
+        });
+        onClick(post.id);
+        console.log('🔵 onClick 함수 호출 완료');
+      }}
     >
-      <div>
-        <div className="mb-3">
-          <div className="flex justify-between items-start mb-1">
-            <h3 className="text-lg font-bold text-gray-900 flex-1 pr-4 break-words">
-              {post.title}
-            </h3>
-            <Badge className={getStatusBadgeClass(post.status)}>
-              {post.status}
-            </Badge>
-          </div>
-          {/* Display writer's nickname */}
-          <p className="text-sm text-gray-600">
-            {post.writerProfile?.nickname || '알 수 없는 사용자'}
-          </p>
+      {/* Background Image */}
+      <div className="absolute inset-0">
+        {actualImageUrl ? (
+          <img
+            src={actualImageUrl}
+            alt={post.title}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              console.error('Image load failed:', actualImageUrl);
+              e.currentTarget.style.display = 'none';
+            }}
+          />
+        ) : (
+          <div className="w-full h-full bg-[#d1d5db]" />
+        )}
+        {/* Dark Overlay */}
+        <div className="absolute inset-0 bg-black/40" />
+      </div>
+
+      {/* Content */}
+      <div className="relative h-full flex flex-col justify-end p-[20px]">
+        {/* Default State: Title */}
+        <div
+          className={`transition-all duration-300 ${
+            isHovered ? 'opacity-0' : 'opacity-100'
+          }`}
+        >
+          <h3 className="text-[20px] font-bold text-white leading-[1.4] overflow-hidden whitespace-nowrap text-ellipsis">
+            {post.title}
+          </h3>
         </div>
 
-        <div className="space-y-2 text-sm text-gray-600 mb-4">
-          <div className="flex items-center gap-2">
-            <MapPin className="w-4 h-4 flex-shrink-0" />
-            <span>{post.location}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 flex-shrink-0" />
-            <span>{`${post.startDate} ~ ${post.endDate}`}</span>
+        {/* Hover State: Matching Score */}
+        <div
+          className={`absolute bottom-[20px] left-[20px] right-[20px] transition-all duration-300 ${
+            isHovered ? 'opacity-100' : 'opacity-0'
+          }`}
+        >
+          <div className="flex items-end justify-between">
+            <p className="text-[16px] font-medium text-white leading-[1.6]">
+              매칭율
+            </p>
+            <div className="flex items-start text-white">
+              <span className="text-[24px] font-bold leading-[1.4]">
+                {matchingScore ?? 0}
+              </span>
+              <span className="text-[14px] font-medium leading-[1.2]">
+                %
+              </span>
+            </div>
           </div>
         </div>
       </div>
-
-      <div className="flex flex-wrap gap-2">
-        {post.keywords.map((keyword) => (
-          <Badge key={keyword} variant="secondary">
-            {translateKeyword(keyword)}
-          </Badge>
-        ))}
-      </div>
-    </Card>
+    </div>
   );
 }
+
