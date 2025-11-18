@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import { usePlaceStore } from '../store/placeStore'; // [추가] 장소 캐시를 사용하기 위해 import
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { SimpleToggle } from './ui/SimpleToggle';
 import {
   ListOrdered,
@@ -519,8 +518,8 @@ interface LeftPanelProps {
   onOptimizeRoute: (dayId: string) => void;
   visibleDayIds: Set<string>;
   onDayVisibilityChange: (dayId: string, isVisible: boolean) => void;
-  onMyItineraryVisibilityChange: () => void; // [수정] '내 일정' 전체 토글 핸들러 prop
-  onRecommendedItineraryVisibilityChange: () => void; // [수정] 'AI 추천' 전체 토글 핸들러 prop
+  onMyItineraryVisibilityChange: () => void;
+  onRecommendedItineraryVisibilityChange: () => void;
   hoveredPoiId: string | null;
   onGenerateAiPlan: () => void;
   isOptimizationProcessing: boolean;
@@ -528,10 +527,8 @@ interface LeftPanelProps {
   sendMessage: (message: string) => void;
   isChatConnected: boolean;
   onCardClick: (poi: any) => void;
-  isRecommendationOpen: boolean;
-  setIsRecommendationOpen: (isOpen: boolean) => void;
-  setAiRecommendedPlaces: (places: AiPlace[]) => void;
-  aiRecommendedPlaces: AiPlace[];
+  setChatAiPlaces: (places: AiPlace[]) => void;
+  chatAiPlaces: AiPlace[];
 }
 
 const formatDuration = (seconds: number) => {
@@ -789,7 +786,7 @@ function RecommendedDayItem({
   onAddRecommendedPoi: (poi: Poi) => void;
   allAddedPois: Poi[];
 }) {
-  const virtualPlanDayId = `rec-${workspaceId}-${layer.label}`;
+  const virtualPlanDayId = `rec-${workspaceId}-${layer.planDate}`;
   const recommendedPois = recommendedItinerary[virtualPlanDayId] || [];
 
   if (recommendedPois.length === 0) return null;
@@ -856,137 +853,36 @@ function RecommendedDayItem({
   );
 }
 
-function RecommendationSidebar({
+function ChatSidebar({
+  messages,
+  sendMessage,
+  isChatConnected,
   workspaceId,
-  dayLayers,
-  recommendedItinerary,
-  onPoiClick,
-  onPoiHover,
-  unmarkPoi,
-  removeSchedule,
-  hoveredPoiId,
-  onAddRecommendedPoi,
-  onAddRecommendedPoiToDay,
-  onClose,
-  allAddedPois,
-  visibleDayIds,
-  onDayVisibilityChange,
-  onRecommendedItineraryVisibilityChange, // [수정] 'AI 추천' 전체 토글 핸들러 prop
-  onGenerateAiPlan,
+  onAddPoiToItinerary,
+  onCardClick,
+  setChatAiPlaces,
+  chatAiPlaces,
 }: {
+  messages: ChatMessage[];
+  sendMessage: (message: string) => void;
+  isChatConnected: boolean;
   workspaceId: string;
-  dayLayers: DayLayer[];
-  recommendedItinerary: Record<string, Poi[]>;
-  onPoiClick: (poi: Poi | AiPlace) => void;
-  onPoiHover: (poiId: string | null) => void;
-  unmarkPoi: (poiId: string | number) => void;
-  removeSchedule: (poiId: string, planDayId: string) => void;
-  hoveredPoiId: string | null;
-  onAddRecommendedPoi: (poi: Poi) => void;
-  onAddRecommendedPoiToDay: (planDayId: string, pois: Poi[]) => void;
-  onClose: () => void;
-  allAddedPois: Poi[];
-  visibleDayIds: Set<string>;
-  onDayVisibilityChange: (dayId: string, isVisible: boolean) => void;
-  onRecommendedItineraryVisibilityChange: () => void; // [수정] 'AI 추천' 전체 토글 핸들러 prop
-  onGenerateAiPlan: () => void;
+  onAddPoiToItinerary: (poi: Poi) => void;
+  onCardClick: (poi: any) => void;
+  setChatAiPlaces: (places: AiPlace[]) => void;
+  chatAiPlaces: AiPlace[];
 }) {
-  // [신규] 'AI 추천'의 접기/펼치기 상태 관리
-  const [collapsedDayIds, setCollapsedDayIds] = useState<Set<string>>(
-    new Set()
-  );
-
-  const handleToggleDayCollapse = (dayId: string) => {
-    setCollapsedDayIds((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(dayId)) {
-        newSet.delete(dayId);
-      } else {
-        newSet.add(dayId);
-      }
-      return newSet;
-    });
-  };
-
-  const handleToggleAllCollapse = () => {
-    if (collapsedDayIds.size === dayLayers.length) {
-      setCollapsedDayIds(new Set());
-    } else {
-      setCollapsedDayIds(new Set(dayLayers.map((l) => l.id)));
-    }
-  };
   return (
-    <div className="w-96 bg-gray-50 border-l border-gray-200 flex flex-col h-full">
-      <div className="p-4 border-b flex justify-between items-center">
-        <h2 className="text-xl font-bold flex items-center gap-2">
-          <Lightbulb className="w-5 h-5 text-blue-500" />
-          AI 추천 일정
-        </h2>
-        <Button variant="ghost" size="icon" onClick={onClose}>
-          <X className="w-4 h-4" />
-        </Button>
-      </div>
-      <div className="p-4 border-b">
-        <Button
-          className="w-full"
-          onClick={onGenerateAiPlan}
-          variant="default" // [수정] 버튼 스타일을 기본(채워진 형태)으로 변경
-        >
-          <RefreshCw className="w-4 h-4 mr-2" />
-          다시 추천받기
-        </Button>
-      </div>
-      <div className="overflow-y-auto flex-1">
-        {/* [신규] 전체 추천 경로 토글 */}
-        <div className="flex items-center justify-between p-4 border-b">
-          <div className="flex items-center gap-2">
-            <h3 className="text-base font-bold">전체 추천 경로</h3>
-            <SimpleToggle
-              // 모든 추천 경로가 켜져 있을 때만 ON
-              checked={
-                Object.keys(recommendedItinerary).length > 0 &&
-                Object.keys(recommendedItinerary).every((id) =>
-                  visibleDayIds.has(id)
-                )
-              }
-              onChange={onRecommendedItineraryVisibilityChange}
-            />
-          </div>
-          {/* [신규] 모두 접기/펴기 버튼 */}
-          <Button
-            variant="link"
-            size="sm"
-            className="text-base text-gray-500"
-            onClick={handleToggleAllCollapse}
-          >
-            <ChevronsUpDown className="w-3.5 h-3.5 mr-1" />
-            {collapsedDayIds.size === dayLayers.length
-              ? '일정 모두 펴기'
-              : '일정 모두 접기'}
-          </Button>
-        </div>
-        {dayLayers.map((layer) => (
-          <RecommendedDayItem
-            key={layer.id}
-            layer={layer}
-            workspaceId={workspaceId}
-            isCollapsed={collapsedDayIds.has(layer.id)}
-            recommendedItinerary={recommendedItinerary}
-            visibleDayIds={visibleDayIds}
-            onDayVisibilityChange={onDayVisibilityChange}
-            onAddRecommendedPoiToDay={onAddRecommendedPoiToDay}
-            onPoiClick={onPoiClick}
-            onPoiHover={onPoiHover}
-            unmarkPoi={unmarkPoi}
-            removeSchedule={removeSchedule}
-            onToggleCollapse={() => handleToggleDayCollapse(layer.id)}
-            hoveredPoiId={hoveredPoiId}
-            onAddRecommendedPoi={onAddRecommendedPoi}
-            allAddedPois={allAddedPois}
-          />
-        ))}
-      </div>
-    </div>
+    <ChatPanel
+      messages={messages}
+      sendMessage={sendMessage}
+      isChatConnected={isChatConnected}
+      workspaceId={workspaceId}
+      onAddPoiToItinerary={onAddPoiToItinerary}
+      onCardClick={onCardClick}
+      setChatAiPlaces={setChatAiPlaces}
+      chatAiPlaces={chatAiPlaces}
+    />
   );
 }
 
@@ -1017,10 +913,8 @@ export function LeftPanel({
   sendMessage,
   isChatConnected,
   onCardClick,
-  isRecommendationOpen,
-  setIsRecommendationOpen,
-  setAiRecommendedPlaces,
-  aiRecommendedPlaces,
+  setChatAiPlaces,
+  chatAiPlaces,
 }: LeftPanelProps) {
   const [isOptimizationModalOpen, setIsOptimizationModalOpen] = useState(false);
   const [optimizationDayId, setOptimizationDayId] = useState<string | null>(
@@ -1032,12 +926,43 @@ export function LeftPanel({
   } | null>(null);
   const [activeTab, setActiveTab] = useState('itinerary');
 
+  const [recCollapsedDayIds, setRecCollapsedDayIds] = useState<Set<string>>(
+    new Set()
+  );
+
+  const [isAiRecOpen, setIsAiRecOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+
+  const handleRecToggleDayCollapse = (dayId: string) => {
+    setRecCollapsedDayIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(dayId)) {
+        newSet.delete(dayId);
+      } else {
+        newSet.add(dayId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleRecToggleAllCollapse = () => {
+    if (recCollapsedDayIds.size === dayLayers.length) {
+      setRecCollapsedDayIds(new Set());
+    } else {
+      setRecCollapsedDayIds(new Set(dayLayers.map((l) => l.id)));
+    }
+  };
+
   // [추가] 장소 캐시에서 모든 장소 정보를 가져옵니다.
   const placeCache = usePlaceStore((state) => state.placesById);
 
   // [추가] 서버에서 받은 POI 목록에 캐시된 카테고리 정보를 병합합니다.
   const poisWithCategory = useMemo(() => {
-    const allPois = [...markedPois, ...Object.values(itinerary).flat()];
+    const allPois = [
+      ...markedPois,
+      ...Object.values(itinerary).flat(),
+      ...Object.values(recommendedItinerary).flat(),
+    ];
     return allPois.map((poi) => {
       // POI에 categoryName이 이미 있으면 그대로 사용합니다.
       if (poi.categoryName) return poi;
@@ -1045,7 +970,7 @@ export function LeftPanel({
       const cachedPlace = placeCache.get(poi.placeId);
       return cachedPlace ? { ...poi, categoryName: cachedPlace.category } : poi;
     });
-  }, [markedPois, itinerary, placeCache]);
+  }, [markedPois, itinerary, recommendedItinerary, placeCache]);
 
   const allAddedPois = useMemo(
     () => [...markedPois, ...Object.values(itinerary).flat()],
@@ -1080,6 +1005,30 @@ export function LeftPanel({
     });
     return newItinerary;
   }, [poisWithCategory, dayLayers]);
+  const enrichedRecommendedItinerary = useMemo(() => {
+    const newItinerary: Record<string, Poi[]> = {};
+    dayLayers.forEach((layer) => {
+      const virtualDayId = `rec-${workspaceId}-${layer.planDate}`;
+      const poisForDay = recommendedItinerary[virtualDayId] || [];
+      if (poisForDay.length > 0) {
+        const poiIdsForDay = new Set(poisForDay.map((p) => p.id));
+        newItinerary[virtualDayId] = poisWithCategory.filter((p) =>
+          poiIdsForDay.has(p.id)
+        );
+      }
+    });
+    return newItinerary;
+  }, [poisWithCategory, recommendedItinerary, workspaceId, dayLayers]);
+
+  const enrichedChatAiPlaces = useMemo(() => {
+    return chatAiPlaces.map((place) => {
+      if (place.category) return place;
+      const cachedPlace = placeCache.get(place.id);
+      return cachedPlace
+        ? { ...place, categoryName: cachedPlace.category }
+        : place;
+    });
+  }, [chatAiPlaces, placeCache]);
 
   // [수정] 모든 Hook이 호출된 후에 조기 리턴을 수행합니다.
   if (!isOpen) {
@@ -1094,102 +1043,185 @@ export function LeftPanel({
     ? routeSegmentsByDay[optimizationDayId]
     : [];
 
-  return (
+  const renderAiRecommendationContent = () => (
     <>
-      <div className="flex h-full">
-        <div className="w-96 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out">
-          <Tabs
-            value={activeTab}
-            onValueChange={setActiveTab}
-            className="flex-1 flex flex-col min-h-0"
+      <div className="p-4 border-b">
+        <Button className="w-full" onClick={onGenerateAiPlan} variant="default">
+          <RefreshCw className="w-4 h-4 mr-2" />
+          다시 추천받기
+        </Button>
+      </div>
+      <div className="flex-1">
+        <div className="flex items-center justify-between p-4 border-b">
+          <div className="flex items-center gap-2">
+            <h3 className="text-base font-bold">전체 추천 경로</h3>
+            <SimpleToggle
+              checked={
+                Object.keys(recommendedItinerary).length > 0 &&
+                Object.keys(recommendedItinerary).every((id) =>
+                  visibleDayIds.has(id)
+                )
+              }
+              onChange={onRecommendedItineraryVisibilityChange}
+            />
+          </div>
+          <Button
+            variant="link"
+            size="sm"
+            className="text-base text-gray-500"
+            onClick={handleRecToggleAllCollapse}
           >
-            <TabsList className="w-full justify-around rounded-none bg-black h-14">
-              <TabsTrigger
-                value="itinerary"
-                className="flex-1 gap-2 text-lg text-gray-400 rounded-none data-[state=active]:text-white data-[state=active]:bg-gray-800"
-              >
-                <ListOrdered className="w-5 h-5" />
-                <span>내 일정</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="chat"
-                className="flex-1 gap-2 text-lg text-gray-400 rounded-none data-[state=active]:text-white data-[state=active]:bg-gray-800"
-              >
-                <MessageCircle className="w-5 h-5" />
-                <span>채팅</span>
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent
-              value="itinerary"
-              className="flex-1 m-0 overflow-y-auto"
-            >
-              <MarkerStorage
-                pois={enrichedMarkedPois} // [수정] 카테고리 정보가 보강된 데이터 사용
-                {...{
-                  onPoiClick,
-                  onPoiHover,
-                  unmarkPoi,
-                  removeSchedule,
-                  hoveredPoiId,
-                }}
-              />
-              <ItineraryPanel
-                {...{
-                  itinerary: enrichedItinerary, // [수정] 카테고리 정보가 보강된 데이터 사용
-                  workspaceId,
-                  dayLayers,
-                  onPoiClick,
-                  onPoiHover,
-                  unmarkPoi,
-                  removeSchedule,
-                  routeSegmentsByDay,
-                  onOptimizeRoute: handleOptimizeRoute,
-                  visibleDayIds,
-                  onDayVisibilityChange,
-                  onMyItineraryVisibilityChange,
-                  hoveredPoiId,
-                  isRecommendationLoading,
-                }}
-              />
-            </TabsContent>
-
-            <TabsContent value="chat" className="flex-1 overflow-auto m-0">
-              <ChatPanel
-                messages={messages}
-                sendMessage={sendMessage}
-                isChatConnected={isChatConnected}
-                workspaceId={workspaceId}
-                onAddPoiToItinerary={onAddRecommendedPoi}
-                onCardClick={onCardClick}
-                setAiRecommendedPlaces={setAiRecommendedPlaces}
-                aiRecommendedPlaces={aiRecommendedPlaces}
-              />
-            </TabsContent>
-          </Tabs>
+            <ChevronsUpDown className="w-3.5 h-3.5 mr-1" />
+            {recCollapsedDayIds.size === dayLayers.length
+              ? '일정 모두 펴기'
+              : '일정 모두 접기'}
+          </Button>
         </div>
-        {isRecommendationOpen && (
-          <RecommendationSidebar
+        {dayLayers.map((layer) => (
+          <RecommendedDayItem
+            key={layer.id}
             {...{
+              layer,
               workspaceId,
-              dayLayers,
-              recommendedItinerary,
+              recommendedItinerary: enrichedRecommendedItinerary,
+              visibleDayIds,
+              onDayVisibilityChange,
+              onAddRecommendedPoiToDay,
               onPoiClick,
               onPoiHover,
               unmarkPoi,
               removeSchedule,
               hoveredPoiId,
-              onAddRecommendedPoi: onAddRecommendedPoi,
-              onAddRecommendedPoiToDay,
-              onClose: () => setIsRecommendationOpen(false),
+              onAddRecommendedPoi,
               allAddedPois,
-              visibleDayIds,
-              onDayVisibilityChange,
-              onRecommendedItineraryVisibilityChange, // [수정] 'AI 추천'용 핸들러 전달
-              onGenerateAiPlan,
+            }}
+            isCollapsed={recCollapsedDayIds.has(layer.id)}
+            onToggleCollapse={() => handleRecToggleDayCollapse(layer.id)}
+          />
+        ))}
+      </div>
+    </>
+  );
+
+  const renderTabContent = () => {
+    if (activeTab === 'itinerary') {
+      return (
+        <>
+          <MarkerStorage
+            pois={enrichedMarkedPois}
+            {...{
+              onPoiClick,
+              onPoiHover,
+              unmarkPoi,
+              removeSchedule,
+              hoveredPoiId,
             }}
           />
-        )}
+          <ItineraryPanel
+            {...{
+              itinerary: enrichedItinerary,
+              workspaceId,
+              dayLayers,
+              onPoiClick,
+              onPoiHover,
+              unmarkPoi,
+              removeSchedule,
+              routeSegmentsByDay,
+              onOptimizeRoute: handleOptimizeRoute,
+              visibleDayIds,
+              onDayVisibilityChange,
+              onMyItineraryVisibilityChange,
+              hoveredPoiId,
+              isRecommendationLoading,
+            }}
+          />
+        </>
+      );
+    }
+    return null;
+  };
+
+  return (
+    <div className="relative h-full">
+      <div className="flex h-full">
+        {' '}
+        {/* '내 일정'과 '채팅' 패널을 위한 flex 컨테이너 */}
+        <div className="w-96 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out">
+          <div className="flex w-full bg-black h-14 p-0 rounded-none">
+            <button
+              onClick={() => setActiveTab('itinerary')}
+              className={`flex-1 flex items-center justify-center gap-2 text-lg rounded-none ${
+                activeTab === 'itinerary'
+                  ? 'text-white bg-gray-800'
+                  : 'text-gray-400'
+              } hover:text-white`}
+            >
+              <ListOrdered className="w-5 h-5" />
+              <span>내 일정</span>
+            </button>
+            <button
+              onClick={() => {
+                const newIsOpen = !isAiRecOpen;
+                setIsAiRecOpen(newIsOpen);
+                if (newIsOpen) setIsChatOpen(false);
+              }}
+              className={`flex-1 flex items-center justify-center gap-2 text-lg rounded-none ${
+                isAiRecOpen ? 'text-white bg-gray-800' : 'text-gray-400'
+              } hover:text-white`}
+            >
+              <Lightbulb className="w-5 h-5" />
+              <span>AI 추천</span>
+            </button>
+            <button
+              onClick={() => {
+                const newIsOpen = !isChatOpen;
+                setIsChatOpen(newIsOpen);
+                if (newIsOpen) setIsAiRecOpen(false);
+              }}
+              className={`flex-1 flex items-center justify-center gap-2 text-lg rounded-none ${
+                isChatOpen ? 'text-white bg-gray-800' : 'text-gray-400'
+              } hover:text-white`}
+            >
+              <MessageCircle className="w-5 h-5" />
+              <span>채팅</span>
+            </button>
+          </div>
+
+          <div className="flex-1 m-0 overflow-y-auto">{renderTabContent()}</div>
+        </div>
+      </div>
+      {/* AI 추천 패널 (Floating) */}
+      <div
+        className={`absolute top-0 left-0 h-full w-96 bg-white border-r border-gray-200 shadow-lg transition-all duration-300 ease-in-out z-10 ${
+          isAiRecOpen
+            ? 'opacity-100 translate-x-96'
+            : 'opacity-0 -translate-x-full pointer-events-none'
+        }`}
+      >
+        <div className="flex flex-col h-full">
+          <div className="flex-1 overflow-y-auto">
+            {renderAiRecommendationContent()}
+          </div>
+        </div>
+      </div>
+      {/* 채팅 패널 (Floating) */}
+      <div
+        className={`absolute top-0 left-0 h-full w-96 bg-white border-r border-gray-200 shadow-lg transition-all duration-300 ease-in-out z-10 ${
+          isChatOpen
+            ? 'opacity-100 translate-x-96'
+            : 'opacity-0 -translate-x-full pointer-events-none'
+        }`}
+      >
+        <ChatSidebar
+          messages={messages}
+          sendMessage={sendMessage}
+          isChatConnected={isChatConnected}
+          workspaceId={workspaceId}
+          onAddPoiToItinerary={onAddRecommendedPoi}
+          onCardClick={onCardClick}
+          setChatAiPlaces={setChatAiPlaces}
+          chatAiPlaces={enrichedChatAiPlaces}
+        />
       </div>
       <OptimizationModal
         isOpen={isOptimizationModalOpen}
@@ -1202,6 +1234,6 @@ export function LeftPanel({
         }
         dayLayer={dayLayerForModal}
       />
-    </>
+    </div>
   );
 }

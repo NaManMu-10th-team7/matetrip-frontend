@@ -14,7 +14,8 @@ export function RecommendedPlaceCard({
   onAddPoiToItinerary,
   onCardClick,
 }: RecommendedPlaceCardProps) {
-  const handleAddClick = () => {
+  const handleAddClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // 이벤트 전파를 막습니다.
     // AiPlace를 Poi 타입과 유사하게 변환하여 전달
     const poiForModal: Poi = {
       id: place.id,
@@ -34,10 +35,14 @@ export function RecommendedPlaceCard({
     onAddPoiToItinerary(poiForModal);
   };
 
+  const handleCardClick = () => {
+    onCardClick({ latitude: place.latitude, longitude: place.longitude });
+  };
+
   return (
     <div
       className="bg-white rounded-lg border border-gray-200 p-3 flex gap-3 text-gray-900 shadow-sm cursor-pointer hover:shadow-md hover:border-gray-300 transition-all"
-      onClick={() => onCardClick(place)}
+      onClick={handleCardClick}
     >
       {place.image_url && (
         <img
@@ -49,6 +54,7 @@ export function RecommendedPlaceCard({
       <div className="flex-1 flex flex-col justify-between min-w-0">
         <div>
           <p className="font-semibold truncate text-sm">{place.title}</p>
+          <p className="text-gray-500 text-xs mt-1">{place.category}</p>
           <div className="flex items-start gap-1 text-xs text-gray-500 mt-1">
             <MapPin className="w-3 h-3 mt-0.5 flex-shrink-0" />
             <p className="truncate">{place.address}</p>

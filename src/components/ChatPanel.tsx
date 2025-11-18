@@ -18,8 +18,8 @@ interface ChatPanelProps {
   workspaceId: string;
   onAddPoiToItinerary: (poi: Poi) => void;
   onCardClick: (poi: Pick<Poi, 'latitude' | 'longitude'>) => void;
-  setAiRecommendedPlaces: (places: AiPlace[]) => void;
-  aiRecommendedPlaces: AiPlace[];
+  setChatAiPlaces: (places: AiPlace[]) => void;
+  chatAiPlaces: AiPlace[];
 }
 
 export const ChatPanel = memo(function ChatPanel({
@@ -37,6 +37,7 @@ export const ChatPanel = memo(function ChatPanel({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuthStore();
   const currentUserId = user?.userId;
+  const [isAiCardCollapsed, setIsAiCardCollapsed] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -175,23 +176,29 @@ export const ChatPanel = memo(function ChatPanel({
                         : 'bg-gray-100 text-gray-900'
                   )}
                 >
-                  {!isAiRecommendation && (
-                    <p className="text-sm">{msg.message}</p>
-                  )}
+                  <p className="text-sm">{msg.message}</p>
                   {isAiRecommendation && (
-                    <div className="space-y-2">
-                      <p className="text-sm text-gray-900 bg-gray-100 rounded-lg px-4 py-2">
-                        {msg.message}
-                      </p>
-                      <div className="grid grid-cols-1 gap-2">
-                        {msg.recommendedPlaces?.map((place, placeIndex) => (
-                          <RecommendedPlaceCard
-                            key={placeIndex}
-                            place={place}
-                            onAddPoiToItinerary={onAddPoiToItinerary}
-                            onCardClick={onCardClick}
-                          />
-                        ))}
+                    <div className="mt-2">
+                      {!isAiCardCollapsed && (
+                        <div className="grid grid-cols-1 gap-2">
+                          {msg.recommendedPlaces?.map((place, placeIndex) => (
+                            <RecommendedPlaceCard
+                              key={placeIndex}
+                              place={place}
+                              onAddPoiToItinerary={onAddPoiToItinerary}
+                              onCardClick={onCardClick}
+                            />
+                          ))}
+                        </div>
+                      )}
+                      <div className="flex justify-end mt-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setIsAiCardCollapsed((prev) => !prev)}
+                        >
+                          {isAiCardCollapsed ? '펼치기' : '접기'}
+                        </Button>
                       </div>
                     </div>
                   )}

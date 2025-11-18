@@ -1,11 +1,5 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
-import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  GripVertical,
-} from 'lucide-react';
+import { GripVertical } from 'lucide-react';
 import html2canvas from 'html2canvas-pro';
 import jsPDF from 'jspdf';
 import {
@@ -18,7 +12,6 @@ import {
 import { arrayMove } from '@dnd-kit/sortable';
 import { MapPanel } from './MapPanel';
 import type { KakaoPlace, RouteSegment, ChatMessage } from '../types/map';
-import { Button } from './ui/button';
 import type { PlanDayDto } from '../types/workspace';
 import { LeftPanel } from './LeftPanel';
 import { PlanRoomHeader } from './PlanRoomHeader';
@@ -87,16 +80,17 @@ export function Workspace({
   planDayDtos,
   onEndTrip,
 }: WorkspaceProps) {
-  const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
+  const [isLeftPanelOpen, _setIsLeftPanelOpen] = useState(true);
 
   // [신규] AI 추천 일정 관련 상태
   const [recommendedItinerary, setRecommendedItinerary] = useState<
     Record<string, Poi[]>
   >({});
-  const [isRecommendationOpen, setIsRecommendationOpen] = useState(false);
+  const [isRecommendationOpen, _setIsRecommendationOpen] = useState(false);
   const [isRecommendationLoading, setIsRecommendationLoading] = useState(true);
-  const [aiRecommendedPlaces, setAiRecommendedPlaces] = useState<AiPlace[]>([]);
-  const [initialBoundsSet, setInitialBoundsSet] = useState(false);
+  const [itineraryAiPlaces, setItineraryAiPlaces] = useState<AiPlace[]>([]);
+  const [chatAiPlaces, setChatAiPlaces] = useState<AiPlace[]>([]);
+  const [_initialBoundsSet, setInitialBoundsSet] = useState(false);
 
   // [신규] '일정 추가' 모달 관련 상태
   const [poiToAdd, setPoiToAdd] = useState<Poi | null>(null);
@@ -168,25 +162,29 @@ export function Workspace({
     sendMessage(message);
   };
 
+  // [버그 수정] POI가 삭제된 후에도 hover 효과(파란색 원)가 남아있는 문제 해결
+  // pois 목록이 변경될 때, 현재 hoveredPoiId가 더 이상 존재하지 않으면 hover 상태를 초기화합니다.
   useEffect(() => {
-    if (lastMessage?.recommendedPlaces && !initialBoundsSet) {
-      setAiRecommendedPlaces(lastMessage.recommendedPlaces);
+    if (hoveredPoiInfo && !pois.find((p) => p.id === hoveredPoiInfo.poiId)) {
+      hoverPoi(null);
+    }
+  }, [pois, hoveredPoiInfo, hoverPoi]);
+
+  useEffect(() => {
+    if (lastMessage?.recommendedPlaces) {
+      setChatAiPlaces(lastMessage.recommendedPlaces);
       const map = mapRef.current;
       if (map && lastMessage.recommendedPlaces.length > 0) {
+        const firstPlace = lastMessage.recommendedPlaces[0];
+        const moveLatLon = new window.kakao.maps.LatLng(
+          firstPlace.latitude,
+          firstPlace.longitude
+        );
         isProgrammaticMove.current = true;
-        const bounds = new window.kakao.maps.LatLngBounds();
-        lastMessage.recommendedPlaces.forEach((place) => {
-          bounds.extend(
-            new window.kakao.maps.LatLng(place.latitude, place.longitude)
-          );
-        });
-        map.setBounds(bounds);
-        setInitialBoundsSet(true);
+        map.panTo(moveLatLon);
       }
-    } else if (lastMessage && !lastMessage.recommendedPlaces) {
-      setAiRecommendedPlaces([]);
     }
-  }, [lastMessage, initialBoundsSet]);
+  }, [lastMessage]);
 
   const [selectedPlace, setSelectedPlace] = useState<KakaoPlace | null>(null);
   const [activePoi, setActivePoi] = useState<Poi | null>(null);
@@ -286,7 +284,7 @@ export function Workspace({
         newRecommendedItinerary[virtualPlanDayId] = poisForDay;
       });
       setRecommendedItinerary(newRecommendedItinerary);
-      setAiRecommendedPlaces(allRecommendedPois);
+      setItineraryAiPlaces(allRecommendedPois);
     } catch (error) {
       console.error('Failed to generate AI plan:', error);
       setRecommendedItinerary({}); // 에러 시 기존 추천 초기화
@@ -473,7 +471,7 @@ export function Workspace({
   const endDate =
     planDayDtos.length > 0 ? planDayDtos[planDayDtos.length - 1].planDate : '';
 
-  const handlePoiClick = (poi: Poi | AiPlace) => {
+  const handlePoiClick = (poi: Pick<Poi, 'latitude' | 'longitude'>) => {
     const map = mapRef.current;
     if (!map) return;
     isProgrammaticMove.current = true;
@@ -481,7 +479,7 @@ export function Workspace({
       poi.latitude,
       poi.longitude
     );
-    map.setLevel(5);
+    map.setLevel(3);
     map.panTo(moveLatLon);
   };
 
@@ -890,10 +888,8 @@ export function Workspace({
             sendMessage={handleSendMessage}
             isChatConnected={isChatConnected}
             onCardClick={handlePoiClick} // 채팅 카드 클릭 핸들러
-            isRecommendationOpen={isRecommendationOpen}
-            setIsRecommendationOpen={setIsRecommendationOpen}
-            setAiRecommendedPlaces={setAiRecommendedPlaces}
-            aiRecommendedPlaces={aiRecommendedPlaces}
+            setChatAiPlaces={setChatAiPlaces}
+            chatAiPlaces={chatAiPlaces}
           />
 
           {/* AI 추천 일정 버튼 */}
@@ -906,35 +902,7 @@ export function Workspace({
                   : '384px'
                 : '0px',
             }}
-          >
-            <Button
-              variant={isRecommendationOpen ? 'default' : 'outline'}
-              className={`h-14 w-auto px-4 shadow-lg rounded-none rounded-tr-lg flex items-center gap-2 ${
-                isRecommendationOpen
-                  ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white border-transparent shadow-indigo-500/50'
-                  : 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white border-transparent shadow-indigo-500/50'
-              }`}
-              onClick={() => setIsRecommendationOpen(!isRecommendationOpen)}
-            >
-              <span className="text-sm font-semibold">AI 추천</span>
-              {isRecommendationOpen ? (
-                <ChevronsLeft className="w-5 h-5" />
-              ) : (
-                <ChevronsRight className="w-5 h-5" />
-              )}
-            </Button>
-          </div>
-          <button
-            onClick={() => setIsLeftPanelOpen(!isLeftPanelOpen)}
-            className="absolute top-1/2 -translate-y-1/2 z-20 w-6 h-12 bg-white hover:bg-gray-100 transition-colors flex items-center justify-center border border-gray-300 rounded-r-md shadow-md"
-            style={{ left: isLeftPanelOpen ? '384px' : '0' }}
-          >
-            {isLeftPanelOpen ? (
-              <ChevronLeft className="w-4 h-4 text-gray-600" />
-            ) : (
-              <ChevronRight className="w-4 h-4 text-gray-600" />
-            )}
-          </button>
+          ></div>
 
           <div className="flex-1 bg-gray-100">
             <MapPanel
@@ -963,9 +931,8 @@ export function Workspace({
               visibleDayIds={visibleDayIds} // [추가] 가시성 상태 전달
               initialCenter={initialMapCenter} // [신규] 초기 지도 중심 좌표 전달
               focusPlace={focusPlace} // [추가] focusPlace 전달
-              isRecommendationOpen={isRecommendationOpen}
-              setIsRecommendationOpen={setIsRecommendationOpen}
-              recommendedPlaces={aiRecommendedPlaces}
+              itineraryAiPlaces={itineraryAiPlaces}
+              chatAiPlaces={chatAiPlaces}
               isProgrammaticMove={isProgrammaticMove}
             />
           </div>
