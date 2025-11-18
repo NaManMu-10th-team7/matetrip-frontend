@@ -573,29 +573,10 @@ export function ProfileModal({
       {profile && (
         <EditProfileModal
           open={isEditProfileModalOpen}
-          onOpenChange={(open) => {
-            if (!open) {
-              // 모달이 닫힐 때 프로필 데이터를 다시 불러옵니다.
-              fetchProfileData();
-            }
-            setIsEditProfileModalOpen(open);
+          onOpenChange={setIsEditProfileModalOpen}
+          onProfileUpdated={() => {
+            fetchProfileData();
           }}
-          // onProfileUpdated={(updates) => {
-          //   setProfile((prev) =>
-          //     prev
-          //       ? {
-          //           ...prev,
-          //           nickname: updates.nickname,
-          //           intro: updates.intro,
-          //           description: updates.description,
-          //           travelStyles: updates.travelStyles,
-          //           tendency: updates.tendency,
-          //           profileImageId:
-          //             updates.profileImageId ?? prev.profileImageId,
-          //         }
-          //       : prev
-          //   );
-          // }}
           user={{
             id: profile.id,
             nickname: profile.nickname,
