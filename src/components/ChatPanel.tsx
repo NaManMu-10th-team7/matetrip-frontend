@@ -1,5 +1,12 @@
 import { useState, useEffect, useRef, useCallback, memo } from 'react';
-import { Send, Phone, Video, ChevronUp, ChevronDown } from 'lucide-react';
+import {
+  Send,
+  Phone,
+  Video,
+  ChevronUp,
+  ChevronDown,
+  X,
+} from 'lucide-react';
 import { Button } from './ui/button';
 import type { Poi } from '../hooks/usePoiSocket';
 import { Input } from './ui/input';
@@ -18,8 +25,8 @@ interface ChatPanelProps {
   workspaceId: string;
   onAddPoiToItinerary: (poi: Poi) => void;
   onCardClick: (poi: Pick<Poi, 'latitude' | 'longitude'>) => void;
-  setAiRecommendedPlaces: (places: AiPlace[]) => void;
-  aiRecommendedPlaces: AiPlace[];
+  setChatAiPlaces: (places: AiPlace[]) => void;
+  chatAiPlaces: AiPlace[];
 }
 
 export const ChatPanel = memo(function ChatPanel({
@@ -29,6 +36,8 @@ export const ChatPanel = memo(function ChatPanel({
   workspaceId,
   onAddPoiToItinerary,
   onCardClick,
+  setChatAiPlaces,
+  chatAiPlaces,
 }: ChatPanelProps) {
   const [isVCCallActive, setIsVCCallActive] = useState(false);
   const [hasVCCallBeenInitiated, setHasVCCallBeenInitiated] = useState(false);
@@ -73,6 +82,11 @@ export const ChatPanel = memo(function ChatPanel({
   const handleCloseVideoCall = useCallback(() => {
     setIsVCCallActive(false);
   }, []);
+
+  const isLastMessageFromAiWithPlaces =
+    messages.length > 0 &&
+    messages[messages.length - 1].role === 'ai' &&
+    !!messages[messages.length - 1].recommendedPlaces;
 
   return (
     <div className="h-full flex flex-col bg-white">
@@ -207,6 +221,18 @@ export const ChatPanel = memo(function ChatPanel({
             </div>
           );
         })}
+        {isLastMessageFromAiWithPlaces && (
+          <div className="flex justify-end mt-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs text-gray-500"
+              onClick={() => setChatAiPlaces([])}
+            >
+              추천 장소 닫기
+            </Button>
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
 

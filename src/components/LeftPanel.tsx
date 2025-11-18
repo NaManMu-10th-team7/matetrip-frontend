@@ -518,8 +518,8 @@ interface LeftPanelProps {
   onOptimizeRoute: (dayId: string) => void;
   visibleDayIds: Set<string>;
   onDayVisibilityChange: (dayId: string, isVisible: boolean) => void;
-  onMyItineraryVisibilityChange: () => void; // [수정] '내 일정' 전체 토글 핸들러 prop
-  onRecommendedItineraryVisibilityChange: () => void; // [수정] 'AI 추천' 전체 토글 핸들러 prop
+  onMyItineraryVisibilityChange: () => void;
+  onRecommendedItineraryVisibilityChange: () => void;
   hoveredPoiId: string | null;
   onGenerateAiPlan: () => void;
   isOptimizationProcessing: boolean;
@@ -527,8 +527,8 @@ interface LeftPanelProps {
   sendMessage: (message: string) => void;
   isChatConnected: boolean;
   onCardClick: (poi: any) => void;
-  setAiRecommendedPlaces: (places: AiPlace[]) => void;
-  aiRecommendedPlaces: AiPlace[];
+  setChatAiPlaces: (places: AiPlace[]) => void;
+  chatAiPlaces: AiPlace[];
 }
 
 const formatDuration = (seconds: number) => {
@@ -860,8 +860,8 @@ function ChatSidebar({
   workspaceId,
   onAddPoiToItinerary,
   onCardClick,
-  setAiRecommendedPlaces,
-  aiRecommendedPlaces,
+  setChatAiPlaces,
+  chatAiPlaces,
 }: {
   messages: ChatMessage[];
   sendMessage: (message: string) => void;
@@ -869,8 +869,8 @@ function ChatSidebar({
   workspaceId: string;
   onAddPoiToItinerary: (poi: Poi) => void;
   onCardClick: (poi: any) => void;
-  setAiRecommendedPlaces: (places: AiPlace[]) => void;
-  aiRecommendedPlaces: AiPlace[];
+  setChatAiPlaces: (places: AiPlace[]) => void;
+  chatAiPlaces: AiPlace[];
 }) {
   return (
     <ChatPanel
@@ -880,8 +880,8 @@ function ChatSidebar({
       workspaceId={workspaceId}
       onAddPoiToItinerary={onAddPoiToItinerary}
       onCardClick={onCardClick}
-      setAiRecommendedPlaces={setAiRecommendedPlaces}
-      aiRecommendedPlaces={aiRecommendedPlaces}
+      setChatAiPlaces={setChatAiPlaces}
+      chatAiPlaces={chatAiPlaces}
     />
   );
 }
@@ -913,8 +913,8 @@ export function LeftPanel({
   sendMessage,
   isChatConnected,
   onCardClick,
-  setAiRecommendedPlaces,
-  aiRecommendedPlaces,
+  setChatAiPlaces,
+  chatAiPlaces,
 }: LeftPanelProps) {
   const [isOptimizationModalOpen, setIsOptimizationModalOpen] = useState(false);
   const [optimizationDayId, setOptimizationDayId] = useState<string | null>(
@@ -1191,8 +1191,8 @@ export function LeftPanel({
           workspaceId={workspaceId}
           onAddPoiToItinerary={onAddRecommendedPoi}
           onCardClick={onCardClick}
-          setAiRecommendedPlaces={setAiRecommendedPlaces}
-          aiRecommendedPlaces={aiRecommendedPlaces}
+          setChatAiPlaces={setChatAiPlaces}
+          chatAiPlaces={chatAiPlaces}
         />
       </div>
       <OptimizationModal

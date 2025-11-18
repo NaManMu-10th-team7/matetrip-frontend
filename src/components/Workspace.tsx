@@ -88,7 +88,8 @@ export function Workspace({
   >({});
   const [isRecommendationOpen, setIsRecommendationOpen] = useState(false);
   const [isRecommendationLoading, setIsRecommendationLoading] = useState(true);
-  const [aiRecommendedPlaces, setAiRecommendedPlaces] = useState<AiPlace[]>([]);
+  const [itineraryAiPlaces, setItineraryAiPlaces] = useState<AiPlace[]>([]);
+  const [chatAiPlaces, setChatAiPlaces] = useState<AiPlace[]>([]);
   const [initialBoundsSet, setInitialBoundsSet] = useState(false);
 
   // [신규] '일정 추가' 모달 관련 상태
@@ -162,24 +163,24 @@ export function Workspace({
   };
 
   useEffect(() => {
-    if (lastMessage?.recommendedPlaces && !initialBoundsSet) {
-      setAiRecommendedPlaces(lastMessage.recommendedPlaces);
-      const map = mapRef.current;
-      if (map && lastMessage.recommendedPlaces.length > 0) {
-        isProgrammaticMove.current = true;
-        const bounds = new window.kakao.maps.LatLngBounds();
-        lastMessage.recommendedPlaces.forEach((place) => {
-          bounds.extend(
-            new window.kakao.maps.LatLng(place.latitude, place.longitude)
-          );
-        });
-        map.setBounds(bounds);
-        setInitialBoundsSet(true);
+    if (lastMessage?.recommendedPlaces) {
+      setChatAiPlaces(lastMessage.recommendedPlaces);
+      if (!initialBoundsSet) {
+        const map = mapRef.current;
+        if (map && lastMessage.recommendedPlaces.length > 0) {
+          isProgrammaticMove.current = true;
+          const bounds = new window.kakao.maps.LatLngBounds();
+          lastMessage.recommendedPlaces.forEach((place) => {
+            bounds.extend(
+              new window.kakao.maps.LatLng(place.latitude, place.longitude)
+            );
+          });
+          map.setBounds(bounds);
+          setInitialBoundsSet(true);
+        }
       }
-    } else if (lastMessage && !lastMessage.recommendedPlaces) {
-      setAiRecommendedPlaces([]);
     }
-  }, [lastMessage, initialBoundsSet]);
+  }, [lastMessage]);
 
   const [selectedPlace, setSelectedPlace] = useState<KakaoPlace | null>(null);
   const [activePoi, setActivePoi] = useState<Poi | null>(null);
@@ -279,7 +280,7 @@ export function Workspace({
         newRecommendedItinerary[virtualPlanDayId] = poisForDay;
       });
       setRecommendedItinerary(newRecommendedItinerary);
-      setAiRecommendedPlaces(allRecommendedPois);
+      setItineraryAiPlaces(allRecommendedPois);
     } catch (error) {
       console.error('Failed to generate AI plan:', error);
       setRecommendedItinerary({}); // 에러 시 기존 추천 초기화
@@ -883,10 +884,8 @@ export function Workspace({
             sendMessage={handleSendMessage}
             isChatConnected={isChatConnected}
             onCardClick={handlePoiClick} // 채팅 카드 클릭 핸들러
-            isRecommendationOpen={isRecommendationOpen}
-            setIsRecommendationOpen={setIsRecommendationOpen}
-            setAiRecommendedPlaces={setAiRecommendedPlaces}
-            aiRecommendedPlaces={aiRecommendedPlaces}
+            setChatAiPlaces={setChatAiPlaces}
+            chatAiPlaces={chatAiPlaces}
           />
 
           {/* AI 추천 일정 버튼 */}
@@ -939,8 +938,8 @@ export function Workspace({
               visibleDayIds={visibleDayIds} // [추가] 가시성 상태 전달
               initialCenter={initialMapCenter} // [신규] 초기 지도 중심 좌표 전달
               focusPlace={focusPlace} // [추가] focusPlace 전달
-              isRecommendationOpen={isRecommendationOpen}
-              recommendedPlaces={aiRecommendedPlaces}
+              itineraryAiPlaces={itineraryAiPlaces}
+              chatAiPlaces={chatAiPlaces}
               isProgrammaticMove={isProgrammaticMove}
             />
           </div>
