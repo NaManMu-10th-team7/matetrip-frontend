@@ -1,5 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Dialog, DialogContent, DialogTitle, DialogHeader } from './ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogHeader,
+  DialogClose,
+} from './ui/dialog';
 import { Button } from './ui/button';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import {
@@ -59,18 +65,26 @@ interface Review {
   createdAt: string;
 }
 
-function ProfileModalSkeleton() {
+function ProfileModalSkeleton({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   return (
-    <Dialog open onOpenChange={() => {}}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="max-w-4xl min-w-[900px] h-[80vh] p-0 overflow-hidden flex flex-col border-0"
         aria-describedby={undefined}
       >
         <DialogHeader className="flex flex-row items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-10 text-left">
           <div className="h-6 bg-gray-200 rounded w-48 animate-pulse" />
-          <Button variant="ghost" size="icon" className="h-9 w-9" disabled>
-            <X className="w-5 h-5" />
-          </Button>
+          <DialogClose asChild>
+            <Button variant="ghost" size="icon" className="h-9 w-9">
+              <X className="w-5 h-5" />
+            </Button>
+          </DialogClose>
         </DialogHeader>
 
         <div className="flex-1 p-6 space-y-6 overflow-y-auto bg-gray-50 no-scrollbar">
@@ -246,6 +260,19 @@ export function ProfileModal({
   useEffect(() => {
     if (open && userId) {
       fetchProfileData();
+    } else if (!open) {
+      // 모달이 닫힐 때 내부 상태를 초기화합니다.
+      // 닫기 애니메이션 시간을 고려하여 약간의 딜레이를 줍니다.
+      const timer = setTimeout(() => {
+        setIsLoading(true);
+        setProfile(null);
+        setError(null);
+        setActiveTab('overview');
+        setProfileImageUrl(null);
+        setTravelHistory([]);
+        setReviews([]);
+      }, 300);
+      return () => clearTimeout(timer);
     }
   }, [open, userId, fetchProfileData]);
 
@@ -256,6 +283,10 @@ export function ProfileModal({
   const handleCardClick = (post: Post) => {
     onViewPost(post.id);
   };
+
+  if (!open) {
+    return null;
+  }
 
   if (error) {
     return (
@@ -278,7 +309,7 @@ export function ProfileModal({
   }
 
   if (isLoading || !profile) {
-    return <ProfileModalSkeleton />;
+    return <ProfileModalSkeleton open={open} onOpenChange={onOpenChange} />;
   }
 
   const rawMannerTemperature =
@@ -304,14 +335,11 @@ export function ProfileModal({
             <DialogTitle className="text-gray-900 font-bold">
               {profile.nickname}님의 프로필
             </DialogTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9"
-              onClick={() => onOpenChange(false)}
-            >
-              <X className="w-5 h-5" />
-            </Button>
+            <DialogClose asChild>
+              <Button variant="ghost" size="icon" className="h-9 w-9">
+                <X className="w-5 h-5" />
+              </Button>
+            </DialogClose>
           </DialogHeader>
 
           <div className="flex-1 p-6 space-y-6 overflow-y-auto bg-gray-50 no-scrollbar">

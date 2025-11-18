@@ -22,7 +22,6 @@ export function EditPostModal({
   onClose,
   onSuccess,
 }: EditPostModalProps) {
-  //console.log('EditPostModal post.imageId:', post);
   const [formData, setFormData] = useState({
     title: post.title,
     content: post.content,
@@ -36,7 +35,7 @@ export function EditPostModal({
     useState<KeywordValue[]>(initialKeywords);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentImageId, setCurrentImageId] = useState<string | null>(
-    post.imageId ?? null //imageId는 따로 관리
+    post.imageId ?? null
   );
   const [remoteImageUrl, setRemoteImageUrl] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -62,7 +61,7 @@ export function EditPostModal({
 
     (async () => {
       try {
-        const response = await client.get<{ url: string }>(
+        const response = await client.get<{ url:string }>(
           `/binary-content/${currentImageId}/presigned-url`
         );
         if (!cancelled) {
@@ -90,8 +89,7 @@ export function EditPostModal({
   }, [imagePreview]);
 
   const displayImage = imagePreview ?? remoteImageUrl;
-  //displayImage는 먼저 imagePreview(방금 선택한 새 파일의 로컬 미리보기 URL)가 있으면 그걸 쓰고, 없으면
-  //  remoteImageUrl(기존 게시물이 갖고 있던 imageId로 받은 presigned URL)을 보여주는 순서
+
   const updateImagePreview = (nextUrl: string | null) => {
     setImagePreview((prev) => {
       if (prev && prev.startsWith('blob:')) {
@@ -109,7 +107,6 @@ export function EditPostModal({
     const file = event.target.files?.[0];
     if (!file) return;
     setPendingImageFile(file);
-    //기존꺼 지우고 새 이미지 미리보기 만들기
     updateImagePreview(URL.createObjectURL(file));
     event.target.value = '';
   };
@@ -203,11 +200,10 @@ export function EditPostModal({
 
     try {
       await client.patch(`/posts/${post.id}`, updatedPostData);
-      // alert('게시물이 성공적으로 수정되었습니다.'); // App.tsx에서 처리하도록 변경
       setPendingImageFile(null);
       updateImagePreview(null);
       setCurrentImageId(nextImageId ?? null);
-      onSuccess(); // 성공 콜백 호출
+      onSuccess();
     } catch (error) {
       console.error('Failed to update post:', error);
       if (axios.isAxiosError(error) && error.response?.status === 400) {
@@ -221,235 +217,235 @@ export function EditPostModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b sticky top-0 bg-white">
-          <h3 className="text-gray-900">게시물 수정</h3>
+        <div className="flex items-center justify-between p-5 border-b sticky top-0 bg-white rounded-t-2xl">
+          <h3 className="text-xl font-bold text-gray-900">게시물 수정</h3>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
           >
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-5 h-5 text-gray-600" />
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Cover Image */}
-          <div className="space-y-3">
-            <Label className="block">대표 이미지</Label>
-            <div className="relative h-48 rounded-2xl border border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center text-gray-400 overflow-hidden">
-              {displayImage ? (
-                <>
+        <div className="overflow-y-auto">
+          <form onSubmit={handleSubmit} className="p-6 space-y-8">
+            {/* Cover Image */}
+            <div className="space-y-3">
+              <Label className="text-base font-semibold text-gray-800">대표 이미지</Label>
+              <div className="relative h-56 rounded-xl border border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center text-gray-400 overflow-hidden">
+                {displayImage ? (
                   <img
                     src={displayImage}
                     alt="게시글 이미지 미리보기"
-                    className="inset-0 w-full h-full object-cover"
+                    className="absolute inset-0 w-full h-full object-cover"
                   />
-                </>
-              ) : (
-                <>
-                  <Upload className="w-10 h-10 text-gray-400 mb-3" />
-                  <p className="font-semibold text-gray-600">이미지 업로드</p>
-                </>
-              )}
-            </div>
-            <div className="flex flex-wrap justify-end gap-2">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleImageSelected}
-              />
-              <Button
-                type="button"
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
-                onClick={handleImageUploadClick}
-                disabled={isSubmitting}
-              >
-                {displayImage ? '이미지 수정' : '이미지 등록'}
-              </Button>
-              {displayImage && (
+                ) : (
+                  <>
+                    <Upload className="w-10 h-10 text-gray-400 mb-3" />
+                    <p className="font-semibold text-gray-600">이미지를 업로드 해주세요</p>
+                    <p className="text-sm text-gray-500 mt-1">최대 50MB 이하</p>
+                  </>
+                )}
+              </div>
+              <div className="flex flex-wrap justify-end gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageSelected}
+                />
                 <Button
                   type="button"
-                  variant="ghost"
-                  className="flex items-center gap-2 text-red-500 hover:text-red-600"
-                  onClick={handleRemoveImage}
-                  disabled={isSubmitting || isImageDeleting}
+                  variant="outline"
+                  className="font-semibold"
+                  onClick={handleImageUploadClick}
+                  disabled={isSubmitting}
                 >
-                  <Trash2 className="w-4 h-4" />
-                  이미지 제거
+                  {displayImage ? '이미지 변경' : '이미지 선택'}
                 </Button>
-              )}
+                {displayImage && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="font-semibold text-red-600 hover:text-red-700 hover:bg-red-50"
+                    onClick={handleRemoveImage}
+                    disabled={isSubmitting || isImageDeleting}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    이미지 제거
+                  </Button>
+                )}
+              </div>
             </div>
-            <p className="text-xs text-gray-500">
-              최대 50MB 이하의 JPG, PNG 이미지를 권장합니다.
-            </p>
-          </div>
-          {/* Title */}
-          <div>
-            <Label htmlFor="title">여행 제목</Label>
-            <Input
-              id="title"
-              value={formData.title}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, title: e.target.value }))
-              }
-              className="mt-2"
-              required
-            />
-          </div>
-
-          {/* Description */}
-          <div>
-            <Label htmlFor="description">상세 설명</Label>
-            <Textarea
-              id="description"
-              value={formData.content}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  content: e.target.value,
-                }))
-              }
-              className="mt-2 min-h-32"
-              required
-            />
-          </div>
-
-          {/* Date Range */}
-          <div className="grid grid-cols-2 gap-4">
+            
+            {/* Title */}
             <div>
-              <Label htmlFor="startDate" className="flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                시작일
-              </Label>
+              <Label htmlFor="title" className="text-base font-semibold text-gray-800">여행 제목</Label>
               <Input
-                id="startDate"
-                type="date"
-                value={formData.startDate}
+                id="title"
+                value={formData.title}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, title: e.target.value }))
+                }
+                className="mt-2 text-base"
+                required
+              />
+            </div>
+
+            {/* Description */}
+            <div>
+              <Label htmlFor="description" className="text-base font-semibold text-gray-800">상세 설명</Label>
+              <Textarea
+                id="description"
+                value={formData.content}
                 onChange={(e) =>
                   setFormData((prev) => ({
                     ...prev,
-                    startDate: e.target.value,
+                    content: e.target.value,
                   }))
                 }
-                className="mt-2"
+                className="mt-2 min-h-36 text-base"
                 required
               />
             </div>
-            <div>
-              <Label htmlFor="endDate" className="flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                종료일
-              </Label>
-              <Input
-                id="endDate"
-                type="date"
-                value={formData.endDate}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, endDate: e.target.value }))
-                }
-                className="mt-2"
-                required
-              />
-            </div>
-          </div>
 
-          {/* Location */}
-          <div>
-            <Label htmlFor="location" className="flex items-center gap-2">
-              <MapPin className="w-4 h-4" />
-              여행지
-            </Label>
-            <Input
-              id="location"
-              value={formData.location}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, location: e.target.value }))
-              }
-              className="mt-2"
-              required
-            />
-          </div>
-
-          {/* Max Participants */}
-          <div>
-            <Label
-              htmlFor="maxParticipants"
-              className="flex items-center gap-2"
-            >
-              <Users className="w-4 h-4" />
-              최대 인원 (본인 포함)
-            </Label>
-            <Input
-              id="maxParticipants"
-              type="number"
-              min="2"
-              max="10"
-              value={formData.maxParticipants}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  maxParticipants: parseInt(e.target.value),
-                }))
-              }
-              className="mt-2"
-              required
-            />
-          </div>
-
-          {/* Keywords */}
-          <div>
-            <Label className="flex items-center gap-2 mb-3">
-              <Tag className="w-4 h-4" />
-              여행 키워드
-            </Label>
-            <div className="flex flex-wrap gap-2">
-              {KEYWORD_OPTIONS.map((keyword) => (
-                <Badge
-                  key={keyword.value}
-                  variant={
-                    selectedKeywords.includes(keyword.value)
-                      ? 'default'
-                      : 'outline'
+            {/* Date Range */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="startDate" className="flex items-center gap-2 text-base font-semibold text-gray-800">
+                  <Calendar className="w-5 h-5 text-gray-500" />
+                  시작일
+                </Label>
+                <Input
+                  id="startDate"
+                  type="date"
+                  value={formData.startDate}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      startDate: e.target.value,
+                    }))
                   }
-                  className={`cursor-pointer transition-colors ${
-                    selectedKeywords.includes(keyword.value)
-                      ? 'bg-blue-600 hover:bg-blue-700'
-                      : 'hover:bg-gray-100'
-                  }`}
-                  onClick={() => toggleKeyword(keyword.value)}
-                >
-                  {keyword.label}
-                </Badge>
-              ))}
+                  className="mt-2 text-base"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="endDate" className="flex items-center gap-2 text-base font-semibold text-gray-800">
+                  <Calendar className="w-5 h-5 text-gray-500" />
+                  종료일
+                </Label>
+                <Input
+                  id="endDate"
+                  type="date"
+                  value={formData.endDate}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, endDate: e.target.value }))
+                  }
+                  className="mt-2 text-base"
+                  required
+                />
+              </div>
             </div>
-          </div>
-        </form>
+
+            {/* Location & Max Participants */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="location" className="flex items-center gap-2 text-base font-semibold text-gray-800">
+                  <MapPin className="w-5 h-5 text-gray-500" />
+                  여행지
+                </Label>
+                <Input
+                  id="location"
+                  value={formData.location}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, location: e.target.value }))
+                  }
+                  className="mt-2 text-base"
+                  required
+                />
+              </div>
+              <div>
+                <Label
+                  htmlFor="maxParticipants"
+                  className="flex items-center gap-2 text-base font-semibold text-gray-800"
+                >
+                  <Users className="w-5 h-5 text-gray-500" />
+                  최대 인원
+                </Label>
+                <Input
+                  id="maxParticipants"
+                  type="number"
+                  min="2"
+                  max="10"
+                  value={formData.maxParticipants}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      maxParticipants: parseInt(e.target.value),
+                    }))
+                  }
+                  className="mt-2 text-base"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Keywords */}
+            <div>
+              <Label className="flex items-center gap-2 mb-3 text-base font-semibold text-gray-800">
+                <Tag className="w-5 h-5 text-gray-500" />
+                여행 키워드
+              </Label>
+              <div className="flex flex-wrap gap-2">
+                {KEYWORD_OPTIONS.map((keyword) => (
+                  <Badge
+                    key={keyword.value}
+                    variant={
+                      selectedKeywords.includes(keyword.value)
+                        ? 'default'
+                        : 'outline'
+                    }
+                    className={`cursor-pointer transition-all duration-200 text-sm font-semibold ${
+                      selectedKeywords.includes(keyword.value)
+                        ? 'bg-black text-white hover:bg-gray-800'
+                        : 'text-gray-600 border-gray-300 hover:bg-gray-100 hover:border-gray-400'
+                    }`}
+                    onClick={() => toggleKeyword(keyword.value)}
+                  >
+                    {keyword.label}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </form>
+        </div>
 
         {errorMessage && (
-          <div className="px-6 pb-2 text-sm text-red-500 text-right">
+          <div className="px-6 pb-4 text-sm font-medium text-red-600 text-right">
             {errorMessage}
           </div>
         )}
 
         {/* Footer */}
-        <div className="flex gap-3 p-6 border-t sticky bottom-0 bg-white">
+        <div className="flex gap-3 p-4 border-t sticky bottom-0 bg-gray-50 rounded-b-2xl">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
-            className="flex-1"
+            className="flex-1 font-bold text-lg"
             disabled={isSubmitting}
           >
             취소
           </Button>
           <Button
             onClick={handleSubmit}
-            className="flex-1 bg-blue-600 hover:bg-blue-700"
+            className="flex-1 bg-black hover:bg-gray-800 text-white font-bold text-lg"
             disabled={isSubmitting}
           >
             {isSubmitting ? '수정 중...' : '수정 완료'}
