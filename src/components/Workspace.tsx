@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, GripVertical } from 'lucide-react';
+import { GripVertical } from 'lucide-react';
 import html2canvas from 'html2canvas-pro';
 import jsPDF from 'jspdf';
 import {
@@ -80,7 +80,7 @@ export function Workspace({
   planDayDtos,
   onEndTrip,
 }: WorkspaceProps) {
-  const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
+  const [isLeftPanelOpen, _setIsLeftPanelOpen] = useState(true);
 
   // [신규] AI 추천 일정 관련 상태
   const [recommendedItinerary, setRecommendedItinerary] = useState<
@@ -903,17 +903,6 @@ export function Workspace({
                 : '0px',
             }}
           ></div>
-          <button
-            onClick={() => setIsLeftPanelOpen(!isLeftPanelOpen)}
-            className="absolute top-1/2 -translate-y-1/2 z-20 w-6 h-12 bg-white hover:bg-gray-100 transition-colors flex items-center justify-center border border-gray-300 rounded-r-md shadow-md"
-            style={{ left: isLeftPanelOpen ? '384px' : '0' }}
-          >
-            {isLeftPanelOpen ? (
-              <ChevronLeft className="w-4 h-4 text-gray-600" />
-            ) : (
-              <ChevronRight className="w-4 h-4 text-gray-600" />
-            )}
-          </button>
 
           <div className="flex-1 bg-gray-100">
             <MapPanel
