@@ -93,7 +93,7 @@ export function Sidebar({
               <MessageSquare className="w-5 h-5 shrink-0" />
               {isExpanded && (
                 <span className="font-normal text-base whitespace-nowrap">
-                  AI Chat
+                  MAIN
                 </span>
               )}
             </button>
