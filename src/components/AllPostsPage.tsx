@@ -85,12 +85,10 @@ export function AllPostsPage({
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      handleSearch({ title: searchQuery });
-    } else {
-      // 검색어가 비어있으면 전체 목록을 다시 가져온다.
-      handleSearch();
-    }
+    const trimmed = searchQuery.trim();
+    // 검색어가 없으면 목록을 다시 불러오지 않는다.
+    if (!trimmed) return;
+    handleSearch({ title: trimmed });
   };
 
   // 필터 외부 클릭 시 닫기
