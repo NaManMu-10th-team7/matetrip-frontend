@@ -1,4 +1,10 @@
-import { useState, type FormEvent, useRef, useEffect, useCallback } from 'react';
+import {
+  useState,
+  type FormEvent,
+  useRef,
+  useEffect,
+  useCallback,
+} from 'react';
 import axios from 'axios';
 import {
   X,
@@ -19,6 +25,7 @@ import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { useAuthStore } from '../store/authStore';
 import client, { API_BASE_URL } from '../api/client';
 import { KEYWORD_OPTIONS, type KeywordValue } from '../utils/keyword';
+import { toast } from 'sonner';
 
 interface CreatePostModalProps {
   onClose: () => void;
@@ -217,7 +224,8 @@ export function CreatePostModal({
 
       try {
         await createPost(postData);
-        alert('동행 모집 게시글이 작성되었습니다.');
+        toast.success('동행 모집 게시글이 작성되었습니다.');
+
         onClose(); // 성공 시 모달 닫기
         onPostCreated?.(); // 부모 컴포넌트에 알림
       } catch (error) {
@@ -235,14 +243,7 @@ export function CreatePostModal({
         setIsLoading(false);
       }
     },
-    [
-      user,
-      formData,
-      pendingImageFile,
-      selectedKeywords,
-      onClose,
-      onPostCreated,
-    ]
+    [user, formData, pendingImageFile, selectedKeywords, onClose, onPostCreated]
   );
 
   return (
@@ -410,7 +411,10 @@ export function CreatePostModal({
                     }
                     className="cursor-pointer"
                     onClick={() =>
-                      setFormData((prev) => ({ ...prev, location: region.value }))
+                      setFormData((prev) => ({
+                        ...prev,
+                        location: region.value,
+                      }))
                     }
                   >
                     {region.value}

@@ -2,9 +2,6 @@ import { useEffect, useState, type UIEvent } from 'react';
 import { Bell } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { useNotificationStore } from '../store/useNotificationStore';
-import { useAuthStore } from '../store/authStore';
-import { toast } from 'sonner';
-import { API_BASE_URL } from '../api/client';
 
 const formatTimeAgo = (date: string) => {
   const now = new Date();
@@ -73,67 +70,6 @@ export function NotificationPanel() {
       }
     }
   };
-
-  const { user } = useAuthStore();
-  useEffect(() => {
-    if (!user?.userId) return;
-
-    const eventSourceUrl = `${API_BASE_URL}/notifications/connect/`;
-    const eventSource = new EventSource(eventSourceUrl, {
-      withCredentials: true,
-    });
-
-    eventSource.onopen = () => {
-      console.log('[SSE] 알림 서비스에 연결되었습니다.');
-    };
-
-    eventSource.addEventListener('new_notification', (event) => {
-      try {
-        const notificationData = JSON.parse(event.data);
-        const uniqueToastId = `notification-${Date.now()}`;
-        toast.info(
-          <div
-            onClick={() => toast.dismiss(uniqueToastId)}
-            style={{ cursor: 'pointer' }}
-          >
-            {notificationData.content}
-          </div>,
-          { id: uniqueToastId, duration: 5000 }
-        );
-      } catch (error) {
-        console.error('[SSE] 새 알림 처리 중 오류 발생:', error);
-      }
-    });
-
-    eventSource.addEventListener('unread-update', (event) => {
-      try {
-        const { unreadCount } = JSON.parse(event.data);
-        useNotificationStore.getState().setUnreadCount(unreadCount);
-      } catch (error) {
-        console.error(
-          '[SSE] 읽지 않은 알림 개수 업데이트 중 오류 발생:',
-          error
-        );
-      }
-    });
-
-    eventSource.addEventListener('list-stale', () => {
-      try {
-        useNotificationStore.getState().fetchInitialNotifications();
-      } catch (error) {
-        console.error('[SSE] 알림 목록 갱신 중 오류 발생:', error);
-      }
-    });
-
-    eventSource.onerror = () => {
-      console.error('[SSE] 오류가 발생하여 연결을 종료합니다.');
-      eventSource.close();
-    };
-
-    return () => {
-      eventSource.close();
-    };
-  }, [user?.userId]);
 
   return (
     <Popover onOpenChange={setIsOpen}>

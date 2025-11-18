@@ -28,35 +28,50 @@ export const NotificationListener = () => {
       console.log('[SSE] 연결이 성공적으로 열렸습니다.', event);
     };
 
-    // 5. 서버에서 'new_notification' (서비스에서 정한 type) 이벤트를 보냈을 때
-    eventSource.addEventListener('new_notification', (event) => {
-      try {
-        // event.data는 서버에서 보낸 JSON 문자열
-        const notificationData = JSON.parse(event.data);
+    // 토스트 알림을 생성하는 공통 핸들러
+    const handleToast = (
+      content: string,
+      toastFn:
+        | typeof toast.success
+        | typeof toast.error
+        | typeof toast.info
+        | typeof toast.warning
+    ) => {
+      const uniqueToastId = `notification-${Date.now()}`;
+      toastFn(
+        <div
+          onClick={() => toast.dismiss(uniqueToastId)}
+          style={{ cursor: 'pointer' }}
+        >
+          {content}
+        </div>,
+        { id: uniqueToastId, duration: 5000 }
+      );
+    };
+    // 5. 백엔드에서 보내는 이벤트 타입별로 리스너 등록
+    const addNotificationListener = (
+      eventType: string,
+      toastFn:
+        | typeof toast.success
+        | typeof toast.error
+        | typeof toast.info
+        | typeof toast.warning
+    ) => {
+      eventSource.addEventListener(eventType, (event) => {
+        try {
+          const notificationData = JSON.parse(event.data);
+          console.log(`[SSE] '${eventType}' 알림 수신:`, notificationData);
+          handleToast(notificationData.content, toastFn);
+        } catch (error) {
+          console.error(`[SSE] '${eventType}' 데이터 파싱 실패:`, error);
+        }
+      });
+    };
 
-        console.log('[SSE] 새 알림 수신 : ', notificationData);
-
-        // 실제 알림 UI를 띄움
-        const uniqueToastId = `notification-${Date.now()}`;
-
-        toast.info(
-          <div
-            onClick={() => toast.dismiss(uniqueToastId)}
-            style={{
-              cursor: 'pointer',
-            }}
-          >
-            {notificationData.content}
-          </div>,
-          {
-            id: uniqueToastId,
-            duration: 5000,
-          }
-        );
-      } catch (error) {
-        console.error('[SSE] 알림 데이터 파싱 실패:', error);
-      }
-    });
+    addNotificationListener('notification_success', toast.success);
+    addNotificationListener('notification_error', toast.error);
+    addNotificationListener('notification_warning', toast.warning);
+    addNotificationListener('notification_info', toast.info);
 
     // 7. 뱃지 갱신 이벤트
     eventSource.addEventListener('unread-update', (event) => {

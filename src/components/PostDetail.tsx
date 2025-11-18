@@ -40,6 +40,7 @@ import client from '../api/client';
 import { type Post, type Participation } from '../types/post';
 import { translateKeyword } from '../utils/keyword';
 import { useAuthStore } from '../store/authStore';
+import { toast } from 'sonner';
 
 interface PostDetailProps {
   postId: string;
@@ -226,11 +227,10 @@ export function PostDetail({
   const handleApply = async () => {
     try {
       await client.post(`/posts/${postId}/participations`);
-      alert('동행 신청이 완료되었습니다.');
       await fetchPostDetail();
     } catch (err) {
       console.error('Failed to apply for post:', err);
-      alert('동행 신청 중 오류가 발생했습니다.');
+      toast.warning('동행 신청 중 오류가 발생했습니다.');
     }
   };
 
@@ -239,11 +239,10 @@ export function PostDetail({
       await client.patch(`/posts/${postId}/participations/${participationId}`, {
         status: '승인',
       });
-      alert('신청을 수락했습니다.');
       await fetchPostDetail();
     } catch (err) {
       console.error('Failed to accept request:', err);
-      alert('요청 수락 중 오류가 발생했습니다.');
+      toast.warning('요청 수락 중 오류가 발생했습니다.');
     }
   };
 
@@ -252,11 +251,10 @@ export function PostDetail({
       await client.patch(`/posts/${postId}/participations/${participationId}`, {
         status: '거절',
       });
-      alert('신청을 거절했습니다.');
       await fetchPostDetail();
     } catch (err) {
       console.error('Failed to reject request:', err);
-      alert('요청 거절 중 오류가 발생했습니다.');
+      toast.warning('요청 거절 중 오류가 발생했습니다.');
     }
   };
 
@@ -274,7 +272,7 @@ export function PostDetail({
       await fetchPostDetail();
     } catch (err) {
       console.error('Failed to cancel application:', err);
-      alert('신청 취소 중 오류가 발생했습니다.');
+      toast.warning('신청 취소 중 오류가 발생했습니다.');
     } finally {
       setCancelModalOpen(false);
     }
@@ -288,7 +286,7 @@ export function PostDetail({
       setShowDeleteSuccessAlert(true); // 삭제 성공 알림 표시
     } catch (err) {
       console.error('Failed to delete post:', err);
-      alert('게시글 삭제 중 오류가 발생했습니다.');
+      toast.warning('게시글 삭제 중 오류가 발생했습니다.');
       setDeleteModalOpen(false);
     }
   };
