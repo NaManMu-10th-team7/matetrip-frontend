@@ -21,6 +21,10 @@ export const CATEGORY_INFO = {
   '추천코스': { name: '추천코스', color: '#E91E63' }, // 선명한 핑크색 (Pink)
   '자연': { name: '자연', color: '#4CAF50' }, // 선명한 녹색 (Green)
   '숙박': { name: '숙박', color: '#74B9FF' },
+<<<<<<< HEAD
+=======
+  '음식': { name: '음식', color: '#FF7043' }, // 선명한 주황색 (Deep Orange)
+>>>>>>> 3fc95dad540d8621dad805913080d664114b0f3c
   '기타': { name: '기타', color: '#9E9E9E' }, // 회색 (Grey)
 } as const;
 
