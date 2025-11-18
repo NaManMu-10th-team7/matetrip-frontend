@@ -170,6 +170,7 @@ export function Workspace({
   const [selectedPlace, setSelectedPlace] = useState<KakaoPlace | null>(null);
   const [activePoi, setActivePoi] = useState<Poi | null>(null);
   const mapRef = useRef<kakao.maps.Map>(null);
+  const isProgrammaticMove = useRef(false);
   // [추가] 경로 최적화를 트리거하기 위한 상태
   const [optimizingDayId, setOptimizingDayId] = useState<string | null>(null);
   // [추가] 최적화 진행 중 상태
@@ -438,10 +439,12 @@ export function Workspace({
   const handlePoiClick = (poi: AiPlace) => {
     const map = mapRef.current;
     if (!map) return;
+    isProgrammaticMove.current = true;
     const moveLatLon = new window.kakao.maps.LatLng(
       poi.latitude,
       poi.longitude
     );
+    map.setLevel(5);
     map.panTo(moveLatLon);
   };
 
@@ -913,6 +916,7 @@ export function Workspace({
               recommendedPlaces={
                 messages[messages.length - 1]?.recommendedPlaces
               }
+              isProgrammaticMove={isProgrammaticMove}
             />
           </div>
         </div>

@@ -91,6 +91,7 @@ interface MapPanelProps {
   isRecommendationOpen: boolean;
   setIsRecommendationOpen: (isOpen: boolean) => void;
   recommendedPlaces: AiPlace[] | undefined;
+  isProgrammaticMove: React.MutableRefObject<boolean>;
 }
 
 export interface PlaceMarkerProps {
@@ -749,6 +750,7 @@ export function MapPanel({
   isRecommendationOpen,
   setIsRecommendationOpen,
   recommendedPlaces,
+  isProgrammaticMove,
 }: MapPanelProps) {
   const defaultCenter = { lat: 33.450701, lng: 126.570667 }; // 제주도 기본 위치
   const [mapInstance, setMapInstance] = useState<kakao.maps.Map | null>(null);
@@ -1496,6 +1498,7 @@ export function MapPanel({
 
   useEffect(() => {
     if (mapInstance && recommendedPlaces && recommendedPlaces.length > 0) {
+      isProgrammaticMove.current = true;
       const bounds = new window.kakao.maps.LatLngBounds();
       recommendedPlaces.forEach((place) => {
         bounds.extend(
@@ -1504,7 +1507,7 @@ export function MapPanel({
       });
       mapInstance.setBounds(bounds);
     }
-  }, [mapInstance, recommendedPlaces]);
+  }, [mapInstance, recommendedPlaces, isProgrammaticMove]);
 
   return (
     <div style={{ width: '100%', height: '100%' }}>
@@ -1540,12 +1543,11 @@ export function MapPanel({
             setMapInstance(map);
           }
         }}
-        onCenterChanged={(map) => {
-          // 지도 중심이 변경될 때마다 호출
-          handleMapBoundsChanged(map);
-        }}
-        onZoomChanged={(map) => {
-          // 줌 레벨이 변경될 때마다 호출
+        onIdle={(map) => {
+          if (isProgrammaticMove.current) {
+            map.relayout();
+            isProgrammaticMove.current = false;
+          }
           handleMapBoundsChanged(map);
         }}
         onClick={(_map, mouseEvent) => {
