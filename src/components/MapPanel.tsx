@@ -107,7 +107,7 @@ interface MapPanelProps {
     callback: (places: any[]) => void
   ) => void;
   isRecommendationOpen: boolean;
-  setIsRecommendationOpen: (isOpen: boolean) => void;
+  // setIsRecommendationOpen: (isOpen: boolean) => void; // isRecommendationOpen 상태만 필요하므로 제거
   recommendedPlaces: AiPlace[] | undefined;
   isProgrammaticMove: React.MutableRefObject<boolean>;
 }
@@ -768,6 +768,7 @@ export function MapPanel({
   initialCenter, // props로 받음
   focusPlace, // [추가] focusPlace prop
   recommendedPlaces,
+  isRecommendationOpen, // [추가] 채팅창 열림/닫힘 상태
   isProgrammaticMove,
 }: MapPanelProps) {
   const defaultCenter = { lat: 33.450701, lng: 126.570667 }; // 제주도 기본 위치
@@ -842,6 +843,17 @@ export function MapPanel({
       mapInstance.panTo(newCenter);
     }
   }, [mapInstance, initialCenter]);
+
+  // [추가] 채팅창(isRecommendationOpen) 상태가 변경될 때 지도를 다시 그리도록 합니다.
+  useEffect(() => {
+    if (mapInstance) {
+      // transition 효과가 끝난 후 relayout을 호출하기 위해 약간의 지연을 줍니다.
+      const timer = setTimeout(() => {
+        mapInstance.relayout();
+      }, 300); // LeftPanel의 transition duration과 동일하게 설정
+      return () => clearTimeout(timer);
+    }
+  }, [isRecommendationOpen, mapInstance]);
 
   useEffect(() => {
     if (!mapInstance) return;

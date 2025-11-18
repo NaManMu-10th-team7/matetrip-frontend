@@ -1,11 +1,5 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
-import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  GripVertical,
-} from 'lucide-react';
+import { ChevronLeft, ChevronRight, GripVertical } from 'lucide-react';
 import html2canvas from 'html2canvas-pro';
 import jsPDF from 'jspdf';
 import {
@@ -18,7 +12,6 @@ import {
 import { arrayMove } from '@dnd-kit/sortable';
 import { MapPanel } from './MapPanel';
 import type { KakaoPlace, RouteSegment, ChatMessage } from '../types/map';
-import { Button } from './ui/button';
 import type { PlanDayDto } from '../types/workspace';
 import { LeftPanel } from './LeftPanel';
 import { PlanRoomHeader } from './PlanRoomHeader';
@@ -906,24 +899,7 @@ export function Workspace({
                   : '384px'
                 : '0px',
             }}
-          >
-            <Button
-              variant={isRecommendationOpen ? 'default' : 'outline'}
-              className={`h-14 w-auto px-4 shadow-lg rounded-none rounded-tr-lg flex items-center gap-2 ${
-                isRecommendationOpen
-                  ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white border-transparent shadow-indigo-500/50'
-                  : 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white border-transparent shadow-indigo-500/50'
-              }`}
-              onClick={() => setIsRecommendationOpen(!isRecommendationOpen)}
-            >
-              <span className="text-sm font-semibold">채팅</span>
-              {isRecommendationOpen ? (
-                <ChevronsLeft className="w-5 h-5" />
-              ) : (
-                <ChevronsRight className="w-5 h-5" />
-              )}
-            </Button>
-          </div>
+          ></div>
           <button
             onClick={() => setIsLeftPanelOpen(!isLeftPanelOpen)}
             className="absolute top-1/2 -translate-y-1/2 z-20 w-6 h-12 bg-white hover:bg-gray-100 transition-colors flex items-center justify-center border border-gray-300 rounded-r-md shadow-md"
@@ -964,7 +940,6 @@ export function Workspace({
               initialCenter={initialMapCenter} // [신규] 초기 지도 중심 좌표 전달
               focusPlace={focusPlace} // [추가] focusPlace 전달
               isRecommendationOpen={isRecommendationOpen}
-              setIsRecommendationOpen={setIsRecommendationOpen}
               recommendedPlaces={aiRecommendedPlaces}
               isProgrammaticMove={isProgrammaticMove}
             />
