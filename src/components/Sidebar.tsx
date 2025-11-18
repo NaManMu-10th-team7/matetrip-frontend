@@ -59,7 +59,10 @@ export function Sidebar({
       >
         {/* Logo Section */}
         <div className="border-b border-gray-200 px-6 py-6 h-[81px] flex items-center">
-          <div className="flex items-center gap-2">
+          <button 
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+          >
             <div className="w-8 h-8 bg-[#101828] rounded-[10px] flex items-center justify-center shrink-0">
               <Map className="w-5 h-5 text-white" />
             </div>
@@ -71,7 +74,7 @@ export function Sidebar({
                 MateTrip
               </span>
             )}
-          </div>
+          </button>
         </div>
 
       {/* Navigation Menu */}
