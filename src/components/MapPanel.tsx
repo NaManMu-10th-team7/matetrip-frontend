@@ -1614,18 +1614,27 @@ export function MapPanel({
         ))}
 
         {/* AI 추천 장소 강조 효과 */}
-        {recommendedPlaces?.map((place) => (
-          <CustomOverlayMap
-            key={`rec-highlight-${place.id}`}
-            position={{ lat: place.latitude, lng: place.longitude }}
-            xAnchor={0.5}
-            yAnchor={0.93}
-            zIndex={0}
-            clickable={false}
-          >
-            <div className="w-16 h-16 rounded-full border-4 border-purple-500 bg-purple-500/20 animate-pulse pointer-events-none" />
-          </CustomOverlayMap>
-        ))}
+        {recommendedPlaces?.map((place) => {
+          const dayId = recommendedPoiMap.get(place.id);
+          const isVisible = dayId ? visibleDayIds.has(dayId) : false;
+
+          if (!isVisible) {
+            return null;
+          }
+
+          return (
+            <CustomOverlayMap
+              key={`rec-highlight-${place.id}`}
+              position={{ lat: place.latitude, lng: place.longitude }}
+              xAnchor={0.5}
+              yAnchor={0.93}
+              zIndex={0}
+              clickable={false}
+            >
+              <div className="w-16 h-16 rounded-full border-4 border-purple-500 bg-purple-500/20 animate-pulse pointer-events-none" />
+            </CustomOverlayMap>
+          );
+        })}
 
         {/* 지도 클릭 물결 효과 렌더링 */}
         {clickEffects.map((effect) => (
