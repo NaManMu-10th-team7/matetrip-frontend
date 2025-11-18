@@ -25,51 +25,6 @@ interface MainPageProps {
   fetchTrigger: number;
 }
 
-const REGION_CATEGORIES = [
-  {
-    id: 1,
-    name: '제주도',
-    image:
-      'https://images.unsplash.com/photo-1614088459293-5669fadc3448?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHx0cmF2ZWwlMjBkZXN0aW5hdGlvbnxlbnwxfHx8fDE3NjE4NjQwNzB8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    description: '힐링 여행의 성지',
-  },
-  {
-    id: 2,
-    name: '부산',
-    image:
-      'https://images.unsplash.com/photo-1665231342828-229205867d94?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxiZWFjaCUyMHBhcmFhZGlzZfGVufDF8fHx8MTc2MTg4Mzg2MHww&ixlib=rb-4.1.0&q=80&w=1080',
-    description: '바다와 도시의 조화',
-  },
-  {
-    id: 3,
-    name: '서울',
-    image:
-      'https://images.unsplash.com/photo-1597552661064-af143a5f3bee?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxzZW91bCUyMGtvcmVhfGVufDF8fHx8MTc2MTk4MjQzNHww&ixlib=rb-4.1.0&q=80&w=1080',
-    description: '트렌디한 도심 여행',
-  },
-  {
-    id: 4,
-    name: '경주',
-    image:
-      'https://images.unsplash.com/photo-1668850443435-c01eec56c4e5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxnYnllb25namUlMjBrb3JlYXxlbnwxfHx8fDE3NjE5ODI0MzR8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    description: '역사 문화 탐방',
-  },
-  {
-    id: 5,
-    name: '강릉',
-    image:
-      'https://images.unsplash.com/photo-1684042229029-8a99193a8e4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxnYW5nbmV1bmclMjBrb3JlYXxlbnwxfHx8fDE3NjE5ODI0MzV8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    description: '동해안의 낭만',
-  },
-  {
-    id: 6,
-    name: '전주',
-    image:
-      'https://images.unsplash.com/photo-1520645521318-f03a12f0e67?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHxjaXR5JTIwdHJhdmVsfGVufDF8fHx8MTc2MTkxMjEzMXww&ixlib=rb-4.1.0&q=80&w=1080',
-    description: '맛집 투어의 메카',
-  },
-];
-
 const normalizeOverlapText = (values?: unknown): string | undefined => {
   if (!values) {
     return undefined;
@@ -292,47 +247,6 @@ export function MainPage({
     };
   }, [matches, posts]);
 
-  // const normalizedFilters = {
-  //   startDate: startDate || undefined,
-  //   endDate: endDate || undefined,
-  //   keyword: selectedKeyword || undefined,
-  // };
-
-  // const runSearch = () => {
-  //   const titleQuery = searchQuery.trim();
-  //   const payload = {
-  //     ...normalizedFilters,
-  //     title: titleQuery || undefined,
-  //   };
-  //   if (
-  //     !payload.title &&
-  //     !payload.startDate &&
-  //     !payload.endDate &&
-  //     !payload.keyword
-  //   ) {
-  //     return;
-  //   }
-  //   onSearch(payload);
-  // };
-
-  // const handleFilterApply = () => {
-  //   runSearch();
-  //   setIsFilterOpen(false);
-  // };
-
-  // const handleFilterReset = () => {
-  //   setStartDate('');
-  //   setEndDate('');
-  //   setSelectedKeyword('');
-  // };
-
-  // const isFilterActive = Boolean(startDate || endDate || selectedKeyword);
-
-  // const handleSearchSubmit = (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   runSearch();
-  // };
-
   const handleCardClick = (post: Post) => {
     if (!isLoggedIn) {
       window.location.href = '/login';
@@ -502,44 +416,9 @@ export function MainPage({
             <MatchingCarousel
               posts={recommendedPosts}
               matchingInfoByPostId={matchingInfoByPostId}
-              // : featuredItems.slice(0, 10).reduce(
-              //     (acc, post, index) => {
-              //       acc[post.id] = generateMockMatchingInfo(index);
-              //       return acc;
-              //     },
-              //     {} as Record<string, MatchingInfo>
-              //   )
-
               onCardClick={handleCardClick}
             />
           )}
-        </section>
-        {/* Region Categories Section */}
-        <section>
-          <div className="flex items-center gap-2 mb-6">
-            <MapPin className="w-5 h-5 text-blue-600" />
-            <h2 className="text-xl font-bold text-gray-900">인기 여행지</h2>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {REGION_CATEGORIES.map((region) => (
-              <button
-                key={region.id}
-                onClick={() => onSearch({ location: region.name })}
-                className="group relative aspect-[3/4] rounded-xl overflow-hidden hover:shadow-lg transition-all"
-              >
-                <ImageWithFallback
-                  src={region.image}
-                  alt={region.name}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                  <h3 className="mb-1">{region.name}</h3>
-                  <p className="text-xs text-gray-200">{region.description}</p>
-                </div>
-              </button>
-            ))}
-          </div>
         </section>
       </div>
     </div>
