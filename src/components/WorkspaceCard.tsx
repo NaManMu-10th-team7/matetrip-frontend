@@ -4,7 +4,6 @@ import { MapPin, Calendar, Users } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { translateKeyword } from '../utils/keyword';
 import type { Post } from '../types/post';
-import { API_BASE_URL } from '../api/client';
 import client from '../api/client';
 import { useAuthStore } from '../store/authStore';
 
@@ -198,7 +197,7 @@ export function WorkspaceCard({
       onClick={onClick}
     >
       {/* 이미지 영역과 키워드 */}
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3 relative">
         {/* 커버 이미지 */}
         <div className="h-[252px] rounded-2xl overflow-hidden relative">
           <ImageWithFallback
@@ -236,7 +235,9 @@ export function WorkspaceCard({
           )} */}
         </div>
         {/* 상태 배지 */}
-        {(status === '모집중' || status === '완료') && (
+        {(status === '모집중' ||
+          status === '모집완료' ||
+          status === '완료') && (
           <Badge
             className="absolute top-4 right-4 z-10 px-3 py-1 text-sm font-semibold"
             variant={status === '모집중' ? 'default' : 'secondary'}
@@ -303,19 +304,6 @@ export function WorkspaceCard({
           </span>
         </div>
       </div>
-
-      {/* 상태 배지 - 우측 상단 */}
-      {status && (
-        <div
-          className={`absolute top-3 right-3 px-3 py-1 rounded-lg text-xs font-medium ${
-            status === '모집중'
-              ? 'bg-[#101828] text-white'
-              : 'bg-gray-100 text-[#101828]'
-          }`}
-        >
-          {status}
-        </div>
-      )}
     </div>
   );
 }
