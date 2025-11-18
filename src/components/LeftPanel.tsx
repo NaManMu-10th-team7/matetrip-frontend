@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import { usePlaceStore } from '../store/placeStore'; // [추가] 장소 캐시를 사용하기 위해 import
-import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 import { SimpleToggle } from './ui/SimpleToggle';
 import {
   ListOrdered,
@@ -528,8 +527,6 @@ interface LeftPanelProps {
   sendMessage: (message: string) => void;
   isChatConnected: boolean;
   onCardClick: (poi: any) => void;
-  isRecommendationOpen: boolean;
-  setIsRecommendationOpen: (isOpen: boolean) => void;
   setAiRecommendedPlaces: (places: AiPlace[]) => void;
   aiRecommendedPlaces: AiPlace[];
 }
@@ -789,7 +786,7 @@ function RecommendedDayItem({
   onAddRecommendedPoi: (poi: Poi) => void;
   allAddedPois: Poi[];
 }) {
-  const virtualPlanDayId = `rec-${workspaceId}-${layer.label}`;
+  const virtualPlanDayId = `rec-${workspaceId}-${layer.planDate}`;
   const recommendedPois = recommendedItinerary[virtualPlanDayId] || [];
 
   if (recommendedPois.length === 0) return null;
@@ -876,20 +873,16 @@ function ChatSidebar({
   aiRecommendedPlaces: AiPlace[];
 }) {
   return (
-    <div className="w-96 bg-gray-50 border-l border-gray-200 flex flex-col h-full">
-      <div className="flex-1 overflow-auto">
-        <ChatPanel
-          messages={messages}
-          sendMessage={sendMessage}
-          isChatConnected={isChatConnected}
-          workspaceId={workspaceId}
-          onAddPoiToItinerary={onAddPoiToItinerary}
-          onCardClick={onCardClick}
-          setAiRecommendedPlaces={setAiRecommendedPlaces}
-          aiRecommendedPlaces={aiRecommendedPlaces}
-        />
-      </div>
-    </div>
+    <ChatPanel
+      messages={messages}
+      sendMessage={sendMessage}
+      isChatConnected={isChatConnected}
+      workspaceId={workspaceId}
+      onAddPoiToItinerary={onAddPoiToItinerary}
+      onCardClick={onCardClick}
+      setAiRecommendedPlaces={setAiRecommendedPlaces}
+      aiRecommendedPlaces={aiRecommendedPlaces}
+    />
   );
 }
 
@@ -920,8 +913,6 @@ export function LeftPanel({
   sendMessage,
   isChatConnected,
   onCardClick,
-  isRecommendationOpen,
-  setIsRecommendationOpen,
   setAiRecommendedPlaces,
   aiRecommendedPlaces,
 }: LeftPanelProps) {
@@ -939,9 +930,8 @@ export function LeftPanel({
     new Set()
   );
 
-  // For clarity, using isChatOpen internally for the sidebar state
-  const isChatOpen = isRecommendationOpen;
-  const setIsChatOpen = setIsRecommendationOpen;
+  const [isAiRecOpen, setIsAiRecOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   const handleRecToggleDayCollapse = (dayId: string) => {
     setRecCollapsedDayIds((prev) => {
@@ -1025,6 +1015,66 @@ export function LeftPanel({
     ? routeSegmentsByDay[optimizationDayId]
     : [];
 
+  const renderAiRecommendationContent = () => (
+    <>
+      <div className="p-4 border-b">
+        <Button className="w-full" onClick={onGenerateAiPlan} variant="default">
+          <RefreshCw className="w-4 h-4 mr-2" />
+          다시 추천받기
+        </Button>
+      </div>
+      <div className="flex-1">
+        <div className="flex items-center justify-between p-4 border-b">
+          <div className="flex items-center gap-2">
+            <h3 className="text-base font-bold">전체 추천 경로</h3>
+            <SimpleToggle
+              checked={
+                Object.keys(recommendedItinerary).length > 0 &&
+                Object.keys(recommendedItinerary).every((id) =>
+                  visibleDayIds.has(id)
+                )
+              }
+              onChange={onRecommendedItineraryVisibilityChange}
+            />
+          </div>
+          <Button
+            variant="link"
+            size="sm"
+            className="text-base text-gray-500"
+            onClick={handleRecToggleAllCollapse}
+          >
+            <ChevronsUpDown className="w-3.5 h-3.5 mr-1" />
+            {recCollapsedDayIds.size === dayLayers.length
+              ? '일정 모두 펴기'
+              : '일정 모두 접기'}
+          </Button>
+        </div>
+        {dayLayers.map((layer) => (
+          <RecommendedDayItem
+            key={layer.id}
+            {...{
+              layer,
+              workspaceId,
+              recommendedItinerary,
+              visibleDayIds,
+              onDayVisibilityChange,
+              onAddRecommendedPoiToDay,
+              onPoiClick,
+              onPoiHover,
+              unmarkPoi,
+              removeSchedule,
+              hoveredPoiId,
+              onAddRecommendedPoi,
+              allAddedPois,
+            }}
+            isCollapsed={recCollapsedDayIds.has(layer.id)}
+            onToggleCollapse={() => handleRecToggleDayCollapse(layer.id)}
+          />
+        ))}
+      </div>
+    </>
+  );
+
   const renderTabContent = () => {
     if (activeTab === 'itinerary') {
       return (
@@ -1060,101 +1110,46 @@ export function LeftPanel({
         </>
       );
     }
-    if (activeTab === 'ai-recommendation') {
-      return (
-        <>
-          <div className="p-4 border-b">
-            <Button
-              className="w-full"
-              onClick={onGenerateAiPlan}
-              variant="default"
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              다시 추천받기
-            </Button>
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center justify-between p-4 border-b">
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold">전체 추천 경로</h3>
-                <SimpleToggle
-                  checked={
-                    Object.keys(recommendedItinerary).length > 0 &&
-                    Object.keys(recommendedItinerary).every((id) =>
-                      visibleDayIds.has(id)
-                    )
-                  }
-                  onChange={onRecommendedItineraryVisibilityChange}
-                />
-              </div>
-              <Button
-                variant="link"
-                size="sm"
-                className="text-base text-gray-500"
-                onClick={handleRecToggleAllCollapse}
-              >
-                <ChevronsUpDown className="w-3.5 h-3.5 mr-1" />
-                {recCollapsedDayIds.size === dayLayers.length
-                  ? '일정 모두 펴기'
-                  : '일정 모두 접기'}
-              </Button>
-            </div>
-            {dayLayers.map((layer) => (
-              <RecommendedDayItem
-                key={layer.id}
-                layer={layer}
-                workspaceId={workspaceId}
-                isCollapsed={recCollapsedDayIds.has(layer.id)}
-                recommendedItinerary={recommendedItinerary}
-                visibleDayIds={visibleDayIds}
-                onDayVisibilityChange={onDayVisibilityChange}
-                onAddRecommendedPoiToDay={onAddRecommendedPoiToDay}
-                onPoiClick={onPoiClick}
-                onPoiHover={onPoiHover}
-                unmarkPoi={unmarkPoi}
-                removeSchedule={removeSchedule}
-                onToggleCollapse={() => handleRecToggleDayCollapse(layer.id)}
-                hoveredPoiId={hoveredPoiId}
-                onAddRecommendedPoi={onAddRecommendedPoi}
-                allAddedPois={allAddedPois}
-              />
-            ))}
-          </div>
-        </>
-      );
-    }
     return null;
   };
 
   return (
-    <>
+    <div className="relative h-full">
       <div className="flex h-full">
+        {' '}
+        {/* '내 일정'과 '채팅' 패널을 위한 flex 컨테이너 */}
         <div className="w-96 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out">
           <div className="flex w-full bg-black h-14 p-0 rounded-none">
-            <Tabs
-              value={activeTab}
-              onValueChange={setActiveTab}
-              className="flex-[2]"
-            >
-              <TabsList className="w-full h-full grid grid-cols-2 p-0 rounded-none bg-transparent">
-                <TabsTrigger
-                  value="itinerary"
-                  className="h-full gap-2 text-lg text-gray-400 rounded-none data-[state=active]:text-white data-[state=active]:bg-gray-800"
-                >
-                  <ListOrdered className="w-5 h-5" />
-                  <span>내 일정</span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value="ai-recommendation"
-                  className="h-full gap-2 text-lg text-gray-400 rounded-none data-[state=active]:text-white data-[state=active]:bg-gray-800"
-                >
-                  <Lightbulb className="w-5 h-5" />
-                  <span>AI 추천</span>
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
             <button
-              onClick={() => setIsChatOpen(!isChatOpen)}
+              onClick={() => setActiveTab('itinerary')}
+              className={`flex-1 flex items-center justify-center gap-2 text-lg rounded-none ${
+                activeTab === 'itinerary'
+                  ? 'text-white bg-gray-800'
+                  : 'text-gray-400'
+              } hover:text-white`}
+            >
+              <ListOrdered className="w-5 h-5" />
+              <span>내 일정</span>
+            </button>
+            <button
+              onClick={() => {
+                const newIsOpen = !isAiRecOpen;
+                setIsAiRecOpen(newIsOpen);
+                if (newIsOpen) setIsChatOpen(false);
+              }}
+              className={`flex-1 flex items-center justify-center gap-2 text-lg rounded-none ${
+                isAiRecOpen ? 'text-white bg-gray-800' : 'text-gray-400'
+              } hover:text-white`}
+            >
+              <Lightbulb className="w-5 h-5" />
+              <span>AI 추천</span>
+            </button>
+            <button
+              onClick={() => {
+                const newIsOpen = !isChatOpen;
+                setIsChatOpen(newIsOpen);
+                if (newIsOpen) setIsAiRecOpen(false);
+              }}
               className={`flex-1 flex items-center justify-center gap-2 text-lg rounded-none ${
                 isChatOpen ? 'text-white bg-gray-800' : 'text-gray-400'
               } hover:text-white`}
@@ -1166,22 +1161,39 @@ export function LeftPanel({
 
           <div className="flex-1 m-0 overflow-y-auto">{renderTabContent()}</div>
         </div>
-        <div
-          className={`transition-all duration-300 ease-in-out ${isChatOpen ? 'w-96' : 'w-0'}`}
-        >
-          <div className="w-96 h-full">
-            <ChatSidebar
-              messages={messages}
-              sendMessage={sendMessage}
-              isChatConnected={isChatConnected}
-              workspaceId={workspaceId}
-              onAddPoiToItinerary={onAddRecommendedPoi}
-              onCardClick={onCardClick}
-              setAiRecommendedPlaces={setAiRecommendedPlaces}
-              aiRecommendedPlaces={aiRecommendedPlaces}
-            />
+      </div>
+      {/* AI 추천 패널 (Floating) */}
+      <div
+        className={`absolute top-0 left-0 h-full w-96 bg-white border-r border-gray-200 shadow-lg transition-all duration-300 ease-in-out z-10 ${
+          isAiRecOpen
+            ? 'opacity-100 translate-x-96'
+            : 'opacity-0 -translate-x-full pointer-events-none'
+        }`}
+      >
+        <div className="flex flex-col h-full">
+          <div className="flex-1 overflow-y-auto">
+            {renderAiRecommendationContent()}
           </div>
         </div>
+      </div>
+      {/* 채팅 패널 (Floating) */}
+      <div
+        className={`absolute top-0 left-0 h-full w-96 bg-white border-r border-gray-200 shadow-lg transition-all duration-300 ease-in-out z-10 ${
+          isChatOpen
+            ? 'opacity-100 translate-x-96'
+            : 'opacity-0 -translate-x-full pointer-events-none'
+        }`}
+      >
+        <ChatSidebar
+          messages={messages}
+          sendMessage={sendMessage}
+          isChatConnected={isChatConnected}
+          workspaceId={workspaceId}
+          onAddPoiToItinerary={onAddRecommendedPoi}
+          onCardClick={onCardClick}
+          setAiRecommendedPlaces={setAiRecommendedPlaces}
+          aiRecommendedPlaces={aiRecommendedPlaces}
+        />
       </div>
       <OptimizationModal
         isOpen={isOptimizationModalOpen}
@@ -1194,6 +1206,6 @@ export function LeftPanel({
         }
         dayLayer={dayLayerForModal}
       />
-    </>
+    </div>
   );
 }
