@@ -11,8 +11,8 @@ import {
 import { Button } from './ui/button';
 import { AI_SERVER_URL, KAKAO_REST_API_KEY } from '../constants';
 import { usePlaceStore } from '../store/placeStore';
-import type { PlaceDto } from '../types/place';
-import { CATEGORY_INFO, Category } from '../types/place';
+import type { CategoryCode, PlaceDto } from '../types/place';
+import { CATEGORY_INFO } from '../types/place';
 import { findPoiByCoordinates } from '../utils/coordinates';
 
 import type {
@@ -21,9 +21,27 @@ import type {
   KakaoNaviRoad,
   KakaoNaviSection,
   KakaoNaviGuide,
-  AiPlace,
 } from '../types/map';
 import { CategoryIcon } from './CategoryIcon';
+import type { AiPlace } from '../hooks/useChatSocket.ts';
+
+/**
+ * [신규] PoiMarker를 위한 커스텀 마커 아이콘 생성 함수
+ * @param label 마커에 표시될 텍스트 (예: 숫자)
+ * @param color 마커의 배경색
+ * @returns SVG 데이터 URI 문자열
+ */
+// const createCustomMarkerIcon = (label: string, color: string): string => {
+//   const svg = `
+//     <svg width="36" height="48" viewBox="0 0 36 48" xmlns="http://www.w3.org/2000/svg">
+//       <path d="M18 0C9.85 0 3 6.85 3 15c0 10.5 15 25.5 15 25.5S33 25.5 33 15C33 6.85 26.15 0 18 0z" fill="${color}" stroke="#fff" stroke-width="2"/>
+//       <text x="18" y="19" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="white" text-anchor="middle" alignment-baseline="central">
+//         ${label}
+//       </text>
+//     </svg>
+//   `;
+//   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+// };
 
 // [신규] 요청된 새로운 카테고리 색상 팔레트
 const NEW_CATEGORY_COLORS: Record<string, string> = {
@@ -517,125 +535,127 @@ const PlaceMarker = memo(
     );
   }
 );
-memo(
-  ({
-    poi,
-    markerLabel,
-    markerColor,
-    unmarkPoi,
-    isOverlayHoveredRef,
-    isHovered,
-    place, // place prop 추가
-    pois,
-    markPoi,
-  }: PoiMarkerProps) => {
-    const [isInfoWindowOpen, setIsInfoWindowOpen] = useState(false);
-    const infoWindowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    // [수정] isVisible 로직 변경
-    // 마커의 가시성은 markerLabel의 존재 여부가 아니라,
-    // POI의 상태와 부모로부터 받은 가시성 정보(visibleDayIds)에 따라 결정되어야 합니다.
-    const isVisible =
-      poi.status === 'MARKED' ||
-      (poi.status === 'SCHEDULED' &&
-        poi.planDayId &&
-        markerLabel !== undefined);
 
-    const handleMouseOver = () => {
-      // 마커가 보이지 않으면 호버 이벤트를 무시합니다.
-      if (!isVisible) return;
+// const PoiMarker = memo(
+//   ({
+//     poi,
+//     markerLabel,
+//     markerColor,
+//     unmarkPoi,
+//     isOverlayHoveredRef,
+//     isHovered,
+//     place, // place prop 추가
+//     pois,
+//     markPoi,
+//   }: PoiMarkerProps) => {
+//     const [isInfoWindowOpen, setIsInfoWindowOpen] = useState(false);
+//     const infoWindowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+//     // [수정] isVisible 로직 변경
+//     // 마커의 가시성은 markerLabel의 존재 여부가 아니라,
+//     // POI의 상태와 부모로부터 받은 가시성 정보(visibleDayIds)에 따라 결정되어야 합니다.
+//     const isVisible =
+//       poi.status === 'MARKED' ||
+//       (poi.status === 'SCHEDULED' &&
+//         poi.planDayId &&
+//         markerLabel !== undefined);
+//
+//     const handleMouseOver = () => {
+//       // 마커가 보이지 않으면 호버 이벤트를 무시합니다.
+//       if (!isVisible) return;
+//
+//       if (infoWindowTimeoutRef.current) {
+//         clearTimeout(infoWindowTimeoutRef.current);
+//         infoWindowTimeoutRef.current = null;
+//       }
+//       isOverlayHoveredRef.current = true;
+//       setIsInfoWindowOpen(true);
+//     };
+//
+//     const handleMouseOut = () => {
+//       // 마커가 보이지 않으면 호버 이벤트를 무시합니다.
+//       if (!isVisible) return;
+//
+//       infoWindowTimeoutRef.current = setTimeout(() => {
+//         isOverlayHoveredRef.current = false;
+//         setIsInfoWindowOpen(false);
+//       }, 100);
+//     };
+//
+//     const handleClick = () => {
+//       // 마커가 보이지 않으면 클릭 이벤트를 무시합니다.
+//       if (!isVisible) return;
+//
+//       if (infoWindowTimeoutRef.current) {
+//         clearTimeout(infoWindowTimeoutRef.current);
+//         infoWindowTimeoutRef.current = null;
+//       }
+//       isOverlayHoveredRef.current = true;
+//       setIsInfoWindowOpen(true);
+//     };
+//
+//     const isScheduled = poi.status === 'SCHEDULED' && markerLabel !== undefined;
+//     // isScheduled가 true일 때만 커스텀 아이콘을 사용하고, false일 때는 undefined로 두어 기본 마커를 사용하도록 합니다.
+//     const markerImage = isScheduled
+//       ? {
+//           src: createCustomMarkerIcon(markerLabel, markerColor || '#FF5733'),
+//           size: { width: 36, height: 48 },
+//           options: {
+//             offset: { x: 18, y: 48 }, // 마커의 하단 중앙을 좌표에 맞춤
+//           },
+//         }
+//       : undefined;
+//
+//     return (
+//       <MapMarker
+//         position={{ lat: poi.latitude, lng: poi.longitude }}
+//         image={markerImage} // isScheduled가 아니면 기본 카카오 마커가 표시됩니다.
+//         draggable={false}
+//         clickable={true}
+//         onMouseOver={handleMouseOver}
+//         onMouseOut={handleMouseOut}
+//         onClick={handleClick}
+//         // [수정] isVisible을 기반으로 투명도 조절
+//         // isHovered는 isVisible일 때만 의미가 있습니다.
+//         opacity={!isVisible ? 0 : isHovered ? 0.5 : 1}
+//         // [수정] zIndex 로직 단순화.
+//         // PlaceMarker가 모든 것을 처리하므로, PoiMarker는 PlaceMarker가 없을 때만 렌더링됩니다.
+//         // 따라서 복잡한 zIndex 경쟁이 필요 없어집니다.
+//         // isScheduled일 때만 zIndex를 높여 다른 기본 마커들보다 위에 오도록 합니다.
+//         zIndex={isScheduled ? 3 : 0}
+//       >
+//         {isInfoWindowOpen && (
+//           <CustomOverlayMap
+//             position={{ lat: poi.latitude, lng: poi.longitude }}
+//             xAnchor={0.5}
+//             yAnchor={1.3}
+//             zIndex={3}
+//           >
+//             <div onMouseOver={handleMouseOver} onMouseOut={handleMouseOut}>
+//               {place ? (
+//                 <PlaceInfoWindow
+//                   place={place}
+//                   pois={pois}
+//                   isOverlayHoveredRef={isOverlayHoveredRef}
+//                   onClose={() => setIsInfoWindowOpen(false)}
+//                   markPoi={markPoi}
+//                   unmarkPoi={unmarkPoi} // 여기서는 unmarkPoi만 필요하지만, PlaceInfoWindow는 markPoi도 받습니다.
+//                 />
+//               ) : (
+//                 <div className="p-3 bg-white rounded-lg shadow-lg min-w-[200px]">
+//                   <div className="font-bold text-base">{poi.placeName}</div>
+//                   <div className="text-xs text-gray-500 truncate">
+//                     {poi.address}
+//                   </div>
+//                 </div>
+//               )}
+//             </div>
+//           </CustomOverlayMap>
+//         )}
+//       </MapMarker>
+//     );
+//   }
+// );
 
-      if (infoWindowTimeoutRef.current) {
-        clearTimeout(infoWindowTimeoutRef.current);
-        infoWindowTimeoutRef.current = null;
-      }
-      isOverlayHoveredRef.current = true;
-      setIsInfoWindowOpen(true);
-    };
-
-    const handleMouseOut = () => {
-      // 마커가 보이지 않으면 호버 이벤트를 무시합니다.
-      if (!isVisible) return;
-
-      infoWindowTimeoutRef.current = setTimeout(() => {
-        isOverlayHoveredRef.current = false;
-        setIsInfoWindowOpen(false);
-      }, 100);
-    };
-
-    const handleClick = () => {
-      // 마커가 보이지 않으면 클릭 이벤트를 무시합니다.
-      if (!isVisible) return;
-
-      if (infoWindowTimeoutRef.current) {
-        clearTimeout(infoWindowTimeoutRef.current);
-        infoWindowTimeoutRef.current = null;
-      }
-      isOverlayHoveredRef.current = true;
-      setIsInfoWindowOpen(true);
-    };
-
-    const isScheduled = poi.status === 'SCHEDULED' && markerLabel !== undefined;
-    // isScheduled가 true일 때만 커스텀 아이콘을 사용하고, false일 때는 undefined로 두어 기본 마커를 사용하도록 합니다.
-    const markerImage = isScheduled
-      ? {
-          src: createCustomMarkerIcon(markerLabel, markerColor || '#FF5733'),
-          size: { width: 36, height: 48 },
-          options: {
-            offset: { x: 18, y: 48 }, // 마커의 하단 중앙을 좌표에 맞춤
-          },
-        }
-      : undefined;
-
-    return (
-      <MapMarker
-        position={{ lat: poi.latitude, lng: poi.longitude }}
-        image={markerImage} // isScheduled가 아니면 기본 카카오 마커가 표시됩니다.
-        draggable={false}
-        clickable={true}
-        onMouseOver={handleMouseOver}
-        onMouseOut={handleMouseOut}
-        onClick={handleClick}
-        // [수정] isVisible을 기반으로 투명도 조절
-        // isHovered는 isVisible일 때만 의미가 있습니다.
-        opacity={!isVisible ? 0 : isHovered ? 0.5 : 1}
-        // [수정] zIndex 로직 단순화.
-        // PlaceMarker가 모든 것을 처리하므로, PoiMarker는 PlaceMarker가 없을 때만 렌더링됩니다.
-        // 따라서 복잡한 zIndex 경쟁이 필요 없어집니다.
-        // isScheduled일 때만 zIndex를 높여 다른 기본 마커들보다 위에 오도록 합니다.
-        zIndex={isScheduled ? 3 : 0}
-      >
-        {isInfoWindowOpen && (
-          <CustomOverlayMap
-            position={{ lat: poi.latitude, lng: poi.longitude }}
-            xAnchor={0.5}
-            yAnchor={1.3}
-            zIndex={3}
-          >
-            <div onMouseOver={handleMouseOver} onMouseOut={handleMouseOut}>
-              {place ? (
-                <PlaceInfoWindow
-                  place={place}
-                  pois={pois}
-                  isOverlayHoveredRef={isOverlayHoveredRef}
-                  onClose={() => setIsInfoWindowOpen(false)}
-                  markPoi={markPoi}
-                  unmarkPoi={unmarkPoi} // 여기서는 unmarkPoi만 필요하지만, PlaceInfoWindow는 markPoi도 받습니다.
-                />
-              ) : (
-                <div className="p-3 bg-white rounded-lg shadow-lg min-w-[200px]">
-                  <div className="font-bold text-base">{poi.placeName}</div>
-                  <div className="text-xs text-gray-500 truncate">
-                    {poi.address}
-                  </div>
-                </div>
-              )}
-            </div>
-          </CustomOverlayMap>
-        )}
-      </MapMarker>
-    );
-  }
-);
 const DayRouteRenderer = memo(
   ({
     layer,
@@ -747,8 +767,6 @@ export function MapPanel({
   visibleDayIds, // props로 받음
   initialCenter, // props로 받음
   focusPlace, // [추가] focusPlace prop
-  isRecommendationOpen,
-  setIsRecommendationOpen,
   recommendedPlaces,
   isProgrammaticMove,
 }: MapPanelProps) {
@@ -912,21 +930,13 @@ export function MapPanel({
    */
   const handlePlaceClick = useCallback(
     (place: PlaceDto) => {
-      setSelectedBackendPlace(place);
-      setIsSummaryExpanded(false); // 새로운 장소 선택 시 summary 접기
-
-      // 지도가 있으면 해당 위치로 포커싱 및 줌 조정
       if (mapInstance) {
         const position = new window.kakao.maps.LatLng(
           place.latitude,
           place.longitude
         );
-
-        // 줌 레벨을 먼저 설정한 후 중앙으로 이동
-        mapInstance.setLevel(5);
-
-        // setCenter를 사용하여 정확한 위치로 이동
-        mapInstance.setCenter(position);
+        mapInstance.setLevel(5, { anchor: position });
+        mapInstance.panTo(position);
       }
     },
     [mapInstance]
@@ -1442,16 +1452,14 @@ export function MapPanel({
 
     return allPois.map(
       (poi): PlaceDto => ({
-        id: poi.placeId, // POI의 placeId를 PlaceDto의 id로 사용
-        title: poi.placeName,
+        id: poi.placeId,
+        title: poi.placeName || '이름 없는 장소', // [수정] placeName이 없을 경우 기본값 제공
         address: poi.address,
         latitude: poi.latitude,
         longitude: poi.longitude,
-        category: poi.categoryName,
-        image_url: '', // POI에는 이미지 URL 정보가 없으므로 빈 값으로 설정
-        summary: '', // POI에는 요약 정보가 없으므로 빈 값으로 설정
-        content_id: '', // 필요 시 추가 정보 매핑
-        content_type_id: '', // 필요 시 추가 정보 매핑
+        category: (poi.categoryName as CategoryCode) || '기타', // [수정] categoryName이 없을 경우 기본값 제공 및 타입 단언
+        image_url: '',
+        summary: '',
       })
     );
   }, [itinerary, recommendedItinerary]);
@@ -1495,19 +1503,6 @@ export function MapPanel({
     const recommendedDayId = recommendedPoiMap.get(place.id);
     return !!recommendedDayId && visibleDayIds.has(recommendedDayId);
   });
-
-  useEffect(() => {
-    if (mapInstance && recommendedPlaces && recommendedPlaces.length > 0) {
-      isProgrammaticMove.current = true;
-      const bounds = new window.kakao.maps.LatLngBounds();
-      recommendedPlaces.forEach((place) => {
-        bounds.extend(
-          new window.kakao.maps.LatLng(place.latitude, place.longitude)
-        );
-      });
-      mapInstance.setBounds(bounds);
-    }
-  }, [mapInstance, recommendedPlaces, isProgrammaticMove]);
 
   return (
     <div style={{ width: '100%', height: '100%' }}>
@@ -1578,7 +1573,7 @@ export function MapPanel({
           {/* 구분선 */}
           <div className="border-b border-gray-300 my-1" />
 
-          {Object.entries(CATEGORY_INFO).map(([key, { name, color, icon }]) => (
+          {Object.entries(CATEGORY_INFO).map(([key, { name, color }]) => (
             <button
               key={key}
               onClick={() => handleCategoryToggle(key)}
@@ -1594,7 +1589,10 @@ export function MapPanel({
                   : undefined,
               }}
             >
-              <CategoryIcon category={key as Category} className="w-4 h-4" />
+              <CategoryIcon
+                category={key as CategoryCode}
+                className="w-4 h-4"
+              />
               {name}
             </button>
           ))}
@@ -1613,6 +1611,20 @@ export function MapPanel({
             scheduledPoiData={scheduledPoiData}
             recommendedPoiLabelData={recommendedPoiLabelData}
           />
+        ))}
+
+        {/* AI 추천 장소 강조 효과 */}
+        {recommendedPlaces?.map((place) => (
+          <CustomOverlayMap
+            key={`rec-highlight-${place.id}`}
+            position={{ lat: place.latitude, lng: place.longitude }}
+            xAnchor={0.5}
+            yAnchor={0.93}
+            zIndex={0}
+            clickable={false}
+          >
+            <div className="w-16 h-16 rounded-full border-4 border-purple-500 bg-purple-500/20 animate-pulse pointer-events-none" />
+          </CustomOverlayMap>
         ))}
 
         {/* 지도 클릭 물결 효과 렌더링 */}

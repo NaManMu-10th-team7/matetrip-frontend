@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { usePlaceStore } from '../store/placeStore'; // [추가] 장소 캐시를 사용하기 위해 import
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { SimpleToggle } from './ui/SimpleToggle';
@@ -15,7 +15,6 @@ import {
   Clock,
   Car,
   MessageCircle,
-  ChevronRight,
   Check,
   RefreshCw,
 } from 'lucide-react';
@@ -27,12 +26,12 @@ import {
 import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import type { Poi } from '../hooks/usePoiSocket';
-import type { DayLayer, KakaoPlace, RouteSegment, AiPlace } from '../types/map';
+import type { DayLayer, RouteSegment } from '../types/map';
 import { Button } from './ui/button';
 import React from 'react';
 import { ChatPanel } from './ChatPanel';
 import { CategoryIcon } from './CategoryIcon'; // [추가] CategoryIcon 임포트
-import { type ChatMessage } from '../hooks/useChatSocket';
+import { type AiPlace, type ChatMessage } from '../hooks/useChatSocket';
 
 interface PoiItemProps {
   poi: Poi;
@@ -390,7 +389,6 @@ function DayItineraryItem({
 }
 
 function ItineraryPanel({
-  workspaceId,
   itinerary,
   dayLayers,
   onPoiClick,
@@ -532,6 +530,8 @@ interface LeftPanelProps {
   onCardClick: (poi: any) => void;
   isRecommendationOpen: boolean;
   setIsRecommendationOpen: (isOpen: boolean) => void;
+  setAiRecommendedPlaces: (places: AiPlace[]) => void;
+  aiRecommendedPlaces: AiPlace[];
 }
 
 const formatDuration = (seconds: number) => {
@@ -1019,6 +1019,8 @@ export function LeftPanel({
   onCardClick,
   isRecommendationOpen,
   setIsRecommendationOpen,
+  setAiRecommendedPlaces,
+  aiRecommendedPlaces,
 }: LeftPanelProps) {
   const [isOptimizationModalOpen, setIsOptimizationModalOpen] = useState(false);
   const [optimizationDayId, setOptimizationDayId] = useState<string | null>(
@@ -1160,6 +1162,8 @@ export function LeftPanel({
                 workspaceId={workspaceId}
                 onAddPoiToItinerary={onAddRecommendedPoi}
                 onCardClick={onCardClick}
+                setAiRecommendedPlaces={setAiRecommendedPlaces}
+                aiRecommendedPlaces={aiRecommendedPlaces}
               />
             </TabsContent>
           </Tabs>

@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { Send, Phone, Video, ChevronUp, ChevronDown } from 'lucide-react';
 import { Button } from './ui/button';
+import type { Poi } from '../hooks/usePoiSocket';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
 import { VideoChat } from './VideoChat';
 import { type ChatMessage } from '../hooks/useChatSocket';
+import type { AiPlace } from '../hooks/useChatSocket';
 import { useAuthStore } from '../store/authStore';
 import { RecommendedPlaceCard } from './RecommendedPlaceCard';
 import { cn } from './ui/utils';
@@ -14,8 +16,10 @@ interface ChatPanelProps {
   sendMessage: (message: string) => void;
   isChatConnected: boolean;
   workspaceId: string;
-  onAddPoiToItinerary: (poi: any) => void;
-  onCardClick: (poi: any) => void;
+  onAddPoiToItinerary: (poi: Poi) => void;
+  onCardClick: (poi: Pick<Poi, 'latitude' | 'longitude'>) => void;
+  setAiRecommendedPlaces: (places: AiPlace[]) => void;
+  aiRecommendedPlaces: AiPlace[];
 }
 
 export const ChatPanel = memo(function ChatPanel({
@@ -167,14 +171,18 @@ export const ChatPanel = memo(function ChatPanel({
                     isMe
                       ? 'bg-blue-600 text-white'
                       : isSystem
-                      ? 'bg-gray-100 text-gray-700 italic'
-                      : 'bg-gray-100 text-gray-900'
+                        ? 'bg-gray-100 text-gray-700 italic'
+                        : 'bg-gray-100 text-gray-900'
                   )}
                 >
-                  {!isAiRecommendation && <p className="text-sm">{msg.message}</p>}
+                  {!isAiRecommendation && (
+                    <p className="text-sm">{msg.message}</p>
+                  )}
                   {isAiRecommendation && (
                     <div className="space-y-2">
-                      <p className="text-sm text-gray-900 bg-gray-100 rounded-lg px-4 py-2">{msg.message}</p>
+                      <p className="text-sm text-gray-900 bg-gray-100 rounded-lg px-4 py-2">
+                        {msg.message}
+                      </p>
                       <div className="grid grid-cols-1 gap-2">
                         {msg.recommendedPlaces?.map((place, placeIndex) => (
                           <RecommendedPlaceCard
