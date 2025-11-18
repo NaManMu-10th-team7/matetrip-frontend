@@ -1380,8 +1380,8 @@ export function MapPanel({
           <CustomOverlayMap
             key={`chat-rec-highlight-${place.id}`}
             position={{ lat: place.latitude, lng: place.longitude }}
-            xAnchor={0.5}
-            yAnchor={0.5}
+            xAnchor={0.55}
+            yAnchor={0.55}
             zIndex={0}
             clickable={false}
           >
