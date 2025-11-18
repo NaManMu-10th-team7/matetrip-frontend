@@ -61,6 +61,70 @@ interface Review {
   createdAt: string;
 }
 
+function ProfileModalSkeleton() {
+  return (
+    <Dialog open onOpenChange={() => {}}>
+      <DialogContent
+        className="max-w-4xl min-w-[900px] h-[80vh] p-0 overflow-hidden flex flex-col border-0"
+        aria-describedby={undefined}
+      >
+        <DialogHeader className="flex flex-row items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-10 text-left">
+          <div className="h-6 bg-gray-200 rounded w-48 animate-pulse" />
+          <Button variant="ghost" size="icon" className="h-9 w-9" disabled>
+            <X className="w-5 h-5" />
+          </Button>
+        </DialogHeader>
+
+        <div className="flex-1 p-6 space-y-6 overflow-y-auto bg-gray-50 no-scrollbar">
+          {/* --- 프로필 상단 스켈레톤 --- */}
+          <div className="flex gap-6">
+            <div className="flex-1 border border-gray-200 rounded-lg p-6 bg-white shadow-sm">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-6">
+                  <div className="w-24 h-24 rounded-full bg-gray-200 animate-pulse" />
+                  <div className="flex flex-col gap-2 pt-2">
+                    <div className="h-8 bg-gray-200 rounded w-32 animate-pulse" />
+                    <div className="flex flex-wrap gap-2">
+                      <div className="h-6 bg-gray-200 rounded w-20 animate-pulse" />
+                      <div className="h-6 bg-gray-200 rounded w-24 animate-pulse" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-4 mt-6">
+                <div className="bg-gray-100 rounded-lg p-4 h-20 animate-pulse" />
+                <div className="bg-gray-100 rounded-lg p-4 h-20 animate-pulse" />
+                <div className="bg-gray-100 rounded-lg p-4 h-20 animate-pulse" />
+              </div>
+            </div>
+          </div>
+
+          {/* --- 탭 메뉴 스켈레톤 --- */}
+          <div className="border border-gray-200 rounded-lg bg-white shadow-sm">
+            <div className="flex border-b border-gray-200">
+              <div className="flex-1 py-3 h-12 bg-gray-100 animate-pulse" />
+              <div className="flex-1 py-3 h-12 bg-white" />
+              <div className="flex-1 py-3 h-12 bg-white" />
+            </div>
+            <div className="p-6 space-y-6">
+              <div className="space-y-2">
+                <div className="h-5 bg-gray-200 rounded w-24 animate-pulse" />
+                <div className="h-5 bg-gray-200 rounded w-full animate-pulse" />
+              </div>
+              <div className="space-y-2">
+                <div className="h-5 bg-gray-200 rounded w-24 animate-pulse" />
+                <div className="h-5 bg-gray-200 rounded w-full animate-pulse" />
+                <div className="h-5 bg-gray-200 rounded w-full animate-pulse" />
+                <div className="h-5 bg-gray-200 rounded w-4/5 animate-pulse" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function ProfileModal({
   open,
   onOpenChange,
@@ -224,16 +288,7 @@ export function ProfileModal({
   }
 
   if (isLoading || !profile) {
-    //setProfileImageUrl(null);
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl h-[80vh]">
-          <div className="flex items-center justify-center h-full">
-            프로필 정보를 불러오는 중입니다...
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
+    return <ProfileModalSkeleton />;
   }
 
   const rawMannerTemperature =
