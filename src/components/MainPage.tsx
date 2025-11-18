@@ -9,7 +9,6 @@ import { MainPostCardSkeleton } from './MainPostCardSkeleton';
 import { MatchingCarousel } from './MatchingCarousel';
 import { useAuthStore } from '../store/authStore';
 import type { MatchingInfo, MatchCandidateDto } from '../types/matching';
-import { type KeywordValue } from '../utils/keyword';
 import { MatchingSearchBar } from './MatchingSearchBar';
 
 interface MainPageProps {
@@ -111,18 +110,18 @@ const normalizeOverlapText = (values?: unknown): string | undefined => {
 };
 
 // 임시 매칭 정보 생성 함수 (추후 실제 API로 교체 가능)
-const generateMockMatchingInfo = (index: number): MatchingInfo => {
-  const scores = [92, 85, 78, 73, 68, 65, 62, 58, 55, 52];
-  const tendencies = ['즉흥적', '계획적', '주도적', '따라가는'];
-  const styles = ['호텔', '게스트하우스', '에어비앤비', '캠핑'];
-
-  return {
-    score: scores[index % scores.length] || 50,
-    tendency: tendencies[index % tendencies.length],
-    style: styles[index % styles.length],
-    vectorscore: Math.floor(Math.random() * 30) + 60, // 60-90 사이 랜덤값
-  };
-};
+// const generateMockMatchingInfo = (index: number): MatchingInfo => {
+//   const scores = [92, 85, 78, 73, 68, 65, 62, 58, 55, 52];
+//   const tendencies = ['즉흥적', '계획적', '주도적', '따라가는'];
+//   const styles = ['호텔', '게스트하우스', '에어비앤비', '캠핑'];
+//
+//   return {
+//     score: scores[index % scores.length] || 50,
+//     tendency: tendencies[index % tendencies.length],
+//     style: styles[index % styles.length],
+//     vectorscore: Math.floor(Math.random() * 30) + 60, // 60-90 사이 랜덤값
+//   };
+// };
 
 export function MainPage({
   onSearch,
@@ -134,7 +133,7 @@ export function MainPage({
   const [isLoading, setIsLoading] = useState(true);
   const { user, isAuthLoading } = useAuthStore();
   const [matches, setMatches] = useState<MatchCandidateDto[]>([]);
-  const [isMatchesLoading, setIsMatchesLoading] = useState(true);
+  const [_isMatchesLoading, setIsMatchesLoading] = useState(true);
 
   // const [searchQuery, setSearchQuery] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -456,7 +455,7 @@ export function MainPage({
                 </div>
               )}*/}
         {/* </div>
-          </div> 
+          </div>
         )} */}
         {/* 로그인하지 않은 사용자를 위한 안내 배너 */}
         {!isLoggedIn && (
