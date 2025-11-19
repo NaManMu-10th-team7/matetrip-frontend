@@ -43,12 +43,12 @@ interface NewMainPageProps {
 
 type SelectedType = 'post' | 'place' | 'inspiration' | null;
 
-export function NewMainPage({ 
-  onCreatePost, 
-  onJoinWorkspace, 
-  onViewProfile, 
+export function NewMainPage({
+  onCreatePost,
+  onJoinWorkspace,
+  onViewProfile,
   onEditPost,
-  onDeleteSuccess
+  onDeleteSuccess,
 }: NewMainPageProps) {
   const navigate = useNavigate();
   const { user, isAuthLoading } = useAuthStore();
@@ -58,7 +58,7 @@ export function NewMainPage({
   const [posts, setPosts] = useState<Post[]>([]);
   const [matches, setMatches] = useState<MatchCandidateDto[]>([]);
   const [inspirations, setInspirations] = useState<Place[]>([]);
-  
+
   // Loading states
   const [isPostsLoading, setIsPostsLoading] = useState(true);
   const [isMatchesLoading, setIsMatchesLoading] = useState(true);
@@ -81,7 +81,8 @@ export function NewMainPage({
       try {
         const response = await client.get<Post[]>('/posts');
         const sorted = response.data.sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
         const recruiting = sorted.filter((post) => post.status === '모집중');
         setPosts(recruiting);
@@ -143,14 +144,16 @@ export function NewMainPage({
           '/places/popular',
           { params: { page: 1, limit: 3 } }
         );
-        
+
         // 각 장소의 상세 정보를 가져와서 latitude, longitude 포함
         const detailedPlaces = await Promise.all(
           response.data.map(async (item) => {
             try {
               // 각 장소의 상세 정보 가져오기
-              const detailResponse = await client.get(`/places/${item.addplace_id}`);
-              
+              const detailResponse = await client.get(
+                `/places/${item.addplace_id}`
+              );
+
               return {
                 id: item.addplace_id,
                 title: item.title,
@@ -161,7 +164,10 @@ export function NewMainPage({
                 longitude: detailResponse.data.longitude,
               };
             } catch (error) {
-              console.error(`Failed to fetch detail for ${item.addplace_id}:`, error);
+              console.error(
+                `Failed to fetch detail for ${item.addplace_id}:`,
+                error
+              );
               // 상세 정보를 가져오지 못한 경우 기본값 사용
               return {
                 id: item.addplace_id,
@@ -170,12 +176,12 @@ export function NewMainPage({
                 imageUrl: item.image_url,
                 summary: undefined,
                 latitude: 37.5665, // 서울 시청 기본값
-                longitude: 126.9780,
+                longitude: 126.978,
               };
             }
           })
         );
-        
+
         setInspirations(detailedPlaces);
       } catch (error) {
         console.error('Failed to fetch inspirations:', error);
@@ -191,7 +197,11 @@ export function NewMainPage({
   const matchedPosts = matches
     .map((match) => {
       const post = posts.find((p) => {
-        const writerIds = [p.writerId, p.writer?.id, p.writerProfile?.id].filter(Boolean);
+        const writerIds = [
+          p.writerId,
+          p.writer?.id,
+          p.writerProfile?.id,
+        ].filter(Boolean);
         return writerIds.includes(match.userId);
       });
       return post ? { post, score: Math.round(match.score * 100) } : null;
@@ -203,15 +213,15 @@ export function NewMainPage({
   const handlePostClick = (postId: string) => {
     // PostDetail 내부에서 로그인 상태에 따라 버튼을 처리하므로
     // 여기서는 바로 표시
-    console.log('🟢 handlePostClick 호출됨!', { 
-      postId, 
+    console.log('🟢 handlePostClick 호출됨!', {
+      postId,
       isLoggedIn,
-      현재상태: { selectedType, selectedId }
+      현재상태: { selectedType, selectedId },
     });
     setSelectedType('post');
     setSelectedId(postId);
-    console.log('🟢 State 설정 완료:', { 
-      새로운상태: { selectedType: 'post', selectedId: postId }
+    console.log('🟢 State 설정 완료:', {
+      새로운상태: { selectedType: 'post', selectedId: postId },
     });
   };
 
@@ -263,7 +273,8 @@ export function NewMainPage({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3">
             <div>
               <h2 className="text-xl md:text-xl font-bold text-gray-900">
-                000님의 성향에 맞을 수도 있는 동행의 여행일정
+                {user?.profile.nickname}님의 성향에 맞을 수도 있는 동행의
+                여행일정
               </h2>
               <p className="text-xs md:text-sm text-gray-600 mt-1">
                 MateTrip AI가 추천하는 최적의 여행 파트너
@@ -284,9 +295,13 @@ export function NewMainPage({
               isMatchesLoading,
               isPostsLoading,
               matchedPostsLength: matchedPosts.length,
-              렌더링할내용: !isLoggedIn ? '로그인 필요' : 
-                           isMatchesLoading || isPostsLoading ? '로딩 중' :
-                           matchedPosts.length === 0 ? '추천 없음' : '카드 렌더링'
+              렌더링할내용: !isLoggedIn
+                ? '로그인 필요'
+                : isMatchesLoading || isPostsLoading
+                  ? '로딩 중'
+                  : matchedPosts.length === 0
+                    ? '추천 없음'
+                    : '카드 렌더링',
             });
             return null;
           })()}
@@ -323,11 +338,11 @@ export function NewMainPage({
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               {matchedPosts.map(({ post, score }) => {
-                console.log('🟡 MainPostCard 렌더링:', { 
-                  postId: post.id, 
-                  title: post.title, 
+                console.log('🟡 MainPostCard 렌더링:', {
+                  postId: post.id,
+                  title: post.title,
                   score,
-                  handlePostClick: typeof handlePostClick
+                  handlePostClick: typeof handlePostClick,
                 });
                 return (
                   <MainPostCard
@@ -353,8 +368,8 @@ export function NewMainPage({
               <h2 className="text-xl md:text-xl font-bold text-gray-900">
                 Hot Place
               </h2>
-              <p className='text-xs md:text-sm text-gray-600 mt-1text-xs md:text-sm text-gray-600 mt-1'>
-                MateTrip 유저들의 Pick‼ 
+              <p className="text-xs md:text-sm text-gray-600 mt-1text-xs md:text-sm text-gray-600 mt-1">
+                MateTrip 유저들의 Pick‼
               </p>
             </div>
             <Button
@@ -408,14 +423,15 @@ export function NewMainPage({
               setSelectedId(null);
             }}
           />
-        ) : (selectedType === 'place' || selectedType === 'inspiration') && selectedPlace ? (
+        ) : (selectedType === 'place' || selectedType === 'inspiration') &&
+          selectedPlace ? (
           <div className="relative h-full w-full">
             <SimpleKakaoMap
               latitude={selectedPlace.latitude}
               longitude={selectedPlace.longitude}
               placeName={selectedPlace.title}
             />
-            
+
             {/* 여행 만들기 버튼 */}
             <Button
               onClick={() => {
@@ -451,7 +467,8 @@ export function NewMainPage({
                 </svg>
               </div>
               <p className="text-sm text-gray-500 leading-relaxed">
-                여행 카드를 선택하면<br />
+                여행 카드를 선택하면
+                <br />
                 상세 정보를 확인할 수 있습니다
               </p>
             </div>
@@ -479,4 +496,3 @@ export function NewMainPage({
     </div>
   );
 }
-
