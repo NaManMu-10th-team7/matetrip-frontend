@@ -15,8 +15,8 @@ interface MatchingCardProps {
   onClick?: () => void;
   /** 추천 순위 (1부터 시작) */
   rank?: number;
-  /** 작성자 프로필 이미지 URL */
-  writerProfileImageUrl?: string | null;
+  /** 작성자 프로필 이미지 ID */
+  writerProfileImageId?: string | null; // 변경: URL 대신 ID를 받음
 }
 
 const defaultCoverImage = 'https://via.placeholder.com/400x300';
@@ -31,7 +31,7 @@ export function MatchingCard({
   matchingInfo,
   onClick,
   rank,
-  writerProfileImageUrl,
+  writerProfileImageId, // 변경: URL 대신 ID를 받음
 }: MatchingCardProps) {
   const { title, location, startDate, endDate } = post;
   const { score, tendency, style, vectorscore, mannerTemperature } = matchingInfo;
@@ -52,6 +52,7 @@ export function MatchingCard({
   const safeMannerTemp = mannerTemperature ?? 36.5;
 
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null); // 추가: 프로필 이미지 URL 상태
 
   // 총 일수 계산
   const calculateDays = () => {
@@ -89,7 +90,7 @@ export function MatchingCard({
         );
 
         if (!response.ok) {
-          throw new Error('게시글 이미지를 불러오지 못했습니다.');
+          throw new Error(`게시글 이미지를 불러오지 못했습니다. Status: ${response.status}`);
         }
 
         const payload = await response.json();
@@ -112,11 +113,54 @@ export function MatchingCard({
     };
   }, [post.imageId]);
 
+  // 프로필 이미지 로드 (추가)
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchProfileImage = async () => {
+      if (!writerProfileImageId) {
+        setProfileImageUrl(null);
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/binary-content/${writerProfileImageId}/presigned-url`,
+          {
+            credentials: 'include',
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`프로필 이미지를 불러오지 못했습니다. Status: ${response.status}`);
+        }
+
+        const payload = await response.json();
+        const { url } = payload;
+        if (!cancelled) {
+          setProfileImageUrl(url);
+        }
+      } catch (error) {
+        console.error('MatchingCard profile image load failed:', error);
+        if (!cancelled) {
+          setProfileImageUrl(null);
+        }
+      }
+    };
+
+    fetchProfileImage();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [writerProfileImageId]);
+
+
   return (
     <div
-      className="relative"
+      className="relative" // flex-shrink-0 제거
       style={{
-        width: '240px',
+        width: '240px', // width 속성 다시 추가
         height: '280px',
         transformStyle: 'preserve-3d',
       }}
@@ -149,9 +193,9 @@ export function MatchingCard({
           <div className="absolute bottom-2 left-2 right-2 flex items-end gap-2">
             {/* 프로필 아이콘 (48px 원형) */}
             <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shrink-0 overflow-hidden">
-              {writerProfileImageUrl ? (
+              {profileImageUrl ? ( // 변경: writerProfileImageUrl 대신 profileImageUrl 사용
                 <ImageWithFallback
-                  src={writerProfileImageUrl}
+                  src={profileImageUrl} // 변경
                   alt="작성자 프로필"
                   className="w-full h-full object-cover"
                 />

@@ -73,6 +73,7 @@ export function MatchingSearchBar() {
     return {
       post,
       matchingInfo: buildMatchingInfo(candidate),
+      writerProfileImageId: candidate.profileImageId, // 추가: 작성자 프로필 이미지 ID
     };
   };
 
@@ -134,7 +135,7 @@ export function MatchingSearchBar() {
       });
 
       const rawData = response.data;
-      //console.log(rawData);
+      console.log(rawData);
       //데이터 프론트가 이해하게끔
       const candidates: MatchCandidateDto[] = Array.isArray(rawData)
         ? (rawData as MatchCandidateDto[])
@@ -251,7 +252,7 @@ export function MatchingSearchBar() {
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-200"
               />
             </div>
           </div>
