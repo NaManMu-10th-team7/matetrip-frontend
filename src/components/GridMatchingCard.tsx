@@ -122,7 +122,7 @@ export function GridMatchingCard({
         )}
 
         {/* 하단 오버레이: 프로필 아이콘 + 매칭률 */}
-        <div className="absolute bottom-3 left-3 right-3 flex items-end gap-[14px]">
+        <div className="absolute inset-x-0 bottom-0 flex items-end gap-[14px] p-3 bg-gradient-to-t from-black/70 to-transparent pt-8"> {/* 클래스 수정 */}
           {/* 프로필 아이콘 (64px 원형) */}
           <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shrink-0 overflow-hidden">
             {writerProfileImageUrl ? (
@@ -176,4 +176,3 @@ export function GridMatchingCard({
     </div>
   );
 }
-
