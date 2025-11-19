@@ -4,6 +4,7 @@ import {
   MapPin,
   Calendar,
   Users,
+  User,
   Thermometer,
   Trash2,
   MoreVertical,
@@ -101,6 +102,9 @@ export function PostDetail({
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [showDeleteSuccessAlert, setShowDeleteSuccessAlert] = useState(false);
+  const [recommendedUserProfiles, setRecommendedUserProfiles] = useState<
+    Record<string, { nickname: string; profileImageId?: string } | null>
+  >({});
 
   const fetchPostDetail = useCallback(async () => {
     if (!postId) return;
@@ -221,6 +225,74 @@ export function PostDetail({
     };
   }, [participations]);
 
+  // 추천 유저 프로필 로드
+  useEffect(() => {
+    let cancelled = false;
+    
+    if (!post?.matchResult || post.matchResult.length === 0) {
+      setRecommendedUserProfiles({});
+      return;
+    }
+
+    const userIds = post.matchResult
+      .slice(0, 3) // 상위 3명만
+      .map((candidate) => candidate.userId)
+      .filter((id): id is string => Boolean(id));
+
+    if (!userIds.length) {
+      setRecommendedUserProfiles({});
+      return;
+    }
+
+    (async () => {
+      try {
+        const results = await Promise.all(
+          userIds.map(async (userId) => {
+            try {
+              const { data } = await client.get<{
+                id: string;
+                nickname: string;
+                profileImageId?: string;
+              }>(`/profile/user/${userId}`);
+              return {
+                userId,
+                profile: {
+                  nickname: data.nickname,
+                  profileImageId: data.profileImageId,
+                },
+              };
+            } catch (err) {
+              console.error(
+                `PostDetail recommended user profile load failed for ${userId}:`,
+                err
+              );
+              return { userId, profile: null };
+            }
+          })
+        );
+
+        if (cancelled) {
+          return;
+        }
+
+        const nextMap: Record<
+          string,
+          { nickname: string; profileImageId?: string } | null
+        > = {};
+        for (const { userId, profile } of results) {
+          nextMap[userId] = profile;
+        }
+        setRecommendedUserProfiles(nextMap);
+      } catch (err) {
+        console.error('PostDetail recommended user profiles batch load failed:', err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [post?.matchResult]);
+
   const isAuthor = user && post ? user.userId === post?.writer?.id : false;
   const isLoggedIn = !!user;
 
@@ -319,7 +391,12 @@ export function PostDetail({
 
   const isFull = approvedParticipants.length + 1 >= post.maxParticipants;
 
-  let buttonConfig = {
+  let buttonConfig: {
+    text: string;
+    disabled: boolean;
+    className: string;
+    icon: React.ReactNode;
+  } = {
     text: '로그인 후 신청 가능',
     disabled: true,
     className: 'w-full',
@@ -742,6 +819,44 @@ export function PostDetail({
               {buttonConfig.icon}
               {buttonConfig.text}
             </Button>
+
+            {/* AI 추천 동행 섹션 */}
+            {isAuthor && post.matchResult && post.matchResult.length > 0 && (
+              <div className="bg-gray-50 rounded-xl p-6 shadow-sm space-y-4">
+                <h3 className="text-gray-900 pb-2 border-b font-bold flex items-center gap-2">
+                  <UserPlus className="w-5 h-5" />
+                  AI 추천 동행 (상위 {Math.min(post.matchResult.length, 3)}명)
+                </h3>
+                <div className="space-y-3">
+                  {post.matchResult.slice(0, 3).map((candidate) => (
+                    <div
+                      key={candidate.userId}
+                      className="flex items-center gap-3 p-3 bg-white rounded-lg border"
+                    >
+                      <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <User className="w-6 h-6 text-gray-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-gray-900 font-semibold">
+                          {recommendedUserProfiles[candidate.userId]?.nickname || '사용자'}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          매칭률: {Math.round(candidate.score * 100)}%
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-xs h-7"
+                        onClick={() => handleViewProfile(candidate.userId)}
+                      >
+                        프로필 보기
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

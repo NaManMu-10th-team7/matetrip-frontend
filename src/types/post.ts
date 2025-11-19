@@ -1,4 +1,5 @@
 import { type UserProfile } from './user';
+import type { MatchCandidateDto } from './matching';
 
 export type PostStatus = '모집중' | '모집완료' | '완료';
 
@@ -48,4 +49,5 @@ export interface Post {
   endDate: string;
   participations: Participation[];
   imageId: string | null;
+  matchResult?: MatchCandidateDto[];
 }

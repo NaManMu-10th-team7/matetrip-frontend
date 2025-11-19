@@ -45,6 +45,24 @@ interface PlaceApiResponse {
   latitude: number;
 }
 
+// 주변 장소 API 응답 타입
+interface NearbyPlaceApiResponse {
+  id: string;
+  category: string;
+  title: string;
+  address: string;
+  summary?: string;
+  image_url?: string;
+  longitude: number;
+  latitude: number;
+}
+
+// 장소 + 주변 장소 통합 API 응답 타입 (GET /places/{placeId}/with-nearby)
+interface PlaceWithNearbyApiResponse {
+  place: PlaceApiResponse;
+  nearbyPlaces: NearbyPlaceApiResponse[];
+}
+
 export function InspirationDetail() {
   const { placeId } = useParams<{ placeId: string }>();
   const navigate = useNavigate();
@@ -79,11 +97,12 @@ export function InspirationDetail() {
           setPlaceDetail(detailFromState);
         }
 
-        // API에서 장소 상세 정보 가져오기 (좌표 포함)
-        const response = await client.get<PlaceApiResponse>(
-          `/places/${placeId}`
+        // API에서 장소 상세 정보 + 주변 장소 함께 가져오기
+        const response = await client.get<PlaceWithNearbyApiResponse>(
+          `/places/${placeId}/with-nearby`
         );
-        const apiData = response.data;
+        const { place: apiData, nearbyPlaces: nearbyPlacesData } = response.data;
+        console.log('API Response:', { apiData, nearbyPlacesData });
 
         // API 응답으로 상세 정보 업데이트
         const updatedDetail: PlaceDetail = {
@@ -99,61 +118,28 @@ export function InspirationDetail() {
 
         // 지도 중심 설정
         if (apiData.latitude && apiData.longitude) {
+          console.log('Setting map center:', {
+            lat: apiData.latitude,
+            lng: apiData.longitude,
+          });
           setMapCenter({
             lat: apiData.latitude,
             lng: apiData.longitude,
           });
+        } else {
+          console.warn('No coordinates found in API response:', apiData);
         }
 
-        /*
-         * TODO: 주변 장소 API 호출
-         * API 엔드포인트: GET /places/nearby
-         *
-         * 필요한 요청 파라미터:
-         * - latitude: number (현재 장소의 위도)
-         * - longitude: number (현재 장소의 경도)
-         * - limit: number (가져올 장소 개수, 기본 4개)
-         *
-         * 필요한 응답 데이터 (배열):
-         * - id: string (장소 고유 ID)
-         * - title: string (장소명)
-         * - address: string (장소 주소)
-         * - image_url?: string (장소 이미지 URL)
-         *
-         * const nearbyResponse = await client.get<NearbyPlace[]>('/places/nearby', {
-         *   params: {
-         *     latitude: apiData.latitude,
-         *     longitude: apiData.longitude,
-         *     limit: 4,
-         *   },
-         * });
-         * setNearbyPlaces(nearbyResponse.data);
-         */
-
-        // 임시 주변 장소 더미 데이터
-        const dummyNearby: NearbyPlace[] = [
-          {
-            id: '2',
-            title: '강남역 카페거리',
-            address: '서울특별시 강남구 강남대로',
-          },
-          {
-            id: '3',
-            title: '코엑스몰',
-            address: '서울특별시 강남구 영동대로 513',
-          },
-          {
-            id: '4',
-            title: '봉은사',
-            address: '서울특별시 강남구 봉은사로 531',
-          },
-          {
-            id: '5',
-            title: '삼성동 맛집거리',
-            address: '서울특별시 강남구 삼성동',
-          },
-        ];
-        setNearbyPlaces(dummyNearby);
+        // 주변 장소 데이터 설정
+        const formattedNearbyPlaces: NearbyPlace[] = nearbyPlacesData.map(
+          (nearby) => ({
+            id: nearby.id,
+            title: nearby.title,
+            address: nearby.address,
+            imageUrl: nearby.image_url,
+          })
+        );
+        setNearbyPlaces(formattedNearbyPlaces);
       } catch (error) {
         console.error('Failed to fetch place detail:', error);
       } finally {
@@ -162,7 +148,7 @@ export function InspirationDetail() {
     };
 
     fetchPlaceDetail();
-  }, [placeId, passedData]);
+  }, [placeId]); // passedData는 제거 - 객체 참조로 인한 무한 루프 방지
 
   const handlePlanTrip = () => {
     // CreatePostModal로 라우팅 (장소 정보 전달: 이름, 주소, 좌표)
@@ -253,8 +239,8 @@ export function InspirationDetail() {
 
         {/* 근처의 다른 장소들 섹션 */}
         <div className="p-8">
-          <h2 className="text-sm font-normal leading-5 mb-4">
-            근처의 다른 장소들 입니다.
+          <h2 className="text-lg font-bold leading-5 mb-4">
+            MateTrip이 추천하는 주변장소
           </h2>
           <div className="grid grid-cols-2 gap-4">
             {nearbyPlaces.map((place) => (
