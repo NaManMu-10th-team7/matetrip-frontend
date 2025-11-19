@@ -60,7 +60,7 @@ export function MatchingCarousel({
         >
           {displayPosts.map((post, index) => {
             const angle = index * angleStep;
-            
+
             return (
               <div
                 key={post.id}
@@ -85,7 +85,9 @@ export function MatchingCarousel({
                   }
                   writerProfileImageUrl={
                     post.writer?.profile?.profileImageId && writerProfileImages
-                      ? writerProfileImages[post.writer.profile.profileImageId] ?? null
+                      ? (writerProfileImages[
+                          post.writer.profile.profileImageId
+                        ] ?? null)
                       : null
                   }
                   onClick={() => onCardClick?.(post)}

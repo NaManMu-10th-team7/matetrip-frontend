@@ -16,6 +16,7 @@ import {
   UserPlus,
   DoorOpen, // DoorOpen 아이콘 추가
 } from 'lucide-react';
+import React from 'react'; // Import React to use React.ReactNode
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import {
@@ -198,7 +199,7 @@ export function PostDetail({
               );
               return { imageId, url: data.url };
             } catch (err) {
-                console.error('PostDetail participant image load failed:', err);
+              console.error('PostDetail participant image load failed:', err);
               return { imageId, url: null };
             }
           })
@@ -272,7 +273,6 @@ export function PostDetail({
       await client.delete(
         `/posts/${postId}/participations/${userParticipation.id}`
       );
-      alert('동행 신청이 취소되었습니다.');
       await fetchPostDetail();
     } catch (err) {
       console.error('Failed to cancel application:', err);
@@ -319,7 +319,12 @@ export function PostDetail({
 
   const isFull = approvedParticipants.length + 1 >= post.maxParticipants;
 
-  let buttonConfig = {
+  let buttonConfig: {
+    text: string;
+    disabled: boolean;
+    className: string;
+    icon: React.ReactNode | null;
+  } = {
     text: '로그인 후 신청 가능',
     disabled: true,
     className: 'w-full',
@@ -340,7 +345,8 @@ export function PostDetail({
           buttonConfig = {
             text: '워크스페이스 입장',
             disabled: false,
-            className: 'w-full bg-black text-white hover:bg-gray-800 py-3 text-lg', // 크기 키움
+            className:
+              'w-full bg-black text-white hover:bg-gray-800 py-3 text-lg', // 크기 키움
             icon: <DoorOpen className="w-5 h-5 mr-2" />, // 아이콘 추가
           };
           break;
