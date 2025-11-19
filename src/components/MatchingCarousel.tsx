@@ -7,6 +7,7 @@ interface MatchingCarouselProps {
   posts: Post[];
   matchingInfoByPostId?: Record<string, MatchingInfo>;
   fallbackMatchingInfo?: MatchingInfo;
+  writerProfileImages?: Record<string, string | null>;
   onCardClick?: (post: Post) => void;
   onEnterClick?: (post: Post) => void;
   showEnterButton?: boolean;
@@ -26,6 +27,7 @@ export function MatchingCarousel({
   posts,
   matchingInfoByPostId,
   fallbackMatchingInfo,
+  writerProfileImages,
   onCardClick,
 }: MatchingCarouselProps) {
   const [isHovered, setIsHovered] = useState(false);
@@ -80,6 +82,11 @@ export function MatchingCarousel({
                     matchingInfoByPostId?.[post.id] ??
                     fallbackMatchingInfo ??
                     DEFAULT_MATCHING_INFO
+                  }
+                  writerProfileImageUrl={
+                    post.writer?.profile?.profileImageId && writerProfileImages
+                      ? writerProfileImages[post.writer.profile.profileImageId] ?? null
+                      : null
                   }
                   onClick={() => onCardClick?.(post)}
                 />

@@ -15,6 +15,8 @@ interface GridMatchingCardProps {
   onClick?: () => void;
   /** 추천 순위 (1부터 시작) */
   rank?: number;
+  /** 작성자 프로필 이미지 URL */
+  writerProfileImageUrl?: string | null;
 }
 
 const defaultCoverImage = 'https://via.placeholder.com/400x300';
@@ -29,6 +31,7 @@ export function GridMatchingCard({
   matchingInfo,
   onClick,
   rank,
+  writerProfileImageUrl,
 }: GridMatchingCardProps) {
   const { title, location, startDate, endDate } = post;
   const { score } = matchingInfo;
@@ -121,8 +124,16 @@ export function GridMatchingCard({
         {/* 하단 오버레이: 프로필 아이콘 + 매칭률 */}
         <div className="absolute bottom-3 left-3 right-3 flex items-end gap-[14px]">
           {/* 프로필 아이콘 (64px 원형) */}
-          <div className="w-16 h-16 bg-white rounded-full border-4 border-white flex items-center justify-center shrink-0">
-            <User className="w-8 h-8 text-gray-400" />
+          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shrink-0 overflow-hidden">
+            {writerProfileImageUrl ? (
+              <ImageWithFallback
+                src={writerProfileImageUrl}
+                alt="작성자 프로필"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <User className="w-8 h-8 text-gray-400" />
+            )}
           </div>
 
           {/* 매칭률 */}

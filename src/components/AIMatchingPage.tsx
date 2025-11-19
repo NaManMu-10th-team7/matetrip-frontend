@@ -95,6 +95,9 @@ export function MainPage({
   // 모달 상태 관리
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // 작성자 프로필 이미지 관리
+  const [writerProfileImages, setWriterProfileImages] = useState<Record<string, string | null>>({});
 
   // const [searchQuery, setSearchQuery] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -259,6 +262,53 @@ export function MainPage({
     };
   }, [matches, posts]);
 
+  // 작성자 프로필 이미지 일괄 로드 (ProfileModal 방식과 동일)
+  useEffect(() => {
+    const fetchAllWriterProfileImages = async () => {
+      // 1. 모든 게시글에서 작성자의 profileImageId 수집
+      const imageIds = recommendedPosts
+        .map((post) => post.writer?.profile?.profileImageId)
+        .filter((id): id is string => id != null && id.length > 0);
+
+      // 2. 중복 제거
+      const uniqueImageIds = Array.from(new Set(imageIds));
+
+      if (uniqueImageIds.length === 0) {
+        return;
+      }
+
+      try {
+        // 3. Promise.all로 병렬 처리
+        const results = await Promise.all(
+          uniqueImageIds.map(async (imageId) => {
+            try {
+              const { data } = await client.get<{ url: string }>(
+                `/binary-content/${imageId}/presigned-url`
+              );
+              return { imageId, url: data.url };
+            } catch (error) {
+              console.error(`Failed to load profile image ${imageId}:`, error);
+              return { imageId, url: null };
+            }
+          })
+        );
+
+        // 4. State에 저장
+        const imageMap: Record<string, string | null> = {};
+        results.forEach(({ imageId, url }) => {
+          imageMap[imageId] = url;
+        });
+        setWriterProfileImages(imageMap);
+      } catch (error) {
+        console.error('Failed to fetch writer profile images:', error);
+      }
+    };
+
+    if (recommendedPosts.length > 0) {
+      fetchAllWriterProfileImages();
+    }
+  }, [recommendedPosts]);
+
   const handleCardClick = (post: Post) => {
     if (!isLoggedIn) {
       window.location.href = '/login';
@@ -320,6 +370,7 @@ export function MainPage({
             <MatchingCarousel
               posts={recommendedPosts}
               matchingInfoByPostId={matchingInfoByPostId}
+              writerProfileImages={writerProfileImages}
               onCardClick={handleCardClick}
             />
           )}
@@ -348,6 +399,11 @@ export function MainPage({
                   rank={index + 1}
                   matchingInfo={
                     matchingInfoByPostId?.[post.id] ?? { score: 0 }
+                  }
+                  writerProfileImageUrl={
+                    post.writer?.profile?.profileImageId
+                      ? writerProfileImages[post.writer.profile.profileImageId] ?? null
+                      : null
                   }
                   onClick={() => handleCardClick(post)}
                 />

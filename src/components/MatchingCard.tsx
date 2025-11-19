@@ -15,6 +15,8 @@ interface MatchingCardProps {
   onClick?: () => void;
   /** 추천 순위 (1부터 시작) */
   rank?: number;
+  /** 작성자 프로필 이미지 URL */
+  writerProfileImageUrl?: string | null;
 }
 
 const defaultCoverImage = 'https://via.placeholder.com/400x300';
@@ -29,6 +31,7 @@ export function MatchingCard({
   matchingInfo,
   onClick,
   rank,
+  writerProfileImageUrl,
 }: MatchingCardProps) {
   const { title, location, startDate, endDate } = post;
   const { score, tendency, style, vectorscore, mannerTemperature } = matchingInfo;
@@ -109,10 +112,6 @@ export function MatchingCard({
     };
   }, [post.imageId]);
 
-  // TODO: 프로필 이미지 API 연동
-  // 향후 post.writerId를 사용해 /profile/user/:userId 호출
-  // response.data.profileImage를 writerProfileImageUrl로 전달
-
   return (
     <div
       className="relative"
@@ -149,8 +148,16 @@ export function MatchingCard({
           {/* 하단 오버레이: 프로필 아이콘 + 매칭률 */}
           <div className="absolute bottom-2 left-2 right-2 flex items-end gap-2">
             {/* 프로필 아이콘 (48px 원형) */}
-            <div className="w-12 h-12 bg-white rounded-full border-2 border-white flex items-center justify-center shrink-0">
-              <User className="w-6 h-6 text-gray-400" />
+            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shrink-0 overflow-hidden">
+              {writerProfileImageUrl ? (
+                <ImageWithFallback
+                  src={writerProfileImageUrl}
+                  alt="작성자 프로필"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User className="w-6 h-6 text-gray-400" />
+              )}
             </div>
 
             {/* 매칭률 */}
