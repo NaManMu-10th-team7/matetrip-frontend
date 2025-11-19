@@ -14,6 +14,7 @@ import { MatchingSearchBar } from './MatchingSearchBar';
 import { toast } from 'sonner';
 import type { MatchingResult } from '../types/matchSearch'; // MatchingResult 타입 임포트
 import type { KeywordValue } from '../utils/keyword'; // KeywordValue 타입 임포트
+import { ProfileModal } from './ProfileModal'; // ProfileModal 임포트 추가
 
 interface MainPageProps {
   onSearch: (params: {
@@ -97,6 +98,10 @@ export function MainPage({
     endDate?: string;
     keyword?: KeywordValue[];
   } | null>(null);
+
+  // ProfileModal 상태 추가
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileUserId, setProfileUserId] = useState<string | null>(null);
 
   useEffect(() => {
     if (isAuthLoading) {
@@ -475,7 +480,7 @@ export function MainPage({
             ) : recommendedPosts.length === 0 ? (
               <div className="text-center text-gray-500 py-10">
                 추천할 동행이 없습니다.
-              </div>
+              </div >
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-8">
                 {recommendedPosts.map((post, index) => (
@@ -529,8 +534,12 @@ export function MainPage({
                 }
               }}
               onViewProfile={(userId) => {
-                console.log('View profile:', userId);
-                // 프로필 보기 로직
+                console.log('onViewProfile called with userId:', userId);
+                // setIsModalOpen(false); // PostDetail 모달을 닫지 않도록 이 줄을 제거합니다.
+                // setSelectedPostId(null); // PostDetail 모달의 postId를 초기화하지 않습니다.
+                setProfileUserId(userId);
+                setShowProfileModal(true);
+                console.log('ProfileModal states after update - showProfileModal:', true, 'profileUserId:', userId);
               }}
               onEditPost={(post) => {
                 setIsModalOpen(false);
@@ -555,6 +564,20 @@ export function MainPage({
           )}
         </DialogContent>
       </Dialog>
+
+      {/* ProfileModal */}
+      {profileUserId && (
+        <ProfileModal
+          userId={profileUserId}
+          open={showProfileModal}
+          onOpenChange={(open) => { // onClose -> onOpenChange로 수정
+            setShowProfileModal(open); // open 값을 직접 사용
+            if (!open) {
+              setProfileUserId(null);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
