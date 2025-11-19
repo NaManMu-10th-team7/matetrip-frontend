@@ -198,7 +198,7 @@ export function PostDetail({
               );
               return { imageId, url: data.url };
             } catch (err) {
-              console.error('PostDetail participant image load failed:', err);
+                console.error('PostDetail participant image load failed:', err);
               return { imageId, url: null };
             }
           })
@@ -473,10 +473,22 @@ export function PostDetail({
                       alt={post.writer?.profile?.nickname}
                       className="w-12 h-12 rounded-full object-cover flex-shrink-0"
                     />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-gray-900 font-semibold mb-1">
-                        {post.writer?.profile?.nickname}
-                      </p>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-gray-900 font-semibold">
+                          {post.writer?.profile?.nickname}
+                        </p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-shrink-0"
+                          onClick={() =>
+                            post.writer?.id && handleViewProfile(post.writer.id)
+                          }
+                        >
+                          프로필 보기
+                        </Button>
+                      </div>
                       <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
                         <Thermometer className="w-4 h-4" />
                         <span>
@@ -489,27 +501,17 @@ export function PostDetail({
                           <Badge
                             key={style}
                             variant="secondary"
-                            className="text-xs bg-black text-white" // 블랙으로 통일
+                            className="text-xs bg-black text-white"
                           >
                             {translateKeyword(style)}
                           </Badge>
                         ))}
                       </div>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="flex-shrink-0"
-                      onClick={() =>
-                        post.writer?.id && handleViewProfile(post.writer.id)
-                      }
-                    >
-                      프로필 보기
-                    </Button>
                   </div>
                 </div>
 
-                <div className="relative w-full rounded-xl overflow-hidden bg-gray-100 max-h-[400px]"> {/* max-h-[400px] 추가 */}
+                <div className="relative w-full rounded-xl overflow-hidden bg-gray-100 max-h-[400px]">
                   <ImageWithFallback
                     src={
                       remoteCoverImageUrl ||
