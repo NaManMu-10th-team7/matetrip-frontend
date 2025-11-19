@@ -15,8 +15,8 @@ interface MatchingCardProps {
   onClick?: () => void;
   /** 추천 순위 (1부터 시작) */
   rank?: number;
-  /** 작성자 프로필 이미지 URL */
-  writerProfileImageUrl?: string | null;
+  /** 작성자 프로필 이미지 ID */
+  writerProfileImageId?: string | null; // 변경: URL 대신 ID를 받음
 }
 
 const defaultCoverImage = 'https://via.placeholder.com/400x300';
@@ -31,19 +31,20 @@ export function MatchingCard({
   matchingInfo,
   onClick,
   rank,
-  writerProfileImageUrl,
+  writerProfileImageId, // 변경: URL 대신 ID를 받음
 }: MatchingCardProps) {
   const { title, location, startDate, endDate } = post;
-  const { score, tendency, style, vectorscore, mannerTemperature } = matchingInfo;
-  
+  const { score, tendency, style, vectorscore, mannerTemperature } =
+    matchingInfo;
+
   const formatMatchText = (value?: string, fallback = '정보 없음') =>
     value && value.trim().length > 0 ? value : fallback;
-  
+
   const safeScore =
     typeof score === 'number' && !Number.isNaN(score)
       ? Math.min(100, Math.max(0, score))
       : 0;
-  
+
   const safeVectorScore =
     typeof vectorscore === 'number' && !Number.isNaN(vectorscore)
       ? Math.min(100, Math.max(0, vectorscore))
@@ -52,16 +53,17 @@ export function MatchingCard({
   const safeMannerTemp = mannerTemperature ?? 36.5;
 
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null); // 추가: 프로필 이미지 URL 상태
 
   // 총 일수 계산
-  const calculateDays = () => {
-    if (!startDate || !endDate) return 0;
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const diffTime = Math.abs(end.getTime() - start.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-    return diffDays;
-  };
+  // const calculateDays = () => {
+  //   if (!startDate || !endDate) return 0;
+  //   const start = new Date(startDate);
+  //   const end = new Date(endDate);
+  //   const diffTime = Math.abs(end.getTime() - start.getTime());
+  //   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+  //   return diffDays;
+  // };
 
   const renderDateText = () => {
     if (!startDate || !endDate) {
@@ -89,7 +91,9 @@ export function MatchingCard({
         );
 
         if (!response.ok) {
-          throw new Error('게시글 이미지를 불러오지 못했습니다.');
+          throw new Error(
+            `게시글 이미지를 불러오지 못했습니다. Status: ${response.status}`
+          );
         }
 
         const payload = await response.json();
@@ -112,11 +116,55 @@ export function MatchingCard({
     };
   }, [post.imageId]);
 
+  // 프로필 이미지 로드 (추가)
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchProfileImage = async () => {
+      if (!writerProfileImageId) {
+        setProfileImageUrl(null);
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/binary-content/${writerProfileImageId}/presigned-url`,
+          {
+            credentials: 'include',
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(
+            `프로필 이미지를 불러오지 못했습니다. Status: ${response.status}`
+          );
+        }
+
+        const payload = await response.json();
+        const { url } = payload;
+        if (!cancelled) {
+          setProfileImageUrl(url);
+        }
+      } catch (error) {
+        console.error('MatchingCard profile image load failed:', error);
+        if (!cancelled) {
+          setProfileImageUrl(null);
+        }
+      }
+    };
+
+    fetchProfileImage();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [writerProfileImageId]);
+
   return (
     <div
-      className="relative"
+      className="relative" // flex-shrink-0 제거
       style={{
-        width: '240px',
+        width: '240px', // width 속성 다시 추가
         height: '280px',
         transformStyle: 'preserve-3d',
       }}
@@ -137,7 +185,10 @@ export function MatchingCard({
             alt={title}
             className="w-full h-full object-cover"
           />
-          
+
+          {/* 하단 그라데이션 오버레이 추가 */}
+          <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 to-transparent"></div>
+
           {/* Best 배지 (rank === 1일 때만) */}
           {rank === 1 && (
             <div className="absolute top-2 right-2 bg-[#101828] rounded-[8px] px-2 py-0.5">
@@ -149,9 +200,9 @@ export function MatchingCard({
           <div className="absolute bottom-2 left-2 right-2 flex items-end gap-2">
             {/* 프로필 아이콘 (48px 원형) */}
             <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shrink-0 overflow-hidden">
-              {writerProfileImageUrl ? (
+              {profileImageUrl ? ( // 변경: writerProfileImageUrl 대신 profileImageUrl 사용
                 <ImageWithFallback
-                  src={writerProfileImageUrl}
+                  src={profileImageUrl} // 변경
                   alt="작성자 프로필"
                   className="w-full h-full object-cover"
                 />
@@ -180,14 +231,14 @@ export function MatchingCard({
           <h3 className="text-[16px] font-bold text-black leading-[1.3] truncate">
             {title}
           </h3>
-          
+
           <div className="flex items-center gap-1">
             <MapPin className="w-3.5 h-3.5 text-black shrink-0" />
             <p className="text-[12px] font-medium text-black truncate">
               {location}
             </p>
           </div>
-          
+
           <div className="flex items-center gap-1">
             <Calendar className="w-3.5 h-3.5 text-black shrink-0" />
             <p className="text-[12px] font-medium text-black truncate">
@@ -223,7 +274,7 @@ export function MatchingCard({
           <p className="text-[13px] font-medium text-black mb-1.5">
             당신과의 매칭 사유
           </p>
-          
+
           <div className="space-y-2">
             {/* 매칭 사유 1: 여행 스타일 */}
             <div className="flex items-start gap-1.5">
@@ -232,7 +283,7 @@ export function MatchingCard({
                 여행 스타일: {formatMatchText(style, '정보없음')}
               </p>
             </div>
-            
+
             {/* 매칭 사유 2: 여행 성향 */}
             <div className="flex items-start gap-1.5">
               <CheckCircle className="w-3.5 h-3.5 text-black shrink-0 mt-0.5" />
@@ -240,7 +291,7 @@ export function MatchingCard({
                 여행 성향: {formatMatchText(tendency, '정보없음')}
               </p>
             </div>
-            
+
             {/* 매칭 사유 3: 프로필 유사도 */}
             {safeVectorScore !== undefined && (
               <div className="flex items-start gap-1.5">
@@ -253,7 +304,7 @@ export function MatchingCard({
           </div>
         </div>
 
-        {/* 
+        {/*
           TODO: 매너온도 API 연동
           향후 AIMatchingPage의 fetchMatches에서 /profile/user/:userId 호출 시
           response.data.mannerTemperature 필드를 matchingInfo에 포함하여 전달

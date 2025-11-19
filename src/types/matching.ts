@@ -30,6 +30,7 @@ export interface MatchCandidateDto {
   overlappingTravelStyles: TravelStyleType[];
   overlappingTendencies: TravelTendencyType[];
   mbtiMatchScore: number;
+  profileImageId?: string | null; // 추가된 필드
   recruitingPosts?: MatchRecruitingPostDto[];
 }
 

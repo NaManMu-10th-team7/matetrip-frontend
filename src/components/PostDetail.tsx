@@ -17,6 +17,7 @@ import {
   UserPlus,
   DoorOpen, // DoorOpen 아이콘 추가
 } from 'lucide-react';
+import React from 'react'; // Import React to use React.ReactNode
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import {
@@ -344,7 +345,6 @@ export function PostDetail({
       await client.delete(
         `/posts/${postId}/participations/${userParticipation.id}`
       );
-      alert('동행 신청이 취소되었습니다.');
       await fetchPostDetail();
     } catch (err) {
       console.error('Failed to cancel application:', err);
@@ -395,7 +395,7 @@ export function PostDetail({
     text: string;
     disabled: boolean;
     className: string;
-    icon: React.ReactNode;
+    icon: React.ReactNode | null;
   } = {
     text: '로그인 후 신청 가능',
     disabled: true,
@@ -417,7 +417,8 @@ export function PostDetail({
           buttonConfig = {
             text: '워크스페이스 입장',
             disabled: false,
-            className: 'w-full bg-black text-white hover:bg-gray-800 py-3 text-lg', // 크기 키움
+            className:
+              'w-full bg-black text-white hover:bg-gray-800 py-3 text-lg', // 크기 키움
             icon: <DoorOpen className="w-5 h-5 mr-2" />, // 아이콘 추가
           };
           break;
@@ -550,10 +551,22 @@ export function PostDetail({
                       alt={post.writer?.profile?.nickname}
                       className="w-12 h-12 rounded-full object-cover flex-shrink-0"
                     />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-gray-900 font-semibold mb-1">
-                        {post.writer?.profile?.nickname}
-                      </p>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-gray-900 font-semibold">
+                          {post.writer?.profile?.nickname}
+                        </p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-shrink-0"
+                          onClick={() =>
+                            post.writer?.id && handleViewProfile(post.writer.id)
+                          }
+                        >
+                          프로필 보기
+                        </Button>
+                      </div>
                       <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
                         <Thermometer className="w-4 h-4" />
                         <span>
@@ -566,27 +579,17 @@ export function PostDetail({
                           <Badge
                             key={style}
                             variant="secondary"
-                            className="text-xs bg-black text-white" // 블랙으로 통일
+                            className="text-xs bg-black text-white"
                           >
                             {translateKeyword(style)}
                           </Badge>
                         ))}
                       </div>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="flex-shrink-0"
-                      onClick={() =>
-                        post.writer?.id && handleViewProfile(post.writer.id)
-                      }
-                    >
-                      프로필 보기
-                    </Button>
                   </div>
                 </div>
 
-                <div className="relative w-full rounded-xl overflow-hidden bg-gray-100 max-h-[400px]"> {/* max-h-[400px] 추가 */}
+                <div className="relative w-full rounded-xl overflow-hidden bg-gray-100 max-h-[400px]">
                   <ImageWithFallback
                     src={
                       remoteCoverImageUrl ||

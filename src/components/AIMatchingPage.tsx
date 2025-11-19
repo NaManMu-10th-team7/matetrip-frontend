@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { MapPin } from 'lucide-react';
+import { MapPin, Search as SearchIcon } from 'lucide-react'; // SearchIcon 추가
 import { Button } from './ui/button';
-//import { SearchBar } from './SearchBar';
 import client from '../api/client';
 import { type Post } from '../types/post';
 import { MainPostCardSkeleton } from './AIMatchingSkeletion';
@@ -13,6 +12,9 @@ import { useAuthStore } from '../store/authStore';
 import type { MatchingInfo, MatchCandidateDto } from '../types/matching';
 import { MatchingSearchBar } from './MatchingSearchBar';
 import { toast } from 'sonner';
+import type { MatchingResult } from '../types/matchSearch'; // MatchingResult 타입 임포트
+import type { KeywordValue } from '../utils/keyword'; // KeywordValue 타입 임포트
+import { ProfileModal } from './ProfileModal'; // ProfileModal 임포트 추가
 
 interface MainPageProps {
   onSearch: (params: {
@@ -67,44 +69,39 @@ const normalizeOverlapText = (values?: unknown): string | undefined => {
   return normalized.join(', ');
 };
 
-// 임시 매칭 정보 생성 함수 (추후 실제 API로 교체 가능)
-// const generateMockMatchingInfo = (index: number): MatchingInfo => {
-//   const scores = [92, 85, 78, 73, 68, 65, 62, 58, 55, 52];
-//   const tendencies = ['즉흥적', '계획적', '주도적', '따라가는'];
-//   const styles = ['호텔', '게스트하우스', '에어비앤비', '캠핑'];
-//
-//   return {
-//     score: scores[index % scores.length] || 50,
-//     tendency: tendencies[index % tendencies.length],
-//     style: styles[index % styles.length],
-//     vectorscore: Math.floor(Math.random() * 30) + 60, // 60-90 사이 랜덤값
-//   };
-// };
-
-export function MainPage({
-  onViewPost,
-  fetchTrigger,
-  isLoggedIn,
-}: MainPageProps) {
+export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user, isAuthLoading } = useAuthStore();
   const [matches, setMatches] = useState<MatchCandidateDto[]>([]);
   const [_isMatchesLoading, setIsMatchesLoading] = useState(true);
-  
+
   // 모달 상태 관리
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
-  // 작성자 프로필 이미지 관리
-  const [writerProfileImages, setWriterProfileImages] = useState<Record<string, string | null>>({});
 
-  // const [searchQuery, setSearchQuery] = useState('');
+  // 작성자 프로필 이미지 관리
+  const [writerProfileImages, setWriterProfileImages] = useState<
+    Record<string, string | null>
+  >({});
+
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  // const [startDate, setStartDate] = useState('');
-  // const [endDate, setEndDate] = useState('');
-  // const [selectedKeyword, setSelectedKeyword] = useState<KeywordValue | ''>('');
   const filterContainerRef = useRef<HTMLDivElement | null>(null);
+
+  // 검색 결과 상태 추가
+  const [searchResults, setSearchResults] = useState<MatchingResult[] | null>(
+    null
+  );
+  const [searchQueryInfo, setSearchQueryInfo] = useState<{
+    location?: string;
+    startDate?: string;
+    endDate?: string;
+    keyword?: KeywordValue[];
+  } | null>(null);
+
+  // ProfileModal 상태 추가
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileUserId, setProfileUserId] = useState<string | null>(null);
 
   useEffect(() => {
     if (isAuthLoading) {
@@ -159,7 +156,7 @@ export function MainPage({
         }
         console.log('match response', res.data);
         setMatches(res.data ?? []);
-        
+
         // TODO: 매너온도 API 연동
         // 향후 백엔드에서 MatchCandidateDto에 mannerTemperature 필드 추가 예정
         // 또는 별도 엔드포인트: GET /users/:userId/profile 호출하여 매너온도 가져오기
@@ -266,9 +263,24 @@ export function MainPage({
   useEffect(() => {
     const fetchAllWriterProfileImages = async () => {
       // 1. 모든 게시글에서 작성자의 profileImageId 수집
-      const imageIds = recommendedPosts
+      const allPosts = searchResults
+        ? searchResults.map((res) => res.post)
+        : recommendedPosts;
+      const imageIds = allPosts
         .map((post) => post.writer?.profile?.profileImageId)
         .filter((id): id is string => id != null && id.length > 0);
+
+      // 검색 결과의 writerProfileImageId도 수집
+      if (searchResults) {
+        searchResults.forEach((result) => {
+          if (
+            result.writerProfileImageId &&
+            result.writerProfileImageId.length > 0
+          ) {
+            imageIds.push(result.writerProfileImageId);
+          }
+        });
+      }
 
       // 2. 중복 제거
       const uniqueImageIds = Array.from(new Set(imageIds));
@@ -304,10 +316,13 @@ export function MainPage({
       }
     };
 
-    if (recommendedPosts.length > 0) {
+    if (
+      recommendedPosts.length > 0 ||
+      (searchResults && searchResults.length > 0)
+    ) {
       fetchAllWriterProfileImages();
     }
-  }, [recommendedPosts]);
+  }, [recommendedPosts, searchResults]); // searchResults 의존성 추가
 
   const handleCardClick = (post: Post) => {
     if (!isLoggedIn) {
@@ -318,6 +333,38 @@ export function MainPage({
     setSelectedPostId(post.id);
     setIsModalOpen(true);
   };
+
+  // MatchingSearchBar로부터 검색 결과를 받는 핸들러
+  const handleSearchSuccess = (
+    results: MatchingResult[],
+    query: {
+      location?: string;
+      startDate?: string;
+      endDate?: string;
+      keyword?: KeywordValue[];
+    }
+  ) => {
+    console.log(
+      'handleSearchSuccess called with results:',
+      results,
+      'query:',
+      query
+    ); // 로그 추가
+    setSearchResults(results);
+    setSearchQueryInfo(query);
+  };
+
+  const keywordsText = useMemo(() => {
+    if (!searchQueryInfo) return '';
+    const parts: string[] = [];
+    if (searchQueryInfo.location) parts.push(searchQueryInfo.location);
+    if (searchQueryInfo.startDate) parts.push(searchQueryInfo.startDate);
+    if (searchQueryInfo.endDate) parts.push(searchQueryInfo.endDate);
+    if (searchQueryInfo.keyword && searchQueryInfo.keyword.length > 0) {
+      parts.push(...searchQueryInfo.keyword);
+    }
+    return parts.join(', ');
+  }, [searchQueryInfo]);
 
   return (
     <div className="bg-white min-h-screen">
@@ -355,32 +402,96 @@ export function MainPage({
           </div>
         )}
         {/* Recommended Posts Section - 모든 사용자에게 표시 */}
-        <section className="mb-12">
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-              {Array.from({ length: 5 }).map((_, index) => (
-                <MainPostCardSkeleton key={index} />
-              ))}
-            </div>
-          ) : recommendedPosts.length === 0 ? (
-            <div className="text-center text-gray-500 py-10">
-              추천할 동행이 없습니다.
-            </div>
-          ) : (
-            <MatchingCarousel
-              posts={recommendedPosts}
-              matchingInfoByPostId={matchingInfoByPostId}
-              writerProfileImages={writerProfileImages}
-              onCardClick={handleCardClick}
-            />
-          )}
-        </section>
+        {!searchResults && ( // 검색 결과가 없을 때만 캐러셀 표시
+          <section className="mb-12">
+            {isLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <MainPostCardSkeleton key={index} />
+                ))}
+              </div>
+            ) : recommendedPosts.length === 0 ? (
+              <div className="text-center text-gray-500 py-10">
+                추천할 동행이 없습니다.
+              </div>
+            ) : (
+              <MatchingCarousel
+                posts={recommendedPosts}
+                matchingInfoByPostId={matchingInfoByPostId}
+                writerProfileImages={writerProfileImages}
+                onCardClick={handleCardClick}
+              />
+            )}
+          </section>
+        )}
 
-        {/* 전체 추천 동행 그리드 */}
+        {/* 전체 추천 동행 그리드 또는 검색 결과 */}
         <section className="mb-12">
           {/* Search Bar and Filters - 로그인한 사용자에게만 표시 */}
-          {isLoggedIn && <MatchingSearchBar />}
-          {isLoading ? (
+          {isLoggedIn && (
+            <MatchingSearchBar onSearchSuccess={handleSearchSuccess} />
+          )}{' '}
+          {/* prop 전달 */}
+          {searchResults ? ( // 검색 결과가 있을 경우
+            <div className="mt-8">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                <div>
+                  <h1 className="text-gray-900 mb-2">맞춤 동행 검색 결과</h1>
+                  {keywordsText && (
+                    <p className="text-gray-600">
+                      "{keywordsText}" 검색 결과 {searchResults.length}개
+                    </p>
+                  )}
+                </div>
+                {/* 검색 초기화 버튼 (검색 결과가 있을 때 항상 표시) */}
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    console.log('상단 검색 초기화 button clicked');
+                    setSearchResults(null);
+                    setSearchQueryInfo(null);
+                  }}
+                >
+                  전체 목록 보기 {/* 버튼 텍스트 변경 */}
+                </Button>
+              </div>
+              {searchResults.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                  {' '}
+                  {/* 그리드 클래스 수정 */}
+                  {searchResults.map((result, index) => (
+                    <GridMatchingCard
+                      key={result.post.id}
+                      post={result.post}
+                      matchingInfo={result.matchingInfo}
+                      rank={index + 1}
+                      writerProfileImageUrl={
+                        result.writerProfileImageId
+                          ? (writerProfileImages[result.writerProfileImageId] ??
+                            null)
+                          : null
+                      }
+                      onClick={() => handleCardClick(result.post)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-16">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <SearchIcon className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-gray-900 mb-2">
+                    표시할 추천 결과가 없습니다
+                  </h3>
+                  <p className="text-gray-600 mb-6">
+                    검색 조건을 다시 입력하거나 다른 키워드로 시도해보세요.
+                  </p>
+                  {/* 검색 결과가 없을 때의 초기화 버튼은 제거 */}
+                </div>
+              )}
+            </div>
+          ) : // 검색 결과가 없을 경우 기존 그리드 표시
+          isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-8">
               {Array.from({ length: 8 }).map((_, index) => (
                 <MainPostCardSkeleton key={index} />
@@ -397,12 +508,12 @@ export function MainPage({
                   key={post.id}
                   post={post}
                   rank={index + 1}
-                  matchingInfo={
-                    matchingInfoByPostId?.[post.id] ?? { score: 0 }
-                  }
+                  matchingInfo={matchingInfoByPostId?.[post.id] ?? { score: 0 }}
                   writerProfileImageUrl={
                     post.writer?.profile?.profileImageId
-                      ? writerProfileImages[post.writer.profile.profileImageId] ?? null
+                      ? (writerProfileImages[
+                          post.writer.profile.profileImageId
+                        ] ?? null)
                       : null
                   }
                   onClick={() => handleCardClick(post)}
@@ -438,12 +549,23 @@ export function MainPage({
                   toast.success('워크스페이스에 입장했습니다.');
                 } catch (error) {
                   console.error('Failed to create or join workspace:', error);
-                  toast.error('워크스페이스에 입장하는 중 오류가 발생했습니다.');
+                  toast.error(
+                    '워크스페이스에 입장하는 중 오류가 발생했습니다.'
+                  );
                 }
               }}
               onViewProfile={(userId) => {
-                console.log('View profile:', userId);
-                // 프로필 보기 로직
+                console.log('onViewProfile called with userId:', userId);
+                // setIsModalOpen(false); // PostDetail 모달을 닫지 않도록 이 줄을 제거합니다.
+                // setSelectedPostId(null); // PostDetail 모달의 postId를 초기화하지 않습니다.
+                setProfileUserId(userId);
+                setShowProfileModal(true);
+                console.log(
+                  'ProfileModal states after update - showProfileModal:',
+                  true,
+                  'profileUserId:',
+                  userId
+                );
               }}
               onEditPost={(post) => {
                 setIsModalOpen(false);
@@ -468,6 +590,21 @@ export function MainPage({
           )}
         </DialogContent>
       </Dialog>
+
+      {/* ProfileModal */}
+      {profileUserId && (
+        <ProfileModal
+          userId={profileUserId}
+          open={showProfileModal}
+          onOpenChange={(open) => {
+            // onClose -> onOpenChange로 수정
+            setShowProfileModal(open); // open 값을 직접 사용
+            if (!open) {
+              setProfileUserId(null);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
