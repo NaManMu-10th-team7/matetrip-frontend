@@ -425,7 +425,7 @@ export function NewMainPage({
                 }
                 onCreatePost();
               }}
-              className="absolute bottom-6 left-6 z-[9999] bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
+              className="absolute bottom-6 left-6 z-[9999] bg-[#101828] text-white shadow-lg"
             >
               여행 만들기
             </Button>
