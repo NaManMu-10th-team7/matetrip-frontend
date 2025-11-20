@@ -32,6 +32,7 @@ export interface MatchCandidateDto {
   overlappingTravelStyles: TravelStyleType[];
   overlappingTendencies: TravelTendencyType[];
   mbtiMatchScore: number;
+  profileImageId?: string;
   profile?: Partial<UserProfile> & { profileImageId?: string | null };
   recruitingPosts?: MatchRecruitingPostDto[];
 }
