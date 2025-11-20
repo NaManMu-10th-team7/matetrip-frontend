@@ -504,25 +504,17 @@ interface LeftPanelProps {
   isOpen: boolean;
   isRecommendationLoading: boolean;
   workspaceId: string;
-  itinerary: Record<string, Poi[]>;
   recommendedItinerary: Record<string, Poi[]>;
   dayLayers: DayLayer[];
-  markedPois: Poi[];
-  unmarkPoi: (poiId: string | number) => void;
-  removeSchedule: (poiId: string, planDayId: string) => void;
   onPoiClick: (poi: Poi | AiPlace) => void;
   onPoiHover: (poiId: string | null) => void;
   onAddRecommendedPoi: (poi: Poi) => void;
   onAddRecommendedPoiToDay: (planDayId: string, pois: Poi[]) => void;
-  routeSegmentsByDay: Record<string, RouteSegment[]>;
-  onOptimizeRoute: (dayId: string) => void;
   visibleDayIds: Set<string>;
   onDayVisibilityChange: (dayId: string, isVisible: boolean) => void;
-  onMyItineraryVisibilityChange: () => void;
   onRecommendedItineraryVisibilityChange: () => void;
   hoveredPoiId: string | null;
   onGenerateAiPlan: () => void;
-  isOptimizationProcessing: boolean;
   messages: ChatMessage[];
   sendMessage: (message: string) => void;
   isChatConnected: boolean;
@@ -890,25 +882,17 @@ export function LeftPanel({
   isOpen,
   isRecommendationLoading,
   workspaceId,
-  itinerary,
   recommendedItinerary,
   dayLayers,
-  markedPois,
-  unmarkPoi,
-  removeSchedule,
   onPoiClick,
   onPoiHover,
   onAddRecommendedPoi,
   onAddRecommendedPoiToDay,
-  routeSegmentsByDay,
-  onOptimizeRoute,
   visibleDayIds,
   onDayVisibilityChange,
-  onMyItineraryVisibilityChange,
   onRecommendedItineraryVisibilityChange,
   hoveredPoiId,
   onGenerateAiPlan,
-  isOptimizationProcessing,
   messages,
   sendMessage,
   isChatConnected,
@@ -916,22 +900,13 @@ export function LeftPanel({
   setChatAiPlaces,
   chatAiPlaces,
 }: LeftPanelProps) {
-  const [isOptimizationModalOpen, setIsOptimizationModalOpen] = useState(false);
-  const [optimizationDayId, setOptimizationDayId] = useState<string | null>(
-    null
-  );
-  const [originalRouteData, setOriginalRouteData] = useState<{
-    pois: Poi[];
-    segments: RouteSegment[];
-  } | null>(null);
-  const [activeTab, setActiveTab] = useState('itinerary');
+  const [activeTab, setActiveTab] = useState('chat');
 
   const [recCollapsedDayIds, setRecCollapsedDayIds] = useState<Set<string>>(
     new Set()
   );
 
   const [isAiRecOpen, setIsAiRecOpen] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(false);
 
   const handleRecToggleDayCollapse = (dayId: string) => {
     setRecCollapsedDayIds((prev) => {
@@ -958,11 +933,7 @@ export function LeftPanel({
 
   // [추가] 서버에서 받은 POI 목록에 캐시된 카테고리 정보를 병합합니다.
   const poisWithCategory = useMemo(() => {
-    const allPois = [
-      ...markedPois,
-      ...Object.values(itinerary).flat(),
-      ...Object.values(recommendedItinerary).flat(),
-    ];
+    const allPois = [...Object.values(recommendedItinerary).flat()];
     return allPois.map((poi) => {
       // POI에 categoryName이 이미 있으면 그대로 사용합니다.
       if (poi.categoryName) return poi;
@@ -970,41 +941,13 @@ export function LeftPanel({
       const cachedPlace = placeCache.get(poi.placeId);
       return cachedPlace ? { ...poi, categoryName: cachedPlace.category } : poi;
     });
-  }, [markedPois, itinerary, recommendedItinerary, placeCache]);
+  }, [recommendedItinerary, placeCache]);
 
   const allAddedPois = useMemo(
-    () => [...markedPois, ...Object.values(itinerary).flat()],
-    [markedPois, itinerary]
+    () => [...Object.values(recommendedItinerary).flat()],
+    [recommendedItinerary]
   );
 
-  const handleOptimizeRoute = (dayId: string) => {
-    const pois = itinerary[dayId] || [];
-    const segments = routeSegmentsByDay[dayId] || [];
-    setOriginalRouteData(JSON.parse(JSON.stringify({ pois, segments })));
-    setOptimizationDayId(dayId);
-    setIsOptimizationModalOpen(true); // 모달 열기
-    onOptimizeRoute(dayId);
-  };
-
-  const handleCloseModal = () => {
-    setIsOptimizationModalOpen(false);
-    setOriginalRouteData(null);
-  };
-
-  // [추가] poisWithCategory를 사용하여 markedPois와 itinerary를 재생성합니다.
-  const enrichedMarkedPois = useMemo(
-    () => poisWithCategory.filter((p) => p.status === 'MARKED'),
-    [poisWithCategory]
-  );
-  const enrichedItinerary = useMemo(() => {
-    const newItinerary: Record<string, Poi[]> = {};
-    dayLayers.forEach((layer) => {
-      newItinerary[layer.id] = poisWithCategory.filter(
-        (p) => p.planDayId === layer.id
-      );
-    });
-    return newItinerary;
-  }, [poisWithCategory, dayLayers]);
   const enrichedRecommendedItinerary = useMemo(() => {
     const newItinerary: Record<string, Poi[]> = {};
     dayLayers.forEach((layer) => {
@@ -1034,14 +977,6 @@ export function LeftPanel({
   if (!isOpen) {
     return null;
   }
-
-  const dayLayerForModal = optimizationDayId
-    ? (dayLayers.find((l) => l.id === optimizationDayId) ?? null)
-    : null;
-  const optimizedPois = optimizationDayId ? itinerary[optimizationDayId] : [];
-  const optimizedSegments = optimizationDayId
-    ? routeSegmentsByDay[optimizationDayId]
-    : [];
 
   const renderAiRecommendationContent = () => (
     <>
@@ -1089,8 +1024,8 @@ export function LeftPanel({
               onAddRecommendedPoiToDay,
               onPoiClick,
               onPoiHover,
-              unmarkPoi,
-              removeSchedule,
+              unmarkPoi: () => {},
+              removeSchedule: () => {},
               hoveredPoiId,
               onAddRecommendedPoi,
               allAddedPois,
@@ -1104,38 +1039,18 @@ export function LeftPanel({
   );
 
   const renderTabContent = () => {
-    if (activeTab === 'itinerary') {
+    if (activeTab === 'chat') {
       return (
-        <>
-          <MarkerStorage
-            pois={enrichedMarkedPois}
-            {...{
-              onPoiClick,
-              onPoiHover,
-              unmarkPoi,
-              removeSchedule,
-              hoveredPoiId,
-            }}
-          />
-          <ItineraryPanel
-            {...{
-              itinerary: enrichedItinerary,
-              workspaceId,
-              dayLayers,
-              onPoiClick,
-              onPoiHover,
-              unmarkPoi,
-              removeSchedule,
-              routeSegmentsByDay,
-              onOptimizeRoute: handleOptimizeRoute,
-              visibleDayIds,
-              onDayVisibilityChange,
-              onMyItineraryVisibilityChange,
-              hoveredPoiId,
-              isRecommendationLoading,
-            }}
-          />
-        </>
+        <ChatSidebar
+          messages={messages}
+          sendMessage={sendMessage}
+          isChatConnected={isChatConnected}
+          workspaceId={workspaceId}
+          onAddPoiToItinerary={onAddRecommendedPoi}
+          onCardClick={onCardClick}
+          setChatAiPlaces={setChatAiPlaces}
+          chatAiPlaces={enrichedChatAiPlaces}
+        />
       );
     }
     return null;
@@ -1149,21 +1064,21 @@ export function LeftPanel({
         <div className="w-96 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out">
           <div className="flex w-full bg-black h-14 p-0 rounded-none">
             <button
-              onClick={() => setActiveTab('itinerary')}
+              onClick={() => setActiveTab('chat')}
               className={`flex-1 flex items-center justify-center gap-2 text-lg rounded-none ${
-                activeTab === 'itinerary'
+                activeTab === 'chat'
                   ? 'text-white bg-gray-800'
                   : 'text-gray-400'
               } hover:text-white`}
             >
-              <ListOrdered className="w-5 h-5" />
-              <span>내 일정</span>
+              <MessageCircle className="w-5 h-5" />
+              <span>채팅</span>
             </button>
-            <button
+            {/* AI 추천 탭 숨김 처리 */}
+            {/* <button
               onClick={() => {
                 const newIsOpen = !isAiRecOpen;
                 setIsAiRecOpen(newIsOpen);
-                if (newIsOpen) setIsChatOpen(false);
               }}
               className={`flex-1 flex items-center justify-center gap-2 text-lg rounded-none ${
                 isAiRecOpen ? 'text-white bg-gray-800' : 'text-gray-400'
@@ -1171,20 +1086,7 @@ export function LeftPanel({
             >
               <Lightbulb className="w-5 h-5" />
               <span>AI 추천</span>
-            </button>
-            <button
-              onClick={() => {
-                const newIsOpen = !isChatOpen;
-                setIsChatOpen(newIsOpen);
-                if (newIsOpen) setIsAiRecOpen(false);
-              }}
-              className={`flex-1 flex items-center justify-center gap-2 text-lg rounded-none ${
-                isChatOpen ? 'text-white bg-gray-800' : 'text-gray-400'
-              } hover:text-white`}
-            >
-              <MessageCircle className="w-5 h-5" />
-              <span>채팅</span>
-            </button>
+            </button> */}
           </div>
 
           <div className="flex-1 m-0 overflow-y-auto">{renderTabContent()}</div>
@@ -1204,36 +1106,6 @@ export function LeftPanel({
           </div>
         </div>
       </div>
-      {/* 채팅 패널 (Floating) */}
-      <div
-        className={`absolute top-0 left-0 h-full w-96 bg-white border-r border-gray-200 shadow-lg transition-all duration-300 ease-in-out z-10 ${
-          isChatOpen
-            ? 'opacity-100 translate-x-96'
-            : 'opacity-0 -translate-x-full pointer-events-none'
-        }`}
-      >
-        <ChatSidebar
-          messages={messages}
-          sendMessage={sendMessage}
-          isChatConnected={isChatConnected}
-          workspaceId={workspaceId}
-          onAddPoiToItinerary={onAddRecommendedPoi}
-          onCardClick={onCardClick}
-          setChatAiPlaces={setChatAiPlaces}
-          chatAiPlaces={enrichedChatAiPlaces}
-        />
-      </div>
-      <OptimizationModal
-        isOpen={isOptimizationModalOpen}
-        onClose={handleCloseModal}
-        originalData={originalRouteData}
-        optimizedData={
-          !isOptimizationProcessing
-            ? { pois: optimizedPois, segments: optimizedSegments }
-            : null
-        }
-        dayLayer={dayLayerForModal}
-      />
     </div>
   );
 }

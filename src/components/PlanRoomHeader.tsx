@@ -6,6 +6,7 @@ import {
   DoorOpen,
   FileDown,
   Loader2,
+  ListOrdered,
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -39,6 +40,7 @@ interface PlanRoomHeaderProps {
   activeMembers?: Member[];
   onExportPdf?: () => void;
   isGeneratingPdf?: boolean;
+  onToggleScheduleSidebar: () => void;
 }
 
 export function PlanRoomHeader({
@@ -53,6 +55,7 @@ export function PlanRoomHeader({
   activeMembers = [],
   onExportPdf,
   isGeneratingPdf = false,
+  onToggleScheduleSidebar,
 }: PlanRoomHeaderProps) {
   const [isReviewModalOpen, setReviewModalOpen] = useState(false);
   const { user } = useAuthStore();
@@ -103,6 +106,15 @@ export function PlanRoomHeader({
             ))}
           </div>
         )}
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className="w-10 h-10"
+          onClick={onToggleScheduleSidebar}
+        >
+          <ListOrdered className="w-6 h-6" />
+        </Button>
 
         {/* 메뉴 버튼 */}
         <DropdownMenu>
