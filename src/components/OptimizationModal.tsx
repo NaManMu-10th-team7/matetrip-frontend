@@ -1,212 +1,227 @@
-
+import type { Poi } from '../hooks/usePoiSocket';
+import type { DayLayer, RouteSegment } from '../types/map';
+import { Button } from './ui/button';
 import React from 'react';
+import { Clock, Car, X } from 'lucide-react';
 
-interface PathPoint {
-  name: string;
-  // 경로 지점에 대한 다른 데이터가 있다면 여기에 추가할 수 있습니다.
-  // 예: lat: number, lng: number
-}
+const formatDuration = (seconds: number) => {
+  const minutes = Math.ceil(seconds / 60);
+  if (minutes < 60) return `${minutes}분`;
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  return `${hours}시간 ${remainingMinutes}분`;
+};
 
-interface PathData {
-  path: PathPoint[];
-  distance: number; // 미터 단위
-  duration: number; // 초 단위
-}
+const formatDistance = (meters: number) => {
+  return `${(meters / 1000).toFixed(1)}km`;
+};
+
+const formatDurationChange = (seconds: number) => {
+  const isNegative = seconds < 0;
+  const prefix = isNegative ? '' : '+';
+  const absSeconds = Math.abs(seconds);
+  const minutes = Math.floor(absSeconds / 60);
+
+  if (minutes === 0 && absSeconds > 0) {
+    return seconds > 0 ? '+1분 미만' : '-1분 미만';
+  }
+
+  let formatted;
+  if (minutes < 60) {
+    formatted = `${minutes}분`;
+  } else {
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    formatted = `${hours}시간 ${remainingMinutes}분`;
+  }
+  if (seconds === 0) return '변동 없음';
+  return `${prefix}${formatted}`;
+};
+
+const formatDistanceChange = (meters: number) => {
+  const isNegative = meters < 0;
+  const prefix = isNegative ? '' : '+';
+  const absMeters = Math.abs(meters);
+  const formatted = `${(absMeters / 1000).toFixed(1)}km`;
+  if (meters === 0) return '변동 없음';
+  return `${prefix}${formatted}`;
+};
 
 interface OptimizationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  originalPath: PathData | null;
-  optimizedPath: PathData | null;
-  isOptimizing: boolean;
+  originalData: { pois: Poi[]; segments: RouteSegment[] } | null;
+  optimizedData: { pois: Poi[]; segments: RouteSegment[] } | null;
+  dayLayer: DayLayer | null;
 }
 
-const OptimizationModal: React.FC<OptimizationModalProps> = ({
+export function OptimizationModal({
   isOpen,
   onClose,
-  originalPath,
-  optimizedPath,
-  isOptimizing,
-}) => {
-  if (!isOpen) {
-    return null;
-  }
+  originalData,
+  optimizedData,
+  dayLayer,
+}: OptimizationModalProps) {
+  if (!isOpen || !originalData || !dayLayer) return null;
 
-  const formatDuration = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    return `${hours}시간 ${minutes}분`;
+  const calculateTotals = (segments: RouteSegment[]) => {
+    const totalDistance = segments.reduce((sum, s) => sum + s.distance, 0);
+    const totalDuration = segments.reduce((sum, s) => sum + s.duration, 0);
+    return { totalDistance, totalDuration };
   };
 
-  const formatDistance = (meters: number) => {
-    return `${(meters / 1000).toFixed(2)} km`;
-  };
+  const originalTotals = calculateTotals(originalData.segments);
+  const optimizedTotals = optimizedData
+    ? calculateTotals(optimizedData.segments)
+    : null;
+
+  const renderRouteList = (
+    pois: Poi[],
+    segments: RouteSegment[],
+    color: string
+  ) => (
+    <ul className="space-y-1">
+      {pois.map((poi, index) => (
+        <React.Fragment key={poi.id}>
+          <li className="flex items-center text-base">
+            <span
+              className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full text-white text-sm mr-3"
+              style={{ backgroundColor: color }}
+            >
+              {index + 1}
+            </span>
+            <span className="truncate">{poi.placeName}</span>
+          </li>
+          {index < pois.length - 1 &&
+            (() => {
+              const nextPoi = pois[index + 1];
+              if (!nextPoi) return null;
+              const segment = segments.find(
+                (s) => s.fromPoiId === poi.id && s.toPoiId === nextPoi.id
+              );
+              if (!segment) return null;
+              return (
+                <div className="relative flex h-8 items-center pl-8">
+                  <div className="absolute left-2.5 h-full w-0.5 bg-gray-300" />
+                  <div className="flex items-center text-sm text-gray-600">
+                    <span className="mr-2 flex items-center">
+                      <Clock className="h-3 w-3 mr-1" />
+                      {formatDuration(segment.duration)}
+                    </span>
+                    <span className="flex items-center">
+                      <Car className="h-3 w-3 mr-1" />
+                      {formatDistance(segment.distance)}
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
+        </React.Fragment>
+      ))}
+    </ul>
+  );
 
   return (
-    <div style={styles.overlay}>
-      <div style={styles.modal}>
-        <button onClick={onClose} style={styles.closeButton}>&times;</button>
-        <h2 style={styles.header}>경로 최적화 결과</h2>
-        <div style={styles.content}>
-          <div style={styles.panel}>
-            <h3 style={styles.panelHeader}>기존 경로</h3>
-            {originalPath ? (
+    <div className="fixed inset-0 bg-black/30 flex justify-center items-center z-50">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl">
+        <div className="p-4 border-b flex justify-between items-center">
+          <h2 className="text-xl font-bold">경로 최적화 결과</h2>
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+        <div className="grid grid-cols-2 divide-x">
+          <div className="p-4">
+            <h3 className="font-semibold mb-3 text-center">기존 경로</h3>
+            <div className="text-base mb-4 p-2 bg-gray-50 rounded-md">
+              <p>
+                <strong>총 거리:</strong>{' '}
+                {formatDistance(originalTotals.totalDistance)}
+              </p>
+              <p>
+                <strong>총 소요 시간:</strong>{' '}
+                {formatDuration(originalTotals.totalDuration)}
+              </p>
+            </div>
+            <div className="max-h-80 overflow-y-auto pr-2">
+              {renderRouteList(
+                originalData.pois,
+                originalData.segments,
+                dayLayer.color
+              )}
+            </div>
+          </div>
+
+          <div className="p-4">
+            <h3 className="font-semibold mb-3 text-center">최적 경로</h3>
+            {optimizedData && optimizedTotals ? (
               <>
-                <p>총 거리: {formatDistance(originalPath.distance)}</p>
-                <p>총 소요 시간: {formatDuration(originalPath.duration)}</p>
-                <h4 style={styles.pathHeader}>경로 순서</h4>
-                <ol style={styles.pathList}>
-                  {originalPath.path.map((point, index) => (
-                    <li key={index}>{point.name || `경유지 ${index + 1}`}</li>
-                  ))}
-                </ol>
+                <div className="text-base mb-4 p-2 bg-blue-50 rounded-md">
+                  <p>
+                    <strong>총 거리:</strong>{' '}
+                    {formatDistance(optimizedTotals.totalDistance)}
+                    <span
+                      className={`ml-2 text-sm font-semibold ${
+                        optimizedTotals.totalDistance <
+                        originalTotals.totalDistance
+                          ? 'text-blue-600'
+                          : optimizedTotals.totalDistance >
+                              originalTotals.totalDistance
+                            ? 'text-red-600'
+                            : 'text-gray-500'
+                      }`}
+                    >
+                      (
+                      {formatDistanceChange(
+                        optimizedTotals.totalDistance -
+                          originalTotals.totalDistance
+                      )}
+                      )
+                    </span>
+                  </p>
+                  <p>
+                    <strong>총 소요 시간:</strong>{' '}
+                    {formatDuration(optimizedTotals.totalDuration)}
+                    <span
+                      className={`ml-2 text-sm font-semibold ${
+                        optimizedTotals.totalDuration <
+                        originalTotals.totalDuration
+                          ? 'text-blue-600'
+                          : optimizedTotals.totalDuration >
+                              originalTotals.totalDuration
+                            ? 'text-red-600'
+                            : 'text-gray-500'
+                      }`}
+                    >
+                      (
+                      {formatDurationChange(
+                        optimizedTotals.totalDuration -
+                          originalTotals.totalDuration
+                      )}
+                      )
+                    </span>
+                  </p>
+                </div>
+                <div className="max-h-80 overflow-y-auto pr-2">
+                  {renderRouteList(
+                    optimizedData.pois,
+                    optimizedData.segments,
+                    dayLayer.color
+                  )}
+                </div>
               </>
             ) : (
-              <p>기존 경로 정보가 없습니다.</p>
-            )}
-          </div>
-          <div style={styles.panel}>
-            <h3 style={styles.panelHeader}>최적화된 경로</h3>
-            {isOptimizing ? (
-              <div style={styles.loadingContainer}>
-                <p>최적화 중입니다...</p>
-                {/* 간단한 로딩 스피너 */}
-                <div style={styles.spinner}></div>
+              <div className="flex h-full flex-col items-center justify-center">
+                <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-gray-900"></div>
+                <p className="mt-4 text-gray-600">최적화 중입니다...</p>
               </div>
-            ) : optimizedPath ? (
-              <>
-                <p>총 거리: {formatDistance(optimizedPath.distance)}</p>
-                <p>총 소요 시간: {formatDuration(optimizedPath.duration)}</p>
-                <h4 style={styles.pathHeader}>경로 순서</h4>
-                <ol style={styles.pathList}>
-                  {optimizedPath.path.map((point, index) => (
-                    <li key={index}>{point.name || `경유지 ${index + 1}`}</li>
-                  ))}
-                </ol>
-                {originalPath && (
-                    <div style={styles.summary}>
-                        <h4>개선 효과</h4>
-                        <p style={styles.summaryText}>
-                            거리 단축: {formatDistance(originalPath.distance - optimizedPath.distance)}
-                        </p>
-                        <p style={styles.summaryText}>
-                            시간 단축: {formatDuration(originalPath.duration - optimizedPath.duration)}
-                        </p>
-                    </div>
-                )}
-              </>
-            ) : (
-              <p>최적화된 경로를 불러오지 못했습니다.</p>
             )}
           </div>
+        </div>
+        <div className="p-4 border-t text-right">
+          <Button onClick={onClose}>닫기</Button>
         </div>
       </div>
     </div>
   );
-};
-
-// CSS-in-JS 스타일 정의
-const styles: { [key: string]: React.CSSProperties } = {
-    overlay: {
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 1000,
-    },
-    modal: {
-        background: 'white',
-        padding: '25px',
-        borderRadius: '10px',
-        width: '90%',
-        maxWidth: '800px',
-        position: 'relative',
-        boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-    },
-    closeButton: {
-        position: 'absolute',
-        top: '15px',
-        right: '15px',
-        background: 'transparent',
-        border: 'none',
-        fontSize: '1.8rem',
-        cursor: 'pointer',
-        color: '#333',
-    },
-    header: {
-        textAlign: 'center',
-        marginBottom: '20px',
-    },
-    content: {
-        display: 'flex',
-        justifyContent: 'space-around',
-        gap: '20px',
-    },
-    panel: {
-        width: '48%',
-        padding: '15px',
-        border: '1px solid #ddd',
-        borderRadius: '8px',
-        backgroundColor: '#f9f9f9',
-    },
-    panelHeader: {
-        marginTop: 0,
-        borderBottom: '2px solid #eee',
-        paddingBottom: '10px',
-        marginBottom: '15px',
-    },
-    pathHeader: {
-        marginTop: '20px',
-        marginBottom: '10px',
-    },
-    pathList: {
-        paddingLeft: '20px',
-    },
-    summary: {
-        marginTop: '20px',
-        paddingTop: '15px',
-        borderTop: '1px solid #ddd',
-    },
-    summaryText: {
-        color: '#28a745',
-        fontWeight: 'bold',
-    },
-    loadingContainer: {
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100%',
-    },
-    spinner: {
-        border: '4px solid #f3f3f3',
-        borderTop: '4px solid #3498db',
-        borderRadius: '50%',
-        width: '40px',
-        height: '40px',
-        animation: 'spin 1s linear infinite',
-        marginTop: '20px',
-    },
-};
-
-// keyframes를 스타일 시트에 동적으로 추가
-const styleSheet = document.styleSheets[0];
-if (styleSheet) {
-    const keyframes = `@keyframes spin {
-        0% { transform: 'rotate(0deg)' }
-        100% { transform: 'rotate(360deg)' }
-    }`;
-    try {
-        styleSheet.insertRule(keyframes, styleSheet.cssRules.length);
-    } catch (e) {
-        console.error("Could not insert keyframes rule:", e);
-    }
 }
-
-
-export default OptimizationModal;

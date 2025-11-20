@@ -8,17 +8,17 @@ import {
   Car,
   Cigarette,
 } from 'lucide-react';
-import { Button } from './ui/button';
-import { Badge } from './ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { ImageWithFallback } from './figma/ImageWithFallback';
+import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from './ui/select';
+} from '../components/ui/select';
 import {
   TRAVEL_STYLE_OPTIONS,
   //TRAVEL_STYLE_TYPES,

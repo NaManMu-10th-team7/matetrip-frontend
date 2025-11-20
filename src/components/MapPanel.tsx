@@ -1,10 +1,4 @@
-import {
-  PlusCircle,
-  X,
-  ChevronsRight,
-  Filter,
-  ArrowRightToLine,
-} from 'lucide-react';
+import { PlusCircle, X, ChevronsRight, Filter } from 'lucide-react';
 import React, { useEffect, useRef, useState, memo, useCallback } from 'react';
 import type { Poi, CreatePoiDto, HoveredPoiInfo } from '../hooks/usePoiSocket';
 import {
@@ -213,7 +207,8 @@ const PlaceInfoWindow = memo(
           <div className="inline-block rounded bg-[#f5f5f5] px-2 py-1 text-[11px] text-[#999]">
             {(place.category &&
               CATEGORY_INFO[place.category as keyof typeof CATEGORY_INFO]
-                ?.name) || '기타'}
+                ?.name) ||
+              '기타'}
           </div>
           <Button
             size="sm"
@@ -1226,7 +1221,9 @@ export function MapPanel({
         latitude: poi.latitude,
         longitude: poi.longitude,
         category:
-          ((poi as any).categoryName as CategoryCode) || ((poi as any).category as CategoryCode) || '기타',
+          ((poi as any).categoryName as CategoryCode) ||
+          ((poi as any).category as CategoryCode) ||
+          '기타',
         image_url: '',
         summary: '',
       })

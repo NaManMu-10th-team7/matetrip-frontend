@@ -2,10 +2,11 @@ import { ImageWithFallback } from './figma/ImageWithFallback';
 import { MapPin, Calendar, Users } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { translateKeyword } from '../utils/keyword';
-import type { PostListItem } from '../types/post';
+import type { Post } from '../types/post';
+import { API_BASE_URL } from '../api/client';
 
 interface PostListCardProps {
-  post: PostListItem;
+  post: Post;
   onClick?: () => void;
 }
 
@@ -18,10 +19,16 @@ export function PostListCard({ post, onClick }: PostListCardProps) {
     writerProfile,
     keywords,
     maxParticipants,
-    currentParticipants,
+    participations,
     status,
-    imageUrl,
+    imageId,
   } = post;
+
+  const currentParticipants =
+    (participations?.filter((p) => p.status === '승인').length || 0) + 1;
+  const imageUrl = imageId
+    ? `${API_BASE_URL}/binary-content/${imageId}/presigned-url`
+    : undefined;
 
   // 총 일수 계산
   const calculateDays = () => {
@@ -34,7 +41,9 @@ export function PostListCard({ post, onClick }: PostListCardProps) {
   };
 
   const defaultCoverImage = 'https://via.placeholder.com/400x300';
-  const defaultProfileImage = `https://ui-avatars.com/api/?name=${writerProfile.nickname}&background=random`;
+  const defaultProfileImage = `https://ui-avatars.com/api/?name=${
+    writerProfile?.nickname ?? '?'
+  }&background=random`;
 
   return (
     <div
@@ -68,12 +77,12 @@ export function PostListCard({ post, onClick }: PostListCardProps) {
           )}
         </div>
         {/* 상태 배지 */}
-        {(status === '모집중' || status === '완료') && (
+        {(status === '모집중' || status === '완료' || status === '모집완료') && (
           <Badge
             className="absolute top-4 right-4 z-10 px-3 py-1 text-sm font-semibold"
             variant={status === '모집중' ? 'default' : 'secondary'}
           >
-            {status === '모집중' ? '모집중' : '모집완료'}
+            {status}
           </Badge>
         )}
       </div>
@@ -109,8 +118,10 @@ export function PostListCard({ post, onClick }: PostListCardProps) {
         {/* 작성자 프로필 이미지 */}
         <div className="flex -space-x-2">
           <ImageWithFallback
-            src={writerProfile.profileImageUrl ?? defaultProfileImage}
-            alt={writerProfile.nickname}
+            src={
+              (writerProfile as any)?.profileImageUrl ?? defaultProfileImage
+            }
+            alt={writerProfile?.nickname ?? ''}
             className="w-8 h-8 rounded-full object-cover border-2 border-white"
           />
         </div>
@@ -123,19 +134,6 @@ export function PostListCard({ post, onClick }: PostListCardProps) {
           </span>
         </div>
       </div>
-
-      {/* 상태 배지 - 우측 상단 */}
-      {status && (
-        <div
-          className={`absolute top-3 right-3 px-3 py-1 rounded-lg text-xs font-medium ${
-            status === '모집중'
-              ? 'bg-[#101828] text-white'
-              : 'bg-gray-100 text-[#101828]'
-          }`}
-        >
-          {status}
-        </div>
-      )}
     </div>
   );
 }

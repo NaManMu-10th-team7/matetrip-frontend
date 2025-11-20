@@ -26,6 +26,7 @@ import { PdfDocument } from '../components/PdfDocument.tsx'; // [신규] 모달 
 import { AIRecommendationLoadingModal } from '../components/AIRecommendationLoadingModal.tsx';
 import { toast } from 'sonner';
 import { ScheduleSidebar } from '../components/ScheduleSidebar.tsx';
+import { OptimizationModal } from '../components/OptimizationModal.tsx';
 
 interface WorkspaceProps {
   workspaceId: string;
@@ -90,7 +91,6 @@ export function Workspace({
   const [recommendedItinerary, setRecommendedItinerary] = useState<
     Record<string, Poi[]>
   >({});
-  const [isRecommendationOpen, _setIsRecommendationOpen] = useState(false);
   const [isRecommendationLoading, setIsRecommendationLoading] = useState(true);
   const [itineraryAiPlaces, setItineraryAiPlaces] = useState<AiPlace[]>([]);
   const [chatAiPlaces, setChatAiPlaces] = useState<AiPlace[]>([]);
@@ -199,13 +199,19 @@ export function Workspace({
   // [추가] 최적화 진행 중 상태
   const [isOptimizationProcessing, setIsOptimizationProcessing] =
     useState(false);
-  // [추가] 최적화 완료 후 상태를 리셋하는 콜백
+  // [수정] 최적화 완료 후 상태를 리셋하는 콜백
   const handleOptimizationComplete = useCallback(() => {
-    setOptimizingDayId(null);
-    setIsOptimizationProcessing(false); // Optimization ends
+    setIsOptimizationProcessing(false); // Optimization ends, but keep the modal open
   }, []);
   // [추가] 지도에 표시할 날짜 ID를 관리하는 상태
   const [visibleDayIds, setVisibleDayIds] = useState<Set<string>>(new Set());
+
+  // [추가] 모달 상태 추가
+  const [isOptimizationModalOpen, setIsOptimizationModalOpen] = useState(false);
+  const [originalRouteData, setOriginalRouteData] = useState<{
+    pois: Poi[];
+    segments: RouteSegment[];
+  } | null>(null);
 
   // 워크스페이스와 연결된 게시글 정보를 가져와서 postLocation을 설정합니다.
   useEffect(() => {
@@ -576,12 +582,26 @@ export function Workspace({
     routeSegmentsByDay,
   ]);
 
-  // [추가] LeftPanel에서 경로 최적화 버튼 클릭 시 호출될 핸들러
-  const handleOptimizeRoute = useCallback((dayId: string) => {
-    console.log(`[Workspace] Optimization triggered for day: ${dayId}`);
-    setOptimizingDayId(dayId);
-    setIsOptimizationProcessing(true); // Optimization starts
-  }, []);
+  // [수정] 경로 최적화 버튼 클릭 시 호출될 핸들러
+  const handleOptimizeRoute = useCallback(
+    (dayId: string) => {
+      const pois = itinerary[dayId] || [];
+      const segments = routeSegmentsByDay[dayId] || [];
+      setOriginalRouteData(JSON.parse(JSON.stringify({ pois, segments }))); // 원본 데이터 저장
+      setOptimizingDayId(dayId);
+      setIsOptimizationProcessing(true);
+      setIsOptimizationModalOpen(true); // 모달 열기
+    },
+    [itinerary, routeSegmentsByDay]
+  );
+
+  // [추가] 모달 닫기 핸들러
+  const handleCloseModal = () => {
+    setIsOptimizationModalOpen(false);
+    setOriginalRouteData(null);
+    setOptimizingDayId(null);
+    setIsOptimizationProcessing(false);
+  };
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
@@ -842,6 +862,14 @@ export function Workspace({
     setSchedulePosition((prev) => (prev === 'hidden' ? 'overlay' : 'hidden'));
   };
 
+  const dayLayerForModal = optimizingDayId
+    ? dayLayers.find((l) => l.id === optimizingDayId) ?? null
+    : null;
+  const optimizedPois = optimizingDayId ? itinerary[optimizingDayId] : [];
+  const optimizedSegments = optimizingDayId
+    ? routeSegmentsByDay[optimizingDayId]
+    : [];
+
   return (
     <DndContext
       onDragStart={handleDragStart}
@@ -978,6 +1006,17 @@ export function Workspace({
         </div>
       )}
       <AIRecommendationLoadingModal isOpen={isRecommendationLoading} />
+      <OptimizationModal
+        isOpen={isOptimizationModalOpen}
+        onClose={handleCloseModal}
+        originalData={originalRouteData}
+        optimizedData={
+          !isOptimizationProcessing
+            ? { pois: optimizedPois, segments: optimizedSegments }
+            : null
+        }
+        dayLayer={dayLayerForModal}
+      />
     </DndContext>
   );
 }
