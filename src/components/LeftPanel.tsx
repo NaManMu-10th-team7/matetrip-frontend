@@ -1057,8 +1057,10 @@ export function LeftPanel({
   };
 
   return (
-    <div className="relative h-full rounded-lg overflow-hidden w-1/2">
+    <div className="relative h-full rounded-lg overflow-hidden w-full">
       <div className="flex h-full">
+        {' '}
+        {/* '내 일정'과 '채팅' 패널을 위한 flex 컨테이너 */}
         <div className="w-full bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out">
           <div className="flex-1 m-0 overflow-y-auto">{renderTabContent()}</div>
         </div>

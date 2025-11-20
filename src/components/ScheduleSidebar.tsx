@@ -8,6 +8,7 @@ import {
   X,
   Clock,
   Car,
+  ArrowLeftToLine,
 } from 'lucide-react';
 import {
   SortableContext,
@@ -329,8 +330,9 @@ function DayItineraryItem({
 }
 
 interface ScheduleSidebarProps {
-  isOpen: boolean;
+  position: 'hidden' | 'overlay' | 'docked';
   onClose: () => void;
+  onDock: () => void;
   itinerary: Record<string, Poi[]>;
   dayLayers: DayLayer[];
   markedPois: Poi[];
@@ -348,8 +350,9 @@ interface ScheduleSidebarProps {
 }
 
 export function ScheduleSidebar({
-  isOpen,
+  position,
   onClose,
+  onDock,
   itinerary,
   dayLayers,
   markedPois,
@@ -417,15 +420,36 @@ export function ScheduleSidebar({
     }
   };
 
+  const getPositionClasses = () => {
+    switch (position) {
+      case 'docked':
+        return 'left-0';
+      case 'overlay':
+        return 'left-1/2';
+      case 'hidden':
+      default:
+        return 'left-full';
+    }
+  };
+
+  if (position === 'hidden') {
+    return null;
+  }
+
   return (
     <div
-      className={`absolute top-0 right-0 h-full w-1/2 bg-white border-l border-gray-200 shadow-lg transition-transform duration-300 ease-in-out z-20 rounded-lg overflow-hidden ${
-        isOpen ? 'translate-x-0' : 'translate-x-full'
-      }`}
+      className={`absolute top-0 h-full w-1/2 bg-white border-l border-gray-200 shadow-lg transition-all duration-300 ease-in-out z-20 rounded-lg overflow-hidden ${getPositionClasses()}`}
     >
       <div className="flex flex-col h-full">
         <div className="flex items-center justify-between px-6 py-4 border-b">
-          <h2 className="text-xl font-bold">내 일정</h2>
+          <div className="flex items-center gap-2">
+            {position === 'overlay' && (
+              <Button variant="ghost" size="icon" onClick={onDock}>
+                <ArrowLeftToLine className="w-5 h-5" />
+              </Button>
+            )}
+            <h2 className="text-xl font-bold">여행 일정</h2>
+          </div>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="w-5 h-5" />
           </Button>
