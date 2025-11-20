@@ -86,7 +86,10 @@ export function MatchingSearchBar({ onSearchSuccess }: MatchingSearchBarProps) {
     return {
       post,
       matchingInfo: buildMatchingInfo(candidate),
-      writerProfileImageId: candidate.profileImageId,
+      writerProfileImageId:
+        candidate.profile?.profileImageId ?? candidate.profileImageId ?? null,
+      writerNickname:
+        candidate.profile?.nickname ?? post.writer?.profile?.nickname ?? null,
     };
   };
 
@@ -148,7 +151,7 @@ export function MatchingSearchBar({ onSearchSuccess }: MatchingSearchBarProps) {
       });
 
       const rawData = response.data;
-      console.log(rawData);
+      console.log('rawodata', rawData);
       //데이터 프론트가 이해하게끔
       const candidates: MatchCandidateDto[] = Array.isArray(rawData)
         ? (rawData as MatchCandidateDto[])

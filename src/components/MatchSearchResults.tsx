@@ -69,7 +69,9 @@ export function MatchSearchResults() {
       </div>
 
       {results.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6"> {/* 그리드 클래스 수정 */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+          {' '}
+          {/* 그리드 클래스 수정 */}
           {results.map((result, index) => (
             <MatchingCard
               key={result.post.id}
@@ -77,7 +79,12 @@ export function MatchSearchResults() {
               matchingInfo={result.matchingInfo}
               rank={index + 1}
               writerProfileImageId={result.writerProfileImageId}
-              onClick={() => navigate(`/posts/${result.post.id}`, { state: { background: location } })}
+              writerNickname={result.writerNickname ?? null}
+              onClick={() =>
+                navigate(`/posts/${result.post.id}`, {
+                  state: { background: location },
+                })
+              }
             />
           ))}
         </div>

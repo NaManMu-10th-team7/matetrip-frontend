@@ -17,6 +17,8 @@ interface MatchingCardProps {
   rank?: number;
   /** 작성자 프로필 이미지 ID */
   writerProfileImageId?: string | null; // 변경: URL 대신 ID를 받음
+  /** 작성자 닉네임 */
+  writerNickname?: string | null;
 }
 
 const defaultCoverImage = 'https://via.placeholder.com/400x300';
@@ -32,9 +34,11 @@ export function MatchingCard({
   onClick,
   rank,
   writerProfileImageId, // 변경: URL 대신 ID를 받음
+  writerNickname,
 }: MatchingCardProps) {
   const { title, location, startDate, endDate } = post;
-  const { score, tendency, style, mannerTemperature, vectorScore } = matchingInfo;
+  const { score, tendency, style, mannerTemperature, vectorScore } =
+    matchingInfo;
 
   const formatMatchText = (value?: string, fallback = '정보 없음') =>
     value && value.trim().length > 0 ? value : fallback;
@@ -53,6 +57,8 @@ export function MatchingCard({
 
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null); // 추가: 프로필 이미지 URL 상태
+  const displayWriterName =
+    writerNickname ?? post.writer?.profile?.nickname ?? '작성자';
 
   // 총 일수 계산
   // const calculateDays = () => {
@@ -197,17 +203,22 @@ export function MatchingCard({
 
           {/* 하단 오버레이: 프로필 아이콘 + 매칭률 */}
           <div className="absolute bottom-2 left-2 right-2 flex items-end gap-2">
-            {/* 프로필 아이콘 (48px 원형) */}
-            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shrink-0 overflow-hidden">
-              {profileImageUrl ? ( // 변경: writerProfileImageUrl 대신 profileImageUrl 사용
-                <ImageWithFallback
-                  src={profileImageUrl} // 변경
-                  alt="작성자 프로필"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <User className="w-6 h-6 text-gray-400" />
-              )}
+            {/* 프로필 아이콘 (48px 원형) + 닉네임 */}
+            <div className="flex flex-col items-center gap-1">
+              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shrink-0 overflow-hidden">
+                {profileImageUrl ? ( // 변경: writerProfileImageUrl 대신 profileImageUrl 사용
+                  <ImageWithFallback
+                    src={profileImageUrl} // 변경
+                    alt="작성자 프로필"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <User className="w-6 h-6 text-gray-400" />
+                )}
+              </div>
+              <p className="text-[10px] font-medium text-white leading-[1.2] max-w-[60px] text-center truncate">
+                {displayWriterName}
+              </p>
             </div>
 
             {/* 매칭률 */}

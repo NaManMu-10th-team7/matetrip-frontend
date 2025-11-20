@@ -475,6 +475,7 @@ export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
                             null)
                           : null
                       }
+                      writerNickname={result.writerNickname ?? null}
                       onClick={() => handleCardClick(result.post)}
                     />
                   ))}
@@ -520,6 +521,7 @@ export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
                         ] ?? null)
                       : null
                   }
+                  writerNickname={post.writer?.profile?.nickname ?? null}
                   onClick={() => handleCardClick(post)}
                 />
               ))}

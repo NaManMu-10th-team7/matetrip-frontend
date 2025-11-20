@@ -26,6 +26,8 @@ interface GridMatchingCardProps {
   rank?: number;
   /** 작성자 프로필 이미지 URL */
   writerProfileImageUrl?: string | null;
+  /** 작성자 닉네임 (검색 결과 등에서 전달) */
+  writerNickname?: string | null;
 }
 
 const defaultCoverImage = 'https://via.placeholder.com/400x300';
@@ -41,6 +43,7 @@ export function GridMatchingCard({
   onClick,
   rank,
   writerProfileImageUrl,
+  writerNickname,
 }: GridMatchingCardProps) {
   const {
     title,
@@ -57,6 +60,10 @@ export function GridMatchingCard({
     typeof score === 'number' && !Number.isNaN(score)
       ? Math.min(100, Math.max(0, score))
       : 0;
+  const safeVectorScore =
+    typeof vectorScore === 'number' && !Number.isNaN(vectorScore)
+      ? Math.min(100, Math.max(0, vectorScore))
+      : null;
 
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
 
@@ -164,7 +171,7 @@ export function GridMatchingCard({
               )}
             </div>
             <p className="w-24 text-base font-semibold text-white leading-tight text-center truncate">
-              {writer?.profile?.nickname ?? '작성자'}
+              {writerNickname ?? writer?.profile?.nickname ?? '작성자'}
             </p>
           </div>
 
@@ -179,8 +186,8 @@ export function GridMatchingCard({
               </p>
               <p className="text-sm font-medium text-white leading-tight">%</p>
             </div>
-            {/* 일치하는 성향/스타일 정보 */}
-            {(style || tendency) && (
+            {/* 일치하는 성향/스타일/프로필 유사도 */}
+            {(style || tendency || safeVectorScore !== null) && (
               <div className="flex flex-wrap items-center justify-end gap-1.5 -mb-0.5">
                 {style && (
                   <Badge
@@ -200,13 +207,13 @@ export function GridMatchingCard({
                     {tendency}
                   </Badge>
                 )}
-                {vectorScore && (
+                {safeVectorScore !== null && (
                   <Badge
                     variant="outline"
                     className="border-green-500/50 bg-green-950/50 text-green-300 text-xs px-2 py-1"
                   >
                     <UserCheck className="w-3 h-3 mr-1" />
-                    프로필 유사도 {vectorScore}%
+                    프로필 유사도 {safeVectorScore}%
                   </Badge>
                 )}
               </div>

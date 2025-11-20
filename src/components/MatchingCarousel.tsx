@@ -83,6 +83,7 @@ export function MatchingCarousel({
                     DEFAULT_MATCHING_INFO
                   }
                   writerProfileImageId={post.writer?.profile?.profileImageId}
+                  writerNickname={post.writer?.profile?.nickname ?? null}
                   onClick={() => onCardClick?.(post)}
                 />
               </div>
