@@ -19,10 +19,21 @@ interface BehaviorRecommendationResponse {
   image_url?: string;
   longitude: number;
   latitude: number;
+  reason: {
+    message: string;
+    referencePlace: {
+      id: string;
+      title: string;
+    };
+  };
+}
+
+interface PlaceWithReason extends PlaceDto {
+  recommendationReason?: string;
 }
 
 export function PlaceRecommendationSection({ onPlaceClick }: PlaceRecommendationSectionProps) {
-  const [places, setPlaces] = useState<PlaceDto[]>([]);
+  const [places, setPlaces] = useState<PlaceWithReason[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user, isAuthLoading } = useAuthStore();
   const navigate = useNavigate();
@@ -51,8 +62,8 @@ export function PlaceRecommendationSection({ onPlaceClick }: PlaceRecommendation
           }
         );
         
-        // Convert to PlaceDto format
-        const placesData: PlaceDto[] = response.data.map((item) => {
+        // Convert to PlaceDto format with recommendation reason
+        const placesData: PlaceWithReason[] = response.data.map((item) => {
           return {
             id: item.id,
             category: item.category as any, // CategoryCode
@@ -62,6 +73,7 @@ export function PlaceRecommendationSection({ onPlaceClick }: PlaceRecommendation
             image_url: item.image_url,
             longitude: item.longitude,
             latitude: item.latitude,
+            recommendationReason: item.reason.message,
           };
         });
         
