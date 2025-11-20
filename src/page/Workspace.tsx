@@ -938,6 +938,7 @@ export function Workspace({
             position={schedulePosition}
             onClose={() => setSchedulePosition('hidden')}
             onDock={() => setSchedulePosition('docked')}
+            onUndock={() => setSchedulePosition('overlay')}
             itinerary={itinerary}
             dayLayers={dayLayers}
             markedPois={markedPois}

@@ -9,6 +9,7 @@ import {
   Clock,
   Car,
   ArrowLeftToLine,
+  ArrowRightToLine,
 } from 'lucide-react';
 import {
   SortableContext,
@@ -333,6 +334,7 @@ interface ScheduleSidebarProps {
   position: 'hidden' | 'overlay' | 'docked';
   onClose: () => void;
   onDock: () => void;
+  onUndock: () => void;
   itinerary: Record<string, Poi[]>;
   dayLayers: DayLayer[];
   markedPois: Poi[];
@@ -353,6 +355,7 @@ export function ScheduleSidebar({
   position,
   onClose,
   onDock,
+  onUndock,
   itinerary,
   dayLayers,
   markedPois,
@@ -443,9 +446,13 @@ export function ScheduleSidebar({
       <div className="flex flex-col h-full">
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <div className="flex items-center gap-2">
-            {position === 'overlay' && (
+            {position === 'overlay' ? (
               <Button variant="ghost" size="icon" onClick={onDock}>
                 <ArrowLeftToLine className="w-5 h-5" />
+              </Button>
+            ) : (
+              <Button variant="ghost" size="icon" onClick={onUndock}>
+                <ArrowRightToLine className="w-5 h-5" />
               </Button>
             )}
             <h2 className="text-xl font-bold">여행 일정</h2>
