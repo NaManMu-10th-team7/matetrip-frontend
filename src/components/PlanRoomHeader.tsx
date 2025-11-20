@@ -20,12 +20,7 @@ import {
 import { TripReviewModal } from './TripReviewModal';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'sonner';
-
-interface Member {
-  id: string;
-  name: string;
-  avatar: string;
-}
+import type { ActiveMember } from '../types/member';
 
 interface PlanRoomHeaderProps {
   workspaceId: string;
@@ -38,7 +33,7 @@ interface PlanRoomHeaderProps {
   onExit: () => void;
   onBack: () => void;
   isOwner?: boolean;
-  activeMembers?: Member[];
+  activeMembers?: ActiveMember[];
   onExportPdf?: () => void;
   isGeneratingPdf?: boolean;
   onToggleScheduleSidebar: () => void;

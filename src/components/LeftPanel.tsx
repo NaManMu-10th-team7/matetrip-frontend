@@ -20,6 +20,7 @@ import React from 'react';
 import { ChatPanel } from './ChatPanel';
 import { CategoryIcon } from './CategoryIcon'; // [추가] CategoryIcon 임포트
 import { type AiPlace, type ChatMessage } from '../hooks/useChatSocket';
+import type { ActiveMember } from '../types/member';
 
 interface PoiItemProps {
   poi: Poi;
@@ -165,12 +166,6 @@ function PoiItem({
   );
 }
 
-interface Member {
-  id: string;
-  name: string;
-  avatar: string;
-}
-
 interface LeftPanelProps {
   isOpen: boolean;
   isRecommendationLoading: boolean;
@@ -192,7 +187,7 @@ interface LeftPanelProps {
   onCardClick: (poi: any) => void;
   setChatAiPlaces: (places: AiPlace[]) => void;
   chatAiPlaces: AiPlace[];
-  activeMembers?: Member[];
+  activeMembers?: ActiveMember[];
 }
 
 function RecommendedDayItem({
@@ -314,7 +309,7 @@ function ChatSidebar({
   onCardClick: (poi: any) => void;
   setChatAiPlaces: (places: AiPlace[]) => void;
   chatAiPlaces: AiPlace[];
-  activeMembers?: Member[];
+  activeMembers?: ActiveMember[];
 }) {
   return (
     <ChatPanel

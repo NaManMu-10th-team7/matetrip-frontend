@@ -9,3 +9,13 @@ export interface WorkspaceMember {
   email: string;
   profile: UserProfile;
 }
+
+/**
+ * 현재 활성화된(접속 중인) 멤버 정보를 나타내는 타입입니다.
+ * PlanRoomHeader 등에서 사용됩니다.
+ */
+export interface ActiveMember {
+  id: string;
+  name: string;
+  avatar: string;
+}
