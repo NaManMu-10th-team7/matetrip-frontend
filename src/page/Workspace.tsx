@@ -953,6 +953,7 @@ export function Workspace({
               itineraryAiPlaces={itineraryAiPlaces}
               chatAiPlaces={chatAiPlaces}
               isProgrammaticMove={isProgrammaticMove}
+              isScheduleSidebarOpen={isScheduleSidebarOpen}
             />
           </div>
         </div>

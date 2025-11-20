@@ -419,18 +419,18 @@ export function ScheduleSidebar({
 
   return (
     <div
-      className={`absolute top-0 right-0 h-full w-96 bg-white border-l border-gray-200 shadow-lg transition-transform duration-300 ease-in-out z-20 rounded-lg overflow-hidden ${
+      className={`absolute top-0 right-0 h-full w-1/2 bg-white border-l border-gray-200 shadow-lg transition-transform duration-300 ease-in-out z-20 rounded-lg overflow-hidden ${
         isOpen ? 'translate-x-0' : 'translate-x-full'
       }`}
     >
       <div className="flex flex-col h-full">
-        <div className="flex items-center justify-between p-4 border-b">
+        <div className="flex items-center justify-between px-6 py-4 border-b">
           <h2 className="text-xl font-bold">내 일정</h2>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="w-5 h-5" />
           </Button>
         </div>
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto p-4">
           <MarkerStorage
             pois={enrichedMarkedPois}
             onPoiClick={onPoiClick}

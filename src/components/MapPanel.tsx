@@ -91,6 +91,7 @@ interface MapPanelProps {
   itineraryAiPlaces: AiPlace[] | undefined;
   chatAiPlaces: AiPlace[] | undefined;
   isProgrammaticMove: React.MutableRefObject<boolean>;
+  isScheduleSidebarOpen: boolean;
 }
 
 export interface PlaceMarkerProps {
@@ -584,6 +585,7 @@ export function MapPanel({
   itineraryAiPlaces,
   chatAiPlaces,
   isProgrammaticMove,
+  isScheduleSidebarOpen,
 }: MapPanelProps) {
   const defaultCenter = { lat: 33.450701, lng: 126.570667 };
   const [mapInstance, setMapInstance] = useState<kakao.maps.Map | null>(null);
@@ -1309,68 +1311,76 @@ export function MapPanel({
           });
         }}
       >
-        <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 p-1.5 bg-white/80 backdrop-blur-sm rounded-lg shadow-md">
-          <button
-            onClick={() => setIsCategoryFilterVisible(!isCategoryFilterVisible)}
-            className="p-1.5 text-gray-600 hover:bg-gray-100 rounded-md flex-shrink-0"
-          >
-            {isCategoryFilterVisible ? (
-              <ChevronsRight size={18} />
-            ) : (
-              <Filter size={18} />
-            )}
-          </button>
-          <div
-            className="grid transition-all duration-300 ease-in-out"
-            style={{
-              gridTemplateColumns: isCategoryFilterVisible ? '1fr' : '0fr',
-            }}
-          >
-            <div className="overflow-hidden">
-              <div className="flex items-center gap-2 min-w-max pr-1">
-                <div className="border-l border-gray-300 h-6" />
-                <button
-                  onClick={handleToggleAllCategories}
-                  className="whitespace-nowrap px-3 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 flex justify-center items-center gap-1.5"
-                  style={{
-                    backgroundColor:
-                      visibleCategories.size ===
-                      Object.keys(CATEGORY_INFO).length
-                        ? '#374151'
-                        : 'white',
-                    color:
-                      visibleCategories.size ===
-                      Object.keys(CATEGORY_INFO).length
-                        ? 'white'
-                        : '#4B5563',
-                  }}
-                >
-                  전체
-                </button>
-
-                {Object.entries(CATEGORY_INFO).map(([key, { name, color }]) => (
+        {!isScheduleSidebarOpen && (
+          <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 p-1.5 bg-white/80 backdrop-blur-sm rounded-lg shadow-md">
+            <button
+              onClick={() =>
+                setIsCategoryFilterVisible(!isCategoryFilterVisible)
+              }
+              className="p-1.5 text-gray-600 hover:bg-gray-100 rounded-md flex-shrink-0"
+            >
+              {isCategoryFilterVisible ? (
+                <ChevronsRight size={18} />
+              ) : (
+                <Filter size={18} />
+              )}
+            </button>
+            <div
+              className="grid transition-all duration-300 ease-in-out"
+              style={{
+                gridTemplateColumns: isCategoryFilterVisible ? '1fr' : '0fr',
+              }}
+            >
+              <div className="overflow-hidden">
+                <div className="flex items-center gap-2 min-w-max pr-1">
+                  <div className="border-l border-gray-300 h-6" />
                   <button
-                    key={key}
-                    onClick={() => handleCategoryToggle(key)}
+                    onClick={handleToggleAllCategories}
                     className="whitespace-nowrap px-3 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 flex justify-center items-center gap-1.5"
                     style={{
-                      backgroundColor: visibleCategories.has(key)
-                        ? NEW_CATEGORY_COLORS[key] || color
-                        : 'white',
-                      color: visibleCategories.has(key) ? 'white' : '#4B5563',
+                      backgroundColor:
+                        visibleCategories.size ===
+                        Object.keys(CATEGORY_INFO).length
+                          ? '#374151'
+                          : 'white',
+                      color:
+                        visibleCategories.size ===
+                        Object.keys(CATEGORY_INFO).length
+                          ? 'white'
+                          : '#4B5563',
                     }}
                   >
-                    <CategoryIcon
-                      category={key as CategoryCode}
-                      className="w-4 h-4"
-                    />
-                    {name}
+                    전체
                   </button>
-                ))}
+
+                  {Object.entries(CATEGORY_INFO).map(
+                    ([key, { name, color }]) => (
+                      <button
+                        key={key}
+                        onClick={() => handleCategoryToggle(key)}
+                        className="whitespace-nowrap px-3 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 flex justify-center items-center gap-1.5"
+                        style={{
+                          backgroundColor: visibleCategories.has(key)
+                            ? NEW_CATEGORY_COLORS[key] || color
+                            : 'white',
+                          color: visibleCategories.has(key)
+                            ? 'white'
+                            : '#4B5563',
+                        }}
+                      >
+                        <CategoryIcon
+                          category={key as CategoryCode}
+                          className="w-4 h-4"
+                        />
+                        {name}
+                      </button>
+                    )
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
         {filteredPlacesToRender.map((place) => (
           <PlaceMarker
             key={`${place.id}-${place.latitude}-${place.longitude}`}
