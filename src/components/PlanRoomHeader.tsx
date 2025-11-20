@@ -62,6 +62,7 @@ export function PlanRoomHeader({
 }: PlanRoomHeaderProps) {
   const [isReviewModalOpen, setReviewModalOpen] = useState(false);
   const { user } = useAuthStore();
+  const [isFlushing, setIsFlushing] = useState(false);
 
   // 리뷰 대상에서 자기 자신을 제외합니다.
   const membersToReview = activeMembers.filter(
@@ -69,8 +70,22 @@ export function PlanRoomHeader({
   );
 
   const handleFlush = () => {
-    onFlush();
-    toast.success('저장되었습니다.');
+    if (isFlushing) return;
+    setIsFlushing(true);
+
+    try {
+      onFlush();
+      toast.info('저장 요청을 전송했습니다.');
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : '알 수 없는 오류';
+      toast.error(`요청 전송에 실패했습니다: ${errorMessage}`);
+    }
+
+    // 시각적 피드백을 위해 잠시 '저장 중' 상태를 유지
+    setTimeout(() => {
+      setIsFlushing(false);
+    }, 1500);
   };
 
   return (
@@ -100,9 +115,16 @@ export function PlanRoomHeader({
           variant="outline"
           className="h-9 px-3 gap-2 bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white"
           onClick={handleFlush}
+          disabled={isFlushing}
         >
-          <Save className="w-4 h-4" />
-          <span className="text-sm font-medium">저장</span>
+          {isFlushing ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Save className="w-4 h-4" />
+          )}
+          <span className="text-sm font-medium">
+            {isFlushing ? '저장 중...' : '저장'}
+          </span>
         </Button>
         <Button
           variant="outline"

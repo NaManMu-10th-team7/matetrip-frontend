@@ -29,6 +29,7 @@ const PoiSocketEvent = {
   'place:focus': 'place:focus',
   'place:focused': 'place:focused',
   FLUSH: 'flush',
+  FLUSHED: 'flushed',
 } as const;
 
 export type Poi = {
@@ -241,7 +242,9 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
               ? {
                   ...newPoiData,
                   planDayId: optimisticData?.planDayId || p.planDayId,
-                  status: optimisticData?.planDayId ? 'SCHEDULED' : newPoiData.status,
+                  status: optimisticData?.planDayId
+                    ? 'SCHEDULED'
+                    : newPoiData.status,
                   categoryName: p.categoryName, // [추가] 임시 POI의 categoryName을 유지합니다.
                 }
               : p
@@ -249,12 +252,18 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
         }
 
         // If no temporary POI was found, it's an update or a new POI from another user
-        const existingPoiIndex = prevPois.findIndex((p) => p.id === newPoiData.id);
+        const existingPoiIndex = prevPois.findIndex(
+          (p) => p.id === newPoiData.id
+        );
         if (existingPoiIndex > -1) {
           return prevPois.map((p, index) =>
             // [수정] 다른 사용자의 POI 업데이트 시에도 categoryName이 누락되지 않도록 병합합니다.
             index === existingPoiIndex
-              ? { ...p, ...newPoiData, categoryName: p.categoryName || newPoiData.categoryName }
+              ? {
+                  ...p,
+                  ...newPoiData,
+                  categoryName: p.categoryName || newPoiData.categoryName,
+                }
               : p
           );
         }
@@ -281,7 +290,12 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
       setPois((prevPois) =>
         prevPois.map((p) =>
           p.id === data.poiId
-            ? { ...p, planDayId: data.planDayId, status: 'SCHEDULED', categoryName: p.categoryName }
+            ? {
+                ...p,
+                planDayId: data.planDayId,
+                status: 'SCHEDULED',
+                categoryName: p.categoryName,
+              }
             : p
         )
       );
@@ -346,7 +360,11 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
       );
     };
 
-    const handlePlaceFocused = (data: { userId: string; userName: string; places?: any[] }) => {
+    const handlePlaceFocused = (data: {
+      userId: string;
+      userName: string;
+      places?: any[];
+    }) => {
       console.log('[Event] PLACE_FOCUSED 수신:', data);
       // 자신이 보낸 이벤트는 처리하지 않음 (이미 받았음)
       if (data.userId === user?.userId) return;
@@ -556,16 +574,31 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
   );
 
   const focusPlace = useCallback(
-    (bounds: { southWestLatitude: number; southWestLongitude: number; northEastLatitude: number; northEastLongitude: number }, callback: (places: any[]) => void) => {
+    (
+      bounds: {
+        southWestLatitude: number;
+        southWestLongitude: number;
+        northEastLatitude: number;
+        northEastLongitude: number;
+      },
+      callback: (places: any[]) => void
+    ) => {
       if (!user || !socketRef.current?.connected) return;
       const member = members.find((m) => m.id === user.userId);
       const userName = member?.profile.nickname || 'Unknown';
 
       // 이벤트 리스너를 한 번만 등록
-      const handleResponse = (data: { userId: string; userName: string; places?: any[] }) => {
+      const handleResponse = (data: {
+        userId: string;
+        userName: string;
+        places?: any[];
+      }) => {
         if (data.userId === user.userId && data.places) {
           callback(data.places);
-          socketRef.current?.off(PoiSocketEvent['place:focused'], handleResponse);
+          socketRef.current?.off(
+            PoiSocketEvent['place:focused'],
+            handleResponse
+          );
         }
       };
 
@@ -597,7 +630,10 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
         pois.map((p) => `${p.latitude.toFixed(5)},${p.longitude.toFixed(5)}`)
       );
 
-      const poisToCreate: { tempId: string; payload: Omit<CreatePoiDto, 'planDayId'> }[] = [];
+      const poisToCreate: {
+        tempId: string;
+        payload: Omit<CreatePoiDto, 'planDayId'>;
+      }[] = [];
       const newPoisForState: Poi[] = [];
       const skippedPois: string[] = [];
 
@@ -625,7 +661,7 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
           categoryName: poi.categoryName,
           planDayId: planDayId,
         };
-        
+
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { planDayId: _, ...payloadForMark } = payload;
 
@@ -673,10 +709,11 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
 
   const flushPois = useCallback(() => {
     if (!socketRef.current?.connected) {
-      console.error('소켓이 연결되지 않았습니다.');
-      return;
+      throw new Error('소켓이 연결되지 않았습니다.');
     }
-    console.log(`[flushPois] Firing FLUSH event for workspaceId: ${workspaceId}`);
+    console.log(
+      `[flushPois] Firing FLUSH event for workspaceId: ${workspaceId}`
+    );
     socketRef.current?.emit(PoiSocketEvent.FLUSH, { workspaceId });
   }, [workspaceId]);
 
