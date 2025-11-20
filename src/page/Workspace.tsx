@@ -930,7 +930,7 @@ export function Workspace({
               itineraryAiPlaces={itineraryAiPlaces}
               chatAiPlaces={chatAiPlaces}
               isProgrammaticMove={isProgrammaticMove}
-              isScheduleSidebarOpen={schedulePosition !== 'hidden'}
+              schedulePosition={schedulePosition}
             />
           </div>
 

@@ -1,4 +1,10 @@
-import { PlusCircle, X, ChevronsRight, Filter } from 'lucide-react';
+import {
+  PlusCircle,
+  X,
+  ChevronsRight,
+  Filter,
+  ArrowRightToLine,
+} from 'lucide-react';
 import React, { useEffect, useRef, useState, memo, useCallback } from 'react';
 import type { Poi, CreatePoiDto, HoveredPoiInfo } from '../hooks/usePoiSocket';
 import {
@@ -91,7 +97,7 @@ interface MapPanelProps {
   itineraryAiPlaces: AiPlace[] | undefined;
   chatAiPlaces: AiPlace[] | undefined;
   isProgrammaticMove: React.MutableRefObject<boolean>;
-  isScheduleSidebarOpen: boolean;
+  schedulePosition: 'hidden' | 'overlay' | 'docked';
 }
 
 export interface PlaceMarkerProps {
@@ -585,7 +591,7 @@ export function MapPanel({
   itineraryAiPlaces,
   chatAiPlaces,
   isProgrammaticMove,
-  isScheduleSidebarOpen,
+  schedulePosition,
 }: MapPanelProps) {
   const defaultCenter = { lat: 33.450701, lng: 126.570667 };
   const [mapInstance, setMapInstance] = useState<kakao.maps.Map | null>(null);
@@ -1311,7 +1317,7 @@ export function MapPanel({
           });
         }}
       >
-        {!isScheduleSidebarOpen && (
+        {schedulePosition !== 'overlay' && (
           <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 p-1.5 bg-white/80 backdrop-blur-sm rounded-lg shadow-md">
             <button
               onClick={() =>
