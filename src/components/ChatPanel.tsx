@@ -82,7 +82,7 @@ export const ChatPanel = memo(function ChatPanel({
         <div className="flex items-center gap-3">
           <Badge
             variant={isChatConnected ? 'outline' : 'destructive'}
-            className="text-white"
+            className="text-white text-sm"
           >
             {isChatConnected ? '연결됨' : '연결 끊김'}
           </Badge>
@@ -90,18 +90,18 @@ export const ChatPanel = memo(function ChatPanel({
             <Button
               size="icon"
               variant="ghost"
-              className="w-8 h-8 text-white hover:bg-blue-800"
+              className="w-9 h-9 text-white hover:bg-blue-800"
               disabled
             >
-              <Phone className="w-4 h-4" />
+              <Phone className="w-5 h-5" />
             </Button>
             <Button
               size="icon"
               variant={isVCCallActive ? 'secondary' : 'ghost'}
-              className="w-8 h-8 text-white hover:bg-blue-800"
+              className="w-9 h-9 text-white hover:bg-blue-800"
               onClick={handleToggleVideoCall}
             >
-              <Video className="w-4 h-4" />
+              <Video className="w-5 h-5" />
             </Button>
           </div>
         </div>
