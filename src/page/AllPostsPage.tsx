@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { ClipboardList, Search, SlidersHorizontal, X } from 'lucide-react';
-import { Button } from './ui/button';
+import { Button } from '../components/ui/button';
 import client from '../api/client';
 import { type Post } from '../types/post';
-import { MainPostCardSkeleton } from './AIMatchingSkeletion';
-import { WorkspaceCard } from './WorkspaceCard';
+import { MainPostCardSkeleton } from '../components/AIMatchingSkeletion';
+import { WorkspaceCard } from '../components/WorkspaceCard';
 import { useAuthStore } from '../store/authStore';
 
 type SearchParams = {

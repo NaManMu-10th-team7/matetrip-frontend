@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { ClipboardList } from 'lucide-react';
 import client from '../api/client';
 import { type Post } from '../types/post';
-import { MainPostCardSkeleton } from './AIMatchingSkeletion';
-import { WorkspaceCarousel } from './WorkspaceCarousel';
+import { MainPostCardSkeleton } from '../components/AIMatchingSkeletion';
+import { WorkspaceCarousel } from '../components/WorkspaceCarousel';
 import { useAuthStore } from '../store/authStore';
 
 interface MyTripsPageProps {

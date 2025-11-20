@@ -10,20 +10,20 @@ import {
   type DragEndEvent,
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
-import { MapPanel } from './MapPanel';
+import { MapPanel } from '../components/MapPanel';
 import type { KakaoPlace, RouteSegment, ChatMessage } from '../types/map';
 import type { PlanDayDto } from '../types/workspace';
-import { LeftPanel } from './LeftPanel';
-import { PlanRoomHeader } from './PlanRoomHeader';
+import { LeftPanel } from '../components/LeftPanel';
+import { PlanRoomHeader } from '../components/PlanRoomHeader';
 import { usePlaceStore } from '../store/placeStore'; // placeStore import
 import { type Poi, usePoiSocket } from '../hooks/usePoiSocket.ts';
 import { type AiPlace, useChatSocket } from '../hooks/useChatSocket';
 import { useWorkspaceMembers } from '../hooks/useWorkspaceMembers.ts';
 import client, { API_BASE_URL } from '../api/client.ts';
 import { CATEGORY_INFO, type PlaceDto } from '../types/place.ts'; // useWorkspaceMembers 훅 import
-import { AddToItineraryModal } from './AddToItineraryModal.tsx';
-import { PdfDocument } from './PdfDocument.tsx'; // [신규] 모달 컴포넌트 임포트 (생성 필요)
-import { AIRecommendationLoadingModal } from './AIRecommendationLoadingModal.tsx';
+import { AddToItineraryModal } from '../components/AddToItineraryModal.tsx';
+import { PdfDocument } from '../components/PdfDocument.tsx'; // [신규] 모달 컴포넌트 임포트 (생성 필요)
+import { AIRecommendationLoadingModal } from '../components/AIRecommendationLoadingModal.tsx';
 import { toast } from 'sonner';
 
 interface WorkspaceProps {

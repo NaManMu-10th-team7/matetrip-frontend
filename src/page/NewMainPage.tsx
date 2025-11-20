@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from './ui/button';
-import { MainPostCard } from './MainPostCard';
-import { PlaceRecommendationSection } from './PlaceRecommendationSection';
-import { InspirationCard } from './InspirationCard';
+import { Button } from '../components/ui/button';
+import { MainPostCard } from '../components/MainPostCard';
+import { PlaceRecommendationSection } from '../components/PlaceRecommendationSection';
+import { InspirationCard } from '../components/InspirationCard';
 import { PostDetail } from './PostDetail';
-import { PostPreview } from './PostPreview';
-import { SimpleKakaoMap } from './SimpleKakaoMap';
+import { PostPreview } from '../components/PostPreview';
+import { SimpleKakaoMap } from '../components/SimpleKakaoMap';
 import { useAuthStore } from '../store/authStore';
 import client from '../api/client';
 import { type Post } from '../types/post';

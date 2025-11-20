@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { MapPin } from 'lucide-react';
 import { Map as KakaoMap, MapMarker } from 'react-kakao-maps-sdk';
-import { Button } from './ui/button';
-import { InspirationCard } from './InspirationCard';
+import { Button } from '../components/ui/button';
+import { InspirationCard } from '../components/InspirationCard';
 import client from '../api/client';
 
 // 장소 상세 정보 타입

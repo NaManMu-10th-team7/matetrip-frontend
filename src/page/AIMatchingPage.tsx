@@ -1,24 +1,24 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { MapPin, Search as SearchIcon } from 'lucide-react'; // SearchIcon 추가
-import { Button } from './ui/button';
+import { Button } from '../components/ui/button';
 import client from '../api/client';
 import { type Post } from '../types/post';
-import { MainPostCardSkeleton } from './AIMatchingSkeletion';
-import { MatchingCarousel } from './MatchingCarousel';
-import { GridMatchingCard } from './GridMatchingCard';
+import { MainPostCardSkeleton } from '../components/AIMatchingSkeletion';
+import { MatchingCarousel } from '../components/MatchingCarousel';
+import { GridMatchingCard } from '../components/GridMatchingCard';
 import { PostDetail } from './PostDetail';
-import { Dialog, DialogContent } from './ui/dialog';
+import { Dialog, DialogContent } from '../components/ui/dialog';
 import { useAuthStore } from '../store/authStore';
 import type {
   MatchingInfo,
   MatchCandidateDto,
   MatchRecruitingPostDto,
 } from '../types/matching';
-import { MatchingSearchBar } from './MatchingSearchBar';
+import { MatchingSearchBar } from '../components/MatchingSearchBar';
 import { toast } from 'sonner';
 import type { MatchingResult } from '../types/matchSearch'; // MatchingResult 타입 임포트
 import type { KeywordValue } from '../utils/keyword'; // KeywordValue 타입 임포트
-import { ProfileModal } from './ProfileModal'; // ProfileModal 임포트 추가
+import { ProfileModal } from '../components/ProfileModal'; // ProfileModal 임포트 추가
 
 interface MainPageProps {
   onSearch: (params: {
@@ -128,7 +128,7 @@ export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
           (post) => post.status === '모집중'
         );
         setPosts(recruitingPosts);
-        console.log(`최신 동행 글 목록`, sortedInitialPosts);
+        console.log('최신 동행 글 목록', sortedInitialPosts);
       } catch (error) {
         console.error('Failed to fetch posts:', error);
       } finally {
@@ -328,7 +328,7 @@ export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
     }
   }, [recommendedPosts, searchResults]); // searchResults 의존성 추가
 
-  const handleCardClick = (post: Post | MatchRecruitingPostDto) => {
+  const handleCardClick = (post: Post | MatchRecruitingPostDto): void => {
     if (!isLoggedIn) {
       window.location.href = '/login';
       return;

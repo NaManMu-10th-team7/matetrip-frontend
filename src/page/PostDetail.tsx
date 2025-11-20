@@ -18,14 +18,14 @@ import {
   DoorOpen, // DoorOpen 아이콘 추가
 } from 'lucide-react';
 import React from 'react'; // Import React to use React.ReactNode
-import { Button } from './ui/button';
-import { Badge } from './ui/badge';
+import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogTitle,
-} from './ui/dialog';
+} from '../components/ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,14 +34,14 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from './ui/alert-dialog';
+} from '../components/ui/alert-dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from './ui/dropdown-menu';
-import { ImageWithFallback } from './figma/ImageWithFallback';
+} from '../components/ui/dropdown-menu';
+import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import client from '../api/client';
 import { type Post, type Participation } from '../types/post';
 import { translateKeyword } from '../utils/keyword';
