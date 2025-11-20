@@ -77,20 +77,28 @@ export const ChatPanel = memo(function ChatPanel({
 
   return (
     <div className="h-full flex flex-col bg-white">
-      <div className="border-b p-3 flex items-center justify-between">
-        <h3 className="text-gray-900 font-semibold">채팅</h3>
+      <div className="bg-blue-900 text-white px-6 py-3 flex items-center justify-between">
+        <h3 className="font-semibold">채팅</h3>
         <div className="flex items-center gap-3">
-          <Badge variant={isChatConnected ? 'default' : 'destructive'}>
+          <Badge
+            variant={isChatConnected ? 'outline' : 'destructive'}
+            className="text-white"
+          >
             {isChatConnected ? '연결됨' : '연결 끊김'}
           </Badge>
           <div className="flex gap-1">
-            <Button size="icon" variant="ghost" className="w-8 h-8" disabled>
-              <Phone className="w-4 h-4 text-gray-600" />
+            <Button
+              size="icon"
+              variant="ghost"
+              className="w-8 h-8 text-white hover:bg-blue-800"
+              disabled
+            >
+              <Phone className="w-4 h-4" />
             </Button>
             <Button
               size="icon"
               variant={isVCCallActive ? 'secondary' : 'ghost'}
-              className="w-8 h-8"
+              className="w-8 h-8 text-white hover:bg-blue-800"
               onClick={handleToggleVideoCall}
             >
               <Video className="w-4 h-4" />

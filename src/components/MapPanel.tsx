@@ -1310,6 +1310,16 @@ export function MapPanel({
         }}
       >
         <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 p-1.5 bg-white/80 backdrop-blur-sm rounded-lg shadow-md">
+          <button
+            onClick={() => setIsCategoryFilterVisible(!isCategoryFilterVisible)}
+            className="p-1.5 text-gray-600 hover:bg-gray-100 rounded-md flex-shrink-0"
+          >
+            {isCategoryFilterVisible ? (
+              <ChevronsRight size={18} />
+            ) : (
+              <Filter size={18} />
+            )}
+          </button>
           <div
             className="grid transition-all duration-300 ease-in-out"
             style={{
@@ -1318,6 +1328,7 @@ export function MapPanel({
           >
             <div className="overflow-hidden">
               <div className="flex items-center gap-2 min-w-max pr-1">
+                <div className="border-l border-gray-300 h-6" />
                 <button
                   onClick={handleToggleAllCategories}
                   className="whitespace-nowrap px-3 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 flex justify-center items-center gap-1.5"
@@ -1336,7 +1347,6 @@ export function MapPanel({
                 >
                   전체
                 </button>
-                <div className="border-l border-gray-300 h-6" />
 
                 {Object.entries(CATEGORY_INFO).map(([key, { name, color }]) => (
                   <button
@@ -1360,16 +1370,6 @@ export function MapPanel({
               </div>
             </div>
           </div>
-          <button
-            onClick={() => setIsCategoryFilterVisible(!isCategoryFilterVisible)}
-            className="p-1.5 text-gray-600 hover:bg-gray-100 rounded-md flex-shrink-0"
-          >
-            {isCategoryFilterVisible ? (
-              <ChevronsRight size={18} />
-            ) : (
-              <Filter size={18} />
-            )}
-          </button>
         </div>
         {filteredPlacesToRender.map((place) => (
           <PlaceMarker

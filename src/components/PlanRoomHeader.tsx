@@ -66,20 +66,20 @@ export function PlanRoomHeader({
   );
 
   return (
-    <div className="border-b border-gray-700 bg-gray-900 px-6 py-3 flex items-center justify-between flex-shrink-0 h-18 text-white relative rounded-lg">
+    <div className="border-b border-gray-700 bg-gray-800 px-4 py-2 flex items-center justify-between flex-shrink-0 h-16 text-white relative rounded-lg">
       {/* 왼쪽 영역: 뒤로가기 버튼, 제목 */}
-      <div className="flex items-center gap-4 flex-1 min-w-0">
+      <div className="flex items-center gap-3 flex-1 min-w-0">
         <button
           onClick={onBack}
           className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
         >
           <ArrowLeft className="w-5 h-5 text-gray-300" />
         </button>
-        <h1 className="text-white text-2xl font-bold truncate">{title}</h1>
+        <h1 className="text-white text-xl font-bold truncate">{title}</h1>
       </div>
 
       {/* 중앙 영역: 날짜 정보와 참여인원 */}
-      <div className="flex-grow flex justify-center items-center gap-2 text-gray-400 px-4">
+      <div className="flex-grow flex justify-center items-center gap-2 text-gray-400 px-4 text-sm">
         <Calendar className="w-4 h-4 text-gray-400" />
         <span>
           {startDate} ~ {endDate} ({totalDays}일)
@@ -87,7 +87,7 @@ export function PlanRoomHeader({
       </div>
 
       {/* 오른쪽 영역: 접속 중인 멤버 아바타 + 메뉴 버튼 */}
-      <div className="flex items-center gap-3 flex-1 justify-end min-w-0">
+      <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
         {/* 접속 중인 멤버 아바타 */}
         {activeMembers.length > 0 && (
           <div className="flex items-center">
@@ -110,17 +110,17 @@ export function PlanRoomHeader({
         <Button
           variant="ghost"
           size="icon"
-          className="w-10 h-10"
+          className="w-9 h-9"
           onClick={onToggleScheduleSidebar}
         >
-          <ListOrdered className="w-6 h-6" />
+          <ListOrdered className="w-5 h-5" />
         </Button>
 
         {/* 메뉴 버튼 */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="w-10 h-10">
-              <MoreVertical className="w-6 h-6" />
+            <Button variant="ghost" size="icon" className="w-9 h-9">
+              <MoreVertical className="w-5 h-5" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent

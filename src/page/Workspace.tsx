@@ -847,7 +847,7 @@ export function Workspace({
       onDragEnd={handleDragEnd}
       collisionDetection={closestCenter}
     >
-      <div className="h-full flex flex-col bg-gray-50 p-4">
+      <div className="h-full flex flex-col bg-gray-50 p-4 gap-4">
         <PlanRoomHeader
           workspaceId={workspaceId}
           title={workspaceName}
@@ -865,7 +865,7 @@ export function Workspace({
           onToggleScheduleSidebar={handleToggleScheduleSidebar}
         />
 
-        <div className="flex-1 flex relative overflow-hidden mt-4 rounded-lg">
+        <div className="flex-1 flex relative overflow-hidden rounded-lg border shadow-sm">
           <LeftPanel
             isRecommendationLoading={isRecommendationLoading}
             workspaceId={workspaceId}
