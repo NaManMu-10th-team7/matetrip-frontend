@@ -708,6 +708,9 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
   );
 
   const flushPois = useCallback(() => {
+    if (!workspaceId) {
+      throw new Error('유효하지 않은 workspaceId입니다.');
+    }
     if (!socketRef.current?.connected) {
       throw new Error('소켓이 연결되지 않았습니다.');
     }
