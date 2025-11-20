@@ -28,6 +28,7 @@ const PoiSocketEvent = {
   'map:clicked': 'map:clicked',
   'place:focus': 'place:focus',
   'place:focused': 'place:focused',
+  FLUSH: 'flush',
 } as const;
 
 export type Poi = {
@@ -670,6 +671,15 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
     [user, workspaceId, pois, setPois]
   );
 
+  const flushPois = useCallback(() => {
+    if (!socketRef.current?.connected) {
+      console.error('소켓이 연결되지 않았습니다.');
+      return;
+    }
+    console.log(`[flushPois] Firing FLUSH event for workspaceId: ${workspaceId}`);
+    socketRef.current?.emit(PoiSocketEvent.FLUSH, { workspaceId });
+  }, [workspaceId]);
+
   return {
     pois,
     setPois,
@@ -688,5 +698,6 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
     clickMap,
     addRecommendedPoisToDay,
     focusPlace,
+    flushPois,
   };
 }

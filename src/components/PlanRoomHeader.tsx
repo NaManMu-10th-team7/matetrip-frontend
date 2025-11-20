@@ -7,6 +7,7 @@ import {
   FileDown,
   Loader2,
   ListOrdered,
+  Save,
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { useState } from 'react';
@@ -18,6 +19,7 @@ import {
 } from './ui/dropdown-menu';
 import { TripReviewModal } from './TripReviewModal';
 import { useAuthStore } from '../store/authStore';
+import { toast } from 'sonner';
 
 interface Member {
   id: string;
@@ -40,6 +42,7 @@ interface PlanRoomHeaderProps {
   onExportPdf?: () => void;
   isGeneratingPdf?: boolean;
   onToggleScheduleSidebar: () => void;
+  onFlush: () => void;
 }
 
 export function PlanRoomHeader({
@@ -55,6 +58,7 @@ export function PlanRoomHeader({
   onExportPdf,
   isGeneratingPdf = false,
   onToggleScheduleSidebar,
+  onFlush,
 }: PlanRoomHeaderProps) {
   const [isReviewModalOpen, setReviewModalOpen] = useState(false);
   const { user } = useAuthStore();
@@ -63,6 +67,11 @@ export function PlanRoomHeader({
   const membersToReview = activeMembers.filter(
     (member) => member.id !== user?.userId
   );
+
+  const handleFlush = () => {
+    onFlush();
+    toast.success('저장되었습니다.');
+  };
 
   return (
     <div className="border-b border-gray-700 bg-gray-800 px-4 py-2 flex items-center justify-between flex-shrink-0 h-16 text-white relative rounded-lg">
@@ -87,6 +96,14 @@ export function PlanRoomHeader({
 
       {/* 오른쪽 영역: 메뉴 버튼 */}
       <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
+        <Button
+          variant="outline"
+          className="h-9 px-3 gap-2 bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white"
+          onClick={handleFlush}
+        >
+          <Save className="w-4 h-4" />
+          <span className="text-sm font-medium">저장</span>
+        </Button>
         <Button
           variant="outline"
           className="h-9 px-3 gap-2 bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white"

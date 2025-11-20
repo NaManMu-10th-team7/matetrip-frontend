@@ -144,6 +144,7 @@ export function Workspace({
     clickMap, // 추가
     addRecommendedPoisToDay,
     focusPlace, // 추가
+    flushPois,
   } = usePoiSocket(workspaceId, members);
 
   const {
@@ -891,6 +892,7 @@ export function Workspace({
           isGeneratingPdf={isGeneratingPdf}
           activeMembers={activeMembersForHeader}
           onToggleScheduleSidebar={handleToggleScheduleOverlay}
+          onFlush={flushPois}
         />
 
         <div className="flex-1 flex relative overflow-hidden rounded-lg border shadow-sm">
