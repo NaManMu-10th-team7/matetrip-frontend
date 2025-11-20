@@ -109,9 +109,19 @@ export const ChatPanel = memo(function ChatPanel({
           )}
           <Badge
             variant={isChatConnected ? 'outline' : 'destructive'}
-            className="text-white text-sm"
+            className="text-white text-sm flex items-center gap-2"
           >
-            {isChatConnected ? '연결됨' : '연결 끊김'}
+            {isChatConnected ? (
+              <>
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                </span>
+                <span>연결됨</span>
+              </>
+            ) : (
+              '연결 끊김'
+            )}
           </Badge>
           <div className="flex gap-1">
             <Button
@@ -173,7 +183,7 @@ export const ChatPanel = memo(function ChatPanel({
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto px-8 py-4 space-y-4">
         {messages.map((msg, index) => {
           const isMe = currentUserId != null && msg.userId === currentUserId;
           const isSystem = msg.username === 'System';
@@ -182,69 +192,89 @@ export const ChatPanel = memo(function ChatPanel({
             msg.recommendedPlaces &&
             msg.recommendedPlaces.length > 0;
 
+          const sender =
+            !isMe && !isSystem
+              ? activeMembers.find((m) => m.id === msg.userId)
+              : null;
+
           return (
             <div
               key={msg.id || index}
-              className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
+              className={`flex gap-3 ${
+                isMe ? 'justify-end' : 'justify-start'
+              }`}
             >
+              {!isMe && !isSystem && (
+                <Avatar className="w-8 h-8 self-start">
+                  <AvatarImage src={sender?.avatar} alt={sender?.name} />
+                  <AvatarFallback>{sender?.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+              )}
               <div
                 className={cn(
-                  !isAiRecommendation && 'max-w-[70%]',
-                  isMe ? 'order-2' : ''
+                  'flex flex-col',
+                  isMe ? 'items-end' : 'items-start',
+                  !isAiRecommendation && 'max-w-[70%]'
                 )}
               >
                 {!isMe && !isSystem && (
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm text-gray-600">
-                      {msg.username}
-                    </span>
-                  </div>
+                  <span className="text-sm text-gray-600 mb-1">
+                    {msg.username}
+                  </span>
                 )}
                 <div
-                  className={cn(
-                    'rounded-lg px-4 py-2',
-                    isAiRecommendation && 'w-full bg-transparent p-0',
-                    isMe
-                      ? 'bg-blue-600 text-white'
-                      : isSystem
-                        ? 'bg-gray-100 text-gray-700 italic'
-                        : 'bg-gray-100 text-gray-900'
-                  )}
-                >
-                  <p className="text-sm">{msg.message}</p>
-                  {isAiRecommendation && (
-                    <div className="mt-2">
-                      {!isAiCardCollapsed && (
-                        <div className="grid grid-cols-1 gap-2">
-                          {msg.recommendedPlaces?.map((place, placeIndex) => (
-                            <RecommendedPlaceCard
-                              key={placeIndex}
-                              place={place}
-                              onAddPoiToItinerary={onAddPoiToItinerary}
-                              onCardClick={onCardClick}
-                            />
-                          ))}
-                        </div>
-                      )}
-                      <div className="flex justify-end mt-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setIsAiCardCollapsed((prev) => !prev)}
-                        >
-                          {isAiCardCollapsed ? '펼치기' : '접기'}
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <span
-                  className={`text-xs text-gray-500 mt-1 block ${
-                    isMe ? 'text-right' : 'text-left'
+                  className={`flex items-baseline gap-2 ${
+                    isMe ? 'flex-row-reverse' : ''
                   }`}
                 >
-                  {formatTimestamp(msg.timestamp)}
-                </span>
+                  <div
+                    className={cn(
+                      'rounded-lg px-4 py-2',
+                      isAiRecommendation && 'w-full bg-transparent p-0',
+                      isMe
+                        ? 'bg-blue-600 text-white'
+                        : isSystem
+                          ? 'bg-gray-100 text-gray-700 italic'
+                          : 'bg-gray-100 text-gray-900'
+                    )}
+                  >
+                    <p className="text-sm" style={{ wordBreak: 'break-word' }}>
+                      {msg.message}
+                    </p>
+                    {isAiRecommendation && (
+                      <div className="mt-2">
+                        {!isAiCardCollapsed && (
+                          <div className="grid grid-cols-1 gap-2">
+                            {msg.recommendedPlaces?.map(
+                              (place, placeIndex) => (
+                                <RecommendedPlaceCard
+                                  key={placeIndex}
+                                  place={place}
+                                  onAddPoiToItinerary={onAddPoiToItinerary}
+                                  onCardClick={onCardClick}
+                                />
+                              )
+                            )}
+                          </div>
+                        )}
+                        <div className="flex justify-end mt-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              setIsAiCardCollapsed((prev) => !prev)
+                            }
+                          >
+                            {isAiCardCollapsed ? '펼치기' : '접기'}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-xs text-gray-500 flex-shrink-0">
+                    {formatTimestamp(msg.timestamp)}
+                  </span>
+                </div>
               </div>
             </div>
           );
