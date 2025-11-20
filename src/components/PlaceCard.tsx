@@ -3,7 +3,7 @@ import { type PlaceDto } from '../types/place';
 import client from '../api/client';
 
 interface PlaceCardProps {
-  place: PlaceDto;
+  place: PlaceDto & { recommendationReason?: string };
   onClick: (placeId: string) => void;
 }
 
@@ -38,35 +38,47 @@ export function PlaceCard({ place, onClick }: PlaceCardProps) {
   }, [place.image_url, isImageId]);
 
   return (
-    <div
-      className="relative w-full aspect-[203/241] rounded-[16px] overflow-hidden cursor-pointer"
-      onClick={() => onClick(place.id)}
-    >
-      {/* Background Image */}
-      <div className="absolute inset-0">
-        {actualImageUrl ? (
-          <img
-            src={actualImageUrl}
-            alt={place.title}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              console.error('Place image load failed:', actualImageUrl);
-              e.currentTarget.style.display = 'none';
-            }}
-          />
-        ) : (
-          <div className="w-full h-full bg-[#d1d5db]" />
-        )}
-        {/* Dark Overlay */}
-        <div className="absolute inset-0 bg-black/40" />
+    <div className="w-full">
+      <div
+        className="relative w-full aspect-[203/241] rounded-[16px] overflow-hidden cursor-pointer"
+        onClick={() => onClick(place.id)}
+      >
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          {actualImageUrl ? (
+            <img
+              src={actualImageUrl}
+              alt={place.title}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                console.error('Place image load failed:', actualImageUrl);
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+          ) : (
+            <div className="w-full h-full bg-[#d1d5db]" />
+          )}
+          {/* Dark Overlay */}
+          <div className="absolute inset-0 bg-black/40" />
+        </div>
+
+        {/* Content */}
+        <div className="relative h-full flex flex-col justify-end p-[20px]">
+          <h3 className="text-[20px] font-bold text-white leading-[1.4] overflow-hidden whitespace-nowrap text-ellipsis">
+            {place.title}
+          </h3>
+        </div>
       </div>
 
-      {/* Content */}
-      <div className="relative h-full flex flex-col justify-end p-[20px]">
-        <h3 className="text-[20px] font-bold text-white leading-[1.4] overflow-hidden whitespace-nowrap text-ellipsis">
-          {place.title}
-        </h3>
-      </div>
+      {/* Recommendation Reason Bubble */}
+      {place.recommendationReason && (
+        <div className="mt-2 bg-white rounded-lg px-3 py-2 shadow-sm border border-gray-200 relative">
+          <div className="absolute -top-1 left-4 w-2 h-2 bg-white border-l border-t border-gray-200 transform rotate-45"></div>
+          <p className="text-xs text-gray-700 font-medium">
+            💡 {place.recommendationReason}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
