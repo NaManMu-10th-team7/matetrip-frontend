@@ -27,7 +27,7 @@ import type { AiPlace } from '../hooks/useChatSocket';
 import { usePlaceStore } from '../store/placeStore';
 
 interface PoiItemProps {
-  poi: Poi;
+  poi: Poi & { image_url?: string };
   color?: string;
   index?: number;
   onPoiClick: (poi: Poi | AiPlace) => void;
@@ -76,14 +76,28 @@ function PoiItem({
     <li
       ref={setNodeRef}
       style={style}
-      className={`flex items-center text-sm p-1 rounded-md cursor-pointer ${
+      className={`flex items-center text-sm p-2 rounded-md cursor-pointer ${
         isHovered ? 'bg-blue-100' : 'hover:bg-gray-100'
       }`}
       onClick={() => onPoiClick(poi)}
       onMouseEnter={() => onPoiHover(poi.id)}
       onMouseLeave={() => onPoiHover(null)}
     >
-      <div className="flex items-center w-12 flex-shrink-0 gap-1">
+      {poi.image_url ? (
+        <img
+          src={poi.image_url}
+          alt={poi.placeName}
+          className="w-12 h-12 rounded-md object-cover mr-3 flex-shrink-0"
+        />
+      ) : (
+        <div className="w-12 h-12 rounded-md bg-gray-200 flex items-center justify-center mr-3 flex-shrink-0">
+          <CategoryIcon
+            category={poi.categoryName}
+            className="w-6 h-6 text-gray-500"
+          />
+        </div>
+      )}
+      <div className="flex items-center flex-grow min-w-0">
         <div
           {...attributes}
           {...listeners}
@@ -93,27 +107,21 @@ function PoiItem({
         </div>
         {color && index !== undefined && (
           <span
-            className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full text-white text-sm"
+            className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full text-white text-sm mr-2"
             style={{ backgroundColor: color }}
           >
             {index + 1}
           </span>
         )}
-      </div>
-      <div className="flex items-center gap-2 flex-grow ml-2 min-w-0">
-        <CategoryIcon
-          category={poi.categoryName}
-          className="w-4 h-4 text-gray-500 flex-shrink-0"
-        />
-        <span className="truncate">{poi.placeName}</span>
+        <span className="truncate font-medium">{poi.placeName}</span>
       </div>
       <Button
         variant="ghost"
         size="icon"
         onClick={handleDeleteClick}
-        className="w-6 h-6 p-0 flex-shrink-0"
+        className="w-8 h-8 p-0 flex-shrink-0"
       >
-        <X className="w-3 h-3 text-gray-500" />
+        <X className="w-4 h-4 text-gray-500" />
       </Button>
     </li>
   );
@@ -127,7 +135,7 @@ function MarkerStorage({
   removeSchedule,
   hoveredPoiId,
 }: {
-  pois: Poi[];
+  pois: (Poi & { image_url?: string })[];
   onPoiClick: (poi: Poi | AiPlace) => void;
   onPoiHover: (poiId: string | null) => void;
   unmarkPoi: (poiId: string | number) => void;
@@ -203,7 +211,7 @@ function DayItineraryItem({
   hoveredPoiId,
 }: {
   layer: DayLayer;
-  itinerary: Record<string, Poi[]>;
+  itinerary: Record<string, (Poi & { image_url?: string })[]>;
   visibleDayIds: Set<string>;
   routeSegmentsByDay: Record<string, RouteSegment[]>;
   onDayVisibilityChange: (dayId: string, isVisible: boolean) => void;
@@ -376,32 +384,38 @@ export function ScheduleSidebar({
 
   const placeCache = usePlaceStore((state) => state.placesById);
 
-  const poisWithCategory = useMemo(() => {
+  const poisWithEnhancedData = useMemo(() => {
     const allPois = [...markedPois, ...Object.values(itinerary).flat()];
     return allPois.map((poi) => {
-      if (poi.categoryName) return poi;
       const cachedPlace = placeCache.get(poi.placeId);
-      return cachedPlace ? { ...poi, categoryName: cachedPlace.category } : poi;
+      if (cachedPlace) {
+        return {
+          ...poi,
+          categoryName: poi.categoryName || cachedPlace.category,
+          image_url: cachedPlace.image_url,
+        };
+      }
+      return poi;
     });
   }, [markedPois, itinerary, placeCache]);
 
   const enrichedMarkedPois = useMemo(
     () =>
-      poisWithCategory
+      poisWithEnhancedData
         .filter((p) => p.status === 'MARKED')
         .sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0)),
-    [poisWithCategory]
+    [poisWithEnhancedData]
   );
 
   const enrichedItinerary = useMemo(() => {
-    const newItinerary: Record<string, Poi[]> = {};
+    const newItinerary: Record<string, (Poi & { image_url?: string })[]> = {};
     dayLayers.forEach((layer) => {
-      newItinerary[layer.id] = poisWithCategory
+      newItinerary[layer.id] = poisWithEnhancedData
         .filter((p) => p.planDayId === layer.id && p.status === 'SCHEDULED')
         .sort((a, b) => a.sequence - b.sequence);
     });
     return newItinerary;
-  }, [poisWithCategory, dayLayers]);
+  }, [poisWithEnhancedData, dayLayers]);
 
   const handleToggleDayCollapse = (dayId: string) => {
     setCollapsedDayIds((prev) => {
