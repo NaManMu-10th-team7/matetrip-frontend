@@ -10,6 +10,13 @@ import type { AiPlace } from '../hooks/useChatSocket';
 import { useAuthStore } from '../store/authStore';
 import { RecommendedPlaceCard } from './RecommendedPlaceCard';
 import { cn } from './ui/utils';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+
+interface Member {
+  id: string;
+  name: string;
+  avatar: string;
+}
 
 interface ChatPanelProps {
   messages: ChatMessage[];
@@ -20,6 +27,7 @@ interface ChatPanelProps {
   onCardClick: (poi: Pick<Poi, 'latitude' | 'longitude'>) => void;
   setChatAiPlaces: (places: AiPlace[]) => void;
   chatAiPlaces: AiPlace[];
+  activeMembers?: Member[];
 }
 
 export const ChatPanel = memo(function ChatPanel({
@@ -29,6 +37,7 @@ export const ChatPanel = memo(function ChatPanel({
   workspaceId,
   onAddPoiToItinerary,
   onCardClick,
+  activeMembers = [],
 }: ChatPanelProps) {
   const [isVCCallActive, setIsVCCallActive] = useState(false);
   const [hasVCCallBeenInitiated, setHasVCCallBeenInitiated] = useState(false);
@@ -80,6 +89,24 @@ export const ChatPanel = memo(function ChatPanel({
       <div className="bg-blue-900 text-white px-6 py-3 flex items-center justify-between">
         <h3 className="font-semibold">채팅</h3>
         <div className="flex items-center gap-3">
+          {/* 접속 중인 멤버 아바타 */}
+          {activeMembers.length > 0 && (
+            <div className="flex items-center">
+              {activeMembers.map((member, index) => (
+                <Avatar
+                  key={member.id}
+                  className="w-8 h-8 border-2 border-white"
+                  style={{
+                    marginLeft: index > 0 ? '-8px' : '0',
+                    zIndex: activeMembers.length - index,
+                  }}
+                >
+                  <AvatarImage src={member.avatar} alt={member.name} />
+                  <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+              ))}
+            </div>
+          )}
           <Badge
             variant={isChatConnected ? 'outline' : 'destructive'}
             className="text-white text-sm"

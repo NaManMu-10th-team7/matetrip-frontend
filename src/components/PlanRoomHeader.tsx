@@ -9,7 +9,6 @@ import {
   ListOrdered,
 } from 'lucide-react';
 import { Button } from './ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useState } from 'react';
 import {
   DropdownMenu,
@@ -86,27 +85,8 @@ export function PlanRoomHeader({
         </span>
       </div>
 
-      {/* 오른쪽 영역: 접속 중인 멤버 아바타 + 메뉴 버튼 */}
+      {/* 오른쪽 영역: 메뉴 버튼 */}
       <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
-        {/* 접속 중인 멤버 아바타 */}
-        {activeMembers.length > 0 && (
-          <div className="flex items-center">
-            {activeMembers.map((member, index) => (
-              <Avatar
-                key={member.id}
-                className="w-8 h-8 border-2 border-white"
-                style={{
-                  marginLeft: index > 0 ? '-8px' : '0',
-                  zIndex: activeMembers.length - index,
-                }}
-              >
-                <AvatarImage src={member.avatar} alt={member.name} />
-                <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
-              </Avatar>
-            ))}
-          </div>
-        )}
-
         <Button
           variant="outline"
           className="h-9 px-3 gap-2 bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white"

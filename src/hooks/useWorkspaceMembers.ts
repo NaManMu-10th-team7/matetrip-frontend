@@ -44,7 +44,6 @@ export function useWorkspaceMembers(
       setIsLoading(true);
       setError(null);
       try {
-        // TODO: API 주소를 환경 변수 등으로 관리하는 것을 권장합니다.
         const response = await fetch(
           `${API_BASE_URL}/posts/workspace/${workspaceId}/members`
         );
@@ -54,12 +53,46 @@ export function useWorkspaceMembers(
         }
 
         const data: WorkspaceMember[] = await response.json();
-        // 각 멤버에게 고유 색상을 할당합니다.
-        const membersWithColor = data.map((member) => ({
-          ...member,
-          color: generateColorFromString(member.id),
-        }));
-        setMembers(membersWithColor);
+
+        const membersWithPresignedUrls = await Promise.all(
+          data.map(async (member) => {
+            let presignedUrl = null;
+            if (member.profile.profileImageId) {
+              try {
+                const presignedUrlResponse = await fetch(
+                  `${API_BASE_URL}/binary-content/${member.profile.profileImageId}/presigned-url`
+                );
+                if (presignedUrlResponse.ok) {
+                  const responseJson = await presignedUrlResponse.json();
+                  presignedUrl = responseJson.url;
+                  console.log(
+                    `[DEBUG] Fetched presigned URL for ${member.profile.nickname}:`,
+                    presignedUrl
+                  );
+                } else {
+                  console.error(
+                    `Failed to fetch presigned URL for member ${member.id}: ${presignedUrlResponse.statusText}`
+                  );
+                }
+              } catch (e) {
+                console.error(
+                  `Error fetching presigned URL for member ${member.id}:`,
+                  e
+                );
+              }
+            }
+            return {
+              ...member,
+              profile: {
+                ...member.profile,
+                profileImageId: presignedUrl,
+              },
+              color: generateColorFromString(member.id),
+            };
+          })
+        );
+
+        setMembers(membersWithPresignedUrls);
       } catch (e) {
         setError(
           e instanceof Error ? e : new Error('An unknown error occurred')

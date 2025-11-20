@@ -124,6 +124,7 @@ export function Workspace({
       })),
     [membersWithoutColor]
   );
+
   // usePoiSocket에서 모든 상태와 함수를 가져옵니다.
   const {
     pois,
@@ -436,10 +437,8 @@ export function Workspace({
     return members.map((member) => ({
       id: member.id, // PlanRoomHeader의 id 타입이 string이어야 함
       name: member.profile.nickname,
-      // TODO: 백엔드 응답에 profileImageId가 포함되면 실제 이미지 URL을 구성해야 합니다.
-      // 현재는 임시 플레이스홀더를 사용합니다.
       avatar: member.profile.profileImageId
-        ? `${API_BASE_URL}/binary-content/${member.profile.profileImageId}/presigned-url` // 예시 URL 구조
+        ? member.profile.profileImageId
         : `https://ui-avatars.com/api/?name=${member.profile.nickname}&background=random`,
     }));
   }, [members]);
@@ -925,6 +924,7 @@ export function Workspace({
               onCardClick={handlePoiClick}
               setChatAiPlaces={setChatAiPlaces}
               chatAiPlaces={chatAiPlaces}
+              activeMembers={activeMembersForHeader}
             />
           </div>
 

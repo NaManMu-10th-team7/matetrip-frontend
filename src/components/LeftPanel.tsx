@@ -164,6 +164,13 @@ function PoiItem({
     </li>
   );
 }
+
+interface Member {
+  id: string;
+  name: string;
+  avatar: string;
+}
+
 interface LeftPanelProps {
   isOpen: boolean;
   isRecommendationLoading: boolean;
@@ -185,6 +192,7 @@ interface LeftPanelProps {
   onCardClick: (poi: any) => void;
   setChatAiPlaces: (places: AiPlace[]) => void;
   chatAiPlaces: AiPlace[];
+  activeMembers?: Member[];
 }
 
 function RecommendedDayItem({
@@ -296,6 +304,7 @@ function ChatSidebar({
   onCardClick,
   setChatAiPlaces,
   chatAiPlaces,
+  activeMembers,
 }: {
   messages: ChatMessage[];
   sendMessage: (message: string) => void;
@@ -305,6 +314,7 @@ function ChatSidebar({
   onCardClick: (poi: any) => void;
   setChatAiPlaces: (places: AiPlace[]) => void;
   chatAiPlaces: AiPlace[];
+  activeMembers?: Member[];
 }) {
   return (
     <ChatPanel
@@ -316,6 +326,7 @@ function ChatSidebar({
       onCardClick={onCardClick}
       setChatAiPlaces={setChatAiPlaces}
       chatAiPlaces={chatAiPlaces}
+      activeMembers={activeMembers}
     />
   );
 }
@@ -340,6 +351,7 @@ export function LeftPanel({
   onCardClick,
   setChatAiPlaces,
   chatAiPlaces,
+  activeMembers,
 }: LeftPanelProps) {
   const [activeTab, _setActiveTab] = useState('chat');
 
@@ -491,6 +503,7 @@ export function LeftPanel({
           onCardClick={onCardClick}
           setChatAiPlaces={setChatAiPlaces}
           chatAiPlaces={enrichedChatAiPlaces}
+          activeMembers={activeMembers}
         />
       );
     }
