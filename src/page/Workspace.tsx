@@ -865,7 +865,7 @@ export function Workspace({
           onToggleScheduleSidebar={handleToggleScheduleSidebar}
         />
 
-        <div className="flex-1 flex relative overflow-hidden mt-4">
+        <div className="flex-1 flex relative overflow-hidden mt-4 rounded-lg">
           <LeftPanel
             isRecommendationLoading={isRecommendationLoading}
             workspaceId={workspaceId}
@@ -923,7 +923,7 @@ export function Workspace({
             }}
           ></div>
 
-          <div className="flex-1 bg-gray-100">
+          <div className="flex-1 bg-gray-100 rounded-lg overflow-hidden">
             <MapPanel
               workspaceId={workspaceId} // [신규] workspaceId 전달
               placesToRender={placesToRender} // [수정] 계산된 최종 목록 전달

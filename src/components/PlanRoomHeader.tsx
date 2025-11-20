@@ -66,7 +66,7 @@ export function PlanRoomHeader({
   );
 
   return (
-    <div className="border-b border-gray-700 bg-gray-900 px-6 py-3 flex items-center justify-between flex-shrink-0 h-18 text-white relative">
+    <div className="border-b border-gray-700 bg-gray-900 px-6 py-3 flex items-center justify-between flex-shrink-0 h-18 text-white relative rounded-lg">
       {/* 왼쪽 영역: 뒤로가기 버튼, 제목 */}
       <div className="flex items-center gap-4 flex-1 min-w-0">
         <button

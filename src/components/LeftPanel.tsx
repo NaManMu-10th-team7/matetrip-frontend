@@ -1057,38 +1057,9 @@ export function LeftPanel({
   };
 
   return (
-    <div className="relative h-full">
+    <div className="relative h-full rounded-lg overflow-hidden w-1/2">
       <div className="flex h-full">
-        {' '}
-        {/* '내 일정'과 '채팅' 패널을 위한 flex 컨테이너 */}
-        <div className="w-96 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out">
-          <div className="flex w-full bg-black h-14 p-0 rounded-none">
-            <button
-              onClick={() => setActiveTab('chat')}
-              className={`flex-1 flex items-center justify-center gap-2 text-lg rounded-none ${
-                activeTab === 'chat'
-                  ? 'text-white bg-gray-800'
-                  : 'text-gray-400'
-              } hover:text-white`}
-            >
-              <MessageCircle className="w-5 h-5" />
-              <span>채팅</span>
-            </button>
-            {/* AI 추천 탭 숨김 처리 */}
-            {/* <button
-              onClick={() => {
-                const newIsOpen = !isAiRecOpen;
-                setIsAiRecOpen(newIsOpen);
-              }}
-              className={`flex-1 flex items-center justify-center gap-2 text-lg rounded-none ${
-                isAiRecOpen ? 'text-white bg-gray-800' : 'text-gray-400'
-              } hover:text-white`}
-            >
-              <Lightbulb className="w-5 h-5" />
-              <span>AI 추천</span>
-            </button> */}
-          </div>
-
+        <div className="w-full bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out">
           <div className="flex-1 m-0 overflow-y-auto">{renderTabContent()}</div>
         </div>
       </div>
