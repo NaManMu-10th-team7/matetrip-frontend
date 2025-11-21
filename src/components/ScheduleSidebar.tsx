@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   GripVertical,
   ChevronDown,
@@ -11,7 +11,7 @@ import {
   ArrowLeftToLine,
   FileText,
   ArrowRightToLine,
-  Trash2, // Import Trash2 icon
+  Trash2,
 } from 'lucide-react';
 import {
   SortableContext,
@@ -26,13 +26,16 @@ import { Button } from './ui/button';
 import { SimpleToggle } from './ui/SimpleToggle';
 import { CategoryIcon } from './CategoryIcon';
 import { usePlaceStore } from '../store/placeStore';
+import { usePlaceDetail } from '../hooks/usePlaceDetail';
+import { InspirationCard } from './InspirationCard';
 
 interface PoiItemProps {
   poi: Poi & { image_url?: string; summary?: string };
   color?: string;
   index?: number;
-  onShowDetail: (poi: Poi & { image_url?: string; summary?: string }) => void;
+  onShowDetail: (placeId: string) => void;
   onPoiHover: (poiId: string | null) => void;
+  onPoiSelect?: (poi: Poi) => void; // onPoiSelect prop 추가
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
   isHovered: boolean;
@@ -44,6 +47,7 @@ function PoiItem({
   index,
   onShowDetail,
   onPoiHover,
+  onPoiSelect,
   unmarkPoi,
   removeSchedule,
   isHovered,
@@ -77,14 +81,13 @@ function PoiItem({
     <li
       ref={setNodeRef}
       style={style}
-      className={`flex items-center text-sm p-2 rounded-md border border-gray-200 ${
-        // 테두리 추가
+      className={`flex items-center text-sm p-2 rounded-md border border-gray-200 cursor-pointer ${
         isHovered ? 'bg-blue-100' : 'hover:bg-gray-100'
       }`}
       onMouseEnter={() => onPoiHover(poi.id)}
       onMouseLeave={() => onPoiHover(null)}
+      onClick={() => onPoiSelect?.(poi)}
     >
-      {/* 드래그앤드롭 아이콘 */}
       <div
         {...attributes}
         {...listeners}
@@ -93,7 +96,6 @@ function PoiItem({
         <GripVertical className="w-6 h-6 text-gray-400" />
       </div>
 
-      {/* 장소 이미지 또는 카테고리 아이콘 */}
       {poi.image_url ? (
         <img
           src={poi.image_url}
@@ -134,7 +136,7 @@ function PoiItem({
           className="h-7 text-xs rounded-full hover:bg-transparent hover:border-2 hover:border-black"
           onClick={(e) => {
             e.stopPropagation();
-            onShowDetail(poi);
+            onShowDetail(poi.placeId);
           }}
         >
           상세보기
@@ -156,13 +158,15 @@ function MarkerStorage({
   pois,
   onShowDetail,
   onPoiHover,
+  onPoiSelect,
   unmarkPoi,
   removeSchedule,
   hoveredPoiId,
 }: {
   pois: (Poi & { image_url?: string; summary?: string })[];
-  onShowDetail: (poi: Poi & { image_url?: string; summary?: string }) => void;
+  onShowDetail: (placeId: string) => void;
   onPoiHover: (poiId: string | null) => void;
+  onPoiSelect?: (poi: Poi) => void;
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
   hoveredPoiId: string | null;
@@ -203,6 +207,7 @@ function MarkerStorage({
                   poi={poi}
                   onShowDetail={onShowDetail}
                   onPoiHover={onPoiHover}
+                  onPoiSelect={onPoiSelect}
                   unmarkPoi={unmarkPoi}
                   removeSchedule={removeSchedule}
                   isHovered={hoveredPoiId === poi.id}
@@ -229,6 +234,7 @@ function DayItineraryItem({
   onOptimizeRoute,
   onShowDetail,
   onPoiHover,
+  onPoiSelect,
   unmarkPoi,
   removeSchedule,
   onToggleCollapse,
@@ -241,8 +247,9 @@ function DayItineraryItem({
   routeSegmentsByDay: Record<string, RouteSegment[]>;
   onDayVisibilityChange: (dayId: string, isVisible: boolean) => void;
   onOptimizeRoute: (dayId: string) => void;
-  onShowDetail: (poi: Poi & { image_url?: string; summary?: string }) => void;
+  onShowDetail: (placeId: string) => void;
   onPoiHover: (poiId: string | null) => void;
+  onPoiSelect?: (poi: Poi) => void;
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
   isCollapsed: boolean;
@@ -264,7 +271,6 @@ function DayItineraryItem({
         ref={setNodeRef}
         className="flex items-center justify-between gap-2 "
       >
-        {/* 왼쪽 영역: 접기/펴기 버튼과 날짜 라벨 */}
         <div className="flex items-center gap-2 flex-shrink min-w-0 ">
           <Button
             variant="ghost"
@@ -283,7 +289,6 @@ function DayItineraryItem({
             onChange={(checked) => onDayVisibilityChange(layer.id, checked)}
           />
         </div>
-        {/* 오른쪽 영역: 경로 최적화 버튼과 날짜 가시성 토글 */}
         <div className="flex items-center gap-1 flex-shrink-0">
           {pois.length >= 2 && (
             <Button
@@ -314,6 +319,7 @@ function DayItineraryItem({
                       index={index}
                       onShowDetail={onShowDetail}
                       onPoiHover={onPoiHover}
+                      onPoiSelect={onPoiSelect}
                       unmarkPoi={unmarkPoi}
                       removeSchedule={removeSchedule}
                       isHovered={hoveredPoiId === poi.id}
@@ -364,13 +370,117 @@ function DayItineraryItem({
 }
 
 function PoiDetailPanel({
-  poi,
+  placeId,
+  isVisible,
   onClose,
 }: {
-  poi: (Poi & { image_url?: string; summary?: string }) | null;
+  placeId: string | null;
+  isVisible: boolean;
   onClose: () => void;
 }) {
-  const isVisible = poi !== null;
+  const { placeDetail, nearbyPlaces, isLoading, error } = usePlaceDetail(placeId);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (placeId && scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+  }, [placeId]);
+
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className="flex-1 overflow-y-auto px-8 py-8 space-y-4">
+          <div className="mb-6 animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-3/4 mb-2"></div>
+          </div>
+          <div className="w-full h-[40vh] bg-gray-200 rounded-lg animate-pulse"></div>
+          <div className="space-y-3 pt-2 animate-pulse">
+            <div className="flex items-start gap-3">
+              <div className="w-5 h-5 bg-gray-200 rounded mt-1 flex-shrink-0"></div>
+              <div className="h-5 bg-gray-200 rounded w-full"></div>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="w-5 h-5 bg-gray-200 rounded mt-1 flex-shrink-0"></div>
+              <div className="h-20 bg-gray-200 rounded w-full"></div>
+            </div>
+          </div>
+          <div className="pt-8">
+            <div className="h-6 bg-gray-200 rounded w-1/2 mb-4 animate-pulse"></div>
+            <div className="grid grid-cols-2 gap-4">
+              <InspirationCard isLoading={true} title="" address="" />
+              <InspirationCard isLoading={true} title="" address="" />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-red-500">오류 발생: {error.message}</p>
+        </div>
+      );
+    }
+
+    if (!placeDetail) {
+      return (
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-gray-500">장소 정보를 찾을 수 없습니다.</p>
+        </div>
+      );
+    }
+
+    return (
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-8 py-8 space-y-4">
+        <div className="mb-6">
+          <h3 className="text-2xl font-bold">{placeDetail.title}</h3>
+        </div>
+
+        {placeDetail.imageUrl && (
+          <img
+            src={placeDetail.imageUrl}
+            alt={placeDetail.title}
+            className="w-full h-[40vh] object-cover rounded-lg"
+          />
+        )}
+
+        <div className="text-md text-gray-800 space-y-3 pt-2">
+          <div className="flex items-start gap-3">
+            <MapPin className="w-5 h-5 text-gray-600 mt-1 flex-shrink-0" />
+            <span>{placeDetail.address}</span>
+          </div>
+          {placeDetail.summary && (
+            <div className="flex items-start gap-3">
+              <FileText className="w-5 h-5 text-gray-600 mt-1 flex-shrink-0" />
+              <p className="leading-relaxed">{placeDetail.summary}</p>
+            </div>
+          )}
+        </div>
+
+        {nearbyPlaces.length > 0 && (
+          <div className="pt-8">
+            <h2 className="text-lg font-bold leading-5 mb-4">
+              MateTrip이 추천하는 주변장소
+            </h2>
+            <div className="grid grid-cols-2 gap-4">
+              {nearbyPlaces.map((place) => (
+                <div key={place.id} className="cursor-pointer">
+                  <InspirationCard
+                    imageUrl={place.imageUrl}
+                    badgeText=""
+                    title={place.title}
+                    address={place.address}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div
@@ -384,43 +494,7 @@ function PoiDetailPanel({
             <X className="w-5 h-5" />
           </Button>
         </div>
-        {poi && (
-          <div className="flex-1 overflow-y-auto px-8 py-8 space-y-4">
-            <div className="mb-6">
-              <h3 className="text-2xl font-bold">{poi.placeName}</h3>
-              {poi.categoryName && (
-                <div className="flex items-center gap-2 text-md text-gray-500 mt-1">
-                  <CategoryIcon
-                    category={poi.categoryName}
-                    className="w-5 h-5"
-                  />
-                  <span>{poi.categoryName}</span>
-                </div>
-              )}
-            </div>
-
-            {poi.image_url && (
-              <img
-                src={poi.image_url}
-                alt={poi.placeName}
-                className="w-full h-[40vh] object-cover rounded-lg"
-              />
-            )}
-
-            <div className="text-md text-gray-800 space-y-3 pt-2">
-              <div className="flex items-start gap-3">
-                <MapPin className="w-5 h-5 text-gray-600 mt-1 flex-shrink-0" />
-                <span>{poi.address}</span>
-              </div>
-              {poi.summary && (
-                <div className="flex items-start gap-3">
-                  <FileText className="w-5 h-5 text-gray-600 mt-1 flex-shrink-0" />
-                  <p className="leading-relaxed">{poi.summary}</p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        {renderContent()}
       </div>
     </div>
   );
@@ -437,6 +511,7 @@ interface ScheduleSidebarProps {
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
   onPoiHover: (poiId: string | null) => void;
+  onPoiSelect?: (poi: Poi) => void; // onPoiSelect prop 추가
   routeSegmentsByDay: Record<string, RouteSegment[]>;
   onOptimizeRoute: (dayId: string) => void;
   visibleDayIds: Set<string>;
@@ -457,6 +532,7 @@ export function ScheduleSidebar({
   unmarkPoi,
   removeSchedule,
   onPoiHover,
+  onPoiSelect,
   routeSegmentsByDay,
   onOptimizeRoute,
   visibleDayIds,
@@ -468,19 +544,18 @@ export function ScheduleSidebar({
     new Set()
   );
 
-  const [selectedPoiForDetail, setSelectedPoiForDetail] = useState<
-    (Poi & { image_url?: string; summary?: string }) | null
-  >(null);
+  const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
+  const [isDetailPanelVisible, setIsDetailPanelVisible] = useState(false);
 
-  const handlePoiDetailClick = (
-    poi: Poi & { image_url?: string; summary?: string }
-  ) => {
-    setSelectedPoiForDetail(poi);
+  const handlePoiDetailClick = (placeId: string) => {
+    setSelectedPlaceId(placeId);
+    setIsDetailPanelVisible(true);
   };
 
   const handleCloseDetailPanel = () => {
-    setSelectedPoiForDetail(null);
+    setIsDetailPanelVisible(false);
   };
+
   const placeCache = usePlaceStore((state) => state.placesById);
 
   const poisWithEnhancedData = useMemo(() => {
@@ -579,6 +654,7 @@ export function ScheduleSidebar({
             pois={enrichedMarkedPois}
             onShowDetail={handlePoiDetailClick}
             onPoiHover={onPoiHover}
+            onPoiSelect={onPoiSelect}
             unmarkPoi={unmarkPoi}
             removeSchedule={removeSchedule}
             hoveredPoiId={hoveredPoiId}
@@ -617,6 +693,7 @@ export function ScheduleSidebar({
                   onOptimizeRoute={onOptimizeRoute}
                   onShowDetail={handlePoiDetailClick}
                   onPoiHover={onPoiHover}
+                  onPoiSelect={onPoiSelect}
                   unmarkPoi={unmarkPoi}
                   removeSchedule={removeSchedule}
                   isCollapsed={collapsedDayIds.has(layer.id)}
@@ -628,7 +705,8 @@ export function ScheduleSidebar({
           </div>
         </div>
         <PoiDetailPanel
-          poi={selectedPoiForDetail}
+          placeId={selectedPlaceId}
+          isVisible={isDetailPanelVisible}
           onClose={handleCloseDetailPanel}
         />
       </div>
