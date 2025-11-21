@@ -119,7 +119,14 @@ function PoiItem({
             {index + 1}
           </span>
         )}
-        <span className="truncate font-medium">{poi.placeName}</span>
+        <div className="flex flex-col min-w-0">
+          <span className="truncate font-medium">{poi.placeName}</span>
+          {poi.categoryName && (
+            <span className="truncate text-xs text-gray-500">
+              {poi.categoryName}
+            </span>
+          )}
+        </div>
       </div>
       <Button
         variant="ghost"
