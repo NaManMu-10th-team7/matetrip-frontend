@@ -35,7 +35,7 @@ interface PoiItemProps {
   index?: number;
   onShowDetail: (placeId: string) => void;
   onPoiHover: (poiId: string | null) => void;
-  onPoiSelect?: (poi: Poi) => void; // onPoiSelect prop 추가
+  onPoiSelect?: (poi: Poi) => void;
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
   isHovered: boolean;
@@ -81,7 +81,7 @@ function PoiItem({
     <li
       ref={setNodeRef}
       style={style}
-      className={`flex items-center text-sm p-2 rounded-md border border-gray-200 cursor-pointer ${
+      className={`flex items-center text-sm p-2 rounded-md border border-gray-200 cursor-pointer bg-white ${
         isHovered ? 'bg-blue-100' : 'hover:bg-gray-100'
       }`}
       onMouseEnter={() => onPoiHover(poi.id)}
@@ -373,12 +373,15 @@ function PoiDetailPanel({
   placeId,
   isVisible,
   onClose,
+  onNearbyPlaceSelect,
 }: {
   placeId: string | null;
   isVisible: boolean;
   onClose: () => void;
+  onNearbyPlaceSelect: (placeId: string) => void;
 }) {
-  const { placeDetail, nearbyPlaces, isLoading, error } = usePlaceDetail(placeId);
+  const { placeDetail, nearbyPlaces, isLoading, error } =
+    usePlaceDetail(placeId);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -407,7 +410,7 @@ function PoiDetailPanel({
           </div>
           <div className="pt-8">
             <div className="h-6 bg-gray-200 rounded w-1/2 mb-4 animate-pulse"></div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-10">
               <InspirationCard isLoading={true} title="" address="" />
               <InspirationCard isLoading={true} title="" address="" />
             </div>
@@ -433,7 +436,10 @@ function PoiDetailPanel({
     }
 
     return (
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-8 py-8 space-y-4">
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto px-8 py-8 space-y-4"
+      >
         <div className="mb-6">
           <h3 className="text-2xl font-bold">{placeDetail.title}</h3>
         </div>
@@ -462,16 +468,23 @@ function PoiDetailPanel({
         {nearbyPlaces.length > 0 && (
           <div className="pt-8">
             <h2 className="text-lg font-bold leading-5 mb-4">
-              MateTrip이 추천하는 주변장소
+              MateTrip이 추천하는{' '}
+              <span className="text-indigo-600">{placeDetail.title}</span> 주변
+              장소
             </h2>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-10">
               {nearbyPlaces.map((place) => (
-                <div key={place.id} className="cursor-pointer">
+                <div
+                  key={place.id}
+                  className="cursor-pointer"
+                  onClick={() => onNearbyPlaceSelect(place.id)}
+                >
                   <InspirationCard
                     imageUrl={place.imageUrl}
                     badgeText=""
                     title={place.title}
                     address={place.address}
+                    category={place.category}
                   />
                 </div>
               ))}
@@ -511,7 +524,7 @@ interface ScheduleSidebarProps {
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
   onPoiHover: (poiId: string | null) => void;
-  onPoiSelect?: (poi: Poi) => void; // onPoiSelect prop 추가
+  onPoiSelect?: (poi: Poi) => void;
   routeSegmentsByDay: Record<string, RouteSegment[]>;
   onOptimizeRoute: (dayId: string) => void;
   visibleDayIds: Set<string>;
@@ -554,6 +567,10 @@ export function ScheduleSidebar({
 
   const handleCloseDetailPanel = () => {
     setIsDetailPanelVisible(false);
+  };
+
+  const handleNearbyPlaceSelect = (placeId: string) => {
+    setSelectedPlaceId(placeId);
   };
 
   const placeCache = usePlaceStore((state) => state.placesById);
@@ -708,6 +725,7 @@ export function ScheduleSidebar({
           placeId={selectedPlaceId}
           isVisible={isDetailPanelVisible}
           onClose={handleCloseDetailPanel}
+          onNearbyPlaceSelect={handleNearbyPlaceSelect}
         />
       </div>
     </div>

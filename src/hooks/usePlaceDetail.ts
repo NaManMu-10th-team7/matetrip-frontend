@@ -6,6 +6,7 @@ export interface PlaceDetail {
   id: string;
   title: string;
   address: string;
+  category?: string;
   imageUrl?: string;
   summary?: string;
   latitude?: number;
@@ -17,6 +18,7 @@ export interface NearbyPlace {
   id: string;
   title: string;
   address: string;
+  category?: string;
   imageUrl?: string;
 }
 
@@ -87,6 +89,7 @@ export const usePlaceDetail = (placeId?: string | null): UsePlaceDetailResult =>
           id: apiData.id,
           title: apiData.title,
           address: apiData.address,
+          category: apiData.category,
           imageUrl: apiData.image_url,
           summary: apiData.summary,
           latitude: apiData.latitude,
@@ -99,6 +102,7 @@ export const usePlaceDetail = (placeId?: string | null): UsePlaceDetailResult =>
             id: nearby.id,
             title: nearby.title,
             address: nearby.address,
+            category: nearby.category,
             imageUrl: nearby.image_url,
           })
         );
