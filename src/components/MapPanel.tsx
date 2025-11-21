@@ -104,6 +104,7 @@ export interface PlaceMarkerProps {
   isOverlayHoveredRef: React.MutableRefObject<boolean>;
   scheduledPoiData: Map<string, { label: string; color: string }>;
   recommendedPoiLabelData: Map<string, { label: string; color: string }>;
+  highlightedPlaceId: string | null;
 }
 
 export interface PoiMarkerProps {
@@ -254,6 +255,7 @@ const PlaceMarker = memo(
     isOverlayHoveredRef,
     scheduledPoiData,
     recommendedPoiLabelData,
+    highlightedPlaceId,
   }: PlaceMarkerProps) => {
     const [isInfoWindowOpen, setIsInfoWindowOpen] = useState(false);
     const infoWindowTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
@@ -473,6 +475,16 @@ const PlaceMarker = memo(
             </div>
           </CustomOverlayMap>
         )}
+        {place.id === highlightedPlaceId && (
+          <CustomOverlayMap
+            position={{ lat: place.latitude, lng: place.longitude }}
+            zIndex={0}
+            xAnchor={0.55}
+            yAnchor={0.55}
+          >
+            <div className="w-16 h-16 rounded-full border-4 border-blue-500 bg-blue-500/20 pointer-events-none" />
+          </CustomOverlayMap>
+        )}
       </>
     );
   }
@@ -602,6 +614,10 @@ export function MapPanel({
   );
   const [isCategoryFilterVisible, setIsCategoryFilterVisible] = useState(true);
   const [showFamousPlaces, setShowFamousPlaces] = useState(true);
+  const [highlightedPlaceId, setHighlightedPlaceId] = useState<string | null>(
+    null
+  );
+  const highlightTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const [recommendedRouteInfo, setRecommendedRouteInfo] = useState<
     Record<string, RouteSegment[]>
@@ -725,16 +741,33 @@ export function MapPanel({
   const handlePlaceClick = useCallback(
     (place: PlaceDto) => {
       if (mapInstance) {
+        if (highlightTimeoutRef.current) {
+          clearTimeout(highlightTimeoutRef.current);
+        }
+
         const position = new window.kakao.maps.LatLng(
           place.latitude,
           place.longitude
         );
         mapInstance.setLevel(5, { anchor: position });
         mapInstance.panTo(position);
+
+        setHighlightedPlaceId(place.id);
+        highlightTimeoutRef.current = setTimeout(() => {
+          setHighlightedPlaceId(null);
+        }, 3000);
       }
     },
     [mapInstance]
   );
+
+  useEffect(() => {
+    return () => {
+      if (highlightTimeoutRef.current) {
+        clearTimeout(highlightTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (mapInstance) {
@@ -1280,27 +1313,31 @@ export function MapPanel({
           div[style*="background: rgb(255, 255, 255);"][style*="border: 1px solid rgb(118, 129, 168);"] {
             display: none !important;
           }
-          .ripple {
-            position: absolute;
-            border-radius: 50%;
-            border-style: solid;
-            transform: translate(-50%, -50%);
-            animation: ripple-animation 1s ease-out;
-          }
-          @keyframes ripple-animation {
-            from { width: 0; height: 0; opacity: 0.9; }
-            to { width: 150px; height: 150px; opacity: 0; }
-          }
-          @keyframes fade-out {
-            from { opacity: 1; transform: translateY(0); }
-            to { opacity: 0; transform: translateY(-10px); }
-          }
           .scrollbar-hide::-webkit-scrollbar {
             display: none;
           }
           .scrollbar-hide {
             -ms-overflow-style: none;
             scrollbar-width: none;
+          }
+          @keyframes ripple-thrice {
+            from {
+              transform: scale(0.2);
+              opacity: 0.7;
+            }
+            to {
+              transform: scale(1.5);
+              opacity: 0;
+            }
+          }
+          .animate-ripple-thrice {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            border-radius: 50%;
+            border: 3px solid #3b82f6;
+            animation: ripple-thrice 0.8s ease-out;
+            animation-iteration-count: 3;
           }
         `}
       </style>
@@ -1322,8 +1359,14 @@ export function MapPanel({
           handleMapBoundsChanged(map);
         }}
         onClick={(_map, mouseEvent) => {
-          if (isOverlayHoveredRef.current) return;
-
+          if (isOverlayHoveredRef.current) {
+            isOverlayHoveredRef.current = false;
+            return;
+          }
+          setHighlightedPlaceId(null);
+          if (highlightTimeoutRef.current) {
+            clearTimeout(highlightTimeoutRef.current);
+          }
           const latlng = mouseEvent.latLng;
           clickMap({
             lat: latlng.getLat(),
@@ -1424,6 +1467,7 @@ export function MapPanel({
             isOverlayHoveredRef={isOverlayHoveredRef}
             scheduledPoiData={scheduledPoiData}
             recommendedPoiLabelData={recommendedPoiLabelData}
+            highlightedPlaceId={highlightedPlaceId}
           />
         ))}
 
@@ -1470,38 +1514,19 @@ export function MapPanel({
             xAnchor={0.5}
             yAnchor={0.5}
           >
-            <div className="relative flex items-center justify-center">
+            <div
+              className="relative flex items-center justify-center"
+              style={{ animation: 'fade-out 1s ease-out forwards' }}
+            >
               <span
                 className="px-2 py-1 text-xs text-white rounded-md shadow-md z-10"
                 style={{
                   backgroundColor: effect.userColor,
-                  animation: 'fade-out 1s ease-out forwards',
                   animationDelay: '0.5s',
                 }}
               >
                 {effect.userName}
               </span>
-              <div
-                className="ripple"
-                style={{
-                  top: '50%',
-                  left: '50%',
-                  borderWidth: '3px',
-                  borderColor: effect.userColor,
-                  backgroundColor: `${effect.userColor}66`,
-                }}
-              />
-              <div
-                className="ripple"
-                style={{
-                  top: '50%',
-                  left: '50%',
-                  borderWidth: '3px',
-                  borderColor: effect.userColor,
-                  backgroundColor: `${effect.userColor}66`,
-                  animationDelay: '0.3s',
-                }}
-              />
             </div>
           </CustomOverlayMap>
         ))}
