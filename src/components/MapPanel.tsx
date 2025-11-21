@@ -1261,6 +1261,7 @@ export function MapPanel({
           '기타',
         image_url: '',
         summary: '',
+        popularityScore: (poi as any).popularityScore,
       })
     );
   }, [itinerary, recommendedItinerary, chatAiPlaces]);
@@ -1276,7 +1277,24 @@ export function MapPanel({
     return Array.from(uniquePlaces.values());
   }, [placesToRender, allPoisAsPlaces]);
 
+  const famousPlaces = React.useMemo(
+    () =>
+      allPlacesToRender
+        .filter((p) => (p.popularityScore ?? 0) > 0)
+        .sort((a, b) => (b.popularityScore ?? 0) - (a.popularityScore ?? 0)),
+    [allPlacesToRender]
+  );
+
+  const famousPlaceIds = React.useMemo(
+    () => new Set(famousPlaces.map((p) => p.id)),
+    [famousPlaces]
+  );
+
   const filteredPlacesToRender = allPlacesToRender.filter((place) => {
+    if (famousPlaceIds.has(place.id)) {
+      return true;
+    }
+
     if (visibleCategories.has(place.category)) {
       return true;
     }
@@ -1297,14 +1315,6 @@ export function MapPanel({
     const recommendedDayId = recommendedPoiMap.get(place.id);
     return !!recommendedDayId && visibleDayIds.has(recommendedDayId);
   });
-
-  const famousPlaces = React.useMemo(
-    () =>
-      allPlacesToRender
-        .filter((p) => (p.popularityScore ?? 0) > 0)
-        .sort((a, b) => (b.popularityScore ?? 0) - (a.popularityScore ?? 0)),
-    [allPlacesToRender]
-  );
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
@@ -1375,10 +1385,10 @@ export function MapPanel({
         }}
       >
         {schedulePosition !== 'overlay' && (
-          <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 p-1.5 bg-white/80 backdrop-blur-sm rounded-lg shadow-md">
+          <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-2 p-1.5">
             <button
               onClick={() => setShowFamousPlaces(!showFamousPlaces)}
-              className="p-1.5 text-gray-600 hover:bg-gray-100 rounded-md flex-shrink-0"
+              className="p-1.5 text-gray-600 bg-white rounded-full shadow-md hover:bg-gray-100 flex-shrink-0"
             >
               <Star
                 size={18}
@@ -1392,7 +1402,7 @@ export function MapPanel({
               onClick={() =>
                 setIsCategoryFilterVisible(!isCategoryFilterVisible)
               }
-              className="p-1.5 text-gray-600 hover:bg-gray-100 rounded-md flex-shrink-0"
+              className="p-1.5 text-gray-600 bg-white rounded-full shadow-md hover:bg-gray-100 flex-shrink-0"
             >
               {isCategoryFilterVisible ? (
                 <ChevronsRight size={18} />
@@ -1411,7 +1421,7 @@ export function MapPanel({
                   <div className="border-l border-gray-300 h-6" />
                   <button
                     onClick={handleToggleAllCategories}
-                    className="whitespace-nowrap px-3 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 flex justify-center items-center gap-1.5"
+                    className="whitespace-nowrap px-3 py-1.5 text-xs font-semibold rounded-full shadow-md transition-all duration-200 flex justify-center items-center gap-1.5"
                     style={{
                       backgroundColor:
                         visibleCategories.size ===
@@ -1433,7 +1443,7 @@ export function MapPanel({
                       <button
                         key={key}
                         onClick={() => handleCategoryToggle(key)}
-                        className="whitespace-nowrap px-3 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 flex justify-center items-center gap-1.5"
+                        className="whitespace-nowrap px-3 py-1.5 text-xs font-semibold rounded-full shadow-md transition-all duration-200 flex justify-center items-center gap-1.5"
                         style={{
                           backgroundColor: visibleCategories.has(key)
                             ? NEW_CATEGORY_COLORS[key] || color
