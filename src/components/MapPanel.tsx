@@ -392,7 +392,7 @@ const PlaceMarker = memo(
       }
 
       const svg = `
-      <svg width="48" height="52" viewBox="0 -6 48 52" xmlns="http://www.w3.org/2000/svg">
+      <svg width="44" height="48" viewBox="0 -6 48 52" xmlns="http://www.w3.org/2000/svg">
         <path d="M20 0C11 0 4 8 4 18c0 12 16 28 16 28s16-16 16-28C36 8 29 0 20 0z"
               fill="${color}" 
               stroke="${strokeColor}" stroke-width="${strokeWidth}"/>
@@ -430,9 +430,9 @@ const PlaceMarker = memo(
     const markerImageSrc = getMarkerImageSrc(place, markedPoi);
     const markerImage = {
       src: markerImageSrc,
-      size: { width: 48, height: 52 },
+      size: { width: 44, height: 48 },
       options: {
-        offset: { x: 24, y: 52 },
+        offset: { x: 22, y: 48 },
       },
     };
 
