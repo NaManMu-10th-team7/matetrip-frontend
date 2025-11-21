@@ -20,6 +20,8 @@ export interface NearbyPlace {
   address: string;
   category?: string;
   imageUrl?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 // 백엔드 API 응답 타입 (GET /places/{placeId})
@@ -104,6 +106,8 @@ export const usePlaceDetail = (placeId?: string | null): UsePlaceDetailResult =>
             address: nearby.address,
             category: nearby.category,
             imageUrl: nearby.image_url,
+            latitude: nearby.latitude,
+            longitude: nearby.longitude,
           })
         );
         setNearbyPlaces(formattedNearbyPlaces);

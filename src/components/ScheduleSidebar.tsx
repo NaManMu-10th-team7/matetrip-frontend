@@ -26,7 +26,7 @@ import { Button } from './ui/button';
 import { SimpleToggle } from './ui/SimpleToggle';
 import { CategoryIcon } from './CategoryIcon';
 import { usePlaceStore } from '../store/placeStore';
-import { usePlaceDetail } from '../hooks/usePlaceDetail';
+import { usePlaceDetail, NearbyPlace } from '../hooks/usePlaceDetail';
 import { InspirationCard } from './InspirationCard';
 
 interface PoiItemProps {
@@ -35,7 +35,7 @@ interface PoiItemProps {
   index?: number;
   onShowDetail: (placeId: string) => void;
   onPoiHover: (poiId: string | null) => void;
-  onPoiSelect?: (poi: Poi) => void;
+  onPoiSelect?: (poi: Pick<Poi, 'latitude' | 'longitude'>) => void;
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
   isHovered: boolean;
@@ -166,7 +166,7 @@ function MarkerStorage({
   pois: (Poi & { image_url?: string; summary?: string })[];
   onShowDetail: (placeId: string) => void;
   onPoiHover: (poiId: string | null) => void;
-  onPoiSelect?: (poi: Poi) => void;
+  onPoiSelect?: (poi: Pick<Poi, 'latitude' | 'longitude'>) => void;
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
   hoveredPoiId: string | null;
@@ -249,7 +249,7 @@ function DayItineraryItem({
   onOptimizeRoute: (dayId: string) => void;
   onShowDetail: (placeId: string) => void;
   onPoiHover: (poiId: string | null) => void;
-  onPoiSelect?: (poi: Poi) => void;
+  onPoiSelect?: (poi: Pick<Poi, 'latitude' | 'longitude'>) => void;
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
   isCollapsed: boolean;
@@ -374,11 +374,13 @@ function PoiDetailPanel({
   isVisible,
   onClose,
   onNearbyPlaceSelect,
+  onPoiSelect,
 }: {
   placeId: string | null;
   isVisible: boolean;
   onClose: () => void;
   onNearbyPlaceSelect: (placeId: string) => void;
+  onPoiSelect?: (place: Pick<Poi, 'latitude' | 'longitude'>) => void;
 }) {
   const { placeDetail, nearbyPlaces, isLoading, error } =
     usePlaceDetail(placeId);
@@ -389,6 +391,13 @@ function PoiDetailPanel({
       scrollContainerRef.current.scrollTop = 0;
     }
   }, [placeId]);
+
+  const handleNearbyClick = (place: NearbyPlace) => {
+    onNearbyPlaceSelect(place.id);
+    if (place.latitude && place.longitude) {
+      onPoiSelect?.({ latitude: place.latitude, longitude: place.longitude });
+    }
+  };
 
   const renderContent = () => {
     if (isLoading) {
@@ -477,7 +486,7 @@ function PoiDetailPanel({
                 <div
                   key={place.id}
                   className="cursor-pointer"
-                  onClick={() => onNearbyPlaceSelect(place.id)}
+                  onClick={() => handleNearbyClick(place)}
                 >
                   <InspirationCard
                     imageUrl={place.imageUrl}
@@ -524,7 +533,7 @@ interface ScheduleSidebarProps {
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
   onPoiHover: (poiId: string | null) => void;
-  onPoiSelect?: (poi: Poi) => void;
+  onPoiSelect?: (poi: Pick<Poi, 'latitude' | 'longitude'>) => void;
   routeSegmentsByDay: Record<string, RouteSegment[]>;
   onOptimizeRoute: (dayId: string) => void;
   visibleDayIds: Set<string>;
@@ -726,6 +735,7 @@ export function ScheduleSidebar({
           isVisible={isDetailPanelVisible}
           onClose={handleCloseDetailPanel}
           onNearbyPlaceSelect={handleNearbyPlaceSelect}
+          onPoiSelect={onPoiSelect}
         />
       </div>
     </div>
