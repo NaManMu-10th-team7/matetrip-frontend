@@ -10,25 +10,9 @@ interface FamousPlacesCarouselProps {
   onPlaceSelect: (place: PlaceDto) => void;
 }
 
-const PlaceCard = ({
-  place,
-  onClick,
-}: {
-  place: PlaceDto;
-  onClick: () => void;
-}) => {
+const PlaceCard = ({ place }: { place: PlaceDto }) => {
   return (
-    <div
-      className="relative w-full h-full bg-white rounded-xl shadow-lg overflow-hidden flex flex-col cursor-pointer"
-      onClick={onClick}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          onClick();
-        }
-      }}
-      role="button"
-      tabIndex={0}
-    >
+    <div className="relative w-full h-full bg-white rounded-xl shadow-lg overflow-hidden flex flex-col">
       <div className="relative h-32 flex-shrink-0">
         <img
           src={place.image_url}
@@ -69,7 +53,6 @@ export const FamousPlacesCarousel = ({
     containScroll: 'trimSnaps',
   });
 
-  // places 배열의 내용이 변경될 때만 새로운 값을 갖는 안정적인 의존성 생성
   const placesIdString = useMemo(
     () => JSON.stringify(places.map((p) => p.id)),
     [places]
@@ -83,7 +66,25 @@ export const FamousPlacesCarousel = ({
     if (emblaApi) emblaApi.scrollNext();
   }, [emblaApi]);
 
+  // Restore the select handler to move the map when the user scrolls the carousel.
+  useEffect(() => {
+    if (!emblaApi) return;
+
+    const handleSelect = () => {
+      const newIndex = emblaApi.selectedScrollSnap();
+      if (places[newIndex]) {
+        onPlaceSelect(places[newIndex]);
+      }
+    };
+
+    emblaApi.on('select', handleSelect);
+    return () => {
+      emblaApi.off('select', handleSelect);
+    };
+  }, [emblaApi, places, onPlaceSelect]);
+
   // This effect re-initializes the carousel when the places list changes.
+  // This no longer moves the map, fixing the "snap back" bug.
   useEffect(() => {
     if (emblaApi) {
       emblaApi.reInit();
@@ -105,7 +106,7 @@ export const FamousPlacesCarousel = ({
                 className="relative flex-[0_0_100%]"
                 style={{ height: '220px' }}
               >
-                <PlaceCard place={place} onClick={() => onPlaceSelect(place)} />
+                <PlaceCard place={place} />
               </div>
             ))}
           </div>
