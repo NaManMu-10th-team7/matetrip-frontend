@@ -1,4 +1,4 @@
-import { PlusCircle, X, ChevronsRight, Filter } from 'lucide-react';
+import { PlusCircle, X, ChevronsRight, Filter, Star } from 'lucide-react';
 import React, { useEffect, useRef, useState, memo, useCallback } from 'react';
 import type { Poi, CreatePoiDto, HoveredPoiInfo } from '../hooks/usePoiSocket';
 import {
@@ -24,6 +24,7 @@ import type {
 } from '../types/map';
 import { CategoryIcon } from './CategoryIcon';
 import type { AiPlace } from '../hooks/useChatSocket.ts';
+import { FamousPlacesCarousel } from './FamousPlacesCarousel';
 
 // [신규] 요청된 새로운 카테고리 색상 팔레트
 const NEW_CATEGORY_COLORS: Record<string, string> = {
@@ -600,6 +601,7 @@ export function MapPanel({
     new Set(Object.keys(CATEGORY_INFO))
   );
   const [isCategoryFilterVisible, setIsCategoryFilterVisible] = useState(true);
+  const [showFamousPlaces, setShowFamousPlaces] = useState(true);
 
   const [recommendedRouteInfo, setRecommendedRouteInfo] = useState<
     Record<string, RouteSegment[]>
@@ -1228,7 +1230,7 @@ export function MapPanel({
         summary: '',
       })
     );
-  }, [itinerary, recommendedItinerary]);
+  }, [itinerary, recommendedItinerary, chatAiPlaces]);
 
   const allPlacesToRender = React.useMemo(() => {
     const combined = [...placesToRender, ...allPoisAsPlaces];
@@ -1263,8 +1265,16 @@ export function MapPanel({
     return !!recommendedDayId && visibleDayIds.has(recommendedDayId);
   });
 
+  const famousPlaces = React.useMemo(
+    () =>
+      allPlacesToRender
+        .filter((p) => (p.popularityScore ?? 0) > 0)
+        .sort((a, b) => (b.popularityScore ?? 0) - (a.popularityScore ?? 0)),
+    [allPlacesToRender]
+  );
+
   return (
-    <div style={{ width: '100%', height: '100%' }}>
+    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       <style>
         {`
           div[style*="background: rgb(255, 255, 255);"][style*="border: 1px solid rgb(118, 129, 168);"] {
@@ -1284,6 +1294,13 @@ export function MapPanel({
           @keyframes fade-out {
             from { opacity: 1; transform: translateY(0); }
             to { opacity: 0; transform: translateY(-10px); }
+          }
+          .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+          }
+          .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
           }
         `}
       </style>
@@ -1316,6 +1333,18 @@ export function MapPanel({
       >
         {schedulePosition !== 'overlay' && (
           <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 p-1.5 bg-white/80 backdrop-blur-sm rounded-lg shadow-md">
+            <button
+              onClick={() => setShowFamousPlaces(!showFamousPlaces)}
+              className="p-1.5 text-gray-600 hover:bg-gray-100 rounded-md flex-shrink-0"
+            >
+              <Star
+                size={18}
+                className={
+                  showFamousPlaces ? 'text-yellow-400 fill-current' : ''
+                }
+              />
+            </button>
+            <div className="border-l border-gray-300 h-6" />
             <button
               onClick={() =>
                 setIsCategoryFilterVisible(!isCategoryFilterVisible)
@@ -1744,6 +1773,13 @@ export function MapPanel({
           </CustomOverlayMap>
         )}
       </KakaoMap>
+
+      {showFamousPlaces && (
+        <FamousPlacesCarousel
+          places={famousPlaces}
+          onPlaceSelect={handlePlaceClick}
+        />
+      )}
 
       {isSyncing && (
         <div className="absolute left-2.5 top-2.5 z-20 rounded bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-md">

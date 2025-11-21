@@ -26,7 +26,7 @@ import { Button } from './ui/button';
 import { SimpleToggle } from './ui/SimpleToggle';
 import { CategoryIcon } from './CategoryIcon';
 import { usePlaceStore } from '../store/placeStore';
-import { usePlaceDetail, NearbyPlace } from '../hooks/usePlaceDetail';
+import { usePlaceDetail, type NearbyPlace } from '../hooks/usePlaceDetail';
 import { InspirationCard } from './InspirationCard';
 
 interface PoiItemProps {
