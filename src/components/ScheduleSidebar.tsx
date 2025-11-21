@@ -449,10 +449,7 @@ export function ScheduleSidebar({
     }
   };
 
-  if (position === 'hidden') {
-    return null;
-  }
-
+  // [수정] position이 'hidden'일 때 null을 반환하는 대신, CSS로 숨깁니다.
   return (
     <div
       className={`absolute top-0 h-full w-1/2 bg-white border-l border-gray-200 shadow-lg transition-all duration-300 ease-in-out z-20 rounded-lg overflow-hidden ${getPositionClasses()}`}
