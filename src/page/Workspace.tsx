@@ -974,7 +974,7 @@ export function Workspace({
             markedPois={markedPois}
             unmarkPoi={unmarkPoi}
             removeSchedule={removeSchedule}
-            onPoiClick={handlePoiClick}
+            onPoiSelect={handlePoiClick}
             onPoiHover={hoverPoi}
             routeSegmentsByDay={routeSegmentsByDay}
             onOptimizeRoute={handleOptimizeRoute}

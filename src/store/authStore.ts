@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import client from '../api/client';
+import client, { API_BASE_URL } from '../api/client'; // API_BASE_URL 임포트
 
 interface Profile {
   email: string;
@@ -18,6 +18,7 @@ interface Profile {
 interface User {
   userId: string;
   profile: Profile;
+  avatar?: string; // [추가] avatar URL 필드 추가
 }
 
 // API 응답 데이터 타입을 정의합니다.
@@ -48,8 +49,27 @@ export const useAuthStore = create<AuthState>()(
         const userData = response.data;
 
         if (userData && userData.userId && userData.profile) {
+          const userWithAvatar: User = { ...userData };
+          if (userData.profile.profileImageId) {
+            try {
+              // presigned-url API를 호출하여 실제 이미지 URL을 가져옵니다.
+              const presignedUrlResponse = await client.get<{ url: string }>(
+                `${API_BASE_URL}/binary-content/${userData.profile.profileImageId}/presigned-url`
+              );
+              userWithAvatar.avatar = presignedUrlResponse.data.url;
+            } catch (presignedUrlError) {
+              console.error('Failed to get presigned URL:', presignedUrlError);
+              userWithAvatar.avatar = 'https://via.placeholder.com/150'; // 에러 시 기본 이미지
+            }
+          } else {
+            // profileImageId가 없을 경우 기본 아바타 설정
+            userWithAvatar.avatar = 'https://via.placeholder.com/150'; // 예시 기본 이미지
+          }
+
+          console.log('AuthStore - User Data with Avatar:', userWithAvatar); // 디버깅 로그 추가
+
           set(
-            { isLoggedIn: true, user: userData, isAuthLoading: false },
+            { isLoggedIn: true, user: userWithAvatar, isAuthLoading: false },
             false,
             'checkAuth/success'
           );

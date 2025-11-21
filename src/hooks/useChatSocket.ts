@@ -29,7 +29,7 @@ export type ChatMessage = {
   id: string; // 메시지 고유 ID 추가 (낙관적 업데이트 및 중복 방지용)
   username: string;
   message: string;
-  timestamp: string; // 클라이언트에서 추가할 필드
+  createdAt: string; // 클라이언트에서 추가할 필드
   userId?: string; // userId 필드 추가
   role: 'user' | 'ai' | 'system'; // 메시지 역할 추가
   toolData?: ToolCallData[]; // AI 메시지인 경우 도구 데이터 추가
@@ -65,6 +65,7 @@ type IncomingChatMessagePayload = {
   role?: 'ai' | 'system' | 'user'; // 백엔드에서 역할 지정 가능
   toolData?: ToolCallData[]; // AI 메시지인 경우 도구 데이터 포함
   tempId?: string; // [추가] 클라이언트가 보낸 임시 ID
+  createdAt: string;
 };
 
 export function useChatSocket(workspaceId: string) {
@@ -121,7 +122,7 @@ export function useChatSocket(workspaceId: string) {
           id: payload.id,
           username: payload.username || 'Unknown',
           message: payload.message,
-          timestamp: new Date().toISOString(), // 서버 타임스탬프가 있다면 그것을 사용
+          createdAt: payload.createdAt || new Date().toISOString(), // 서버 타임스탬프가 있다면 그것을 사용
           userId: payload.userId,
           role:
             payload.role || (payload.username === 'System' ? 'system' : 'user'), // 역할 지정
@@ -209,7 +210,7 @@ export function useChatSocket(workspaceId: string) {
                 id: `system-join-${Date.now()}-${Math.random()}`,
                 username: 'System',
                 message: `${parsedPayload.data}님이 채팅방에 입장했습니다.`,
-                timestamp: new Date().toISOString(),
+                createdAt: new Date().toISOString(),
                 userId: undefined,
                 role: 'system',
               },
@@ -222,7 +223,7 @@ export function useChatSocket(workspaceId: string) {
                 id: p.id,
                 username: p.username,
                 message: p.message,
-                timestamp: new Date().toISOString(), // TODO: 서버에서 타임스탬프를 준다면 그것을 사용
+                createdAt: p.createdAt || new Date().toISOString(), // TODO: 서버에서 타임스탬프를 준다면 그것을 사용
                 userId: p.userId,
                 role: p.role || 'user',
                 toolData: p.toolData,
@@ -249,7 +250,7 @@ export function useChatSocket(workspaceId: string) {
           id: `system-left-${Date.now()}-${Math.random()}`, // 시스템 메시지 고유 ID
           username: 'System',
           message: `${payload.data}님이 채팅방을 나갔습니다.`,
-          timestamp: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
           userId: undefined, // 시스템 메시지는 userId가 없을 수 있음
           role: 'system',
         },
@@ -292,7 +293,7 @@ export function useChatSocket(workspaceId: string) {
           id: tempMessageId,
           username,
           message,
-          timestamp: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
           userId,
           role: 'user',
         };
@@ -304,7 +305,7 @@ export function useChatSocket(workspaceId: string) {
             id: `ai-loading-${Date.now()}`,
             username: 'AI',
             message: 'AI가 응답을 생성하고 있습니다...',
-            timestamp: new Date().toISOString(),
+            createdAt: new Date().toISOString(),
             role: 'ai',
             isLoading: true, // 로딩 상태임을 표시
           };

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   GripVertical,
   ChevronDown,
@@ -9,7 +9,9 @@ import {
   Clock,
   Car,
   ArrowLeftToLine,
+  FileText,
   ArrowRightToLine,
+  Trash2,
 } from 'lucide-react';
 import {
   SortableContext,
@@ -23,15 +25,17 @@ import type { DayLayer, RouteSegment } from '../types/map';
 import { Button } from './ui/button';
 import { SimpleToggle } from './ui/SimpleToggle';
 import { CategoryIcon } from './CategoryIcon';
-import type { AiPlace } from '../hooks/useChatSocket';
 import { usePlaceStore } from '../store/placeStore';
+import { usePlaceDetail, type NearbyPlace } from '../hooks/usePlaceDetail';
+import { InspirationCard } from './InspirationCard';
 
 interface PoiItemProps {
-  poi: Poi & { image_url?: string };
+  poi: Poi & { image_url?: string; summary?: string };
   color?: string;
   index?: number;
-  onPoiClick: (poi: Poi | AiPlace) => void;
+  onShowDetail: (placeId: string) => void;
   onPoiHover: (poiId: string | null) => void;
+  onPoiSelect?: (poi: Pick<Poi, 'latitude' | 'longitude'>) => void;
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
   isHovered: boolean;
@@ -41,8 +45,9 @@ function PoiItem({
   poi,
   color,
   index,
-  onPoiClick,
+  onShowDetail,
   onPoiHover,
+  onPoiSelect,
   unmarkPoi,
   removeSchedule,
   isHovered,
@@ -76,35 +81,37 @@ function PoiItem({
     <li
       ref={setNodeRef}
       style={style}
-      className={`flex items-center text-sm p-2 rounded-md cursor-pointer ${
+      className={`flex items-center text-sm p-2 rounded-md border border-gray-200 cursor-pointer bg-white ${
         isHovered ? 'bg-blue-100' : 'hover:bg-gray-100'
       }`}
-      onClick={() => onPoiClick(poi)}
       onMouseEnter={() => onPoiHover(poi.id)}
       onMouseLeave={() => onPoiHover(null)}
+      onClick={() => onPoiSelect?.(poi)}
     >
+      <div
+        {...attributes}
+        {...listeners}
+        className="touch-none p-1 cursor-grab flex-shrink-0"
+      >
+        <GripVertical className="w-6 h-6 text-gray-400" />
+      </div>
+
       {poi.image_url ? (
         <img
           src={poi.image_url}
           alt={poi.placeName}
-          className="w-12 h-12 rounded-md object-cover mr-3 flex-shrink-0"
+          className="w-12 h-12 rounded-md object-cover ml-2 mr-3 flex-shrink-0"
         />
       ) : (
-        <div className="w-12 h-12 rounded-md bg-gray-200 flex items-center justify-center mr-3 flex-shrink-0">
+        <div className="w-12 h-12 rounded-md bg-gray-200 flex items-center justify-center ml-2 mr-3 flex-shrink-0">
           <CategoryIcon
             category={poi.categoryName}
             className="w-6 h-6 text-gray-500"
           />
         </div>
       )}
+
       <div className="flex items-center flex-grow min-w-0">
-        <div
-          {...attributes}
-          {...listeners}
-          className="touch-none p-1 cursor-grab"
-        >
-          <GripVertical className="w-4 h-4 text-gray-400" />
-        </div>
         {color && index !== undefined && (
           <span
             className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full text-white text-sm mr-2"
@@ -113,31 +120,53 @@ function PoiItem({
             {index + 1}
           </span>
         )}
-        <span className="truncate font-medium">{poi.placeName}</span>
+        <div className="flex flex-col min-w-0">
+          <span className="truncate font-medium">{poi.placeName}</span>
+          {poi.categoryName && (
+            <span className="truncate text-xs text-gray-500">
+              {poi.categoryName}
+            </span>
+          )}
+        </div>
       </div>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={handleDeleteClick}
-        className="w-8 h-8 p-0 flex-shrink-0"
-      >
-        <X className="w-4 h-4 text-gray-500" />
-      </Button>
+      <div className="flex items-center gap-1 ml-2 flex-shrink-0">
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7 text-xs rounded-full hover:bg-transparent hover:border-2 hover:border-black"
+          onClick={(e) => {
+            e.stopPropagation();
+            onShowDetail(poi.placeId);
+          }}
+        >
+          상세보기
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleDeleteClick}
+          className="w-8 h-8 p-0"
+        >
+          <Trash2 className="w-4 h-4 text-gray-500" />
+        </Button>
+      </div>
     </li>
   );
 }
 
 function MarkerStorage({
   pois,
-  onPoiClick,
+  onShowDetail,
   onPoiHover,
+  onPoiSelect,
   unmarkPoi,
   removeSchedule,
   hoveredPoiId,
 }: {
-  pois: (Poi & { image_url?: string })[];
-  onPoiClick: (poi: Poi | AiPlace) => void;
+  pois: (Poi & { image_url?: string; summary?: string })[];
+  onShowDetail: (placeId: string) => void;
   onPoiHover: (poiId: string | null) => void;
+  onPoiSelect?: (poi: Pick<Poi, 'latitude' | 'longitude'>) => void;
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
   hoveredPoiId: string | null;
@@ -146,7 +175,7 @@ function MarkerStorage({
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
-    <div ref={setNodeRef} className="p-3 border-b">
+    <div ref={setNodeRef} className="px-6 py-4 border rounded-lg bg-slate-50">
       <div className="flex justify-between items-center mb-2">
         <div className="flex items-center gap-2">
           <MapPin className="w-5 h-5 text-gray-600" />
@@ -154,13 +183,13 @@ function MarkerStorage({
         </div>
         <Button
           variant="ghost"
-          size="icon"
+          className="size-[28px]"
           onClick={() => setIsCollapsed(!isCollapsed)}
         >
           {isCollapsed ? (
-            <ChevronDown className="h-4 w-4" />
+            <ChevronDown className="size-[28px]" />
           ) : (
-            <ChevronUp className="h-4 w-4" />
+            <ChevronUp className="size-[28px]" />
           )}
         </Button>
       </div>
@@ -176,8 +205,9 @@ function MarkerStorage({
                 <PoiItem
                   key={poi.id}
                   poi={poi}
-                  onPoiClick={onPoiClick}
+                  onShowDetail={onShowDetail}
                   onPoiHover={onPoiHover}
+                  onPoiSelect={onPoiSelect}
                   unmarkPoi={unmarkPoi}
                   removeSchedule={removeSchedule}
                   isHovered={hoveredPoiId === poi.id}
@@ -202,8 +232,9 @@ function DayItineraryItem({
   routeSegmentsByDay,
   onDayVisibilityChange,
   onOptimizeRoute,
-  onPoiClick,
+  onShowDetail,
   onPoiHover,
+  onPoiSelect,
   unmarkPoi,
   removeSchedule,
   onToggleCollapse,
@@ -211,13 +242,14 @@ function DayItineraryItem({
   hoveredPoiId,
 }: {
   layer: DayLayer;
-  itinerary: Record<string, (Poi & { image_url?: string })[]>;
+  itinerary: Record<string, (Poi & { image_url?: string; summary?: string })[]>;
   visibleDayIds: Set<string>;
   routeSegmentsByDay: Record<string, RouteSegment[]>;
   onDayVisibilityChange: (dayId: string, isVisible: boolean) => void;
   onOptimizeRoute: (dayId: string) => void;
-  onPoiClick: (poi: Poi | AiPlace) => void;
+  onShowDetail: (placeId: string) => void;
   onPoiHover: (poiId: string | null) => void;
+  onPoiSelect?: (poi: Pick<Poi, 'latitude' | 'longitude'>) => void;
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
   isCollapsed: boolean;
@@ -234,45 +266,43 @@ function DayItineraryItem({
   }`;
 
   return (
-    <div className="border-b pb-2 px-3">
+    <div className="border px-6 py-4 rounded-lg bg-slate-50">
       <div
         ref={setNodeRef}
         className="flex items-center justify-between gap-2 "
       >
         <div className="flex items-center gap-2 flex-shrink min-w-0 ">
+          <Button
+            variant="ghost"
+            className="size-[28px]"
+            onClick={onToggleCollapse}
+          >
+            {isCollapsed ? (
+              <ChevronDown className="size-[28px]" />
+            ) : (
+              <ChevronUp className="size-[28px]" />
+            )}
+          </Button>
+          <h3 className="text-base font-bold truncate">{layer.label}</h3>
           <SimpleToggle
             checked={isDayVisible}
             onChange={(checked) => onDayVisibilityChange(layer.id, checked)}
           />
-          <h3 className="text-base font-bold truncate">{layer.label}</h3>
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
           {pois.length >= 2 && (
             <Button
               variant="outline"
-              size="sm"
-              className="h-7 text-sm "
+              className="text-sm rounded-full hover:bg-transparent hover:border-2 hover:border-black"
               onClick={() => onOptimizeRoute(layer.id)}
             >
               경로 최적화
             </Button>
           )}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="flex-shrink-0 "
-            onClick={onToggleCollapse}
-          >
-            {isCollapsed ? (
-              <ChevronDown className="h-4 w-4" />
-            ) : (
-              <ChevronUp className="h-4 w-4" />
-            )}
-          </Button>
         </div>
       </div>
 
-      <div className={`mt-2 ${containerBodyClasses}`}>
+      <div className={`mt-6 ${containerBodyClasses}`}>
         {!isCollapsed && (
           <SortableContext
             id={`${layer.id}-sortable`}
@@ -287,8 +317,9 @@ function DayItineraryItem({
                       poi={poi}
                       color={layer.color}
                       index={index}
-                      onPoiClick={onPoiClick}
+                      onShowDetail={onShowDetail}
                       onPoiHover={onPoiHover}
+                      onPoiSelect={onPoiSelect}
                       unmarkPoi={unmarkPoi}
                       removeSchedule={removeSchedule}
                       isHovered={hoveredPoiId === poi.id}
@@ -338,6 +369,159 @@ function DayItineraryItem({
   );
 }
 
+function PoiDetailPanel({
+  placeId,
+  isVisible,
+  onClose,
+  onNearbyPlaceSelect,
+  onPoiSelect,
+}: {
+  placeId: string | null;
+  isVisible: boolean;
+  onClose: () => void;
+  onNearbyPlaceSelect: (placeId: string) => void;
+  onPoiSelect?: (place: Pick<Poi, 'latitude' | 'longitude'>) => void;
+}) {
+  const { placeDetail, nearbyPlaces, isLoading, error } =
+    usePlaceDetail(placeId);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (placeId && scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+  }, [placeId]);
+
+  const handleNearbyClick = (place: NearbyPlace) => {
+    onNearbyPlaceSelect(place.id);
+    if (place.latitude && place.longitude) {
+      onPoiSelect?.({ latitude: place.latitude, longitude: place.longitude });
+    }
+  };
+
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className="flex-1 overflow-y-auto px-8 py-8 space-y-4">
+          <div className="mb-6 animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-3/4 mb-2"></div>
+          </div>
+          <div className="w-full h-[40vh] bg-gray-200 rounded-lg animate-pulse"></div>
+          <div className="space-y-3 pt-2 animate-pulse">
+            <div className="flex items-start gap-3">
+              <div className="w-5 h-5 bg-gray-200 rounded mt-1 flex-shrink-0"></div>
+              <div className="h-5 bg-gray-200 rounded w-full"></div>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="w-5 h-5 bg-gray-200 rounded mt-1 flex-shrink-0"></div>
+              <div className="h-20 bg-gray-200 rounded w-full"></div>
+            </div>
+          </div>
+          <div className="pt-8">
+            <div className="h-6 bg-gray-200 rounded w-1/2 mb-4 animate-pulse"></div>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-10">
+              <InspirationCard isLoading={true} title="" address="" />
+              <InspirationCard isLoading={true} title="" address="" />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-red-500">오류 발생: {error.message}</p>
+        </div>
+      );
+    }
+
+    if (!placeDetail) {
+      return (
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-gray-500">장소 정보를 찾을 수 없습니다.</p>
+        </div>
+      );
+    }
+
+    return (
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto px-8 py-8 space-y-4"
+      >
+        <div className="mb-6">
+          <h3 className="text-2xl font-bold">{placeDetail.title}</h3>
+        </div>
+
+        {placeDetail.imageUrl && (
+          <img
+            src={placeDetail.imageUrl}
+            alt={placeDetail.title}
+            className="w-full h-[40vh] object-cover rounded-lg"
+          />
+        )}
+
+        <div className="text-md text-gray-800 space-y-3 pt-2">
+          <div className="flex items-start gap-3">
+            <MapPin className="w-5 h-5 text-gray-600 mt-1 flex-shrink-0" />
+            <span>{placeDetail.address}</span>
+          </div>
+          {placeDetail.summary && (
+            <div className="flex items-start gap-3">
+              <FileText className="w-5 h-5 text-gray-600 mt-1 flex-shrink-0" />
+              <p className="leading-relaxed">{placeDetail.summary}</p>
+            </div>
+          )}
+        </div>
+
+        {nearbyPlaces.length > 0 && (
+          <div className="pt-8">
+            <h2 className="text-lg font-bold leading-5 mb-4">
+              MateTrip이 추천하는{' '}
+              <span className="text-indigo-600">{placeDetail.title}</span> 주변
+              장소
+            </h2>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-10">
+              {nearbyPlaces.map((place) => (
+                <div
+                  key={place.id}
+                  className="cursor-pointer"
+                  onClick={() => handleNearbyClick(place)}
+                >
+                  <InspirationCard
+                    imageUrl={place.imageUrl}
+                    badgeText=""
+                    title={place.title}
+                    address={place.address}
+                    category={place.category}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div
+      className={`absolute top-0 left-0 w-full h-full bg-white z-30 transition-transform duration-300 ease-in-out ${
+        isVisible ? 'translate-x-0' : 'translate-x-full'
+      }`}
+    >
+      <div className="flex flex-col h-full">
+        <div className="flex items-center justify-start px-2 py-2 border-b">
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <X className="w-5 h-5" />
+          </Button>
+        </div>
+        {renderContent()}
+      </div>
+    </div>
+  );
+}
+
 interface ScheduleSidebarProps {
   position: 'hidden' | 'overlay' | 'docked';
   onClose: () => void;
@@ -348,8 +532,8 @@ interface ScheduleSidebarProps {
   markedPois: Poi[];
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
-  onPoiClick: (poi: Poi | AiPlace) => void;
   onPoiHover: (poiId: string | null) => void;
+  onPoiSelect?: (poi: Pick<Poi, 'latitude' | 'longitude'>) => void;
   routeSegmentsByDay: Record<string, RouteSegment[]>;
   onOptimizeRoute: (dayId: string) => void;
   visibleDayIds: Set<string>;
@@ -369,8 +553,8 @@ export function ScheduleSidebar({
   markedPois,
   unmarkPoi,
   removeSchedule,
-  onPoiClick,
   onPoiHover,
+  onPoiSelect,
   routeSegmentsByDay,
   onOptimizeRoute,
   visibleDayIds,
@@ -381,6 +565,22 @@ export function ScheduleSidebar({
   const [collapsedDayIds, setCollapsedDayIds] = useState<Set<string>>(
     new Set()
   );
+
+  const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
+  const [isDetailPanelVisible, setIsDetailPanelVisible] = useState(false);
+
+  const handlePoiDetailClick = (placeId: string) => {
+    setSelectedPlaceId(placeId);
+    setIsDetailPanelVisible(true);
+  };
+
+  const handleCloseDetailPanel = () => {
+    setIsDetailPanelVisible(false);
+  };
+
+  const handleNearbyPlaceSelect = (placeId: string) => {
+    setSelectedPlaceId(placeId);
+  };
 
   const placeCache = usePlaceStore((state) => state.placesById);
 
@@ -393,6 +593,7 @@ export function ScheduleSidebar({
           ...poi,
           categoryName: poi.categoryName || cachedPlace.category,
           image_url: cachedPlace.image_url,
+          summary: cachedPlace.summary,
         };
       }
       return poi;
@@ -408,7 +609,10 @@ export function ScheduleSidebar({
   );
 
   const enrichedItinerary = useMemo(() => {
-    const newItinerary: Record<string, (Poi & { image_url?: string })[]> = {};
+    const newItinerary: Record<
+      string,
+      (Poi & { image_url?: string; summary?: string })[]
+    > = {};
     dayLayers.forEach((layer) => {
       newItinerary[layer.id] = poisWithEnhancedData
         .filter((p) => p.planDayId === layer.id && p.status === 'SCHEDULED')
@@ -449,16 +653,12 @@ export function ScheduleSidebar({
     }
   };
 
-  if (position === 'hidden') {
-    return null;
-  }
-
   return (
     <div
       className={`absolute top-0 h-full w-1/2 bg-white border-l border-gray-200 shadow-lg transition-all duration-300 ease-in-out z-20 rounded-lg overflow-hidden ${getPositionClasses()}`}
     >
       <div className="flex flex-col h-full">
-        <div className="flex items-center justify-between px-6 py-4 border-b">
+        <div className="flex items-center justify-between px-10 py-4 border-b">
           <div className="flex items-center gap-2">
             {position === 'overlay' ? (
               <Button variant="ghost" size="icon" onClick={onDock}>
@@ -475,17 +675,18 @@ export function ScheduleSidebar({
             <X className="w-5 h-5" />
           </Button>
         </div>
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto px-10 py-4 space-y-4">
           <MarkerStorage
             pois={enrichedMarkedPois}
-            onPoiClick={onPoiClick}
+            onShowDetail={handlePoiDetailClick}
             onPoiHover={onPoiHover}
+            onPoiSelect={onPoiSelect}
             unmarkPoi={unmarkPoi}
             removeSchedule={removeSchedule}
             hoveredPoiId={hoveredPoiId}
           />
-          <div className="p-3 space-y-3 flex flex-col">
-            <div className="flex items-center justify-between p-2 border-b">
+          <div className="flex flex-col">
+            <div className="flex items-center justify-between px-0 py-2">
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-bold">전체 경로</h3>
                 <SimpleToggle
@@ -497,36 +698,45 @@ export function ScheduleSidebar({
               </div>
               <Button
                 variant="link"
-                size="sm"
-                className="text-base text-gray-500"
+                className="text-base text-gray-500 p-0 h-auto"
                 onClick={handleToggleAllCollapse}
               >
-                <ChevronsUpDown className="w-3.5 h-3.5 mr-1" />
+                <ChevronsUpDown className="size-[28px] mr-1" />
                 {collapsedDayIds.size === dayLayers.length
                   ? '일정 모두 펴기'
                   : '일정 모두 접기'}
               </Button>
             </div>
-            {dayLayers.map((layer) => (
-              <DayItineraryItem
-                key={layer.id}
-                layer={layer}
-                itinerary={enrichedItinerary}
-                visibleDayIds={visibleDayIds}
-                routeSegmentsByDay={routeSegmentsByDay}
-                onDayVisibilityChange={onDayVisibilityChange}
-                onOptimizeRoute={onOptimizeRoute}
-                onPoiClick={onPoiClick}
-                onPoiHover={onPoiHover}
-                unmarkPoi={unmarkPoi}
-                removeSchedule={removeSchedule}
-                isCollapsed={collapsedDayIds.has(layer.id)}
-                onToggleCollapse={() => handleToggleDayCollapse(layer.id)}
-                hoveredPoiId={hoveredPoiId}
-              />
-            ))}
+            <div className="pt-4 space-y-4">
+              {dayLayers.map((layer) => (
+                <DayItineraryItem
+                  key={layer.id}
+                  layer={layer}
+                  itinerary={enrichedItinerary}
+                  visibleDayIds={visibleDayIds}
+                  routeSegmentsByDay={routeSegmentsByDay}
+                  onDayVisibilityChange={onDayVisibilityChange}
+                  onOptimizeRoute={onOptimizeRoute}
+                  onShowDetail={handlePoiDetailClick}
+                  onPoiHover={onPoiHover}
+                  onPoiSelect={onPoiSelect}
+                  unmarkPoi={unmarkPoi}
+                  removeSchedule={removeSchedule}
+                  isCollapsed={collapsedDayIds.has(layer.id)}
+                  onToggleCollapse={() => handleToggleDayCollapse(layer.id)}
+                  hoveredPoiId={hoveredPoiId}
+                />
+              ))}
+            </div>
           </div>
         </div>
+        <PoiDetailPanel
+          placeId={selectedPlaceId}
+          isVisible={isDetailPanelVisible}
+          onClose={handleCloseDetailPanel}
+          onNearbyPlaceSelect={handleNearbyPlaceSelect}
+          onPoiSelect={onPoiSelect}
+        />
       </div>
     </div>
   );

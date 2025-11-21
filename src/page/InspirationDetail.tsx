@@ -1,154 +1,28 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { MapPin } from 'lucide-react';
 import { Map as KakaoMap, MapMarker } from 'react-kakao-maps-sdk';
 import { Button } from '../components/ui/button';
 import { InspirationCard } from '../components/InspirationCard';
-import client from '../api/client';
-
-// 장소 상세 정보 타입
-interface PlaceDetail {
-  id: string;
-  title: string;
-  address: string;
-  imageUrl?: string;
-  summary?: string;
-  latitude?: number;
-  longitude?: number;
-}
-
-// 주변 장소 타입
-interface NearbyPlace {
-  id: string;
-  title: string;
-  address: string;
-  imageUrl?: string;
-}
-
-// InspirationPage에서 전달받는 state 타입
-interface LocationState {
-  title?: string;
-  address?: string;
-  summary?: string;
-  imageUrl?: string;
-}
-
-// 백엔드 API 응답 타입 (GET /places/{placeId})
-interface PlaceApiResponse {
-  id: string;
-  category: string;
-  title: string;
-  address: string;
-  summary?: string;
-  image_url?: string;
-  longitude: number;
-  latitude: number;
-}
-
-// 주변 장소 API 응답 타입
-interface NearbyPlaceApiResponse {
-  id: string;
-  category: string;
-  title: string;
-  address: string;
-  summary?: string;
-  image_url?: string;
-  longitude: number;
-  latitude: number;
-}
-
-// 장소 + 주변 장소 통합 API 응답 타입 (GET /places/{placeId}/with-nearby)
-interface PlaceWithNearbyApiResponse {
-  place: PlaceApiResponse;
-  nearbyPlaces: NearbyPlaceApiResponse[];
-}
+import { usePlaceDetail } from '../hooks/usePlaceDetail'; // 커스텀 훅 임포트
 
 export function InspirationDetail() {
   const { placeId } = useParams<{ placeId: string }>();
   const navigate = useNavigate();
-  const location = useLocation();
 
-  // InspirationPage에서 전달받은 데이터
-  const passedData = location.state as LocationState | null;
+  const { placeDetail, nearbyPlaces, isLoading, error } =
+    usePlaceDetail(placeId);
 
-  const [placeDetail, setPlaceDetail] = useState<PlaceDetail | null>(null);
-  const [nearbyPlaces, setNearbyPlaces] = useState<NearbyPlace[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [mapCenter, setMapCenter] = useState({ lat: 37.5665, lng: 126.978 }); // 기본값: 서울
 
   useEffect(() => {
-    const fetchPlaceDetail = async () => {
-      if (!placeId) return;
-
-      setIsLoading(true);
-      try {
-        // InspirationPage에서 전달받은 데이터가 있으면 먼저 UI에 표시
-        if (passedData?.title) {
-          const detailFromState: PlaceDetail = {
-            id: placeId,
-            title: passedData.title,
-            address: passedData.address || '',
-            imageUrl: passedData.imageUrl,
-            summary: passedData.summary,
-            // 좌표는 API에서 가져올 예정
-            latitude: undefined,
-            longitude: undefined,
-          };
-          setPlaceDetail(detailFromState);
-        }
-
-        // API에서 장소 상세 정보 + 주변 장소 함께 가져오기
-        const response = await client.get<PlaceWithNearbyApiResponse>(
-          `/places/${placeId}/with-nearby`
-        );
-        const { place: apiData, nearbyPlaces: nearbyPlacesData } = response.data;
-        console.log('API Response:', { apiData, nearbyPlacesData });
-
-        // API 응답으로 상세 정보 업데이트
-        const updatedDetail: PlaceDetail = {
-          id: apiData.id,
-          title: passedData?.title || apiData.title,
-          address: passedData?.address || apiData.address,
-          imageUrl: passedData?.imageUrl || apiData.image_url,
-          summary: passedData?.summary || apiData.summary,
-          latitude: apiData.latitude,
-          longitude: apiData.longitude,
-        };
-        setPlaceDetail(updatedDetail);
-
-        // 지도 중심 설정
-        if (apiData.latitude && apiData.longitude) {
-          console.log('Setting map center:', {
-            lat: apiData.latitude,
-            lng: apiData.longitude,
-          });
-          setMapCenter({
-            lat: apiData.latitude,
-            lng: apiData.longitude,
-          });
-        } else {
-          console.warn('No coordinates found in API response:', apiData);
-        }
-
-        // 주변 장소 데이터 설정
-        const formattedNearbyPlaces: NearbyPlace[] = nearbyPlacesData.map(
-          (nearby) => ({
-            id: nearby.id,
-            title: nearby.title,
-            address: nearby.address,
-            imageUrl: nearby.image_url,
-          })
-        );
-        setNearbyPlaces(formattedNearbyPlaces);
-      } catch (error) {
-        console.error('Failed to fetch place detail:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchPlaceDetail();
-  }, [placeId]); // passedData는 제거 - 객체 참조로 인한 무한 루프 방지
+    if (placeDetail?.latitude && placeDetail?.longitude) {
+      setMapCenter({
+        lat: placeDetail.latitude,
+        lng: placeDetail.longitude,
+      });
+    }
+  }, [placeDetail]);
 
   const handlePlanTrip = () => {
     // CreatePostModal로 라우팅 (장소 정보 전달: 이름, 주소, 좌표)
@@ -184,6 +58,16 @@ export function InspirationDetail() {
         {/* 지도 영역 */}
         <div className="hidden lg:flex flex-1 bg-gray-100 items-center justify-center">
           <div className="text-gray-500">지도 로딩 중...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-gray-50 min-h-screen flex items-center justify-center">
+        <div className="text-red-500">
+          장소 정보를 불러오는 데 실패했습니다: {error.message}
         </div>
       </div>
     );
