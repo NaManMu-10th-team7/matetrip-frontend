@@ -10,9 +10,25 @@ interface FamousPlacesCarouselProps {
   onPlaceSelect: (place: PlaceDto) => void;
 }
 
-const PlaceCard = ({ place }: { place: PlaceDto }) => {
+const PlaceCard = ({
+  place,
+  onClick,
+}: {
+  place: PlaceDto;
+  onClick: () => void;
+}) => {
   return (
-    <div className="relative w-full h-full bg-white rounded-xl shadow-lg overflow-hidden flex flex-col">
+    <div
+      className="relative w-full h-full bg-white rounded-xl shadow-lg overflow-hidden flex flex-col cursor-pointer"
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          onClick();
+        }
+      }}
+      role="button"
+      tabIndex={0}
+    >
       <div className="relative h-32 flex-shrink-0">
         <img
           src={place.image_url}
@@ -67,32 +83,12 @@ export const FamousPlacesCarousel = ({
     if (emblaApi) emblaApi.scrollNext();
   }, [emblaApi]);
 
-  // 사용자가 캐러셀을 넘길 때(select 이벤트) 호출되는 효과
+  // This effect re-initializes the carousel when the places list changes.
   useEffect(() => {
-    if (!emblaApi) return;
-
-    const handleSelect = () => {
-      const newIndex = emblaApi.selectedScrollSnap();
-      if (places[newIndex]) {
-        onPlaceSelect(places[newIndex]);
-      }
-    };
-
-    emblaApi.on('select', handleSelect);
-    return () => {
-      emblaApi.off('select', handleSelect);
-    };
-  }, [emblaApi, places, onPlaceSelect]);
-
-  // places 목록이 실제로 변경되었을 때 캐러셀을 리셋하는 효과
-  useEffect(() => {
-    if (emblaApi && places.length > 0) {
+    if (emblaApi) {
       emblaApi.reInit();
-      emblaApi.scrollTo(0);
-      onPlaceSelect(places[0]);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [emblaApi, placesIdString, onPlaceSelect]);
+  }, [emblaApi, placesIdString]);
 
   if (places.length === 0) {
     return null;
@@ -109,7 +105,7 @@ export const FamousPlacesCarousel = ({
                 className="relative flex-[0_0_100%]"
                 style={{ height: '220px' }}
               >
-                <PlaceCard place={place} />
+                <PlaceCard place={place} onClick={() => onPlaceSelect(place)} />
               </div>
             ))}
           </div>
