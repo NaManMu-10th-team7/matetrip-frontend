@@ -176,7 +176,7 @@ export function PostPreview({
       <div className="flex-1 overflow-y-auto">
         {/* Cover Image */}
         {coverImageUrl && (
-          <div className="w-full h-48 bg-gray-200">
+          <div className="w-full h-78 bg-gray-200">
             <ImageWithFallback
               src={coverImageUrl}
               alt={post.title}
@@ -199,7 +199,7 @@ export function PostPreview({
           </div>
 
           {/* Writer Info */}
-          <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
+          <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-xl">
             <ImageWithFallback
               src={
                 writerProfileImageUrl ||
@@ -223,7 +223,7 @@ export function PostPreview({
 
           {/* Travel Info */}
           <div className="space-y-3">
-            <h3 className="font-semibold text-gray-900">여행 정보</h3>
+            <h3 className="text-lg font-semibold text-gray-900">여행 정보</h3>
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-gray-700">
                 <Calendar className="w-4 h-4 text-gray-500" />
@@ -247,7 +247,7 @@ export function PostPreview({
           {/* Description */}
           {post.content && (
             <div className="space-y-2">
-              <h3 className="font-semibold text-gray-900">여행 소개</h3>
+              <h3 className="text-lg font-semibold text-gray-900">여행 소개</h3>
               <p className="text-sm text-gray-700 leading-relaxed line-clamp-3">
                 {post.content}
               </p>
@@ -257,7 +257,7 @@ export function PostPreview({
           {/* Keywords */}
           {post.keywords && post.keywords.length > 0 && (
             <div className="space-y-2">
-              <h3 className="font-semibold text-gray-900">여행 키워드</h3>
+              <h3 className="text-lg font-semibold text-gray-900">여행 키워드</h3>
               <div className="flex flex-wrap gap-2">
                 {post.keywords.map((keyword, index) => (
                   <Badge key={index} variant="secondary" className="text-sm">
@@ -275,7 +275,7 @@ export function PostPreview({
         <Button
           onClick={buttonConfig.onClick}
           disabled={buttonConfig.disabled}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+          className="w-full bg-[#101828] text-white"
         >
           {buttonConfig.text}
         </Button>

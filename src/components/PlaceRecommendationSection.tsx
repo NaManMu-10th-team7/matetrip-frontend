@@ -19,10 +19,21 @@ interface BehaviorRecommendationResponse {
   image_url?: string;
   longitude: number;
   latitude: number;
+  reason: {
+    message: string;
+    referencePlace: {
+      id: string;
+      title: string;
+    };
+  };
+}
+
+interface PlaceWithReason extends PlaceDto {
+  recommendationReason?: string;
 }
 
 export function PlaceRecommendationSection({ onPlaceClick }: PlaceRecommendationSectionProps) {
-  const [places, setPlaces] = useState<PlaceDto[]>([]);
+  const [places, setPlaces] = useState<PlaceWithReason[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user, isAuthLoading } = useAuthStore();
   const navigate = useNavigate();
@@ -51,8 +62,8 @@ export function PlaceRecommendationSection({ onPlaceClick }: PlaceRecommendation
           }
         );
         
-        // Convert to PlaceDto format
-        const placesData: PlaceDto[] = response.data.map((item) => {
+        // Convert to PlaceDto format with recommendation reason
+        const placesData: PlaceWithReason[] = response.data.map((item) => {
           return {
             id: item.id,
             category: item.category as any, // CategoryCode
@@ -62,6 +73,7 @@ export function PlaceRecommendationSection({ onPlaceClick }: PlaceRecommendation
             image_url: item.image_url,
             longitude: item.longitude,
             latitude: item.latitude,
+            recommendationReason: item.reason.message,
           };
         });
         
@@ -99,9 +111,14 @@ export function PlaceRecommendationSection({ onPlaceClick }: PlaceRecommendation
   return (
     <section className="mb-8 md:mb-10 lg:mb-12">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3">
-        <h2 className="text-lg md:text-xl font-medium text-gray-900">
-          당신을 위한 장소 추천
-        </h2>
+        <div>
+          <h2 className="text-xl md:text-xl font-bold text-gray-900">
+            여기 갈래? 말래?
+          </h2>
+          <p className="text-xs md:text-sm text-gray-600 mt-1">
+            MateTrip AI가 추천하는 성향기반 장소추천
+          </p>
+        </div>
         <Button
           onClick={handleAllViewClick}
           variant="ghost"

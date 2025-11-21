@@ -13,8 +13,20 @@ import {
   type KeywordKey,
   type KeywordValue,
 } from '../utils/keyword';
-import { useNavigate } from 'react-router-dom';
+// import { useNavigate } from 'react-router-dom'; // useNavigate 제거
 import type { MatchingResult } from '../types/matchSearch';
+
+interface MatchingSearchBarProps {
+  onSearchSuccess: (
+    results: MatchingResult[],
+    query: {
+      location?: string;
+      startDate?: string;
+      endDate?: string;
+      keyword?: KeywordValue[];
+    }
+  ) => void;
+}
 
 const KEYWORD_ENTRIES = Object.entries(KEYWORD_TYPES).map(([key, label]) => ({
   key: key as KeywordKey,
@@ -22,7 +34,8 @@ const KEYWORD_ENTRIES = Object.entries(KEYWORD_TYPES).map(([key, label]) => ({
 }));
 
 // 헤더에서 사용하는 통합 검색바. 입력한 조건으로 매칭 API를 직접 호출하고 결과를 즉시 MatchingCard로 보여준다.
-export function MatchingSearchBar() {
+export function MatchingSearchBar({ onSearchSuccess }: MatchingSearchBarProps) {
+  // onSearchSuccess prop 받기
   const [locationQuery, setLocationQuery] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -31,7 +44,7 @@ export function MatchingSearchBar() {
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const navigate = useNavigate();
+  // const navigate = useNavigate(); // useNavigate 제거
 
   // 검색창 바깥을 클릭하면 필터/결과 패널을 닫는다.
   useEffect(() => {
@@ -54,7 +67,7 @@ export function MatchingSearchBar() {
 
   const buildMatchingInfo = (candidate: MatchCandidateDto): MatchingInfo => ({
     score: Math.round((candidate.score ?? 0) * 100),
-    vectorscore:
+    vectorScore:
       candidate.vectorScore !== undefined
         ? Math.round(candidate.vectorScore * 100)
         : undefined,
@@ -73,6 +86,10 @@ export function MatchingSearchBar() {
     return {
       post,
       matchingInfo: buildMatchingInfo(candidate),
+      writerProfileImageId:
+        candidate.profile?.profileImageId ?? candidate.profileImageId ?? null,
+      writerNickname:
+        candidate.profile?.nickname ?? post.writer?.profile?.nickname ?? null,
     };
   };
 
@@ -134,7 +151,7 @@ export function MatchingSearchBar() {
       });
 
       const rawData = response.data;
-      //console.log(rawData);
+      console.log('rawodata', rawData);
       //데이터 프론트가 이해하게끔
       const candidates: MatchCandidateDto[] = Array.isArray(rawData)
         ? (rawData as MatchCandidateDto[])
@@ -160,15 +177,18 @@ export function MatchingSearchBar() {
 
       if (!normalized.length) {
         setError('조건에 맞는 추천 동행을 찾지 못했습니다.');
+        // 검색 결과가 없을 때도 onSearchSuccess를 호출하여 부모 컴포넌트가 상태를 업데이트하도록 합니다.
+        onSearchSuccess([], filters);
         return;
       }
 
-      navigate('/match-search', {
-        state: {
-          results: normalized,
-          query: filters,
-        },
-      });
+      // navigate('/match-search', { // navigate 대신 onSearchSuccess 호출
+      //   state: {
+      //     results: normalized,
+      //     query: filters,
+      //   },
+      // });
+      onSearchSuccess(normalized, filters); // 검색 결과를 부모 컴포넌트로 전달
     } catch (err) {
       console.error('매칭 검색 실패:', err);
       setError('맞춤 검색 결과를 불러오지 못했습니다.');
@@ -251,7 +271,7 @@ export function MatchingSearchBar() {
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-200"
               />
             </div>
           </div>

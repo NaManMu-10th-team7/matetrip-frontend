@@ -45,7 +45,7 @@ export function MatchSearchResults() {
   const keywordsText = keywordParts.join(', ');
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
         <Button
           variant="ghost"
@@ -69,14 +69,22 @@ export function MatchSearchResults() {
       </div>
 
       {results.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+          {' '}
+          {/* 그리드 클래스 수정 */}
           {results.map((result, index) => (
             <MatchingCard
               key={result.post.id}
               post={result.post}
               matchingInfo={result.matchingInfo}
               rank={index + 1}
-              onClick={() => navigate(`/posts/${result.post.id}`)}
+              writerProfileImageId={result.writerProfileImageId}
+              writerNickname={result.writerNickname ?? null}
+              onClick={() =>
+                navigate(`/posts/${result.post.id}`, {
+                  state: { background: location },
+                })
+              }
             />
           ))}
         </div>

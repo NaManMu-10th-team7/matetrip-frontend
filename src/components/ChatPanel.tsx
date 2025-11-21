@@ -10,6 +10,15 @@ import type { AiPlace } from '../hooks/useChatSocket';
 import { useAuthStore } from '../store/authStore';
 import { RecommendedPlaceCard } from './RecommendedPlaceCard';
 import { cn } from './ui/utils';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+// API_BASE_URL은 이제 authStore에서 avatar를 생성하므로 ChatPanel에서는 필요 없습니다.
+// import { API_BASE_URL } from '../api/client'; 
+
+interface Member {
+  id: string;
+  name: string;
+  avatar: string;
+}
 
 interface ChatPanelProps {
   messages: ChatMessage[];
@@ -18,8 +27,9 @@ interface ChatPanelProps {
   workspaceId: string;
   onAddPoiToItinerary: (poi: Poi) => void;
   onCardClick: (poi: Pick<Poi, 'latitude' | 'longitude'>) => void;
-  setAiRecommendedPlaces: (places: AiPlace[]) => void;
-  aiRecommendedPlaces: AiPlace[];
+  setChatAiPlaces: (places: AiPlace[]) => void;
+  chatAiPlaces: AiPlace[];
+  activeMembers?: Member[];
 }
 
 export const ChatPanel = memo(function ChatPanel({
@@ -29,6 +39,7 @@ export const ChatPanel = memo(function ChatPanel({
   workspaceId,
   onAddPoiToItinerary,
   onCardClick,
+  activeMembers = [],
 }: ChatPanelProps) {
   const [isVCCallActive, setIsVCCallActive] = useState(false);
   const [hasVCCallBeenInitiated, setHasVCCallBeenInitiated] = useState(false);
@@ -37,6 +48,7 @@ export const ChatPanel = memo(function ChatPanel({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuthStore();
   const currentUserId = user?.userId;
+  const [isAiCardCollapsed, setIsAiCardCollapsed] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -54,11 +66,29 @@ export const ChatPanel = memo(function ChatPanel({
   };
 
   const formatTimestamp = (timestamp: string) => {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString('ko-KR', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    const messageDate = new Date(timestamp);
+    const today = new Date();
+
+    const isSameDay =
+      messageDate.getDate() === today.getDate() &&
+      messageDate.getMonth() === today.getMonth() &&
+      messageDate.getFullYear() === today.getFullYear();
+
+    if (isSameDay) {
+      return messageDate.toLocaleTimeString('ko-KR', {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } else {
+      return messageDate.toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }) + ' ' + messageDate.toLocaleTimeString('ko-KR', {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    }
   };
 
   const handleToggleVideoCall = useCallback(() => {
@@ -76,23 +106,59 @@ export const ChatPanel = memo(function ChatPanel({
 
   return (
     <div className="h-full flex flex-col bg-white">
-      <div className="border-b p-3 flex items-center justify-between">
-        <h3 className="text-gray-900 font-semibold">채팅</h3>
+      <div className="bg-blue-900 text-white px-6 py-3 flex items-center justify-between">
+        <h3 className="font-semibold">채팅</h3>
         <div className="flex items-center gap-3">
-          <Badge variant={isChatConnected ? 'default' : 'destructive'}>
-            {isChatConnected ? '연결됨' : '연결 끊김'}
+          {/* 접속 중인 멤버 아바타 */}
+          {activeMembers.length > 0 && (
+            <div className="flex items-center">
+              {activeMembers.map((member, index) => (
+                <Avatar
+                  key={member.id}
+                  className="w-8 h-8 border-2 border-white"
+                  style={{
+                    marginLeft: index > 0 ? '-8px' : '0',
+                    zIndex: activeMembers.length - index,
+                  }}
+                >
+                  <AvatarImage src={member.avatar} alt={member.name} />
+                  <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+              ))}
+            </div>
+          )}
+          <Badge
+            variant={isChatConnected ? 'outline' : 'destructive'}
+            className="text-white text-sm flex items-center gap-2"
+          >
+            {isChatConnected ? (
+              <>
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                </span>
+                <span>연결됨</span>
+              </>
+            ) : (
+              '연결 끊김'
+            )}
           </Badge>
           <div className="flex gap-1">
-            <Button size="icon" variant="ghost" className="w-8 h-8" disabled>
-              <Phone className="w-4 h-4 text-gray-600" />
+            <Button
+              size="icon"
+              variant="ghost"
+              className="w-9 h-9 text-white hover:bg-blue-800"
+              disabled
+            >
+              <Phone className="w-5 h-5" />
             </Button>
             <Button
               size="icon"
               variant={isVCCallActive ? 'secondary' : 'ghost'}
-              className="w-8 h-8"
+              className="w-9 h-9 text-white hover:bg-blue-800"
               onClick={handleToggleVideoCall}
             >
-              <Video className="w-4 h-4" />
+              <Video className="w-5 h-5" />
             </Button>
           </div>
         </div>
@@ -137,7 +203,7 @@ export const ChatPanel = memo(function ChatPanel({
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto px-8 py-4 space-y-4">
         {messages.map((msg, index) => {
           const isMe = currentUserId != null && msg.userId === currentUserId;
           const isSystem = msg.username === 'System';
@@ -146,63 +212,108 @@ export const ChatPanel = memo(function ChatPanel({
             msg.recommendedPlaces &&
             msg.recommendedPlaces.length > 0;
 
+          // Declare sender at the top of the scope
+          let sender: Member | null = null;
+          if (!isMe && !isSystem) {
+            sender = activeMembers.find((m) => m.id === msg.userId) || null;
+          }
+
+          // Determine avatar source and whether to show it
+          let avatarSrc = '';
+          let avatarAlt = '';
+          let showAvatar = false;
+
+          // [수정] user.avatar 사용
+          if (isMe && user?.avatar) { 
+            avatarSrc = user.avatar;
+            avatarAlt = user.profile?.nickname || ''; // user.profile.nickname 사용
+            showAvatar = true;
+          } else if (sender?.avatar) {
+            avatarSrc = sender.avatar;
+            avatarAlt = sender.name || '';
+            showAvatar = true;
+          }
+
+          // Only render Avatar if showAvatar is true AND avatarSrc is not empty
+          const shouldRenderAvatar = showAvatar && avatarSrc !== '';
+
           return (
             <div
               key={msg.id || index}
-              className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
+              // 모든 메시지를 왼쪽으로 정렬
+              className={`flex gap-3 justify-start`}
             >
+              {shouldRenderAvatar && (
+                <img 
+                  src={avatarSrc} 
+                  alt={avatarAlt} 
+                  className="w-10 h-10 self-start rounded-full object-cover border border-gray-300" // 크기 w-10 h-10으로 변경
+                />
+              )}
+              {/* 중복 렌더링을 유발하던 Avatar 컴포넌트 블록 제거 */}
               <div
                 className={cn(
-                  !isAiRecommendation && 'max-w-[70%]',
-                  isMe ? 'order-2' : ''
+                  'flex flex-col',
+                  // 모든 메시지 내부 콘텐츠를 왼쪽으로 정렬
+                  'items-start',
+                  !isAiRecommendation && 'max-w-[70%]'
                 )}
               >
-                {!isMe && !isSystem && (
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm text-gray-600">
-                      {msg.username}
-                    </span>
-                  </div>
-                )}
+                {/* 모든 메시지 (사용자, AI, 시스템): 닉네임 | 날짜 시간 */}
+                <div className="flex items-baseline gap-1 mb-1">
+                  <span className="text-base font-semibold text-gray-800">
+                    {msg.username}
+                  </span>
+                  <span className="text-sm text-gray-500">|</span>
+                  <span className="text-xs text-gray-500">
+                    {formatTimestamp(msg.createdAt)}
+                  </span>
+                </div>
+
+                {/* 메시지 버블 */}
                 <div
                   className={cn(
                     'rounded-lg px-4 py-2',
-                    isAiRecommendation && 'w-full bg-transparent p-0',
-                    isMe
-                      ? 'bg-blue-600 text-white'
+                    isAiRecommendation
+                      ? 'w-full bg-transparent p-0' // AI 추천 메시지
                       : isSystem
-                        ? 'bg-gray-100 text-gray-700 italic'
-                        : 'bg-gray-100 text-gray-900'
+                        ? 'bg-gray-100 text-gray-700 italic' // 시스템 메시지
+                        : 'bg-gray-100 text-gray-900' // 모든 사용자 메시지 (나 포함)
                   )}
                 >
-                  {!isAiRecommendation && (
-                    <p className="text-sm">{msg.message}</p>
-                  )}
+                  <p className="text-sm" style={{ wordBreak: 'break-word' }}>
+                    {msg.message}
+                  </p>
                   {isAiRecommendation && (
-                    <div className="space-y-2">
-                      <p className="text-sm text-gray-900 bg-gray-100 rounded-lg px-4 py-2">
-                        {msg.message}
-                      </p>
-                      <div className="grid grid-cols-1 gap-2">
-                        {msg.recommendedPlaces?.map((place, placeIndex) => (
-                          <RecommendedPlaceCard
-                            key={placeIndex}
-                            place={place}
-                            onAddPoiToItinerary={onAddPoiToItinerary}
-                            onCardClick={onCardClick}
-                          />
-                        ))}
+                    <div className="mt-2">
+                      {!isAiCardCollapsed && (
+                        <div className="grid grid-cols-1 gap-2">
+                          {msg.recommendedPlaces?.map(
+                            (place, placeIndex) => (
+                              <RecommendedPlaceCard
+                                key={placeIndex}
+                                place={place}
+                                onAddPoiToItinerary={onAddPoiToItinerary}
+                                onCardClick={onCardClick}
+                              />
+                            )
+                          )}
+                        </div>
+                      )}
+                      <div className="flex justify-end mt-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            setIsAiCardCollapsed((prev) => !prev)
+                          }
+                        >
+                          {isAiCardCollapsed ? '펼치기' : '접기'}
+                        </Button>
                       </div>
                     </div>
                   )}
                 </div>
-                <span
-                  className={`text-xs text-gray-500 mt-1 block ${
-                    isMe ? 'text-right' : 'text-left'
-                  }`}
-                >
-                  {formatTimestamp(msg.timestamp)}
-                </span>
               </div>
             </div>
           );

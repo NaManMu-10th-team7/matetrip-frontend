@@ -1,168 +1,28 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { MapPin } from 'lucide-react';
 import { Map as KakaoMap, MapMarker } from 'react-kakao-maps-sdk';
-import { Button } from './ui/button';
-import { InspirationCard } from './InspirationCard';
-import client from '../api/client';
-
-// 장소 상세 정보 타입
-interface PlaceDetail {
-  id: string;
-  title: string;
-  address: string;
-  imageUrl?: string;
-  summary?: string;
-  latitude?: number;
-  longitude?: number;
-}
-
-// 주변 장소 타입
-interface NearbyPlace {
-  id: string;
-  title: string;
-  address: string;
-  imageUrl?: string;
-}
-
-// InspirationPage에서 전달받는 state 타입
-interface LocationState {
-  title?: string;
-  address?: string;
-  summary?: string;
-  imageUrl?: string;
-}
-
-// 백엔드 API 응답 타입 (GET /places/{placeId})
-interface PlaceApiResponse {
-  id: string;
-  category: string;
-  title: string;
-  address: string;
-  summary?: string;
-  image_url?: string;
-  longitude: number;
-  latitude: number;
-}
+import { Button } from '../components/ui/button';
+import { InspirationCard } from '../components/InspirationCard';
+import { usePlaceDetail } from '../hooks/usePlaceDetail'; // 커스텀 훅 임포트
 
 export function InspirationDetail() {
   const { placeId } = useParams<{ placeId: string }>();
   const navigate = useNavigate();
-  const location = useLocation();
 
-  // InspirationPage에서 전달받은 데이터
-  const passedData = location.state as LocationState | null;
+  const { placeDetail, nearbyPlaces, isLoading, error } =
+    usePlaceDetail(placeId);
 
-  const [placeDetail, setPlaceDetail] = useState<PlaceDetail | null>(null);
-  const [nearbyPlaces, setNearbyPlaces] = useState<NearbyPlace[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [mapCenter, setMapCenter] = useState({ lat: 37.5665, lng: 126.978 }); // 기본값: 서울
 
   useEffect(() => {
-    const fetchPlaceDetail = async () => {
-      if (!placeId) return;
-
-      setIsLoading(true);
-      try {
-        // InspirationPage에서 전달받은 데이터가 있으면 먼저 UI에 표시
-        if (passedData?.title) {
-          const detailFromState: PlaceDetail = {
-            id: placeId,
-            title: passedData.title,
-            address: passedData.address || '',
-            imageUrl: passedData.imageUrl,
-            summary: passedData.summary,
-            // 좌표는 API에서 가져올 예정
-            latitude: undefined,
-            longitude: undefined,
-          };
-          setPlaceDetail(detailFromState);
-        }
-
-        // API에서 장소 상세 정보 가져오기 (좌표 포함)
-        const response = await client.get<PlaceApiResponse>(
-          `/places/${placeId}`
-        );
-        const apiData = response.data;
-
-        // API 응답으로 상세 정보 업데이트
-        const updatedDetail: PlaceDetail = {
-          id: apiData.id,
-          title: passedData?.title || apiData.title,
-          address: passedData?.address || apiData.address,
-          imageUrl: passedData?.imageUrl || apiData.image_url,
-          summary: passedData?.summary || apiData.summary,
-          latitude: apiData.latitude,
-          longitude: apiData.longitude,
-        };
-        setPlaceDetail(updatedDetail);
-
-        // 지도 중심 설정
-        if (apiData.latitude && apiData.longitude) {
-          setMapCenter({
-            lat: apiData.latitude,
-            lng: apiData.longitude,
-          });
-        }
-
-        /*
-         * TODO: 주변 장소 API 호출
-         * API 엔드포인트: GET /places/nearby
-         *
-         * 필요한 요청 파라미터:
-         * - latitude: number (현재 장소의 위도)
-         * - longitude: number (현재 장소의 경도)
-         * - limit: number (가져올 장소 개수, 기본 4개)
-         *
-         * 필요한 응답 데이터 (배열):
-         * - id: string (장소 고유 ID)
-         * - title: string (장소명)
-         * - address: string (장소 주소)
-         * - image_url?: string (장소 이미지 URL)
-         *
-         * const nearbyResponse = await client.get<NearbyPlace[]>('/places/nearby', {
-         *   params: {
-         *     latitude: apiData.latitude,
-         *     longitude: apiData.longitude,
-         *     limit: 4,
-         *   },
-         * });
-         * setNearbyPlaces(nearbyResponse.data);
-         */
-
-        // 임시 주변 장소 더미 데이터
-        const dummyNearby: NearbyPlace[] = [
-          {
-            id: '2',
-            title: '강남역 카페거리',
-            address: '서울특별시 강남구 강남대로',
-          },
-          {
-            id: '3',
-            title: '코엑스몰',
-            address: '서울특별시 강남구 영동대로 513',
-          },
-          {
-            id: '4',
-            title: '봉은사',
-            address: '서울특별시 강남구 봉은사로 531',
-          },
-          {
-            id: '5',
-            title: '삼성동 맛집거리',
-            address: '서울특별시 강남구 삼성동',
-          },
-        ];
-        setNearbyPlaces(dummyNearby);
-      } catch (error) {
-        console.error('Failed to fetch place detail:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchPlaceDetail();
-  }, [placeId, passedData]);
+    if (placeDetail?.latitude && placeDetail?.longitude) {
+      setMapCenter({
+        lat: placeDetail.latitude,
+        lng: placeDetail.longitude,
+      });
+    }
+  }, [placeDetail]);
 
   const handlePlanTrip = () => {
     // CreatePostModal로 라우팅 (장소 정보 전달: 이름, 주소, 좌표)
@@ -198,6 +58,16 @@ export function InspirationDetail() {
         {/* 지도 영역 */}
         <div className="hidden lg:flex flex-1 bg-gray-100 items-center justify-center">
           <div className="text-gray-500">지도 로딩 중...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-gray-50 min-h-screen flex items-center justify-center">
+        <div className="text-red-500">
+          장소 정보를 불러오는 데 실패했습니다: {error.message}
         </div>
       </div>
     );
@@ -253,8 +123,8 @@ export function InspirationDetail() {
 
         {/* 근처의 다른 장소들 섹션 */}
         <div className="p-8">
-          <h2 className="text-sm font-normal leading-5 mb-4">
-            근처의 다른 장소들 입니다.
+          <h2 className="text-lg font-bold leading-5 mb-4">
+            MateTrip이 추천하는 주변장소
           </h2>
           <div className="grid grid-cols-2 gap-4">
             {nearbyPlaces.map((place) => (

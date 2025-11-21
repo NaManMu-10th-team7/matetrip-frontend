@@ -1,11 +1,5 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
-import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  GripVertical,
-} from 'lucide-react';
+import { GripVertical } from 'lucide-react';
 import html2canvas from 'html2canvas-pro';
 import jsPDF from 'jspdf';
 import {
@@ -16,22 +10,23 @@ import {
   type DragEndEvent,
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
-import { MapPanel } from './MapPanel';
+import { MapPanel } from '../components/MapPanel';
 import type { KakaoPlace, RouteSegment, ChatMessage } from '../types/map';
-import { Button } from './ui/button';
 import type { PlanDayDto } from '../types/workspace';
-import { LeftPanel } from './LeftPanel';
-import { PlanRoomHeader } from './PlanRoomHeader';
+import { LeftPanel } from '../components/LeftPanel';
+import { PlanRoomHeader } from '../components/PlanRoomHeader';
 import { usePlaceStore } from '../store/placeStore'; // placeStore import
 import { type Poi, usePoiSocket } from '../hooks/usePoiSocket.ts';
 import { type AiPlace, useChatSocket } from '../hooks/useChatSocket';
 import { useWorkspaceMembers } from '../hooks/useWorkspaceMembers.ts';
 import client, { API_BASE_URL } from '../api/client.ts';
 import { CATEGORY_INFO, type PlaceDto } from '../types/place.ts'; // useWorkspaceMembers 훅 import
-import { AddToItineraryModal } from './AddToItineraryModal.tsx';
-import { PdfDocument } from './PdfDocument.tsx'; // [신규] 모달 컴포넌트 임포트 (생성 필요)
-import { AIRecommendationLoadingModal } from './AIRecommendationLoadingModal.tsx';
+import { AddToItineraryModal } from '../components/AddToItineraryModal.tsx';
+import { PdfDocument } from '../components/PdfDocument.tsx'; // [신규] 모달 컴포넌트 임포트 (생성 필요)
+import { AIRecommendationLoadingModal } from '../components/AIRecommendationLoadingModal.tsx';
 import { toast } from 'sonner';
+import { ScheduleSidebar } from '../components/ScheduleSidebar.tsx';
+import { OptimizationModal } from '../components/OptimizationModal.tsx';
 
 interface WorkspaceProps {
   workspaceId: string;
@@ -87,16 +82,19 @@ export function Workspace({
   planDayDtos,
   onEndTrip,
 }: WorkspaceProps) {
-  const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
+  const [isLeftPanelOpen, _setIsLeftPanelOpen] = useState(true);
+  const [schedulePosition, setSchedulePosition] = useState<
+    'hidden' | 'overlay' | 'docked'
+  >('hidden');
 
   // [신규] AI 추천 일정 관련 상태
   const [recommendedItinerary, setRecommendedItinerary] = useState<
     Record<string, Poi[]>
   >({});
-  const [isRecommendationOpen, setIsRecommendationOpen] = useState(false);
   const [isRecommendationLoading, setIsRecommendationLoading] = useState(true);
-  const [aiRecommendedPlaces, setAiRecommendedPlaces] = useState<AiPlace[]>([]);
-  const [initialBoundsSet, setInitialBoundsSet] = useState(false);
+  const [itineraryAiPlaces, setItineraryAiPlaces] = useState<AiPlace[]>([]);
+  const [chatAiPlaces, setChatAiPlaces] = useState<AiPlace[]>([]);
+  const [_initialBoundsSet, setInitialBoundsSet] = useState(false);
 
   // [신규] '일정 추가' 모달 관련 상태
   const [poiToAdd, setPoiToAdd] = useState<Poi | null>(null);
@@ -126,6 +124,7 @@ export function Workspace({
       })),
     [membersWithoutColor]
   );
+
   // usePoiSocket에서 모든 상태와 함수를 가져옵니다.
   const {
     pois,
@@ -145,6 +144,7 @@ export function Workspace({
     clickMap, // 추가
     addRecommendedPoisToDay,
     focusPlace, // 추가
+    flushPois,
   } = usePoiSocket(workspaceId, members);
 
   const {
@@ -168,25 +168,29 @@ export function Workspace({
     sendMessage(message);
   };
 
+  // [버그 수정] POI가 삭제된 후에도 hover 효과(파란색 원)가 남아있는 문제 해결
+  // pois 목록이 변경될 때, 현재 hoveredPoiId가 더 이상 존재하지 않으면 hover 상태를 초기화합니다.
   useEffect(() => {
-    if (lastMessage?.recommendedPlaces && !initialBoundsSet) {
-      setAiRecommendedPlaces(lastMessage.recommendedPlaces);
+    if (hoveredPoiInfo && !pois.find((p) => p.id === hoveredPoiInfo.poiId)) {
+      hoverPoi(null);
+    }
+  }, [pois, hoveredPoiInfo, hoverPoi]);
+
+  useEffect(() => {
+    if (lastMessage?.recommendedPlaces) {
+      setChatAiPlaces(lastMessage.recommendedPlaces);
       const map = mapRef.current;
       if (map && lastMessage.recommendedPlaces.length > 0) {
+        const firstPlace = lastMessage.recommendedPlaces[0];
+        const moveLatLon = new window.kakao.maps.LatLng(
+          firstPlace.latitude,
+          firstPlace.longitude
+        );
         isProgrammaticMove.current = true;
-        const bounds = new window.kakao.maps.LatLngBounds();
-        lastMessage.recommendedPlaces.forEach((place) => {
-          bounds.extend(
-            new window.kakao.maps.LatLng(place.latitude, place.longitude)
-          );
-        });
-        map.setBounds(bounds);
-        setInitialBoundsSet(true);
+        map.panTo(moveLatLon);
       }
-    } else if (lastMessage && !lastMessage.recommendedPlaces) {
-      setAiRecommendedPlaces([]);
     }
-  }, [lastMessage, initialBoundsSet]);
+  }, [lastMessage]);
 
   const [selectedPlace, setSelectedPlace] = useState<KakaoPlace | null>(null);
   const [activePoi, setActivePoi] = useState<Poi | null>(null);
@@ -197,13 +201,19 @@ export function Workspace({
   // [추가] 최적화 진행 중 상태
   const [isOptimizationProcessing, setIsOptimizationProcessing] =
     useState(false);
-  // [추가] 최적화 완료 후 상태를 리셋하는 콜백
+  // [수정] 최적화 완료 후 상태를 리셋하는 콜백
   const handleOptimizationComplete = useCallback(() => {
-    setOptimizingDayId(null);
-    setIsOptimizationProcessing(false); // Optimization ends
+    setIsOptimizationProcessing(false); // Optimization ends, but keep the modal open
   }, []);
   // [추가] 지도에 표시할 날짜 ID를 관리하는 상태
   const [visibleDayIds, setVisibleDayIds] = useState<Set<string>>(new Set());
+
+  // [추가] 모달 상태 추가
+  const [isOptimizationModalOpen, setIsOptimizationModalOpen] = useState(false);
+  const [originalRouteData, setOriginalRouteData] = useState<{
+    pois: Poi[];
+    segments: RouteSegment[];
+  } | null>(null);
 
   // 워크스페이스와 연결된 게시글 정보를 가져와서 postLocation을 설정합니다.
   useEffect(() => {
@@ -286,7 +296,7 @@ export function Workspace({
         newRecommendedItinerary[virtualPlanDayId] = poisForDay;
       });
       setRecommendedItinerary(newRecommendedItinerary);
-      setAiRecommendedPlaces(allRecommendedPois);
+      setItineraryAiPlaces(allRecommendedPois);
     } catch (error) {
       console.error('Failed to generate AI plan:', error);
       setRecommendedItinerary({}); // 에러 시 기존 추천 초기화
@@ -422,16 +432,14 @@ export function Workspace({
       }, 310); // transition 시간보다 약간 길게 설정
       return () => clearTimeout(timer);
     }
-  }, [isLeftPanelOpen]);
+  }, [isLeftPanelOpen, schedulePosition]);
   // PlanRoomHeader에 전달할 activeMembers 데이터 형식으로 변환
   const activeMembersForHeader = useMemo(() => {
     return members.map((member) => ({
       id: member.id, // PlanRoomHeader의 id 타입이 string이어야 함
       name: member.profile.nickname,
-      // TODO: 백엔드 응답에 profileImageId가 포함되면 실제 이미지 URL을 구성해야 합니다.
-      // 현재는 임시 플레이스홀더를 사용합니다.
       avatar: member.profile.profileImageId
-        ? `${API_BASE_URL}/binary-content/${member.profile.profileImageId}/presigned-url` // 예시 URL 구조
+        ? member.profile.profileImageId
         : `https://ui-avatars.com/api/?name=${member.profile.nickname}&background=random`,
     }));
   }, [members]);
@@ -473,7 +481,7 @@ export function Workspace({
   const endDate =
     planDayDtos.length > 0 ? planDayDtos[planDayDtos.length - 1].planDate : '';
 
-  const handlePoiClick = (poi: Poi | AiPlace) => {
+  const handlePoiClick = (poi: Pick<Poi, 'latitude' | 'longitude'>) => {
     const map = mapRef.current;
     if (!map) return;
     isProgrammaticMove.current = true;
@@ -481,7 +489,7 @@ export function Workspace({
       poi.latitude,
       poi.longitude
     );
-    map.setLevel(5);
+    map.setLevel(3);
     map.panTo(moveLatLon);
   };
 
@@ -574,12 +582,26 @@ export function Workspace({
     routeSegmentsByDay,
   ]);
 
-  // [추가] LeftPanel에서 경로 최적화 버튼 클릭 시 호출될 핸들러
-  const handleOptimizeRoute = useCallback((dayId: string) => {
-    console.log(`[Workspace] Optimization triggered for day: ${dayId}`);
-    setOptimizingDayId(dayId);
-    setIsOptimizationProcessing(true); // Optimization starts
-  }, []);
+  // [수정] 경로 최적화 버튼 클릭 시 호출될 핸들러
+  const handleOptimizeRoute = useCallback(
+    (dayId: string) => {
+      const pois = itinerary[dayId] || [];
+      const segments = routeSegmentsByDay[dayId] || [];
+      setOriginalRouteData(JSON.parse(JSON.stringify({ pois, segments }))); // 원본 데이터 저장
+      setOptimizingDayId(dayId);
+      setIsOptimizationProcessing(true);
+      setIsOptimizationModalOpen(true); // 모달 열기
+    },
+    [itinerary, routeSegmentsByDay]
+  );
+
+  // [추가] 모달 닫기 핸들러
+  const handleCloseModal = () => {
+    setIsOptimizationModalOpen(false);
+    setOriginalRouteData(null);
+    setOptimizingDayId(null);
+    setIsOptimizationProcessing(false);
+  };
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
@@ -836,13 +858,25 @@ export function Workspace({
     return Array.from(combinedPlaces.values());
   }, [pois, placeCache, recommendedItinerary]);
 
+  const handleToggleScheduleOverlay = () => {
+    setSchedulePosition((prev) => (prev === 'hidden' ? 'overlay' : 'hidden'));
+  };
+
+  const dayLayerForModal = optimizingDayId
+    ? dayLayers.find((l) => l.id === optimizingDayId) ?? null
+    : null;
+  const optimizedPois = optimizingDayId ? itinerary[optimizingDayId] : [];
+  const optimizedSegments = optimizingDayId
+    ? routeSegmentsByDay[optimizingDayId]
+    : [];
+
   return (
     <DndContext
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       collisionDetection={closestCenter}
     >
-      <div className="h-full flex flex-col bg-gray-50">
+      <div className="h-full flex flex-col bg-gray-50 p-4 gap-4">
         <PlanRoomHeader
           workspaceId={workspaceId}
           title={workspaceName}
@@ -857,89 +891,49 @@ export function Workspace({
           onExportPdf={handleExportToPdf}
           isGeneratingPdf={isGeneratingPdf}
           activeMembers={activeMembersForHeader}
+          onToggleScheduleSidebar={handleToggleScheduleOverlay}
+          onFlush={flushPois}
         />
 
-        <div className="flex-1 flex relative overflow-hidden">
-          <LeftPanel
-            isRecommendationLoading={isRecommendationLoading}
-            workspaceId={workspaceId}
-            isOpen={isLeftPanelOpen}
-            itinerary={itinerary}
-            recommendedItinerary={recommendedItinerary}
-            dayLayers={dayLayers}
-            markedPois={markedPois}
-            unmarkPoi={unmarkPoi}
-            removeSchedule={removeSchedule}
-            onPoiClick={handlePoiClick}
-            onPoiHover={hoverPoi} // LeftPanel에 hover 핸들러 전달
-            onAddRecommendedPoi={handleAddRecommendedPoi}
-            onAddRecommendedPoiToDay={addRecommendedPoisToDay}
-            onOptimizeRoute={handleOptimizeRoute}
-            routeSegmentsByDay={routeSegmentsByDay} // LeftPanel에 경로 정보 전달
-            visibleDayIds={visibleDayIds} // [추가] 가시성 상태 전달
-            onDayVisibilityChange={handleDayVisibilityChange} // [추가] 가시성 변경 핸들러 전달
-            onMyItineraryVisibilityChange={handleMyItineraryVisibilityChange} // [수정] '내 일정'용 핸들러 전달
-            onRecommendedItineraryVisibilityChange={
-              handleRecommendedItineraryVisibilityChange
-            } // [수정] 'AI 추천'용 핸들러 전달
-            onGenerateAiPlan={generateAiPlan} // [신규] AI 추천 재생성 함수 전달
-            hoveredPoiId={hoveredPoiInfo?.poiId ?? null}
-            isOptimizationProcessing={isOptimizationProcessing} // New prop
-            // [수정] ChatPanel을 위해 props 전달
-            messages={messages}
-            sendMessage={handleSendMessage}
-            isChatConnected={isChatConnected}
-            onCardClick={handlePoiClick} // 채팅 카드 클릭 핸들러
-            isRecommendationOpen={isRecommendationOpen}
-            setIsRecommendationOpen={setIsRecommendationOpen}
-            setAiRecommendedPlaces={setAiRecommendedPlaces}
-            aiRecommendedPlaces={aiRecommendedPlaces}
-          />
-
-          {/* AI 추천 일정 버튼 */}
+        <div className="flex-1 flex relative overflow-hidden rounded-lg border shadow-sm">
           <div
-            className="absolute top-0 z-30 transition-all duration-300 ease-in-out"
-            style={{
-              left: isLeftPanelOpen
-                ? isRecommendationOpen
-                  ? '768px'
-                  : '384px'
-                : '0px',
-            }}
+            className={`w-1/2 h-full transition-opacity duration-300 ${
+              schedulePosition === 'docked'
+                ? 'opacity-0 pointer-events-none'
+                : 'opacity-100'
+            }`}
           >
-            <Button
-              variant={isRecommendationOpen ? 'default' : 'outline'}
-              className={`h-14 w-auto px-4 shadow-lg rounded-none rounded-tr-lg flex items-center gap-2 ${
-                isRecommendationOpen
-                  ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white border-transparent shadow-indigo-500/50'
-                  : 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white border-transparent shadow-indigo-500/50'
-              }`}
-              onClick={() => setIsRecommendationOpen(!isRecommendationOpen)}
-            >
-              <span className="text-sm font-semibold">AI 추천</span>
-              {isRecommendationOpen ? (
-                <ChevronsLeft className="w-5 h-5" />
-              ) : (
-                <ChevronsRight className="w-5 h-5" />
-              )}
-            </Button>
+            <LeftPanel
+              isRecommendationLoading={isRecommendationLoading}
+              workspaceId={workspaceId}
+              isOpen={isLeftPanelOpen}
+              recommendedItinerary={recommendedItinerary}
+              dayLayers={dayLayers}
+              onPoiClick={handlePoiClick}
+              onPoiHover={hoverPoi}
+              onAddRecommendedPoi={handleAddRecommendedPoi}
+              onAddRecommendedPoiToDay={addRecommendedPoisToDay}
+              visibleDayIds={visibleDayIds}
+              onDayVisibilityChange={handleDayVisibilityChange}
+              onRecommendedItineraryVisibilityChange={
+                handleRecommendedItineraryVisibilityChange
+              }
+              onGenerateAiPlan={generateAiPlan}
+              hoveredPoiId={hoveredPoiInfo?.poiId ?? null}
+              messages={messages}
+              sendMessage={handleSendMessage}
+              isChatConnected={isChatConnected}
+              onCardClick={handlePoiClick}
+              setChatAiPlaces={setChatAiPlaces}
+              chatAiPlaces={chatAiPlaces}
+              activeMembers={activeMembersForHeader}
+            />
           </div>
-          <button
-            onClick={() => setIsLeftPanelOpen(!isLeftPanelOpen)}
-            className="absolute top-1/2 -translate-y-1/2 z-20 w-6 h-12 bg-white hover:bg-gray-100 transition-colors flex items-center justify-center border border-gray-300 rounded-r-md shadow-md"
-            style={{ left: isLeftPanelOpen ? '384px' : '0' }}
-          >
-            {isLeftPanelOpen ? (
-              <ChevronLeft className="w-4 h-4 text-gray-600" />
-            ) : (
-              <ChevronRight className="w-4 h-4 text-gray-600" />
-            )}
-          </button>
 
-          <div className="flex-1 bg-gray-100">
+          <div className="flex-1 bg-gray-100 rounded-lg overflow-hidden">
             <MapPanel
-              workspaceId={workspaceId} // [신규] workspaceId 전달
-              placesToRender={placesToRender} // [수정] 계산된 최종 목록 전달
+              workspaceId={workspaceId}
+              placesToRender={placesToRender}
               itinerary={itinerary}
               recommendedItinerary={recommendedItinerary}
               dayLayers={dayLayers}
@@ -950,31 +944,51 @@ export function Workspace({
               selectedPlace={selectedPlace}
               mapRef={mapRef}
               setSelectedPlace={setSelectedPlace}
-              onRouteInfoUpdate={handleRouteInfoUpdate} // MapPanel에 콜백 함수 전달
-              hoveredPoiInfo={hoveredPoiInfo} // hoveredPoi 대신 hoveredPoiInfo 전달
-              optimizingDayId={optimizingDayId} // [추가] 최적화 트리거 상태 전달
-              onOptimizationComplete={handleOptimizationComplete} // [추가] 최적화 완료 콜백 전달
-              onRouteOptimized={handleRouteOptimized} // [추가] 최적화된 경로 콜백 전달
-              latestChatMessage={latestChatMessage} // [추가] 최신 채팅 메시지 전달
-              cursors={cursors} // cursors prop 전달
-              moveCursor={moveCursor} // moveCursor prop 전달
-              clickEffects={clickEffects} // clickEffects prop 전달
-              clickMap={clickMap} // clickMap prop 전달
-              visibleDayIds={visibleDayIds} // [추가] 가시성 상태 전달
-              initialCenter={initialMapCenter} // [신규] 초기 지도 중심 좌표 전달
-              focusPlace={focusPlace} // [추가] focusPlace 전달
-              isRecommendationOpen={isRecommendationOpen}
-              setIsRecommendationOpen={setIsRecommendationOpen}
-              recommendedPlaces={aiRecommendedPlaces}
+              onRouteInfoUpdate={handleRouteInfoUpdate}
+              hoveredPoiInfo={hoveredPoiInfo}
+              optimizingDayId={optimizingDayId}
+              onOptimizationComplete={handleOptimizationComplete}
+              onRouteOptimized={handleRouteOptimized}
+              latestChatMessage={latestChatMessage}
+              cursors={cursors}
+              moveCursor={moveCursor}
+              clickEffects={clickEffects}
+              clickMap={clickMap}
+              visibleDayIds={visibleDayIds}
+              initialCenter={initialMapCenter}
+              focusPlace={focusPlace}
+              itineraryAiPlaces={itineraryAiPlaces}
+              chatAiPlaces={chatAiPlaces}
               isProgrammaticMove={isProgrammaticMove}
+              schedulePosition={schedulePosition}
             />
           </div>
+
+          <ScheduleSidebar
+            position={schedulePosition}
+            onClose={() => setSchedulePosition('hidden')}
+            onDock={() => setSchedulePosition('docked')}
+            onUndock={() => setSchedulePosition('overlay')}
+            itinerary={itinerary}
+            dayLayers={dayLayers}
+            markedPois={markedPois}
+            unmarkPoi={unmarkPoi}
+            removeSchedule={removeSchedule}
+            onPoiSelect={handlePoiClick}
+            onPoiHover={hoverPoi}
+            routeSegmentsByDay={routeSegmentsByDay}
+            onOptimizeRoute={handleOptimizeRoute}
+            visibleDayIds={visibleDayIds}
+            onDayVisibilityChange={handleDayVisibilityChange}
+            onMyItineraryVisibilityChange={handleMyItineraryVisibilityChange}
+            hoveredPoiId={hoveredPoiInfo?.poiId ?? null}
+            isOptimizationProcessing={isOptimizationProcessing}
+          />
         </div>
       </div>
       <DragOverlay>
         {activePoi ? <DraggablePoiItem poi={activePoi} /> : null}
       </DragOverlay>
-      {/* [신규] 일정 추가 모달 */}
       <AddToItineraryModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
@@ -982,8 +996,6 @@ export function Workspace({
         onConfirm={handleConfirmAdd}
         poiName={poiToAdd?.placeName}
       />
-
-      {/* PDF 생성 시에만 렌더링되는 숨겨진 문서 */}
       {isGeneratingPdf && (
         <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
           <PdfDocument
@@ -995,9 +1007,18 @@ export function Workspace({
           />
         </div>
       )}
-
-      {/* AI 추천 로딩 모달 */}
       <AIRecommendationLoadingModal isOpen={isRecommendationLoading} />
+      <OptimizationModal
+        isOpen={isOptimizationModalOpen}
+        onClose={handleCloseModal}
+        originalData={originalRouteData}
+        optimizedData={
+          !isOptimizationProcessing
+            ? { pois: optimizedPois, segments: optimizedSegments }
+            : null
+        }
+        dayLayer={dayLayerForModal}
+      />
     </DndContext>
   );
 }

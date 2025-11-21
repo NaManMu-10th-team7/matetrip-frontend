@@ -49,8 +49,8 @@ export const RightPanel = memo(function RightPanel({
             workspaceId={workspaceId}
             onAddPoiToItinerary={onAddPoiToItinerary}
             onCardClick={onCardClick}
-            setAiRecommendedPlaces={setAiRecommendedPlaces}
-            aiRecommendedPlaces={aiRecommendedPlaces}
+            setChatAiPlaces={setAiRecommendedPlaces}
+            chatAiPlaces={aiRecommendedPlaces}
           />
         </TabsContent>
       </Tabs>

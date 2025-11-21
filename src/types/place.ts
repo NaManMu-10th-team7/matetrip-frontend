@@ -10,6 +10,7 @@ export interface PlaceDto {
   image_url?: string;
   longitude: number;
   latitude: number;
+  popularityScore?: number;
 }
 
 /**

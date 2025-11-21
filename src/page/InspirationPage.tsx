@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Compass, Loader2 } from 'lucide-react';
-import { SearchBar } from './SearchBar';
-import { InspirationCard } from './InspirationCard';
+import { SearchBar } from '../components/SearchBar';
+import { InspirationCard } from '../components/InspirationCard';
 import { useAuthStore } from '../store/authStore';
 import client from '../api/client';
 

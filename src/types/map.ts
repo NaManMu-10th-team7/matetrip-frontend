@@ -26,6 +26,7 @@ export interface DayLayer {
   id: string;
   label: string;
   color: string;
+  planDate: string;
 }
 
 export interface RouteSegment {

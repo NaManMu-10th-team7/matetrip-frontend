@@ -12,12 +12,12 @@ import {
   CheckCircle2,
   ArrowLeft,
 } from 'lucide-react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Badge } from './ui/badge';
-import { Textarea } from './ui/textarea';
-import { Progress } from './ui/progress';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Badge } from '../components/ui/badge';
+import { Textarea } from '../components/ui/textarea';
+import { Progress } from '../components/ui/progress';
 import axios from 'axios';
 import client from '../api/client';
 import {
