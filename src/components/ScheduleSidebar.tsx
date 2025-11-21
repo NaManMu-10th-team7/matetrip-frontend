@@ -10,6 +10,7 @@ import {
   Car,
   ArrowLeftToLine,
   ArrowRightToLine,
+  Trash2, // Import Trash2 icon
 } from 'lucide-react';
 import {
   SortableContext,
@@ -76,35 +77,40 @@ function PoiItem({
     <li
       ref={setNodeRef}
       style={style}
-      className={`flex items-center text-sm p-2 rounded-md cursor-pointer ${
+      className={`flex items-center text-sm p-2 rounded-md cursor-pointer border border-gray-200 ${
+        // 테두리 추가
         isHovered ? 'bg-blue-100' : 'hover:bg-gray-100'
       }`}
       onClick={() => onPoiClick(poi)}
       onMouseEnter={() => onPoiHover(poi.id)}
       onMouseLeave={() => onPoiHover(null)}
     >
+      {/* 드래그앤드롭 아이콘 */}
+      <div
+        {...attributes}
+        {...listeners}
+        className="touch-none p-1 cursor-grab flex-shrink-0"
+      >
+        <GripVertical className="w-6 h-6 text-gray-400" />
+      </div>
+
+      {/* 장소 이미지 또는 카테고리 아이콘 */}
       {poi.image_url ? (
         <img
           src={poi.image_url}
           alt={poi.placeName}
-          className="w-12 h-12 rounded-md object-cover mr-3 flex-shrink-0"
+          className="w-12 h-12 rounded-md object-cover ml-2 mr-3 flex-shrink-0"
         />
       ) : (
-        <div className="w-12 h-12 rounded-md bg-gray-200 flex items-center justify-center mr-3 flex-shrink-0">
+        <div className="w-12 h-12 rounded-md bg-gray-200 flex items-center justify-center ml-2 mr-3 flex-shrink-0">
           <CategoryIcon
             category={poi.categoryName}
             className="w-6 h-6 text-gray-500"
           />
         </div>
       )}
+
       <div className="flex items-center flex-grow min-w-0">
-        <div
-          {...attributes}
-          {...listeners}
-          className="touch-none p-1 cursor-grab"
-        >
-          <GripVertical className="w-4 h-4 text-gray-400" />
-        </div>
         {color && index !== undefined && (
           <span
             className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full text-white text-sm mr-2"
@@ -121,7 +127,7 @@ function PoiItem({
         onClick={handleDeleteClick}
         className="w-8 h-8 p-0 flex-shrink-0"
       >
-        <X className="w-4 h-4 text-gray-500" />
+        <Trash2 className="w-4 h-4 text-gray-500" />
       </Button>
     </li>
   );
@@ -146,7 +152,7 @@ function MarkerStorage({
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
-    <div ref={setNodeRef} className="p-3 border-b">
+    <div ref={setNodeRef} className="px-6 py-4 border rounded-lg bg-slate-50">
       <div className="flex justify-between items-center mb-2">
         <div className="flex items-center gap-2">
           <MapPin className="w-5 h-5 text-gray-600" />
@@ -154,13 +160,13 @@ function MarkerStorage({
         </div>
         <Button
           variant="ghost"
-          size="icon"
+          className="size-[28px]"
           onClick={() => setIsCollapsed(!isCollapsed)}
         >
           {isCollapsed ? (
-            <ChevronDown className="h-4 w-4" />
+            <ChevronDown className="size-[28px]" />
           ) : (
-            <ChevronUp className="h-4 w-4" />
+            <ChevronUp className="size-[28px]" />
           )}
         </Button>
       </div>
@@ -234,45 +240,45 @@ function DayItineraryItem({
   }`;
 
   return (
-    <div className="border-b pb-2 px-3">
+    <div className="border px-6 py-4 rounded-lg bg-slate-50">
       <div
         ref={setNodeRef}
         className="flex items-center justify-between gap-2 "
       >
+        {/* 왼쪽 영역: 접기/펴기 버튼과 날짜 라벨 */}
         <div className="flex items-center gap-2 flex-shrink min-w-0 ">
+          <Button
+            variant="ghost"
+            className="size-[28px]"
+            onClick={onToggleCollapse}
+          >
+            {isCollapsed ? (
+              <ChevronDown className="size-[28px]" />
+            ) : (
+              <ChevronUp className="size-[28px]" />
+            )}
+          </Button>
+          <h3 className="text-base font-bold truncate">{layer.label}</h3>
           <SimpleToggle
             checked={isDayVisible}
             onChange={(checked) => onDayVisibilityChange(layer.id, checked)}
           />
-          <h3 className="text-base font-bold truncate">{layer.label}</h3>
         </div>
+        {/* 오른쪽 영역: 경로 최적화 버튼과 날짜 가시성 토글 */}
         <div className="flex items-center gap-1 flex-shrink-0">
           {pois.length >= 2 && (
             <Button
               variant="outline"
-              size="sm"
-              className="h-7 text-sm "
+              className="text-sm rounded-full hover:bg-transparent hover:border-2 hover:border-black"
               onClick={() => onOptimizeRoute(layer.id)}
             >
               경로 최적화
             </Button>
           )}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="flex-shrink-0 "
-            onClick={onToggleCollapse}
-          >
-            {isCollapsed ? (
-              <ChevronDown className="h-4 w-4" />
-            ) : (
-              <ChevronUp className="h-4 w-4" />
-            )}
-          </Button>
         </div>
       </div>
 
-      <div className={`mt-2 ${containerBodyClasses}`}>
+      <div className={`mt-6 ${containerBodyClasses}`}>
         {!isCollapsed && (
           <SortableContext
             id={`${layer.id}-sortable`}
@@ -449,13 +455,12 @@ export function ScheduleSidebar({
     }
   };
 
-  // [수정] position이 'hidden'일 때 null을 반환하는 대신, CSS로 숨깁니다.
   return (
     <div
       className={`absolute top-0 h-full w-1/2 bg-white border-l border-gray-200 shadow-lg transition-all duration-300 ease-in-out z-20 rounded-lg overflow-hidden ${getPositionClasses()}`}
     >
       <div className="flex flex-col h-full">
-        <div className="flex items-center justify-between px-6 py-4 border-b">
+        <div className="flex items-center justify-between px-10 py-4 border-b">
           <div className="flex items-center gap-2">
             {position === 'overlay' ? (
               <Button variant="ghost" size="icon" onClick={onDock}>
@@ -472,7 +477,7 @@ export function ScheduleSidebar({
             <X className="w-5 h-5" />
           </Button>
         </div>
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto px-10 py-4 space-y-4">
           <MarkerStorage
             pois={enrichedMarkedPois}
             onPoiClick={onPoiClick}
@@ -481,8 +486,8 @@ export function ScheduleSidebar({
             removeSchedule={removeSchedule}
             hoveredPoiId={hoveredPoiId}
           />
-          <div className="p-3 space-y-3 flex flex-col">
-            <div className="flex items-center justify-between p-2 border-b">
+          <div className="flex flex-col">
+            <div className="flex items-center justify-between px-0 py-2">
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-bold">전체 경로</h3>
                 <SimpleToggle
@@ -494,34 +499,35 @@ export function ScheduleSidebar({
               </div>
               <Button
                 variant="link"
-                size="sm"
-                className="text-base text-gray-500"
+                className="text-base text-gray-500 p-0 h-auto"
                 onClick={handleToggleAllCollapse}
               >
-                <ChevronsUpDown className="w-3.5 h-3.5 mr-1" />
+                <ChevronsUpDown className="size-[28px] mr-1" />
                 {collapsedDayIds.size === dayLayers.length
                   ? '일정 모두 펴기'
                   : '일정 모두 접기'}
               </Button>
             </div>
-            {dayLayers.map((layer) => (
-              <DayItineraryItem
-                key={layer.id}
-                layer={layer}
-                itinerary={enrichedItinerary}
-                visibleDayIds={visibleDayIds}
-                routeSegmentsByDay={routeSegmentsByDay}
-                onDayVisibilityChange={onDayVisibilityChange}
-                onOptimizeRoute={onOptimizeRoute}
-                onPoiClick={onPoiClick}
-                onPoiHover={onPoiHover}
-                unmarkPoi={unmarkPoi}
-                removeSchedule={removeSchedule}
-                isCollapsed={collapsedDayIds.has(layer.id)}
-                onToggleCollapse={() => handleToggleDayCollapse(layer.id)}
-                hoveredPoiId={hoveredPoiId}
-              />
-            ))}
+            <div className="pt-4 space-y-4">
+              {dayLayers.map((layer) => (
+                <DayItineraryItem
+                  key={layer.id}
+                  layer={layer}
+                  itinerary={enrichedItinerary}
+                  visibleDayIds={visibleDayIds}
+                  routeSegmentsByDay={routeSegmentsByDay}
+                  onDayVisibilityChange={onDayVisibilityChange}
+                  onOptimizeRoute={onOptimizeRoute}
+                  onPoiClick={onPoiClick}
+                  onPoiHover={onPoiHover}
+                  unmarkPoi={unmarkPoi}
+                  removeSchedule={removeSchedule}
+                  isCollapsed={collapsedDayIds.has(layer.id)}
+                  onToggleCollapse={() => handleToggleDayCollapse(layer.id)}
+                  hoveredPoiId={hoveredPoiId}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </div>
