@@ -9,6 +9,7 @@ import {
   Clock,
   Car,
   ArrowLeftToLine,
+  FileText,
   ArrowRightToLine,
   Trash2, // Import Trash2 icon
 } from 'lucide-react';
@@ -24,14 +25,13 @@ import type { DayLayer, RouteSegment } from '../types/map';
 import { Button } from './ui/button';
 import { SimpleToggle } from './ui/SimpleToggle';
 import { CategoryIcon } from './CategoryIcon';
-import type { AiPlace } from '../hooks/useChatSocket';
 import { usePlaceStore } from '../store/placeStore';
 
 interface PoiItemProps {
-  poi: Poi & { image_url?: string };
+  poi: Poi & { image_url?: string; summary?: string };
   color?: string;
   index?: number;
-  onPoiClick: (poi: Poi | AiPlace) => void;
+  onShowDetail: (poi: Poi & { image_url?: string; summary?: string }) => void;
   onPoiHover: (poiId: string | null) => void;
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
@@ -42,7 +42,7 @@ function PoiItem({
   poi,
   color,
   index,
-  onPoiClick,
+  onShowDetail,
   onPoiHover,
   unmarkPoi,
   removeSchedule,
@@ -77,11 +77,10 @@ function PoiItem({
     <li
       ref={setNodeRef}
       style={style}
-      className={`flex items-center text-sm p-2 rounded-md cursor-pointer border border-gray-200 ${
+      className={`flex items-center text-sm p-2 rounded-md border border-gray-200 ${
         // 테두리 추가
         isHovered ? 'bg-blue-100' : 'hover:bg-gray-100'
       }`}
-      onClick={() => onPoiClick(poi)}
       onMouseEnter={() => onPoiHover(poi.id)}
       onMouseLeave={() => onPoiHover(null)}
     >
@@ -128,28 +127,41 @@ function PoiItem({
           )}
         </div>
       </div>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={handleDeleteClick}
-        className="w-8 h-8 p-0 flex-shrink-0"
-      >
-        <Trash2 className="w-4 h-4 text-gray-500" />
-      </Button>
+      <div className="flex items-center gap-1 ml-2 flex-shrink-0">
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7 text-xs rounded-full hover:bg-transparent hover:border-2 hover:border-black"
+          onClick={(e) => {
+            e.stopPropagation();
+            onShowDetail(poi);
+          }}
+        >
+          상세보기
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleDeleteClick}
+          className="w-8 h-8 p-0"
+        >
+          <Trash2 className="w-4 h-4 text-gray-500" />
+        </Button>
+      </div>
     </li>
   );
 }
 
 function MarkerStorage({
   pois,
-  onPoiClick,
+  onShowDetail,
   onPoiHover,
   unmarkPoi,
   removeSchedule,
   hoveredPoiId,
 }: {
-  pois: (Poi & { image_url?: string })[];
-  onPoiClick: (poi: Poi | AiPlace) => void;
+  pois: (Poi & { image_url?: string; summary?: string })[];
+  onShowDetail: (poi: Poi & { image_url?: string; summary?: string }) => void;
   onPoiHover: (poiId: string | null) => void;
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
@@ -189,7 +201,7 @@ function MarkerStorage({
                 <PoiItem
                   key={poi.id}
                   poi={poi}
-                  onPoiClick={onPoiClick}
+                  onShowDetail={onShowDetail}
                   onPoiHover={onPoiHover}
                   unmarkPoi={unmarkPoi}
                   removeSchedule={removeSchedule}
@@ -215,7 +227,7 @@ function DayItineraryItem({
   routeSegmentsByDay,
   onDayVisibilityChange,
   onOptimizeRoute,
-  onPoiClick,
+  onShowDetail,
   onPoiHover,
   unmarkPoi,
   removeSchedule,
@@ -224,12 +236,12 @@ function DayItineraryItem({
   hoveredPoiId,
 }: {
   layer: DayLayer;
-  itinerary: Record<string, (Poi & { image_url?: string })[]>;
+  itinerary: Record<string, (Poi & { image_url?: string; summary?: string })[]>;
   visibleDayIds: Set<string>;
   routeSegmentsByDay: Record<string, RouteSegment[]>;
   onDayVisibilityChange: (dayId: string, isVisible: boolean) => void;
   onOptimizeRoute: (dayId: string) => void;
-  onPoiClick: (poi: Poi | AiPlace) => void;
+  onShowDetail: (poi: Poi & { image_url?: string; summary?: string }) => void;
   onPoiHover: (poiId: string | null) => void;
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
@@ -300,7 +312,7 @@ function DayItineraryItem({
                       poi={poi}
                       color={layer.color}
                       index={index}
-                      onPoiClick={onPoiClick}
+                      onShowDetail={onShowDetail}
                       onPoiHover={onPoiHover}
                       unmarkPoi={unmarkPoi}
                       removeSchedule={removeSchedule}
@@ -351,6 +363,69 @@ function DayItineraryItem({
   );
 }
 
+function PoiDetailPanel({
+  poi,
+  onClose,
+}: {
+  poi: (Poi & { image_url?: string; summary?: string }) | null;
+  onClose: () => void;
+}) {
+  const isVisible = poi !== null;
+
+  return (
+    <div
+      className={`absolute top-0 left-0 w-full h-full bg-white z-30 transition-transform duration-300 ease-in-out ${
+        isVisible ? 'translate-x-0' : 'translate-x-full'
+      }`}
+    >
+      <div className="flex flex-col h-full">
+        <div className="flex items-center justify-start px-2 py-2 border-b">
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <X className="w-5 h-5" />
+          </Button>
+        </div>
+        {poi && (
+          <div className="flex-1 overflow-y-auto px-8 py-8 space-y-4">
+            <div className="mb-6">
+              <h3 className="text-2xl font-bold">{poi.placeName}</h3>
+              {poi.categoryName && (
+                <div className="flex items-center gap-2 text-md text-gray-500 mt-1">
+                  <CategoryIcon
+                    category={poi.categoryName}
+                    className="w-5 h-5"
+                  />
+                  <span>{poi.categoryName}</span>
+                </div>
+              )}
+            </div>
+
+            {poi.image_url && (
+              <img
+                src={poi.image_url}
+                alt={poi.placeName}
+                className="w-full h-[40vh] object-cover rounded-lg"
+              />
+            )}
+
+            <div className="text-md text-gray-800 space-y-3 pt-2">
+              <div className="flex items-start gap-3">
+                <MapPin className="w-5 h-5 text-gray-600 mt-1 flex-shrink-0" />
+                <span>{poi.address}</span>
+              </div>
+              {poi.summary && (
+                <div className="flex items-start gap-3">
+                  <FileText className="w-5 h-5 text-gray-600 mt-1 flex-shrink-0" />
+                  <p className="leading-relaxed">{poi.summary}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 interface ScheduleSidebarProps {
   position: 'hidden' | 'overlay' | 'docked';
   onClose: () => void;
@@ -361,7 +436,6 @@ interface ScheduleSidebarProps {
   markedPois: Poi[];
   unmarkPoi: (poiId: string | number) => void;
   removeSchedule: (poiId: string, planDayId: string) => void;
-  onPoiClick: (poi: Poi | AiPlace) => void;
   onPoiHover: (poiId: string | null) => void;
   routeSegmentsByDay: Record<string, RouteSegment[]>;
   onOptimizeRoute: (dayId: string) => void;
@@ -382,7 +456,6 @@ export function ScheduleSidebar({
   markedPois,
   unmarkPoi,
   removeSchedule,
-  onPoiClick,
   onPoiHover,
   routeSegmentsByDay,
   onOptimizeRoute,
@@ -395,6 +468,19 @@ export function ScheduleSidebar({
     new Set()
   );
 
+  const [selectedPoiForDetail, setSelectedPoiForDetail] = useState<
+    (Poi & { image_url?: string; summary?: string }) | null
+  >(null);
+
+  const handlePoiDetailClick = (
+    poi: Poi & { image_url?: string; summary?: string }
+  ) => {
+    setSelectedPoiForDetail(poi);
+  };
+
+  const handleCloseDetailPanel = () => {
+    setSelectedPoiForDetail(null);
+  };
   const placeCache = usePlaceStore((state) => state.placesById);
 
   const poisWithEnhancedData = useMemo(() => {
@@ -406,6 +492,7 @@ export function ScheduleSidebar({
           ...poi,
           categoryName: poi.categoryName || cachedPlace.category,
           image_url: cachedPlace.image_url,
+          summary: cachedPlace.summary,
         };
       }
       return poi;
@@ -421,7 +508,10 @@ export function ScheduleSidebar({
   );
 
   const enrichedItinerary = useMemo(() => {
-    const newItinerary: Record<string, (Poi & { image_url?: string })[]> = {};
+    const newItinerary: Record<
+      string,
+      (Poi & { image_url?: string; summary?: string })[]
+    > = {};
     dayLayers.forEach((layer) => {
       newItinerary[layer.id] = poisWithEnhancedData
         .filter((p) => p.planDayId === layer.id && p.status === 'SCHEDULED')
@@ -487,7 +577,7 @@ export function ScheduleSidebar({
         <div className="flex-1 overflow-y-auto px-10 py-4 space-y-4">
           <MarkerStorage
             pois={enrichedMarkedPois}
-            onPoiClick={onPoiClick}
+            onShowDetail={handlePoiDetailClick}
             onPoiHover={onPoiHover}
             unmarkPoi={unmarkPoi}
             removeSchedule={removeSchedule}
@@ -525,7 +615,7 @@ export function ScheduleSidebar({
                   routeSegmentsByDay={routeSegmentsByDay}
                   onDayVisibilityChange={onDayVisibilityChange}
                   onOptimizeRoute={onOptimizeRoute}
-                  onPoiClick={onPoiClick}
+                  onShowDetail={handlePoiDetailClick}
                   onPoiHover={onPoiHover}
                   unmarkPoi={unmarkPoi}
                   removeSchedule={removeSchedule}
@@ -537,6 +627,10 @@ export function ScheduleSidebar({
             </div>
           </div>
         </div>
+        <PoiDetailPanel
+          poi={selectedPoiForDetail}
+          onClose={handleCloseDetailPanel}
+        />
       </div>
     </div>
   );
