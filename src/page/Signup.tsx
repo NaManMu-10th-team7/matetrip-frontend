@@ -7,6 +7,7 @@ import {
   Car,
   Sparkles,
   User,
+  MapPin,
   Utensils,
   ArrowRight,
   Compass,
@@ -49,7 +50,7 @@ const CATEGORIZED_KEYWORDS: CategoryItem[] = [
   {
     id: 'place',
     title: '장소',
-    icon: Map,
+    icon: MapPin,
     question: '어떤 여행지를 좋아하시나요?',
     items: [
       '도시',
