@@ -100,33 +100,33 @@ export function PlaceRecommendationSection({
     onPlaceClick(placeId, place);
   };
 
-  const handleAllViewClick = () => {
-    if (!isLoggedIn) {
-      navigate('/login');
-      return;
-    }
-    // TODO: Navigate to place recommendation page when implemented
-  };
+  // const handleAllViewClick = () => {
+  //   if (!isLoggedIn) {
+  //     navigate('/login');
+  //     return;
+  //   }
+  //   // TODO: Navigate to place recommendation page when implemented
+  // };
 
   return (
     <section className="mb-8 md:mb-10 lg:mb-12">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3">
         <div>
-          <h2 className="text-xl md:text-xl font-bold text-gray-900">
+          <h2 className="text-2xl md:text-xl font-bold text-gray-900">
             여기 갈래? 말래?
           </h2>
           <p className="text-xs md:text-sm text-gray-600 mt-1">
             MateTrip AI가 추천하는 성향 기반 장소 추천
           </p>
         </div>
-        <Button
-          onClick={handleAllViewClick}
-          variant="ghost"
-          disabled={true}
-          className="text-sm self-start sm:self-auto"
-        >
-          View All
-        </Button>
+        {/* <Button */}
+        {/*   onClick={handleAllViewClick} */}
+        {/*   variant="ghost" */}
+        {/*   disabled={true} */}
+        {/*   className="text-sm self-start sm:self-auto" */}
+        {/* > */}
+        {/*   View All */}
+        {/* </Button> */}
       </div>
 
       {!isLoggedIn ? (
@@ -170,8 +170,12 @@ export function PlaceRecommendationSection({
               category={place.category}
               summary={place.summary}
               recommendationReasonText={place.recommendationReason?.message} // message 전달
-              referencedPlaceInReason={place.recommendationReason?.referencePlace} // referencePlace 전달
-              onReferencePlaceClick={(placeId) => handlePlaceClick(placeId, place)} // 클릭 핸들러 전달
+              referencedPlaceInReason={
+                place.recommendationReason?.referencePlace
+              } // referencePlace 전달
+              onReferencePlaceClick={(placeId) =>
+                handlePlaceClick(placeId, place)
+              } // 클릭 핸들러 전달
               onClick={() => handlePlaceClick(place.id, place)}
             />
           ))}

@@ -108,6 +108,7 @@ export function PostDetail({
       } | null
     >
   >({});
+  const [invitedUserIds, setInvitedUserIds] = useState<Set<string>>(new Set());
 
   const fetchPostDetail = useCallback(async () => {
     if (!postId) return;
@@ -409,7 +410,8 @@ export function PostDetail({
   } = {
     text: '로그인 후 신청 가능',
     disabled: true,
-    className: 'w-full',
+    className:
+      'w-full rounded-full border border-gray-300 bg-gray-100 text-gray-400 px-6 py-6 text-lg',
     icon: null,
   };
 
@@ -419,7 +421,7 @@ export function PostDetail({
         text: '워크스페이스 입장',
         disabled: false,
         className:
-          'w-full rounded-full border border-black bg-transparent text-black hover:bg-black hover:text-white px-6 py-4 text-lg',
+          'w-full rounded-full border border-black bg-transparent text-black hover:bg-black hover:text-white px-6 py-6 text-lg',
         icon: <DoorOpen className="w-5 h-5 mr-2" />, // 아이콘 추가
       };
     } else if (userParticipation) {
@@ -429,7 +431,7 @@ export function PostDetail({
             text: '워크스페이스 입장',
             disabled: false,
             className:
-              'w-full rounded-full border border-black bg-transparent text-black hover:bg-black hover:text-white px-6 py-4 text-lg',
+              'w-full rounded-full border border-black bg-transparent text-black hover:bg-black hover:text-white px-6 py-6 text-lg',
             icon: <DoorOpen className="w-5 h-5 mr-2" />, // 아이콘 추가
           };
           break;
@@ -437,7 +439,8 @@ export function PostDetail({
           buttonConfig = {
             text: '이미 신청한 동행입니다',
             disabled: true,
-            className: 'w-full bg-gray-400',
+            className:
+              'w-full rounded-full border border-gray-300 bg-gray-100 text-gray-400 px-6 py-6 text-lg',
             icon: null,
           };
           break;
@@ -445,7 +448,8 @@ export function PostDetail({
           buttonConfig = {
             text: '거절된 동행입니다',
             disabled: true,
-            className: 'w-full bg-gray-400',
+            className:
+              'w-full rounded-full border border-gray-300 bg-gray-100 text-gray-400 px-6 py-6 text-lg',
             icon: null,
           };
           break;
@@ -454,7 +458,8 @@ export function PostDetail({
       buttonConfig = {
         text: '모집이 마감되었습니다',
         disabled: true,
-        className: 'w-full bg-gray-400',
+        className:
+          'w-full rounded-full border border-gray-300 bg-gray-100 text-gray-400 px-6 py-6 text-lg',
         icon: null,
       };
     } else {
@@ -462,7 +467,7 @@ export function PostDetail({
         text: '동행 신청하기',
         disabled: false,
         className:
-          'w-full rounded-full border border-black bg-transparent text-black hover:bg-black hover:text-white px-6 py-4 text-lg',
+          'w-full rounded-full border border-black bg-transparent text-black hover:bg-black hover:text-white px-6 py-6 text-lg',
         icon: null,
       };
     }
@@ -535,7 +540,7 @@ export function PostDetail({
                       <MoreVertical className="w-7 h-7" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuContent align="end" className="w-48 z-50 bg-white">
                     <DropdownMenuItem
                       className="cursor-pointer"
                       onClick={() => onEditPost(post)}
@@ -630,7 +635,7 @@ export function PostDetail({
                       <Button
                         size="sm"
                         variant="outline"
-                        className="flex-shrink-0"
+                        className="flex-shrink-0 rounded-full"
                         onClick={() => {
                           console.log(
                             '🔵 [PostDetail] View writer profile clicked.',
@@ -713,7 +718,7 @@ export function PostDetail({
                         : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                     }`}
                   >
-                    AI 추천
+                    AI 추천 동행
                   </button>
                 )}
               </nav>
@@ -742,56 +747,113 @@ export function PostDetail({
                     </h3>
                     <div className="space-y-3">
                       {approvedParticipants.length > 0 ? (
-                        approvedParticipants.map((p) => (
-                          <div
-                            key={p.id}
-                            className="flex items-center gap-3 p-3 rounded-xl border"
-                          >
-                            <ImageWithFallback
-                              src={
-                                (p.requester.profile.profileImageId
-                                  ? (participantProfileUrls[
-                                      p.requester.profile.profileImageId
-                                    ] ?? null)
-                                  : null) ??
-                                `https://ui-avatars.com/api/?name=${p.requester.profile.nickname}&background=random`
-                              }
-                              alt={p.requester.profile.nickname}
-                              className="w-10 h-10 rounded-full object-cover"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <span className="text-gray-900 font-semibold">
-                                {p.requester.profile.nickname}
-                              </span>
-                              <div className="flex items-center gap-1 text-sm text-gray-600">
-                                <Thermometer className="w-5 h-5" />
-                                <span>
-                                  {formatMannerTemperature(p.requester.profile)}
-                                </span>
-                              </div>
-                            </div>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-xs h-7"
-                              onClick={() => {
-                                console.log(
-                                  '🔵 [PostDetail] View approved participant profile clicked.',
-                                  {
-                                    requesterId: p.requester.id,
+                        approvedParticipants.map((p) => {
+                          const matchInfo = post.matchResult?.find(
+                            (m) => m.userId === p.requester.id
+                          );
+                          return (
+                            <div key={p.id} className="rounded-xl border">
+                              <div className="flex items-center gap-3 p-3">
+                                <ImageWithFallback
+                                  src={
+                                    (p.requester.profile.profileImageId
+                                      ? (participantProfileUrls[
+                                          p.requester.profile.profileImageId
+                                        ] ?? null)
+                                      : null) ??
+                                    `https://ui-avatars.com/api/?name=${p.requester.profile.nickname}&background=random`
                                   }
-                                );
-                                if (p.requester.id) {
-                                  onViewProfile(p.requester.id);
-                                } else {
-                                  console.warn('⚠️ Requester ID is missing!');
-                                }
-                              }}
-                            >
-                              프로필 보기
-                            </Button>
-                          </div>
-                        ))
+                                  alt={p.requester.profile.nickname}
+                                  className="w-10 h-10 rounded-full object-cover"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex justify-between items-start">
+                                    <div>
+                                      <span className="text-gray-900 font-semibold">
+                                        {p.requester.profile.nickname}
+                                      </span>
+                                      {isAuthor && matchInfo && (
+                                        <p className="text-sm text-gray-600">
+                                          매칭률:{' '}
+                                          {Math.round(matchInfo.score * 100)}%
+                                        </p>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-1 text-sm text-gray-600 flex-shrink-0 ml-2">
+                                      {
+                                        <>
+                                          <Thermometer className="w-5 h-5" />
+                                          <span>
+                                            {formatMannerTemperature(
+                                              p.requester.profile
+                                            )}
+                                          </span>
+                                        </>
+                                      }
+                                    </div>
+                                  </div>
+                                  <div className="flex justify-between items-end mt-2">
+                                    <div className="flex flex-wrap gap-1">
+                                      {p.requester.profile.travelStyles
+                                        ?.slice(0, 3)
+                                        .map((style) => (
+                                          <Badge
+                                            key={style}
+                                            variant="secondary"
+                                            className="rounded-full px-2 py-0.5 text-xs bg-gray-100"
+                                          >
+                                            {translateKeyword(style)}
+                                          </Badge>
+                                        ))}
+                                    </div>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="text-xs h-7 rounded-full"
+                                      onClick={() => {
+                                        console.log(
+                                          '🔵 [PostDetail] View approved participant profile clicked.',
+                                          {
+                                            requesterId: p.requester.id,
+                                          }
+                                        );
+                                        if (p.requester.id) {
+                                          onViewProfile(p.requester.id);
+                                        } else {
+                                          console.warn(
+                                            '⚠️ Requester ID is missing!'
+                                          );
+                                        }
+                                      }}
+                                    >
+                                      프로필 보기
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                              {isAuthor && matchInfo && (
+                                <div className="p-3 pt-2">
+                                  <div className="flex flex-wrap gap-1">
+                                    {[
+                                      ...(matchInfo.overlappingTravelStyles ||
+                                        []),
+                                      ...(matchInfo.overlappingTendencies ||
+                                        []),
+                                    ].map((keyword) => (
+                                      <Badge
+                                        key={keyword}
+                                        variant="secondary"
+                                        className="rounded-full px-2 py-0.5 text-xs bg-blue-50 text-blue-700 border border-blue-200"
+                                      >
+                                        {translateKeyword(keyword)}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })
                       ) : (
                         <p className="text-gray-500 text-sm p-4 rounded-xl border text-center">
                           아직 확정된 동행이 없습니다.
@@ -807,96 +869,152 @@ export function PostDetail({
                     </h3>
                     <div className="space-y-3">
                       {pendingRequests.length > 0 ? (
-                        pendingRequests.map((request) => (
-                          <div
-                            key={request.id}
-                            className="p-3 rounded-xl border"
-                          >
-                            <div className="flex items-center gap-3 mb-2">
-                              <ImageWithFallback
-                                src={
-                                  (request.requester.profile.profileImageId
-                                    ? (participantProfileUrls[
-                                        request.requester.profile.profileImageId
-                                      ] ?? null)
-                                    : null) ??
-                                  `https://ui-avatars.com/api/?name=${request.requester.profile.nickname}&background=random`
-                                }
-                                alt={request.requester.profile.nickname}
-                                className="w-10 h-10 rounded-full object-cover"
-                              />
-                              <div className="flex-1 min-w-0">
-                                <span className="text-gray-900 font-semibold">
-                                  {request.requester.profile.nickname}
-                                </span>
-                                <div className="flex items-center gap-1 text-sm text-gray-600">
-                                  <Thermometer className="w-5 h-5" />
-                                  <span>
-                                    {formatMannerTemperature(
-                                      request.requester.profile
-                                    )}
-                                  </span>
+                        pendingRequests.map((request) => {
+                          const matchInfo = post.matchResult?.find(
+                            (m) => m.userId === request.requester.id
+                          );
+                          return (
+                            <div key={request.id} className="rounded-xl border">
+                              <div className="flex items-center gap-3 p-3">
+                                <ImageWithFallback
+                                  src={
+                                    (request.requester.profile.profileImageId
+                                      ? (participantProfileUrls[
+                                          request.requester.profile
+                                            .profileImageId
+                                        ] ?? null)
+                                      : null) ??
+                                    `https://ui-avatars.com/api/?name=${request.requester.profile.nickname}&background=random`
+                                  }
+                                  alt={request.requester.profile.nickname}
+                                  className="w-10 h-10 rounded-full object-cover"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex justify-between items-start">
+                                    <div>
+                                      <span className="text-gray-900 font-semibold">
+                                        {request.requester.profile.nickname}
+                                      </span>
+                                      {isAuthor && matchInfo && (
+                                        <p className="text-sm text-gray-600">
+                                          매칭률:{' '}
+                                          {Math.round(matchInfo.score * 100)}%
+                                        </p>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-1 text-sm text-gray-600 flex-shrink-0 ml-2">
+                                      {
+                                        <>
+                                          <Thermometer className="w-5 h-5" />
+                                          <span>
+                                            {formatMannerTemperature(
+                                              request.requester.profile
+                                            )}
+                                          </span>
+                                        </>
+                                      }
+                                    </div>
+                                  </div>
+                                  <div className="flex justify-between items-end mt-2">
+                                    <div className="flex flex-wrap gap-1">
+                                      {request.requester.profile.travelStyles
+                                        ?.slice(0, 3)
+                                        .map((style) => (
+                                          <Badge
+                                            key={style}
+                                            variant="secondary"
+                                            className="rounded-full px-2 py-0.5 text-xs bg-gray-100"
+                                          >
+                                            {translateKeyword(style)}
+                                          </Badge>
+                                        ))}
+                                    </div>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="text-xs h-7 rounded-full"
+                                      onClick={() => {
+                                        console.log(
+                                          '🔵 [PostDetail] View pending participant profile clicked.',
+                                          {
+                                            requesterId: request.requester.id,
+                                          }
+                                        );
+                                        if (request.requester.id) {
+                                          onViewProfile(request.requester.id);
+                                        } else {
+                                          console.warn(
+                                            '⚠️ Requester ID is missing!'
+                                          );
+                                        }
+                                      }}
+                                    >
+                                      프로필 보기
+                                    </Button>
+                                  </div>
                                 </div>
                               </div>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="text-xs h-7"
-                                onClick={() => {
-                                  console.log(
-                                    '🔵 [PostDetail] View pending participant profile clicked.',
-                                    {
-                                      requesterId: request.requester.id,
-                                    }
-                                  );
-                                  if (request.requester.id) {
-                                    onViewProfile(request.requester.id);
-                                  } else {
-                                    console.warn('⚠️ Requester ID is missing!');
-                                  }
-                                }}
-                              >
-                                프로필 보기
-                              </Button>
-                            </div>
-                            {isAuthor && (
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  onClick={() =>
-                                    handleAcceptRequest(request.id)
-                                  }
-                                  className="flex-1 gap-1 bg-black text-white hover:bg-gray-800"
-                                >
-                                  <Check className="w-5 h-5" />
-                                  승인
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() =>
-                                    handleRejectRequest(request.id)
-                                  }
-                                  className="flex-1 gap-1"
-                                >
-                                  <X className="w-5 h-5" />
-                                  거절
-                                </Button>
+                              {isAuthor && matchInfo && (
+                                <div className="p-3 pt-0">
+                                  <div className="flex flex-wrap gap-1">
+                                    {[
+                                      ...(matchInfo.overlappingTravelStyles ||
+                                        []),
+                                      ...(matchInfo.overlappingTendencies ||
+                                        []),
+                                    ].map((keyword) => (
+                                      <Badge
+                                        key={keyword}
+                                        variant="secondary"
+                                        className="rounded-full px-2 py-0.5 text-xs bg-blue-50 text-blue-700 border border-blue-200"
+                                      >
+                                        {translateKeyword(keyword)}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              <div className="p-3 pt-0">
+                                {isAuthor && (
+                                  <div className="flex gap-2">
+                                    <Button
+                                      size="sm"
+                                      onClick={() =>
+                                        handleAcceptRequest(request.id)
+                                      }
+                                      className="flex-1 gap-1 bg-black text-white hover:bg-gray-800 rounded-full"
+                                    >
+                                      <Check className="w-5 h-5" />
+                                      승인
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() =>
+                                        handleRejectRequest(request.id)
+                                      }
+                                      className="flex-1 gap-1 rounded-full"
+                                    >
+                                      <X className="w-5 h-5" />
+                                      거절
+                                    </Button>
+                                  </div>
+                                )}
+                                {user?.userId === request.requester.id && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="w-full text-sm text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300 rounded-full"
+                                    onClick={() => setCancelModalOpen(true)}
+                                  >
+                                    <X className="w-5 h-5 mr-1" />
+                                    동행 신청 취소
+                                  </Button>
+                                )}
                               </div>
-                            )}
-                            {user?.userId === request.requester.id && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="w-full text-sm text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300"
-                                onClick={() => setCancelModalOpen(true)}
-                              >
-                                <X className="w-5 h-5 mr-1" />
-                                동행 신청 취소
-                              </Button>
-                            )}
-                          </div>
-                        ))
+                            </div>
+                          );
+                        })
                       ) : (
                         <p className="text-gray-500 text-sm p-4 rounded-xl border text-center">
                           대기중인 동행이 없습니다.
@@ -915,7 +1033,7 @@ export function PostDetail({
                       AI 추천 동행 (상위 {Math.min(post.matchResult.length, 3)}
                       명)
                     </h3>
-                    <div className="space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {post.matchResult.slice(0, 3).map((candidate) => {
                         const recommendedProfile =
                           recommendedUserProfiles[candidate.userId];
@@ -923,53 +1041,92 @@ export function PostDetail({
                           recommendedProfile?.nickname ||
                           candidate.profile?.nickname ||
                           'user';
+                        const isInvited = invitedUserIds.has(candidate.userId);
                         return (
                           <div
                             key={candidate.userId}
-                            className="flex items-center gap-3 p-3 bg-white rounded-lg border"
+                            className="rounded-xl border bg-white overflow-hidden flex flex-col"
                           >
-                            <ImageWithFallback
-                              src={
-                                recommendedProfile?.imageUrl ||
-                                `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                                  fallbackAvatarName
-                                )}&background=random&rounded=true`
-                              }
-                              alt={fallbackAvatarName}
-                              className="w-10 h-10 rounded-full object-cover flex-shrink-0 bg-gray-100"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-gray-900 font-semibold">
-                                {recommendedProfile?.nickname ||
-                                  candidate.profile?.nickname ||
-                                  '사용자'}
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                매칭률: {Math.round(candidate.score * 100)}%
-                              </p>
-                            </div>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-xs h-7"
-                              onClick={() => {
-                                console.log(
-                                  '🔵 [PostDetail] View recommended user profile clicked.',
-                                  {
-                                    userId: candidate.userId,
+                            <div className="p-4 flex-1">
+                              <div className="flex items-start gap-4">
+                                <ImageWithFallback
+                                  src={
+                                    recommendedProfile?.imageUrl ||
+                                    `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                      fallbackAvatarName
+                                    )}&background=random&rounded=true`
                                   }
-                                );
-                                if (candidate.userId) {
-                                  onViewProfile(candidate.userId);
-                                } else {
-                                  console.warn(
-                                    '⚠️ Candidate userId is missing!'
+                                  alt={fallbackAvatarName}
+                                  className="w-12 h-12 rounded-full object-cover flex-shrink-0 bg-gray-100"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex justify-between items-center mb-1">
+                                    <p className="text-gray-900 font-semibold truncate">
+                                      {recommendedProfile?.nickname ||
+                                        candidate.profile?.nickname ||
+                                        '사용자'}
+                                    </p>
+                                  </div>
+                                  <p className="text-sm text-gray-500">
+                                    매칭률: {Math.round(candidate.score * 100)}%
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="mt-4">
+                                <div className="flex flex-wrap gap-1 h-12 overflow-hidden">
+                                  {[
+                                    ...(candidate.overlappingTravelStyles ||
+                                      []),
+                                    ...(candidate.overlappingTendencies || []),
+                                  ].map((keyword) => (
+                                    <Badge
+                                      key={keyword}
+                                      variant="secondary"
+                                      className="rounded-full px-2 py-0.5 text-xs bg-gray-100 text-gray-800"
+                                    >
+                                      {translateKeyword(keyword)}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="p-4 pt-0 space-y-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="w-full rounded-full"
+                                onClick={() => {
+                                  if (candidate.userId) {
+                                    onViewProfile(candidate.userId);
+                                  } else {
+                                    console.warn(
+                                      '⚠️ Candidate userId is missing!'
+                                    );
+                                  }
+                                }}
+                              >
+                                프로필 보기
+                              </Button>
+                              <Button
+                                size="sm"
+                                className={`w-full rounded-full ${
+                                  isInvited
+                                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                    : 'bg-indigo-500 text-white hover:bg-indigo-600 '
+                                }`}
+                                disabled={isInvited}
+                                onClick={() => {
+                                  console.log(
+                                    `Inviting user: ${candidate.userId}`
                                   );
-                                }
-                              }}
-                            >
-                              프로필 보기
-                            </Button>
+                                  toast.info(`${recommendedProfile?.nickname || '사용자'}님을 초대했습니다.`);
+                                  setInvitedUserIds((prev) => new Set(prev).add(candidate.userId));
+                                }}
+                              >
+                                <UserPlus className="w-4 h-4 mr-2" />
+                                {isInvited ? '초대 완료' : '초대하기'}
+                              </Button>
+                            </div>
                           </div>
                         );
                       })}

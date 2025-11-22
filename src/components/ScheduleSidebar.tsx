@@ -382,21 +382,23 @@ export function PoiDetailPanel({
   onClose,
   onNearbyPlaceSelect,
   onPoiSelect,
-  widthClass = 'w-full', // widthClass prop 추가 및 기본값 설정
-  onClick, // onClick prop 추가
+  widthClass = 'w-full',
+  onClick,
+  positioning = 'absolute',
 }: {
   placeId: string | null;
   isVisible: boolean;
   onClose: () => void;
   onNearbyPlaceSelect: (placeId: string) => void;
   onPoiSelect?: (place: Pick<Poi, 'latitude' | 'longitude'>) => void;
-  widthClass?: string; // widthClass prop 타입 정의
-  onClick?: (e: React.MouseEvent) => void; // onClick prop 타입 정의
+  widthClass?: string;
+  onClick?: (e: React.MouseEvent) => void;
+  positioning?: 'fixed' | 'absolute';
 }) {
   const { placeDetail, nearbyPlaces, isLoading, error } =
     usePlaceDetail(placeId);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<HTMLDivElement>(null); // 카카오맵을 렌더링할 div의 ref
+  const mapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (placeId && scrollContainerRef.current) {
@@ -404,35 +406,24 @@ export function PoiDetailPanel({
     }
   }, [placeId]);
 
-  // 디버깅을 위한 로그 추가
-  useEffect(() => {
-    console.log(`[PoiDetailPanel] isVisible changed: ${isVisible}`);
-    console.log(`[PoiDetailPanel] placeId changed: ${placeId}`);
-  }, [isVisible, placeId]);
-
-  // 카카오맵 초기화 및 마커 표시 로직
   useEffect(() => {
     if (isVisible && mapRef.current && placeDetail && window.kakao) {
       const { latitude, longitude } = placeDetail;
       if (latitude && longitude) {
         const options = {
           center: new window.kakao.maps.LatLng(latitude, longitude),
-          level: 3, // 지도의 확대 레벨
+          level: 3,
         };
         const map = new window.kakao.maps.Map(mapRef.current, options);
-
-        // 마커를 생성하고 지도에 표시합니다
         const marker = new window.kakao.maps.Marker({
           position: new window.kakao.maps.LatLng(latitude, longitude),
         });
         marker.setMap(map);
-
-        // 지도가 로드된 후 지도를 다시 그립니다 (크기 조정 문제 해결)
         map.relayout();
         map.setCenter(new window.kakao.maps.LatLng(latitude, longitude));
       }
     }
-  }, [isVisible, placeDetail]); // isVisible과 placeDetail이 변경될 때마다 실행
+  }, [isVisible, placeDetail]);
 
   const handleNearbyClick = (place: NearbyPlace) => {
     onNearbyPlaceSelect(place.id);
@@ -442,6 +433,8 @@ export function PoiDetailPanel({
   };
 
   const renderContent = () => {
+    if (!placeId) return null; // ID가 없으면 아무것도 렌더링하지 않음
+
     if (isLoading) {
       return (
         <div className="flex-1 overflow-y-auto px-8 py-8 space-y-4">
@@ -450,7 +443,7 @@ export function PoiDetailPanel({
           </div>
           <div className="w-full h-[40vh] bg-gray-200 rounded-lg animate-pulse"></div>
           <div className="space-y-3 pt-2 animate-pulse">
-            <div className="w-full h-[200px] bg-gray-200 rounded-lg"></div> {/* Map Skeleton */}
+            <div className="w-full h-[200px] bg-gray-200 rounded-lg"></div>
             <div className="flex items-start gap-3">
               <div className="w-5 h-5 bg-gray-200 rounded mt-1 flex-shrink-0"></div>
               <div className="h-5 bg-gray-200 rounded w-full"></div>
@@ -495,7 +488,6 @@ export function PoiDetailPanel({
         <div className="mb-6">
           <h3 className="text-2xl font-bold">{placeDetail.title}</h3>
         </div>
-
         {placeDetail.imageUrl && (
           <img
             src={placeDetail.imageUrl}
@@ -503,7 +495,6 @@ export function PoiDetailPanel({
             className="w-full h-[40vh] object-cover rounded-lg"
           />
         )}
-
         <div className="text-md text-gray-800 space-y-3 pt-2">
           <div className="flex items-start gap-3">
             <MapPin className="w-5 h-5 text-gray-600 mt-1 flex-shrink-0" />
@@ -516,10 +507,11 @@ export function PoiDetailPanel({
             </div>
           )}
         </div>
-        
-        {/* 카카오맵 렌더링 영역을 주소/요약 정보 아래, 주변 장소 위에 배치 */}
-        <div ref={mapRef} style={{ width: '100%', height: '200px' }} className="rounded-lg"></div>
-
+        <div
+          ref={mapRef}
+          style={{ width: '100%', height: '200px' }}
+          className="rounded-lg"
+        ></div>
         {nearbyPlaces.length > 0 && (
           <div className="pt-8">
             <h2 className="text-lg font-bold leading-5 mb-4">
@@ -549,15 +541,17 @@ export function PoiDetailPanel({
     );
   };
 
+  const positionClass =
+    positioning === 'fixed' ? 'fixed h-screen' : 'absolute h-full';
+
   return (
     <div
-      className={`absolute top-0 right-0 h-full bg-white z-30 ${widthClass}`}
+      className={`${positionClass} top-0 right-0 bg-white z-30 ${widthClass}`}
       style={{
         transform: isVisible ? 'translateX(0)' : 'translateX(100%)',
-        transition: 'transform 0.3s ease-in-out', // transition 속성 직접 명시
+        transition: 'transform 0.3s ease-in-out',
       }}
-      onClick={onClick} // onClick prop 적용
-      data-is-visible={isVisible} // 디버깅용 속성 추가
+      onClick={onClick}
     >
       <div className="flex flex-col h-full">
         <div className="flex items-center justify-start px-2 py-2 border-b">
@@ -769,7 +763,7 @@ export function ScheduleSidebar({
                   onShowDetail={handlePoiDetailClick}
                   onPoiHover={onPoiHover}
                   onPoiSelect={onPoiSelect}
-                  unmarkPoi={unmarkPoi}
+unmarkPoi={unmarkPoi}
                   removeSchedule={removeSchedule}
                   isCollapsed={collapsedDayIds.has(layer.id)}
                   onToggleCollapse={() => handleToggleDayCollapse(layer.id)}

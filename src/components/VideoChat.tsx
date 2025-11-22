@@ -30,26 +30,33 @@ import client from '../api/client';
 import type { ActiveMember } from '../types/member';
 
 // amazon-chime-sdk-js는 브라우저 환경에서 node의 global 객체를 기대하므로 안전하게 polyfill
-if (typeof window !== 'undefined' && typeof (window as any).global === 'undefined') {
+if (typeof (global as any) === 'undefined' && typeof window !== 'undefined') {
   (window as any).global = window;
 }
 
 interface Props {
   workspaceId: string;
   onClose: () => void;
-  activeMembers?: ActiveMember[];
+  activeMembers?: {
+    id: string;
+    name:string;
+    avatar?: string;
+    userId?: string;
+    profileId?: string;
+    email?: string;
+  }[];
 }
 
 interface JoinResponse {
-  meeting: any; // The Meeting type is not exported from the SDK
+  meeting: any; // `Meeting` 타입이 export되지 않으므로 any로 변경
   attendee: Attendee;
 }
 
 type MeetingStatus = 'idle' | 'joining' | 'joined' | 'error';
 
 interface TileInfo {
-  tileId: number;
-  attendeeId: string | null;
+  tileId: number | null; // null이 될 수 있으므로 타입 변경
+  attendeeId: string;
   name: string;
   externalUserId?: string;
   isLocal: boolean;
@@ -191,17 +198,21 @@ export const VideoChat = ({
         audioVideoDidStart: () => setStatus('joined'),
         videoTileDidUpdate: (tileState: VideoTileState) => {
           if (!tileState.boundAttendeeId || tileState.isContent) return;
+          
+          const boundAttendeeId = tileState.boundAttendeeId;
 
-          const isLocal = tileState.boundAttendeeId === meetingSession.configuration.credentials?.attendeeId;
+          const isLocal =
+            boundAttendeeId ===
+            meetingSession.configuration.credentials?.attendeeId;
           const name = resolveParticipantName(
-            tileState.boundAttendeeId,
-            tileState.boundExternalUserId ?? undefined,
+            boundAttendeeId,
+            tileState.boundExternalUserId,
             isLocal
           );
           const isVideoActive = !!tileState.active && !tileState.paused;
 
           if (!isLocal) {
-            attendeeNamesRef.current[tileState.boundAttendeeId] = name;
+            attendeeNamesRef.current[boundAttendeeId] = name;
             updateParticipantCount(attendeeNamesRef.current);
           }
 
@@ -210,8 +221,8 @@ export const VideoChat = ({
             return [
               ...others,
               {
-                tileId: tileState.tileId as number,
-                attendeeId: tileState.boundAttendeeId,
+                tileId: tileState.tileId,
+                attendeeId: boundAttendeeId,
                 name,
                 externalUserId: tileState.boundExternalUserId ?? undefined,
                 isLocal,
@@ -219,7 +230,7 @@ export const VideoChat = ({
               },
             ];
           });
-
+          
           if (tileState.tileId) {
             const videoEl = videoElementRefs.current[tileState.tileId];
             if (videoEl) {
@@ -258,7 +269,7 @@ export const VideoChat = ({
             ? {
                 [attendeeId]: resolveParticipantName(
                   attendeeId,
-                  externalUserId ?? externalMatch ?? undefined,
+                  externalUserId || externalMatch || undefined,
                   attendeeId === meetingSession.configuration.credentials?.attendeeId
                 ),
               }
@@ -376,12 +387,12 @@ export const VideoChat = ({
   const resolveParticipantName = useCallback(
     (
       attendeeId: string,
-      externalUserId: string | undefined,
+      externalUserId: string | undefined | null,
       isLocal: boolean
     ) => {
       if (isLocal) return localDisplayName;
 
-      const extName = nameFromExternal(externalUserId);
+      const extName = nameFromExternal(externalUserId ?? undefined);
       if (extName) return extName;
 
       const mappedByAttendeeId =
@@ -455,7 +466,11 @@ export const VideoChat = ({
             className="relative flex aspect-video w-full min-h-[160px] max-h-[220px] overflow-hidden rounded-md bg-gray-900 text-white shadow-inner"
           >
             <video
-              ref={(el) => bindVideoElement(tile.tileId, el)}
+              ref={(el) => {
+                if (tile.tileId) {
+                  bindVideoElement(tile.tileId, el);
+                }
+              }}
               className={`h-full w-full object-cover ${
                 tile.isLocal
                   ? !isCameraOn
