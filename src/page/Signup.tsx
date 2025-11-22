@@ -1,4 +1,4 @@
-import React, { useState, ChangeEvent } from 'react';
+import React, { useState } from 'react';
 import {
   Check,
   MapPin,
@@ -16,7 +16,6 @@ import {
   Lock,
   Eye,
   EyeOff,
-  Phone,
   Smile,
   ArrowLeft,
   Pencil,
@@ -27,20 +26,13 @@ import client from '../api/client';
 import { MBTI_TYPES } from '../constants/mbti';
 import { TRAVEL_STYLE_OPTIONS } from '../constants/travelStyle';
 import { TRAVEL_TENDENCY_TYPE } from '../constants/travelTendencyType';
+import { Button } from '../components/ui/button';
+import { Label } from '../components/ui/label';
+import { Input } from '../components/ui/input';
+import { Textarea } from '../components/ui/textarea';
 
 // --- 타입 정의 ---
 type TravelTendencyKey = keyof typeof TRAVEL_TENDENCY_TYPE;
-
-interface UserInfo {
-  email: string;
-  password: string;
-  confirmPassword: string;
-  nickname: string;
-  gender: string;
-  phone: string;
-  introOneLine: string;
-  introDetail: string;
-}
 
 interface CategoryItem {
   id: string;
@@ -193,70 +185,64 @@ const CATEGORIZED_KEYWORDS: CategoryItem[] = [
 ];
 
 export function Signup({ onSignup, onLoginClick }: SignupProps) {
-  const [step, setStep] = useState<number>(1); // 1: 기본, 2: 성향, 3: 소개, 4: 완료
+  const [step, setStep] = useState<number>(1);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [showConfirmPassword, setShowConfirmPassword] =
+    useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<string>('place');
+  const [styleError, setStyleError] = useState<string>('');
 
-  // User Data
-  const [userInfo, setUserInfo] = useState<UserInfo>({
+  const [formData, setFormData] = useState({
     email: '',
     password: '',
     confirmPassword: '',
     nickname: '',
     gender: '',
-    phone: '',
+    mbti: '',
+    travelStyles: new Set<string>(),
+    tendencies: new Set<string>(),
     introOneLine: '',
     introDetail: '',
   });
-  const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [showConfirmPassword, setShowConfirmPassword] =
-    useState<boolean>(false);
 
-  // Step 2 Data
-  const [mbti, setMbti] = useState<string>('');
-  const [selectedStyles, setSelectedStyles] = useState<Set<string>>(new Set());
-  const [selectedTendencies, setSelectedTendencies] = useState<Set<string>>(
-    new Set()
-  );
-  const [styleError, setStyleError] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<string>('place');
-
-  // Handlers
   const handleInputChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    field: keyof typeof formData,
+    value: string | boolean
   ) => {
-    const { name, value } = e.target;
-    setUserInfo((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const toggleTravelStyle = (style: string) => {
-    const newSet = new Set(selectedStyles);
-    if (newSet.has(style)) {
-      newSet.delete(style);
-      setStyleError('');
-      setSelectedStyles(newSet);
-      return;
-    }
+  const handleSetChange = (
+    field: 'travelStyles' | 'tendencies',
+    value: string
+  ) => {
+    setFormData((prev) => {
+      const newSet = new Set(prev[field]);
+      if (newSet.has(value)) {
+        newSet.delete(value);
+      } else {
+        if (field === 'travelStyles' && newSet.size >= 3) {
+          setStyleError('여행 스타일은 3개만 선택할 수 있어요.');
+          return prev;
+        }
+        newSet.add(value);
+      }
 
-    if (newSet.size >= 3) {
-      setStyleError('여행 스타일은 3개만 선택할 수 있어요.');
-      return;
-    }
-
-    newSet.add(style);
-    setStyleError('');
-    setSelectedStyles(newSet);
-  };
-
-  const toggleTravelTendency = (key: string) => {
-    const newSet = new Set(selectedTendencies);
-    if (newSet.has(key)) newSet.delete(key);
-    else newSet.add(key);
-    setSelectedTendencies(newSet);
+      if (field === 'travelStyles') {
+        setStyleError('');
+      }
+      return { ...prev, [field]: newSet };
+    });
   };
 
   const currentTabInfo = CATEGORIZED_KEYWORDS.find((t) => t.id === activeTab);
 
+  const numRows = currentTabInfo
+    ? Math.ceil(currentTabInfo.items.length / 2)
+    : 1;
+
   const handleNext = () => {
-    if (step === 2 && selectedStyles.size !== 3) {
+    if (step === 2 && formData.travelStyles.size !== 3) {
       setStyleError('여행 스타일을 3개 선택해주세요.');
       return;
     }
@@ -272,23 +258,23 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
   const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
 
-    if (userInfo.password !== userInfo.confirmPassword) {
+    if (formData.password !== formData.confirmPassword) {
       alert('비밀번호가 일치하지 않습니다.');
       return;
     }
 
     try {
       const requestData = {
-        email: userInfo.email,
-        password: userInfo.password,
+        email: formData.email,
+        password: formData.password,
         profile: {
-          nickname: userInfo.nickname,
-          gender: userInfo.gender,
-          mbtiTypes: mbti,
-          travelStyles: Array.from(selectedStyles),
-          tendency: Array.from(selectedTendencies),
-          intro: userInfo.introOneLine,
-          description: userInfo.introDetail,
+          nickname: formData.nickname,
+          gender: formData.gender,
+          mbtiTypes: formData.mbti,
+          travelStyles: Array.from(formData.travelStyles),
+          tendency: Array.from(formData.tendencies),
+          intro: formData.introOneLine,
+          description: formData.introDetail,
         },
       };
 
@@ -296,8 +282,8 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
 
       if (signupResponse.status === 201) {
         const loginResponse = await client.post('/auth/login', {
-          email: userInfo.email,
-          password: userInfo.password,
+          email: formData.email,
+          password: formData.password,
         });
 
         if (loginResponse.status === 200) {
@@ -338,16 +324,17 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
 
   return (
     <div className="min-h-screen bg-slate-50 flex justify-center py-8 px-4 sm:px-6 lg:px-8 font-sans">
-      <div className="w-full max-w-xl md:max-w-2xl">
+      <div className="w-full max-w-md md:max-w-lg">
         <div className="bg-white rounded-2xl md:rounded-3xl shadow-xl overflow-hidden border border-slate-100 relative min-h-[560px] flex flex-col">
           {step > 1 && step < 4 && (
-            <button
+            <Button
+              variant="ghost"
               onClick={handleBack}
-              className="absolute top-8 left-6 text-slate-400 hover:text-slate-800 flex items-center gap-1 text-sm font-bold transition-colors z-10"
+              className="absolute top-8 left-6 text-slate-400 hover:text-slate-800 flex items-center gap-1 text-sm font-bold transition-colors z-10 h-auto p-0"
             >
               <ArrowLeft className="w-4 h-4" />
               이전
-            </button>
+            </Button>
           )}
 
           {step < 4 && (
@@ -373,10 +360,9 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                 <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-blue-500 rounded-full transition-all duration-500 ease-out"
-                    style={{ width: `${(step / 3) * 100}%` }}
+                    style={{ width: `${((step - 1) / 3) * 100}%` }}
                   ></div>
                 </div>
-                {/* <div className="text-slate-400 text-sm font-medium">3</div> */}
               </div>
             </div>
           )}
@@ -390,7 +376,6 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
           {step === 1 && (
             <div className="flex-1 px-5 md:px-6 py-5 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="space-y-5 max-w-xl mx-auto w-full">
-                {/* Email */}
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">
                     이메일
@@ -399,17 +384,17 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                       <Mail className="h-5 w-5 text-slate-400" />
                     </div>
-                    <input
+                    <Input
                       type="email"
-                      name="email"
-                      value={userInfo.email}
-                      onChange={handleInputChange}
+                      value={formData.email}
+                      onChange={(e) =>
+                        handleInputChange('email', e.target.value)
+                      }
                       placeholder="example@email.com"
-                      className="w-full pl-11 pr-4 py-3.5 bg-slate-50/60 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
+                      className="w-full pl-12 pr-4 py-3.5 h-auto bg-slate-50/60 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
                     />
                   </div>
                 </div>
-                {/* Password */}
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">
                     비밀번호
@@ -418,28 +403,28 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                       <Lock className="h-5 w-5 text-slate-400" />
                     </div>
-                    <input
+                    <Input
                       type={showPassword ? 'text' : 'password'}
-                      name="password"
-                      value={userInfo.password}
-                      onChange={handleInputChange}
+                      value={formData.password}
+                      onChange={(e) =>
+                        handleInputChange('password', e.target.value)
+                      }
                       placeholder="8자 이상 입력해주세요"
-                      className="w-full pl-11 pr-12 py-3.5 bg-slate-50/60 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
+                      className="w-full pl-12 pr-12 py-3.5 h-auto bg-slate-50/60 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-blue-600"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                     >
                       {showPassword ? (
-                        <EyeOff className="h-5 w-5" />
+                        <EyeOff className="w-5 h-5" />
                       ) : (
-                        <Eye className="h-5 w-5" />
+                        <Eye className="w-5 h-5" />
                       )}
                     </button>
                   </div>
                 </div>
-                {/* Confirm Password */}
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">
                     비밀번호 확인
@@ -448,30 +433,30 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                       <Check className="h-5 w-5 text-slate-400" />
                     </div>
-                    <input
+                    <Input
                       type={showConfirmPassword ? 'text' : 'password'}
-                      name="confirmPassword"
-                      value={userInfo.confirmPassword}
-                      onChange={handleInputChange}
+                      value={formData.confirmPassword}
+                      onChange={(e) =>
+                        handleInputChange('confirmPassword', e.target.value)
+                      }
                       placeholder="비밀번호를 다시 입력해주세요"
-                      className="w-full pl-11 pr-12 py-3.5 bg-slate-50/60 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
+                      className="w-full pl-12 pr-12 py-3.5 h-auto bg-slate-50/60 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
                     />
                     <button
                       type="button"
                       onClick={() =>
                         setShowConfirmPassword(!showConfirmPassword)
                       }
-                      className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-blue-600"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                     >
                       {showConfirmPassword ? (
-                        <EyeOff className="h-5 w-5" />
+                        <EyeOff className="w-5 h-5" />
                       ) : (
-                        <Eye className="h-5 w-5" />
+                        <Eye className="w-5 h-5" />
                       )}
                     </button>
                   </div>
                 </div>
-                {/* Nickname */}
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">
                     닉네임
@@ -480,17 +465,17 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                       <Smile className="h-5 w-5 text-slate-400" />
                     </div>
-                    <input
+                    <Input
                       type="text"
-                      name="nickname"
-                      value={userInfo.nickname}
-                      onChange={handleInputChange}
+                      value={formData.nickname}
+                      onChange={(e) =>
+                        handleInputChange('nickname', e.target.value)
+                      }
                       placeholder="사용할 닉네임을 입력해주세요"
-                      className="w-full pl-11 pr-4 py-3.5 bg-slate-50/60 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
+                      className="w-full pl-12 pr-4 py-3.5 h-auto bg-slate-50/60 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
                     />
                   </div>
                 </div>
-                {/* Gender */}
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">
                     성별
@@ -502,9 +487,9 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                         className="flex items-center gap-2 cursor-pointer group"
                       >
                         <div
-                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${userInfo.gender === g ? 'border-blue-600' : 'border-slate-300 group-hover:border-blue-400'}`}
+                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${formData.gender === g ? 'border-blue-600' : 'border-slate-300 group-hover:border-blue-400'}`}
                         >
-                          {userInfo.gender === g && (
+                          {formData.gender === g && (
                             <div className="w-2.5 h-2.5 rounded-full bg-blue-600" />
                           )}
                         </div>
@@ -512,12 +497,14 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                           type="radio"
                           name="gender"
                           value={g}
-                          checked={userInfo.gender === g}
-                          onChange={handleInputChange}
+                          checked={formData.gender === g}
+                          onChange={(e) =>
+                            handleInputChange('gender', e.target.value)
+                          }
                           className="hidden"
                         />
                         <span
-                          className={`text-base font-medium transition-colors ${userInfo.gender === g ? 'text-blue-900' : 'text-slate-500'}`}
+                          className={`text-base font-medium transition-colors ${formData.gender === g ? 'text-blue-900' : 'text-slate-500'}`}
                         >
                           {g}
                         </span>
@@ -525,40 +512,14 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                     ))}
                   </div>
                 </div>
-                {/* 연락처 섹션 숨김 처리 요청으로 주석 */}
-                {/*
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
-                    연락처
-                  </label>
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <Phone className="h-5 w-5 text-slate-400" />
-                      </div>
-                      <input
-                        type="tel"
-                        name="phone"
-                        value={userInfo.phone}
-                        onChange={handleInputChange}
-                        placeholder="010-0000-0000"
-                        className="w-full pl-11 pr-4 py-3.5 bg-slate-50/60 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
-                      />
-                    </div>
-                    <button className="bg-slate-900 text-white px-5 rounded-xl font-bold text-sm hover:bg-slate-800 transition-colors whitespace-nowrap">
-                      인증하기
-                    </button>
-                  </div>
-                </div>
-                */}
               </div>
               <div className="mt-6 pb-3">
-                <button
+                <Button
                   onClick={handleNext}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold text-lg shadow-md shadow-blue-200 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 h-auto rounded-xl font-bold text-lg shadow-md shadow-blue-200 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
                 >
                   다음
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -582,13 +543,16 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
 
                 <div className="flex flex-wrap justify-start gap-2.5">
                   {TRAVEL_STYLE_OPTIONS.map((style) => {
-                    const isSelected = selectedStyles.has(style.value);
+                    const isSelected = formData.travelStyles.has(style.value);
                     return (
-                      <button
+                      <Button
                         key={style.value}
-                        onClick={() => toggleTravelStyle(style.value)}
+                        onClick={() =>
+                          handleSetChange('travelStyles', style.value)
+                        }
+                        variant={isSelected ? 'default' : 'outline'}
                         className={`
-                          px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 border select-none
+                          px-4 py-1.5 h-auto rounded-xl text-sm font-medium transition-all duration-200 border select-none
                           ${
                             isSelected
                               ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-200 '
@@ -597,7 +561,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                         `}
                       >
                         {style.label}
-                      </button>
+                      </Button>
                     );
                   })}
                 </div>
@@ -626,22 +590,23 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                 </div>
               </div>
 
-              <div className="flex flex-col md:flex-row flex-1 px-1 md:px-3 gap-2 md:gap-3">
+              <div className="flex flex-col md:flex-row flex-1 px-1 md:px-3 gap-2 md:gap-3 min-h-0">
                 <div className="w-full md:w-40 max-w-[150px] shrink-0 bg-slate-100/40 md:rounded-l-2xl mb-4 md:mb-0">
                   <div className="flex flex-row md:flex-col overflow-x-auto md:overflow-visible scrollbar-hide p-2 md:p-2.5 gap-2">
                     {CATEGORIZED_KEYWORDS.map((tab) => {
                       const isActive = activeTab === tab.id;
                       const Icon = tab.icon;
                       const count = tab.items.filter((k) =>
-                        selectedTendencies.has(k)
+                        formData.tendencies.has(k)
                       ).length;
 
                       return (
-                        <button
+                        <Button
                           key={tab.id}
+                          variant="ghost"
                           onClick={() => setActiveTab(tab.id)}
                           className={`
-                            flex items-center gap-2 px-3 py-2.5 text-sm font-medium transition-all relative text-left md:rounded-l-2xl w-32
+                            justify-start h-auto flex items-center gap-2 px-3 py-2.5 text-sm font-medium transition-all relative text-left md:rounded-l-2xl w-32
                             ${
                               isActive
                                 ? 'bg-white text-blue-600 shadow-md shadow-slate-100 z-10'
@@ -662,7 +627,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                               {count}
                             </span>
                           )}
-                        </button>
+                        </Button>
                       );
                     })}
                   </div>
@@ -683,20 +648,28 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                   </div>
 
                   <div
-                    className="animate-in fade-in slide-in-from-right-4 duration-300"
+                    className="animate-in fade-in slide-in-from-right-4 duration-300 h-[300px]"
                     key={activeTab}
                   >
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 min-h-[410px]">
+                    <div
+                      className="grid grid-cols-2 gap-2.5 h-full"
+                      style={{
+                        gridTemplateRows: `repeat(${numRows}, minmax(0, 1fr))`,
+                      }}
+                    >
                       {currentTabInfo &&
                         currentTabInfo.items.map((itemKey) => {
                           const label = TRAVEL_TENDENCY_TYPE[itemKey];
-                          const isSelected = selectedTendencies.has(itemKey);
+                          const isSelected = formData.tendencies.has(itemKey);
                           return (
-                            <button
+                            <Button
                               key={itemKey}
-                              onClick={() => toggleTravelTendency(itemKey)}
+                              variant={isSelected ? 'default' : 'outline'}
+                              onClick={() =>
+                                handleSetChange('tendencies', itemKey)
+                              }
                               className={`
-                              relative group py-3 px-2 rounded-xl text-sm font-medium transition-all duration-200 border text-center flex items-center justify-center gap-1.5
+                              relative group py-2 px-2 h-full w-full rounded-xl text-sm font-medium transition-all duration-200 border text-center flex items-center justify-center gap-1.5 whitespace-normal
                               ${
                                 isSelected
                                   ? 'bg-blue-500 border-blue-500 text-white shadow-md shadow-blue-100'
@@ -705,7 +678,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                             `}
                             >
                               {label}
-                            </button>
+                            </Button>
                           );
                         })}
                     </div>
@@ -717,45 +690,43 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                 <div className="border-t border-dashed border-slate-100"></div>
               </div>
 
-              <div className="px-5 md:px-6 py-5 bg-white">
-                <div className="flex items-center justify-start gap-2 mb-5">
-                  <div className="p-2 bg-blue-50 rounded-full">
-                    <User className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <h2 className="text-xl font-bold text-slate-800 text-left">
-                    MBTI 성격 유형
-                  </h2>
-                </div>
-
-                <div className="max-w-md">
-                  <div className="relative">
-                    <select
-                      value={mbti}
-                      onChange={(e) => setMbti(e.target.value)}
-                      className="w-full appearance-none  border text-slate-900 py-3.5 pl-5 pr-12 rounded-xl leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg  cursor-pointer transition-shadow  "
-                    >
-                      <option value="">선택해주세요</option>
-                      {MBTI_TYPES.map((type) => (
-                        <option key={type} value={type}>
-                          {type}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-5 text-slate-500">
-                      <ChevronDown className="w-5 h-5" />
+              <div className="px-5 md:px-6 pt-6">
+                <div className="flex flex-col gap-1 mb-4">
+                  <div className="flex items-center justify-start gap-2">
+                    <div className="p-2 bg-blue-50 rounded-full">
+                      <User className="w-5 h-5 text-blue-600" />
                     </div>
+                    <h2 className="text-xl font-extrabold text-slate-900 text-left">
+                      MBTI (선택)
+                    </h2>
                   </div>
+                  <p className="text-sm text-slate-500 py-1 pl-1">
+                    MBTI를 선택하여 자신을 더 잘 표현해보세요.
+                  </p>
                 </div>
+                <select
+                  id="mbti"
+                  value={formData.mbti}
+                  onChange={(e) => handleInputChange('mbti', e.target.value)}
+                  className="w-full mt-1 px-4 py-3 h-auto bg-slate-50/60 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900"
+                >
+                  <option value="">MBTI를 선택해주세요</option>
+                  {MBTI_TYPES.map((mbti) => (
+                    <option key={mbti} value={mbti}>
+                      {mbti}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="px-5 md:px-6 py-5 bg-white border-t border-slate-50 flex justify-center mt-auto">
-                <button
+                <Button
                   onClick={handleNext}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold text-lg shadow-md shadow-blue-200 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 h-auto rounded-xl font-bold text-lg shadow-md shadow-blue-200 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
                 >
                   다음 단계로
                   <ArrowRight className="w-5 h-5" />
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -771,13 +742,14 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                       <Pencil className="h-5 w-5 text-slate-400" />
                     </div>
-                    <input
+                    <Input
                       type="text"
-                      name="introOneLine"
-                      value={userInfo.introOneLine}
-                      onChange={handleInputChange}
+                      value={formData.introOneLine}
+                      onChange={(e) =>
+                        handleInputChange('introOneLine', e.target.value)
+                      }
                       placeholder="예) 바다를 사랑하는 여행러 🌊"
-                      className="w-full pl-11 pr-4 py-3.5 bg-slate-50/30 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
+                      className="w-full pl-12 pr-4 py-3.5 h-auto bg-slate-50/30 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
                     />
                   </div>
                 </div>
@@ -790,13 +762,14 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                     <div className="absolute top-4 left-4 pointer-events-none">
                       <FileText className="h-5 w-5 text-slate-400" />
                     </div>
-                    <textarea
-                      name="introDetail"
-                      value={userInfo.introDetail}
-                      onChange={handleInputChange}
+                    <Textarea
+                      value={formData.introDetail}
+                      onChange={(e) =>
+                        handleInputChange('introDetail', e.target.value)
+                      }
                       rows={6}
                       placeholder="자신에 대해 자유롭게 소개해 주세요. (여행 스타일, 좋아하는 것 등)"
-                      className="w-full pl-11 pr-4 py-3.5 bg-slate-50/30 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400 resize-none leading-relaxed"
+                      className="w-full pl-12 pr-4 py-3.5 bg-slate-50/30 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400 resize-none leading-relaxed"
                     />
                   </div>
                   <p className="mt-2 text-xs text-slate-400 text-right">
@@ -806,12 +779,12 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                 </div>
 
                 <div className="pt-5">
-                  <button
+                  <Button
                     onClick={handleSubmit}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold text-lg  shadow-blue-200 shadow-md flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 h-auto rounded-xl font-bold text-lg  shadow-blue-200 shadow-md flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
                   >
                     회원가입 완료
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -828,7 +801,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
               <p className="text-slate-500 text-lg max-w-md mb-10 leading-relaxed">
                 환영합니다,{' '}
                 <span className="text-blue-600 font-bold">
-                  {userInfo.nickname || '여행자'}
+                  {formData.nickname || '여행자'}
                 </span>
                 님!
                 <br />
@@ -837,21 +810,22 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                 <br />
                 당신만의 여행 메이트를 찾아보세요.
               </p>
-              <button
+              <Button
                 onClick={onSignup}
-                className="w-full max-w-sm bg-slate-900 text-white py-4 rounded-xl font-bold text-lg shadow-2xl hover:bg-black transition-all transform hover:-translate-y-1"
+                className="w-full max-w-sm bg-slate-900 text-white py-4 h-auto rounded-xl font-bold text-lg shadow-2xl hover:bg-black transition-all transform hover:-translate-y-1"
               >
                 MateTrip 시작하기
-              </button>
+              </Button>
               <p className="mt-6 text-center text-sm text-gray-600">
                 이미 계정이 있으신가요?{' '}
-                <button
+                <Button
                   type="button"
+                  variant="link"
                   onClick={onLoginClick}
-                  className="text-blue-600 hover:text-blue-700 font-bold"
+                  className="text-blue-600 hover:text-blue-700 font-bold p-0 h-auto"
                 >
                   로그인
-                </button>
+                </Button>
               </p>
             </div>
           )}
