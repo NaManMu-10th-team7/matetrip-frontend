@@ -90,7 +90,7 @@ const CATEGORIZED_KEYWORDS: CategoryItem[] = [
     id: 'food',
     title: '음식',
     icon: Utensils,
-    question: '여행 중 식사는 무엇이 좋으세요?',
+    question: '여행 중 음식은 무엇이 좋으세요?',
     items: [
       '길거리음식',
       '로컬레스토랑',
@@ -183,6 +183,7 @@ const CATEGORIZED_KEYWORDS: CategoryItem[] = [
 
 export function Signup({ onSignup, onLoginClick }: SignupProps) {
   const [step, setStep] = useState<number>(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] =
     useState<boolean>(false);
@@ -285,8 +286,10 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
     setStep((prev) => Math.max(prev - 1, 1));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
+    e?.preventDefault();
+
+    if (isSubmitting) return;
 
     if (formData.password !== formData.confirmPassword) {
       return;
@@ -298,6 +301,12 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
     }
 
     try {
+      setIsSubmitting(true);
+
+      // Sets → Arrays로 변환해 백엔드가 기대하는 배열 형태로 전달
+      const travelStylesArray = Array.from(formData.travelStyles);
+      const tendencyArray = Array.from(formData.tendency);
+
       const requestData = {
         email: formData.email,
         password: formData.password,
@@ -305,8 +314,8 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
           nickname: formData.nickname,
           gender: formData.gender,
           mbtiTypes: formData.mbti,
-          travelStyles: formData.travelStyles,
-          tendency: formData.tendency,
+          travelStyles: travelStylesArray,
+          tendency: tendencyArray,
           intro: formData.intro,
           description: formData.description,
         },
@@ -353,6 +362,8 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
         // setErrorMessage('알 수 없는 오류가 발생했습니다.');
       }
       console.error('Signup error:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -386,244 +397,253 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
     : 1;
 
   return (
-    <div className="min-h-screen bg-slate-50 flex justify-center py-8 px-4 sm:px-6 lg:px-8 font-sans">
-      <div className="w-full max-w-lg md:max-w-md">
-        <div className="bg-white rounded-2xl md:rounded-3xl shadow-sm overflow-hidden border border-slate-100 relative min-h-[560px] flex flex-col">
-          {step > 1 && step < 4 && (
-            <Button
-              variant="ghost"
-              onClick={handlePrevStep}
-              className="absolute top-8 left-6 text-slate-400 hover:text-slate-800 flex items-center gap-1 text-sm font-bold transition-colors z-10 h-auto p-0"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              이전
-            </Button>
-          )}
-
-          {step < 4 && (
-            <div className="px-5 md:px-6 pt-8 pb-3 bg-white flex flex-col items-center text-center relative">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="bg-linear-to-br bg-blue-600 p-2.5 rounded-xl shadow-lg text-white">
-                  <Map className="w-7 h-7 text-white" />
-                </div>
-                <span className="text-2xl font-extrabold text-slate-900 tracking-tight">
-                  MateTrip
-                </span>
-              </div>
-
-              <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
-                {title}
-              </h1>
-              <p className="text-slate-500 text-sm mt-1 mb-6">{desc}</p>
-
-              <div className="w-full max-w-xs flex items-center justify-center gap-3">
-                <div className="text-blue-600 font-bold text-base whitespace-nowrap">
-                  Step {step}
-                </div>
-                <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-blue-500 rounded-full transition-all duration-500 ease-out"
-                    style={{ width: `${(step / 3) * 100}%` }}
-                  ></div>
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+      <div className="flex-1 flex justify-center items-center py-8 px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-lg md:max-w-md">
+          <div className="bg-white rounded-2xl md:rounded-3xl shadow-sm overflow-hidden border border-slate-100 relative min-h-[560px] flex flex-col">
+            {isSubmitting && (
+              <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-20 flex flex-col items-center justify-center gap-3">
+                <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+                <div className="text-sm font-semibold text-slate-700">
+                  추천 동행 매칭 중...
                 </div>
               </div>
-            </div>
-          )}
+            )}
+            {step > 1 && step < 4 && (
+              <Button
+                variant="ghost"
+                onClick={handlePrevStep}
+                className="absolute top-8 left-6 text-slate-400 hover:text-slate-800 flex items-center gap-1 text-sm font-bold transition-colors z-10 h-auto p-0"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                이전
+              </Button>
+            )}
 
-          {step < 4 && <div className="w-full px-6 my-2" />}
-
-          {step === 1 && (
-            <div className="flex-1 px-5 md:px-6 py-5 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="space-y-5 max-w-xl mx-auto w-full">
-                <div>
-                  <Label htmlFor="email" className="font-semibold">
-                    이메일
-                  </Label>
-                  <div className="relative mt-2">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="example@email.com"
-                      value={formData.email}
-                      onChange={(e) =>
-                        handleInputChange('email', e.target.value)
-                      }
-                      className="pl-10"
-                      required
-                    />
+            {step < 4 && (
+              <div className="px-5 md:px-6 pt-8 pb-3 bg-white flex flex-col items-center text-center relative">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="bg-linear-to-br bg-blue-600 p-2.5 rounded-xl shadow-lg text-white">
+                    <Map className="w-7 h-7 text-white" />
                   </div>
+                  <span className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                    MateTrip
+                  </span>
                 </div>
 
-                <div>
-                  <Label htmlFor="password" className="font-semibold">
-                    비밀번호
-                  </Label>
-                  <div className="relative mt-2">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <Input
-                      id="password"
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="8자 이상 입력해주세요"
-                      value={formData.password}
-                      onChange={(e) =>
-                        handleInputChange('password', e.target.value)
-                      }
-                      className="pl-10 pr-10"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="w-5 h-5" />
-                      ) : (
-                        <Eye className="w-5 h-5" />
-                      )}
-                    </button>
+                <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
+                  {title}
+                </h1>
+                <p className="text-slate-500 text-sm mt-1 mb-6">{desc}</p>
+
+                <div className="w-full max-w-xs flex items-center justify-center gap-3">
+                  <div className="text-blue-600 font-bold text-base whitespace-nowrap">
+                    Step {step}
+                  </div>
+                  <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-blue-500 rounded-full transition-all duration-500 ease-out"
+                      style={{ width: `${(step / 3) * 100}%` }}
+                    ></div>
                   </div>
                 </div>
+              </div>
+            )}
 
-                <div>
-                  <Label htmlFor="confirmPassword" className="font-semibold">
-                    비밀번호 확인
-                  </Label>
-                  <div className="relative mt-2">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <Input
-                      id="confirmPassword"
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      placeholder="비밀번호를 다시 입력해주세요"
-                      value={formData.confirmPassword}
-                      onChange={(e) =>
-                        handleInputChange('confirmPassword', e.target.value)
-                      }
-                      className="pl-10 pr-10"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShowConfirmPassword(!showConfirmPassword)
-                      }
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      {showConfirmPassword ? (
-                        <EyeOff className="w-5 h-5" />
-                      ) : (
-                        <Eye className="w-5 h-5" />
-                      )}
-                    </button>
-                  </div>
-                </div>
+            {step < 4 && <div className="w-full px-6 my-2" />}
 
-                <div>
-                  <Label htmlFor="nickname" className="font-semibold">
-                    닉네임
-                  </Label>
-                  <div className="relative mt-2">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <Input
-                      id="nickname"
-                      type="text"
-                      placeholder="사용할 닉네임을 입력해주세요"
-                      value={formData.nickname}
-                      onChange={(e) =>
-                        handleInputChange('nickname', e.target.value)
-                      }
-                      className="pl-10"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label className="font-semibold">성별</Label>
-                  <div className="flex gap-4 mt-2">
-                    <div className="flex items-center gap-2">
+            {step === 1 && (
+              <div className="flex-1 px-5 md:px-6 py-5 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="space-y-5 max-w-xl mx-auto w-full">
+                  <div>
+                    <Label htmlFor="email" className="font-semibold">
+                      이메일
+                    </Label>
+                    <div className="relative mt-2">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <Input
-                        id="male"
-                        type="radio"
-                        value="남성"
-                        name="gender"
-                        checked={formData.gender === '남성'}
+                        id="email"
+                        type="email"
+                        placeholder="example@email.com"
+                        value={formData.email}
                         onChange={(e) =>
-                          handleInputChange('gender', e.target.value)
+                          handleInputChange('email', e.target.value)
                         }
-                        className="h-4 w-4 accent-blue-600"
+                        className="pl-10"
+                        required
                       />
-                      <Label
-                        htmlFor="male"
-                        className="cursor-pointer font-normal"
-                      >
-                        남성
-                      </Label>
                     </div>
-                    <div className="flex items-center gap-2">
+                  </div>
+
+                  <div>
+                    <Label htmlFor="password" className="font-semibold">
+                      비밀번호
+                    </Label>
+                    <div className="relative mt-2">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <Input
-                        id="female"
-                        type="radio"
-                        value="여성"
-                        name="gender"
-                        checked={formData.gender === '여성'}
+                        id="password"
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="8자 이상 입력해주세요"
+                        value={formData.password}
                         onChange={(e) =>
-                          handleInputChange('gender', e.target.value)
+                          handleInputChange('password', e.target.value)
                         }
-                        className="h-4 w-4 accent-blue-600"
+                        className="pl-10 pr-10"
+                        required
                       />
-                      <Label
-                        htmlFor="female"
-                        className="cursor-pointer font-normal"
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                       >
-                        여성
-                      </Label>
+                        {showPassword ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="confirmPassword" className="font-semibold">
+                      비밀번호 확인
+                    </Label>
+                    <div className="relative mt-2">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <Input
+                        id="confirmPassword"
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        placeholder="비밀번호를 다시 입력해주세요"
+                        value={formData.confirmPassword}
+                        onChange={(e) =>
+                          handleInputChange('confirmPassword', e.target.value)
+                        }
+                        className="pl-10 pr-10"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="nickname" className="font-semibold">
+                      닉네임
+                    </Label>
+                    <div className="relative mt-2">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <Input
+                        id="nickname"
+                        type="text"
+                        placeholder="사용할 닉네임을 입력해주세요"
+                        value={formData.nickname}
+                        onChange={(e) =>
+                          handleInputChange('nickname', e.target.value)
+                        }
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="font-semibold">성별</Label>
+                    <div className="flex gap-4 mt-2">
+                      <div className="flex items-center gap-2">
+                        <Input
+                          id="male"
+                          type="radio"
+                          value="남성"
+                          name="gender"
+                          checked={formData.gender === '남성'}
+                          onChange={(e) =>
+                            handleInputChange('gender', e.target.value)
+                          }
+                          className="h-4 w-4 accent-blue-600"
+                        />
+                        <Label
+                          htmlFor="male"
+                          className="cursor-pointer font-normal"
+                        >
+                          남성
+                        </Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          id="female"
+                          type="radio"
+                          value="여성"
+                          name="gender"
+                          checked={formData.gender === '여성'}
+                          onChange={(e) =>
+                            handleInputChange('gender', e.target.value)
+                          }
+                          className="h-4 w-4 accent-blue-600"
+                        />
+                        <Label
+                          htmlFor="female"
+                          className="cursor-pointer font-normal"
+                        >
+                          여성
+                        </Label>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-              <div className="mt-6 pb-3">
-                <Button
-                  onClick={handleNextStep}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 h-auto rounded-lg font-bold text-lg shadow-md shadow-blue-200 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
-                >
-                  다음 단계로
-                  <ArrowRight className="w-5 h-5" />
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {step === 2 && (
-            <div className="flex-1 flex flex-col animate-in fade-in slide-in-from-right-8 duration-500">
-              <div className="px-5 md:px-6 py-3">
-                <div className="flex flex-col gap-1 mb-5">
-                  <div className="flex items-center justify-start gap-2">
-                    <div className="p-2 bg-blue-50 rounded-full">
-                      <Sparkles className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <h2 className="text-lg font-extrabold text-slate-900 text-left flex items-center gap-2">
-                      여행 스타일
-                      <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-600 border border-blue-100">
-                        3개 선택 필수
-                      </span>
-                    </h2>
-                  </div>
-                  <p className="text-sm text-slate-500 py-1">
-                    나를 가장 잘 표현하는 키워드를 3가지 골라주세요
-                  </p>
+                <div className="mt-6 pb-3">
+                  <Button
+                    onClick={handleNextStep}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 h-auto rounded-lg font-bold text-lg shadow-md shadow-blue-200 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
+                  >
+                    다음 단계로
+                    <ArrowRight className="w-5 h-5" />
+                  </Button>
                 </div>
+              </div>
+            )}
 
-                <div className="flex flex-wrap justify-start gap-2.5">
-                  {TRAVEL_STYLE_OPTIONS.map((style) => {
-                    const isSelected = formData.travelStyles.has(style.value);
-                    return (
-                      <Button
-                        key={style.value}
-                        onClick={() => toggleTravelStyle(style.value)}
-                        variant="outline"
-                        className={`
+            {step === 2 && (
+              <div className="flex-1 flex flex-col animate-in fade-in slide-in-from-right-8 duration-500">
+                <div className="px-5 md:px-6 py-3">
+                  <div className="flex flex-col gap-1 mb-5">
+                    <div className="flex items-center justify-start gap-2">
+                      <div className="p-2 bg-blue-50 rounded-full">
+                        <Sparkles className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <h2 className="text-lg font-extrabold text-slate-900 text-left flex items-center gap-2">
+                        여행 스타일
+                        <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-600 border border-blue-100">
+                          3개 선택 필수
+                        </span>
+                      </h2>
+                    </div>
+                    <p className="text-sm text-slate-500 py-1">
+                      나를 가장 잘 표현하는 키워드를 3가지 골라주세요
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap justify-start gap-2.5">
+                    {TRAVEL_STYLE_OPTIONS.map((style) => {
+                      const isSelected = formData.travelStyles.has(style.value);
+                      return (
+                        <Button
+                          key={style.value}
+                          onClick={() => toggleTravelStyle(style.value)}
+                          variant="outline"
+                          className={`
                           px-3 py-1.5 h-auto rounded-md text-xs font-medium transition-all duration-200 border select-none
                           ${
                             isSelected
@@ -631,51 +651,51 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                               : 'bg-white text-slate-600 border-slate-200 hover:border-blue-200 hover:bg-blue-50/30 hover:text-slate-800'
                           }
                         `}
-                      >
-                        {style.label}
-                      </Button>
-                    );
-                  })}
-                </div>
-                {styleError && (
-                  <p className="text-xs text-rose-500 mt-2">{styleError}</p>
-                )}
-              </div>
-
-              <div className="w-full px-5 md:px-6" />
-
-              <div className="px-5 md:px-6 pt-3">
-                <div className="flex flex-col gap-1 mb-5">
-                  <div className="flex items-center justify-start gap-2">
-                    <div className="p-2 bg-blue-50 rounded-full">
-                      <Compass className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <h2 className="text-lg font-extrabold text-slate-900 text-left">
-                      여행 성향
-                    </h2>
+                        >
+                          {style.label}
+                        </Button>
+                      );
+                    })}
                   </div>
-                  <p className="text-sm text-slate-500 py-1">
-                    마음 가는 키워드를 자유롭게 골라주세요.
-                  </p>
+                  {styleError && (
+                    <p className="text-xs text-rose-500 mt-2">{styleError}</p>
+                  )}
                 </div>
-              </div>
 
-              <div className="flex flex-col md:flex-row flex-1 px-1 md:px-3 gap-2 md:gap-3 min-h-0">
-                <div className="w-full md:w-40 max-w-[150px] shrink-0 bg-slate-100/40 md:rounded-l-2xl mb-4 md:mb-0">
-                  <div className="flex flex-row md:flex-col overflow-x-auto md:overflow-visible scrollbar-hide p-2 md:p-2.5 gap-2">
-                    {CATEGORIZED_KEYWORDS.map((tab) => {
-                      const isActive = activeTab === tab.id;
-                      const Icon = tab.icon;
-                      const count = tab.items.filter((k) =>
-                        formData.tendency.has(k)
-                      ).length;
+                <div className="w-full px-5 md:px-6" />
 
-                      return (
-                        <Button
-                          key={tab.id}
-                          variant="ghost"
-                          onClick={() => setActiveTab(tab.id)}
-                          className={`
+                <div className="px-5 md:px-6 pt-3">
+                  <div className="flex flex-col gap-1 mb-5">
+                    <div className="flex items-center justify-start gap-2">
+                      <div className="p-2 bg-blue-50 rounded-full">
+                        <Compass className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <h2 className="text-lg font-extrabold text-slate-900 text-left">
+                        여행 성향
+                      </h2>
+                    </div>
+                    <p className="text-sm text-slate-500 py-1">
+                      마음 가는 키워드를 자유롭게 골라주세요.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col md:flex-row flex-1 px-1 md:px-3 gap-2 md:gap-3 min-h-0">
+                  <div className="w-full md:w-40 max-w-[150px] shrink-0 bg-slate-100/40 md:rounded-l-2xl mb-4 md:mb-0">
+                    <div className="flex flex-row md:flex-col overflow-x-auto md:overflow-visible scrollbar-hide p-2 md:p-2.5 gap-2">
+                      {CATEGORIZED_KEYWORDS.map((tab) => {
+                        const isActive = activeTab === tab.id;
+                        const Icon = tab.icon;
+                        const count = tab.items.filter((k) =>
+                          formData.tendency.has(k)
+                        ).length;
+
+                        return (
+                          <Button
+                            key={tab.id}
+                            variant="ghost"
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`
                             justify-start h-auto flex items-center gap-2 px-3 py-2 text-sm font-medium transition-all relative text-left md:rounded-l-2xl w-32
                             ${
                               isActive
@@ -683,59 +703,61 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                                 : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'
                             }
                           `}
-                        >
-                          <div
-                            className={`p-1 rounded-2xl transition-colors ${isActive ? 'bg-blue-50 text-blue-600' : 'bg-transparent text-slate-400'}`}
                           >
-                            <Icon className="w-4 h-4" />
-                          </div>
-                          <span className="whitespace-nowrap">{tab.title}</span>
-                          {count > 0 && (
-                            <span
-                              className={`ml-auto w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold ${isActive ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-500'}`}
+                            <div
+                              className={`p-1 rounded-2xl transition-colors ${isActive ? 'bg-blue-50 text-blue-600' : 'bg-transparent text-slate-400'}`}
                             >
-                              {count}
+                              <Icon className="w-4 h-4" />
+                            </div>
+                            <span className="whitespace-nowrap">
+                              {tab.title}
                             </span>
-                          )}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="flex-1 min-w-0 py-5 md:py-6 pr-3 pl-0 md:pl-1 bg-white md:rounded-l-2xl">
-                  <div className="mb-6 text-left">
-                    {currentTabInfo && (
-                      <>
-                        <h3 className="text-md font-bold text-slate-900 mb-1">
-                          {currentTabInfo.title}
-                        </h3>
-                        <p className="text-slate-500 text-xs">
-                          {currentTabInfo.question}
-                        </p>
-                      </>
-                    )}
+                            {count > 0 && (
+                              <span
+                                className={`ml-auto w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold ${isActive ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-500'}`}
+                              >
+                                {count}
+                              </span>
+                            )}
+                          </Button>
+                        );
+                      })}
+                    </div>
                   </div>
 
-                  <div
-                    className="animate-in fade-in slide-in-from-right-4 duration-300 h-[250px]"
-                    key={activeTab}
-                  >
+                  <div className="flex-1 min-w-0 py-5 md:py-6 pr-3 pl-0 md:pl-1 bg-white md:rounded-l-2xl">
+                    <div className="mb-6 text-left">
+                      {currentTabInfo && (
+                        <>
+                          <h3 className="text-md font-bold text-slate-900 mb-1">
+                            {currentTabInfo.title}
+                          </h3>
+                          <p className="text-slate-500 text-xs">
+                            {currentTabInfo.question}
+                          </p>
+                        </>
+                      )}
+                    </div>
+
                     <div
-                      className="grid grid-cols-2 gap-2.5 h-full"
-                      style={{
-                        gridTemplateRows: `repeat(${numRows}, minmax(0, 1fr))`,
-                      }}
+                      className="animate-in fade-in slide-in-from-right-4 duration-300 h-[250px]"
+                      key={activeTab}
                     >
-                      {currentTabInfo &&
-                        currentTabInfo.items.map((label) => {
-                          const isSelected = formData.tendency.has(label);
-                          return (
-                            <Button
-                              key={label}
-                              variant="outline"
-                              onClick={() => toggleTravelTendency(label)}
-                              className={`
+                      <div
+                        className="grid grid-cols-2 gap-2.5 h-full"
+                        style={{
+                          gridTemplateRows: `repeat(${numRows}, minmax(0, 1fr))`,
+                        }}
+                      >
+                        {currentTabInfo &&
+                          currentTabInfo.items.map((label) => {
+                            const isSelected = formData.tendency.has(label);
+                            return (
+                              <Button
+                                key={label}
+                                variant="outline"
+                                onClick={() => toggleTravelTendency(label)}
+                                className={`
                               relative group py-2 px-2 h-full w-full min-w-[120px] rounded-md text-sm font-medium transition-all duration-200 border text-center flex items-center justify-center gap-1.5 whitespace-nowrap
                               ${
                                 isSelected
@@ -743,174 +765,147 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                                   : 'bg-white text-slate-600 border-slate-100 hover:border-blue-200 hover:bg-blue-50/30 hover:text-slate-800'
                               }
                             `}
-                            >
-                              {label}
-                            </Button>
-                          );
-                        })}
+                              >
+                                {label}
+                              </Button>
+                            );
+                          })}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="w-full px-6 mt-1" />
+                <div className="w-full px-6 mt-1" />
 
-              <div className="px-5 md:px-6 pt-2">
-                <div className="flex flex-col gap-1 mb-4">
-                  <div className="flex items-center justify-start gap-2">
-                    <div className="p-2 bg-blue-50 rounded-full">
-                      <User className="w-5 h-5 text-blue-600" />
+                <div className="px-5 md:px-6 pt-2">
+                  <div className="flex flex-col gap-1 mb-4">
+                    <div className="flex items-center justify-start gap-2">
+                      <div className="p-2 bg-blue-50 rounded-full">
+                        <User className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <h2 className="text-lg font-extrabold text-slate-900 text-left">
+                        MBTI 성격 유형
+                      </h2>
                     </div>
-                    <h2 className="text-lg font-extrabold text-slate-900 text-left">
-                      MBTI 성격 유형
-                    </h2>
+                    <p className="text-sm text-slate-500 py-1 pl-1">
+                      MBTI를 선택하여 자신을 더 잘 표현해보세요.
+                    </p>
                   </div>
-                  <p className="text-sm text-slate-500 py-1 pl-1">
-                    MBTI를 선택하여 자신을 더 잘 표현해보세요.
+                  <select
+                    id="mbti"
+                    value={formData.mbti}
+                    onChange={(e) => handleInputChange('mbti', e.target.value)}
+                    className="w-full mt-1 px-4 py-3 h-auto bg-slate-50/60 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900"
+                  >
+                    <option value="">MBTI를 선택해주세요</option>
+                    {MBTI_TYPES.map((mbti) => (
+                      <option key={mbti} value={mbti}>
+                        {mbti}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="px-5 md:px-6 py-7  flex justify-center mt-auto">
+                  <Button
+                    onClick={handleNextStep}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 h-auto rounded-lg font-bold text-lg shadow-md shadow-blue-200 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
+                  >
+                    다음 단계로
+                    <ArrowRight className="w-5 h-5" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {step === 3 && (
+              <div className="flex-1 px-5 md:px-6 py-6 flex flex-col animate-in fade-in slide-in-from-right-8 duration-500">
+                <div className="max-w-xl mx-auto w-full space-y-4">
+                  <div>
+                    <Label htmlFor="intro" className="font-semibold">
+                      한줄소개
+                    </Label>
+                    <div className="relative mt-2">
+                      <Pen className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <Input
+                        id="intro"
+                        type="text"
+                        placeholder="예) 바다를 사랑하는 여행러 🌊"
+                        value={formData.intro}
+                        onChange={(e) =>
+                          handleInputChange('intro', e.target.value)
+                        }
+                        className="pl-10"
+                        maxLength={50}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label
+                      htmlFor="description"
+                      className="font-semibold flex items-center gap-2"
+                    >
+                      상세소개
+                      <span className="relative inline-flex items-center group">
+                        <span className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full border border-blue-200 bg-blue-50 text-[10px] font-semibold text-blue-600 shadow-[0_1px_3px_rgba(59,130,246,0.25)] hover:bg-blue-100 hover:border-blue-300 transition-colors cursor-default">
+                          i
+                        </span>
+                        <span className="absolute left-full top-1/2 z-10 ml-2 -translate-y-1/2 block w-72 md:w-80 rounded-lg bg-white px-3 py-2 text-[11px] font-medium text-black text-left whitespace-normal break-words shadow-lg opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none transition-all duration-150">
+                          키워드 유사도와 상세소개 유사도를 합산하여 프로필
+                          유사도를 측정합니다.
+                          <br />
+                          적절하지 않은 상세소개는 등록되지 않을 수 있습니다.
+                        </span>
+                      </span>
+                    </Label>
+                    <div className="relative mt-2">
+                      <FileText className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                      <Textarea
+                        id="description"
+                        placeholder="자신에 대해 자유롭게 소개해주세요. (여행 스타일, 좋아하는 것 등)"
+                        value={formData.description}
+                        onChange={(e) => {
+                          setDescriptionError('');
+                          handleInputChange('description', e.target.value);
+                        }}
+                        className="pl-10 min-h-32"
+                      />
+                    </div>
+                    {descriptionError && (
+                      <p className="text-xs text-rose-500 mt-2">
+                        {descriptionError}
+                      </p>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-400 text-right">
+                    * 자세히 적을수록, 마음이 딱 맞는 동행을 만날 확률이
+                    높아져요!
                   </p>
                 </div>
-                <select
-                  id="mbti"
-                  value={formData.mbti}
-                  onChange={(e) => handleInputChange('mbti', e.target.value)}
-                  className="w-full mt-1 px-4 py-3 h-auto bg-slate-50/60 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900"
-                >
-                  <option value="">MBTI를 선택해주세요</option>
-                  {MBTI_TYPES.map((mbti) => (
-                    <option key={mbti} value={mbti}>
-                      {mbti}
-                    </option>
-                  ))}
-                </select>
-              </div>
 
-              <div className="px-5 md:px-6 py-7  flex justify-center mt-auto">
-                <Button
-                  onClick={handleNextStep}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 h-auto rounded-lg font-bold text-lg shadow-md shadow-blue-200 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
-                >
-                  다음 단계로
-                  <ArrowRight className="w-5 h-5" />
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {step === 3 && (
-            <div className="flex-1 px-5 md:px-6 py-6 flex flex-col animate-in fade-in slide-in-from-right-8 duration-500">
-              <div className="max-w-xl mx-auto w-full space-y-4">
-                <div>
-                  <Label htmlFor="intro" className="font-semibold">
-                    한줄소개
-                  </Label>
-                  <div className="relative mt-2">
-                    <Pen className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <Input
-                      id="intro"
-                      type="text"
-                      placeholder="예) 바다를 사랑하는 여행러 🌊"
-                      value={formData.intro}
-                      onChange={(e) =>
-                        handleInputChange('intro', e.target.value)
-                      }
-                      className="pl-10"
-                      maxLength={50}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label
-                    htmlFor="description"
-                    className="font-semibold flex items-center gap-2"
+                <div className="pt-7">
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={isSubmitting}
+                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white py-2 h-auto rounded-lg font-bold text-lg  shadow-blue-200 shadow-md flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
                   >
-                    상세소개
-                    <span className="relative inline-flex items-center group">
-                      <span className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full border border-blue-200 bg-blue-50 text-[10px] font-semibold text-blue-600 shadow-[0_1px_3px_rgba(59,130,246,0.25)] hover:bg-blue-100 hover:border-blue-300 transition-colors cursor-default">
-                        i
-                      </span>
-                      <span className="absolute left-full top-1/2 z-10 ml-2 -translate-y-1/2 block w-72 md:w-80 rounded-lg bg-white px-3 py-2 text-[11px] font-medium text-black text-left whitespace-normal break-words shadow-lg opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none transition-all duration-150">
-                        키워드 유사도와 상세소개 유사도를 합산하여 프로필
-                        유사도를 측정합니다.
-                        <br />
-                        적절하지 않은 상세소개는 등록되지 않을 수 있습니다.
-                      </span>
-                    </span>
-                  </Label>
-                  <div className="relative mt-2">
-                    <FileText className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-                    <Textarea
-                      id="description"
-                      placeholder="자신에 대해 자유롭게 소개해주세요. (여행 스타일, 좋아하는 것 등)"
-                      value={formData.description}
-                      onChange={(e) => {
-                        setDescriptionError('');
-                        handleInputChange('description', e.target.value);
-                      }}
-                      className="pl-10 min-h-32"
-                    />
-                  </div>
-                  {descriptionError && (
-                    <p className="text-xs text-rose-500 mt-2">
-                      {descriptionError}
-                    </p>
-                  )}
+                    {isSubmitting ? '추천 동행 매칭 중...' : '회원가입 완료'}
+                  </Button>
                 </div>
-                <p className="text-xs text-slate-400 text-right">
-                  * 자세히 적을수록, 마음이 딱 맞는 동행을 만날 확률이 높아져요!
-                </p>
               </div>
-
-              <div className="pt-7">
-                <Button
-                  onClick={handleSubmit}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 h-auto rounded-lg font-bold text-lg  shadow-blue-200 shadow-md flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
-                >
-                  회원가입 완료
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {step === 4 && (
-            <div className="flex-1 flex flex-col items-center justify-center text-center p-10 animate-in zoom-in duration-500">
-              <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mb-8 shadow-inner">
-                <Sparkles className="w-12 h-12 text-blue-600" />
-              </div>
-              <h2 className="text-3xl font-extrabold text-slate-900 mb-4 tracking-tight">
-                가입을 축하합니다!
-              </h2>
-              <p className="text-slate-500 text-lg max-w-md mb-10 leading-relaxed">
-                환영합니다,{' '}
-                <span className="text-blue-600 font-bold">
-                  {formData.nickname || '여행자'}
-                </span>
-                님!
-                <br />
-                이제 <span className="font-bold text-slate-800">MateTrip</span>
-                에서
-                <br />
-                당신만의 여행 메이트를 찾아보세요.
-              </p>
-              <Button
-                onClick={onSignup}
-                className="w-full max-w-sm bg-slate-900 text-white py-4 h-auto rounded-xl font-bold text-lg shadow-2xl hover:bg-black transition-all transform hover:-translate-y-1"
-              >
-                MateTrip 시작하기
-              </Button>
-              <p className="mt-6 text-center text-sm text-gray-600">
-                이미 계정이 있으신가요?{' '}
-                <Button
-                  type="button"
-                  variant="link"
-                  onClick={onLoginClick}
-                  className="text-blue-600 hover:text-blue-700 font-bold p-0 h-auto"
-                >
-                  로그인
-                </Button>
-              </p>
-            </div>
-          )}
+            )}
+          </div>
+          <p className="mt-4 mb-4 text-center text-sm text-gray-600">
+            이미 계정이 있으신가요?{' '}
+            <button
+              type="button"
+              onClick={onLoginClick}
+              className="text-blue-600 hover:text-blue-700"
+            >
+              로그인
+            </button>
+          </p>
         </div>
       </div>
     </div>
