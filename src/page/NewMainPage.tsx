@@ -346,14 +346,18 @@ export function NewMainPage({
   const handleOpenPlaceDetailPanel = (placeId: string) => {
     console.log('handleOpenPlaceDetailPanel called with placeId:', placeId);
     setSelectedPlaceIdForPanel(placeId);
-    setShowPlaceDetailPanel(true);
+    requestAnimationFrame(() => {
+      setShowPlaceDetailPanel(true);
+    });
   };
 
   // [신규] PoiDetailPanel 닫기 핸들러
   const handleClosePlaceDetailPanel = () => {
     console.log('handleClosePlaceDetailPanel called.');
     setShowPlaceDetailPanel(false);
-    setSelectedPlaceIdForPanel(null);
+    setTimeout(() => {
+      setSelectedPlaceIdForPanel(null);
+    }, 300);
   };
 
   // [신규] PostDetailPanel 열기 핸들러
@@ -411,9 +415,9 @@ export function NewMainPage({
   };
 
   return (
-    <div className="flex h-full bg-white relative overflow-y-auto">
+    <div className="flex bg-white relative">
       {/* Center Content */}
-      <div className="flex-1">
+      <div className="flex-1 overflow-y-auto">
         {/* max-w-7xl 컨테이너 및 여백 적용, flex-col과 gap으로 섹션 간 간격 조절 */}
         <PageContainer className="flex flex-col gap-y-8 md:gap-y-10 lg:gap-y-12">
           {/* Section 1: AI 추천 동행 (유저-게시글 매칭) */}
@@ -599,17 +603,16 @@ export function NewMainPage({
       />
 
       {/* PoiDetailPanel: 오버레이의 형제 요소로 분리 */}
-      {selectedPlaceIdForPanel && (
-        <PoiDetailPanel
-          placeId={selectedPlaceIdForPanel}
-          isVisible={showPlaceDetailPanel}
-          onClose={handleClosePlaceDetailPanel}
-          onNearbyPlaceSelect={handleOpenPlaceDetailPanel}
-          onPoiSelect={() => {}}
-          widthClass="w-1/2"
-          onClick={(e) => e.stopPropagation()}
-        />
-      )}
+      <PoiDetailPanel
+        placeId={selectedPlaceIdForPanel}
+        isVisible={showPlaceDetailPanel}
+        onClose={handleClosePlaceDetailPanel}
+        onNearbyPlaceSelect={handleOpenPlaceDetailPanel}
+        onPoiSelect={() => {}}
+        widthClass="w-1/2"
+        onClick={(e) => e.stopPropagation()}
+        positioning="fixed"
+      />
 
       {/* PostDetailPanel: 오버레이의 형제 요소로 분리 */}
       <div
