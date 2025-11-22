@@ -198,6 +198,7 @@ export function EditProfileModal({
   const [selectedTravelTendencies, setSelectedTravelTendencies] = useState<
     TravelTendencyType[]
   >(user?.tendency || []);
+  const [styleError, setStyleError] = useState<string>('');
   const [activeTendencyTab, setActiveTendencyTab] = useState<string>('place');
   const [currentProfileImageId, setCurrentProfileImageId] = useState<
     string | null
@@ -394,11 +395,22 @@ export function EditProfileModal({
   // };
 
   const handleToggleStyle = (style: TravelStyleType) => {
-    setSelectedTravelStyles((prev) =>
-      prev.includes(style)
-        ? prev.filter((item) => item !== style)
-        : [...prev, style]
-    );
+    setSelectedTravelStyles((prev) => {
+      if (prev.includes(style)) {
+        const next = prev.filter((item) => item !== style);
+        if (next.length < 3) {
+          setStyleError('여행 스타일을 3개 골라주세요.');
+        }
+        return next;
+      }
+      if (prev.length >= 3) {
+        setStyleError('여행 스타일을 3개까지 선택할 수 있습니다.');
+        return prev;
+      }
+      // 정상 추가 후 길이가 3개면 에러 해제
+      setStyleError('');
+      return [...prev, style];
+    });
   };
 
   const handleToggleTendency = (style: TravelTendencyType) => {
@@ -410,7 +422,11 @@ export function EditProfileModal({
   };
 
   const handleRemoveStyle = (style: TravelStyleType) => {
-    setSelectedTravelStyles(selectedTravelStyles.filter((s) => s !== style));
+    const next = selectedTravelStyles.filter((s) => s !== style);
+    if (next.length < 3) {
+      setStyleError('여행 스타일을 3개 골라주세요.');
+    }
+    setSelectedTravelStyles(next);
   };
 
   const handleRemoveTendency = (tendency: TravelTendencyType) => {
@@ -428,6 +444,10 @@ export function EditProfileModal({
   //👀 save API  호출
   const handleSaveProfile = async () => {
     if (!user || isSaving) return;
+    if (selectedTravelStyles.length !== 3) {
+      setStyleError('여행 스타일을 3개 골라주세요.');
+      return;
+    }
     setIsSaving(true);
     setSaveError(null);
     let nextProfileImageId = currentProfileImageId;
@@ -747,6 +767,9 @@ export function EditProfileModal({
                   >
                     + 추가
                   </Button>
+                  {styleError && (
+                    <p className="text-sm text-red-500">{styleError}</p>
+                  )}
                 </div>
 
                 {/* 여행 성향 */}
