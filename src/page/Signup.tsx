@@ -145,7 +145,7 @@ const CATEGORIZED_KEYWORDS: CategoryItem[] = [
     id: 'transport',
     title: '이동/방식',
     icon: Car,
-    question: '어떤 이동 수단과 여행 방식을 선호하시나요?',
+    question: '어떤 이동수단과 여행방식을 선호하시나요?',
     items: [
       '렌터카',
       '캠핑카',
@@ -681,7 +681,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                 </div>
 
                 <div className="flex flex-col md:flex-row flex-1 px-1 md:px-3 gap-2 md:gap-3 min-h-0">
-                  <div className="w-full md:w-40 max-w-[150px] shrink-0 bg-slate-100/40 md:rounded-l-2xl mb-4 md:mb-0">
+                  <div className="w-full md:w-48 max-w-40 shrink-0 bg-slate-100/40 md:rounded-l-2xl mb-4 md:mb-0">
                     <div className="flex flex-row md:flex-col overflow-x-auto md:overflow-visible scrollbar-hide p-2 md:p-2.5 gap-2">
                       {CATEGORIZED_KEYWORDS.map((tab) => {
                         const isActive = activeTab === tab.id;
@@ -696,7 +696,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                             variant="ghost"
                             onClick={() => setActiveTab(tab.id)}
                             className={`
-                            justify-start h-auto flex items-center gap-2 px-3 py-2 text-sm font-medium transition-all relative text-left md:rounded-l-2xl w-32
+                            justify-start h-auto flex items-center gap-2 px-3 py-2 text-sm font-medium transition-all relative text-left md:rounded-l-2xl w-full
                             ${
                               isActive
                                 ? 'bg-white text-primary shadow-md shadow-slate-100 z-10'
