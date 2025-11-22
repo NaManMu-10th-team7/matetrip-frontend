@@ -507,24 +507,24 @@ export function PostDetail({
               <div className="flex justify-between items-start">
                 <button
                   onClick={() => onOpenChange(false)}
-                  className="flex items-center justify-center w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 transition-colors backdrop-blur-sm"
+                  className="flex items-center justify-center w-12 h-12 rounded-full bg-black/40 hover:bg-black/60 transition-colors backdrop-blur-sm"
                   aria-label="뒤로 가기"
                 >
-                  <ChevronLeft className="w-6 h-6" />
+                  <ChevronLeft className="w-7 h-7" />
                 </button>
                 <div className="flex flex-col items-end gap-2">
-                  <Badge className="bg-white/90 text-black flex-shrink-0 backdrop-blur-sm">
+                  <Badge className="bg-white/90 text-black flex-shrink-0 backdrop-blur-sm text-base">
                     {post.status}
                   </Badge>
                   {isAuthor && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
-                          size="sm"
+                          size="icon"
                           variant="ghost"
-                          className="text-sm h-8 w-8 p-0 flex-shrink-0 text-white hover:bg-white/20 hover:text-white"
+                          className="h-12 w-12 flex-shrink-0 text-white hover:bg-white/20 hover:text-white"
                         >
-                          <MoreVertical className="w-6 h-6" />
+                          <MoreVertical className="w-7 h-7" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-48">
@@ -554,26 +554,26 @@ export function PostDetail({
 
               {/* 중앙 제목 */}
               <div className="flex items-center justify-center">
-                <h2 className="text-4xl font-bold text-center break-words">
+                <h2 className="text-5xl font-bold text-center break-words">
                   {post.title}
                 </h2>
               </div>
 
               {/* 하단 여행 정보 */}
               <div className="flex flex-col items-center gap-3 pb-2">
-                <div className="flex justify-center items-center gap-8 text-sm">
+                <div className="flex justify-center items-center gap-8 text-base">
                   <div className="flex items-center gap-2">
-                    <MapPin className="w-5 h-5" />
+                    <MapPin className="w-6 h-6" />
                     <span>{post.location}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Calendar className="w-5 h-5" />
+                    <Calendar className="w-6 h-6" />
                     <span>
                       {post.startDate} ~ {post.endDate}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Users className="w-5 h-5" />
+                    <Users className="w-6 h-6" />
                     <span>
                       {approvedParticipants.length + 1} / {post.maxParticipants}
                       명
@@ -586,7 +586,7 @@ export function PostDetail({
                       <Badge
                         key={index}
                         variant="outline"
-                        className="text-white border-white/50 bg-white/10 backdrop-blur-sm"
+                        className="rounded-full px-3 py-1 text-white border-white/50 bg-white/10 backdrop-blur-sm text-sm"
                       >
                         {translateKeyword(keyword)}
                       </Badge>
@@ -640,7 +640,7 @@ export function PostDetail({
                             <Badge
                               key={style}
                               variant="secondary"
-                              className="text-black bg-gray-100" // 색상 변경
+                              className="rounded-full px-3 py-1 text-black bg-gray-100" // 색상 변경 및 스타일 통일
                             >
                               {translateKeyword(style)}
                             </Badge>
