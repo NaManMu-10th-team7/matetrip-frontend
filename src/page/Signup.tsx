@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Check,
   MapPin,
   Tent,
   Heart,
@@ -9,23 +8,27 @@ import {
   Sparkles,
   User,
   Utensils,
-  ChevronDown,
   ArrowRight,
   Compass,
   Mail,
   Lock,
   Eye,
   EyeOff,
-  Smile,
   ArrowLeft,
-  Pencil,
+  Pen,
   FileText,
 } from 'lucide-react';
 import axios from 'axios';
 import client from '../api/client';
 import { MBTI_TYPES } from '../constants/mbti';
-import { TRAVEL_STYLE_OPTIONS } from '../constants/travelStyle';
-import { TRAVEL_TENDENCY_TYPE } from '../constants/travelTendencyType';
+import {
+  TRAVEL_STYLE_OPTIONS,
+  type TravelStyleType,
+} from '../constants/travelStyle';
+import {
+  TRAVEL_TENDENCY_TYPE,
+  type TravelTendencyType,
+} from '../constants/travelTendencyType';
 import { Button } from '../components/ui/button';
 import { Label } from '../components/ui/label';
 import { Input } from '../components/ui/input';
@@ -39,7 +42,7 @@ interface CategoryItem {
   title: string;
   icon: React.ElementType;
   question: string;
-  items: TravelTendencyKey[];
+  items: TravelTendencyType[];
 }
 
 interface SignupProps {
@@ -55,18 +58,18 @@ const CATEGORIZED_KEYWORDS: CategoryItem[] = [
     icon: MapPin,
     question: '어떤 여행지를 좋아하시나요?',
     items: [
-      'CITY',
-      'RURAL',
-      'TRADITIONAL_CITY',
-      'RESORT_CITY',
-      'PORT_TOWN',
-      'TRADITIONAL_MARKET',
-      'NIGHT_MARKET',
-      'BEACH',
-      'ISLAND',
-      'MOUNTAIN',
-      'VALLEY',
-      'LAKE',
+      '도시',
+      '시골',
+      '전통도시',
+      '휴양도시',
+      '항구도시',
+      '전통시장',
+      '야시장',
+      '바다',
+      '섬',
+      '산',
+      '계곡',
+      '호수',
     ],
   },
   {
@@ -75,18 +78,18 @@ const CATEGORIZED_KEYWORDS: CategoryItem[] = [
     icon: Tent,
     question: '어떤 액티비티를 즐기고 싶으신가요?',
     items: [
-      'TREKKING',
-      'MOUNTAINEERING',
-      'CAMPING',
-      'CYCLING',
-      'SURFING',
-      'SNORKELING',
-      'FREEDIVING',
-      'FISHING',
-      'SKIING',
-      'SNOWBOARDING',
-      'GOLF',
-      'RUNNING',
+      '트레킹',
+      '등산',
+      '캠핑',
+      '자전거',
+      '서핑',
+      '스노클링',
+      '프리다이빙',
+      '낚시',
+      '스키',
+      '스노보드',
+      '골프',
+      '러닝',
     ],
   },
   {
@@ -95,17 +98,17 @@ const CATEGORIZED_KEYWORDS: CategoryItem[] = [
     icon: Utensils,
     question: '여행 중 식사는 어떻게 하시겠어요?',
     items: [
-      'STREET_FOOD',
-      'LOCAL_RESTAURANT',
-      'FOODIE_TOUR',
-      'CAFE_DESSERT',
-      'VEGAN_FRIENDLY',
-      'NO_PORK',
-      'NO_SEAFOOD',
-      'SPICY_FOOD_PREF',
-      'MILD_FOOD_PREF',
-      'SEAFOOD_PREF',
-      'MEAT_PREF',
+      '길거리음식',
+      '로컬레스토랑',
+      '맛집탐방',
+      '카페디저트',
+      '비건필요',
+      '돼지고기비선호',
+      '해산물비선호',
+      '매운맛선호',
+      '순한맛선호',
+      '해산물선호',
+      '육류선호',
     ],
   },
   {
@@ -114,18 +117,18 @@ const CATEGORIZED_KEYWORDS: CategoryItem[] = [
     icon: Camera,
     question: '관심 있는 문화 생활이 있으신가요?',
     items: [
-      'ARCHITECTURE_TOUR',
-      'NIGHT_VIEW',
-      'MUSEUM',
-      'GALLERY',
-      'HERITAGE_TOUR',
-      'MUSICAL_SHOW',
-      'CONCERT',
-      'SPORTS_VIEWING',
-      'LOCAL_FESTIVAL',
-      'AMUSEMENT_PARK',
-      'AQUARIUM',
-      'ZOO',
+      '건축물탐방',
+      '야경감상',
+      '박물관',
+      '미술관',
+      '유적지탐방',
+      '공연뮤지컬',
+      '콘서트',
+      '스포츠관람',
+      '현지축제',
+      '놀이공원',
+      '아쿠아리움',
+      '동물원',
     ],
   },
   {
@@ -134,14 +137,14 @@ const CATEGORIZED_KEYWORDS: CategoryItem[] = [
     icon: Heart,
     question: '편안한 밤을 위해 어디서 머물까요?',
     items: [
-      'HOTEL',
-      'RESORT',
-      'GUESTHOUSE',
-      'MOTEL',
-      'PENSION',
-      'AIRBNB',
-      'GLAMPING',
-      'PRIVATE_POOL_VILLA',
+      '호텔',
+      '리조트',
+      '게스트하우스',
+      '모텔',
+      '펜션',
+      '에어비앤비',
+      '글램핑',
+      '풀빌라',
     ],
   },
   {
@@ -150,14 +153,14 @@ const CATEGORIZED_KEYWORDS: CategoryItem[] = [
     icon: Car,
     question: '어떤 이동 수단과 여행 방식을 선호하시나요?',
     items: [
-      'TRANSPORT_RENTAL_CAR',
-      'CAMPER_VAN',
-      'PUBLIC_TRANSPORT',
-      'TRAIN_TRIP',
-      'MOTORCYCLE_TRIP',
-      'BACKPACKING',
-      'HOTEL_STAYCATION',
-      'CAN_DRIVE',
+      '렌터카',
+      '캠핑카',
+      '대중교통',
+      '기차여행',
+      '오토바이여행',
+      '배낭여행',
+      '호캉스',
+      '운전가능',
     ],
   },
   {
@@ -166,20 +169,20 @@ const CATEGORIZED_KEYWORDS: CategoryItem[] = [
     icon: User,
     question: '기타 선호사항이 있나요?',
     items: [
-      'SMALL_GROUP_PREFERRED',
-      'QUIET_COMPANION_PREFERRED',
-      'TALKATIVE_COMPANION_PREFERRED',
-      'QUIET_RELAXATION',
-      'PACKED_SCHEDULE',
-      'LEISURELY_SCHEDULE',
-      'SPEND_ON_LODGING',
-      'SPEND_ON_FOOD',
-      'PHOTOGRAPHY',
-      'LANDSCAPE_PHOTOGRAPHY',
-      'NON_SMOKER',
-      'SMOKER',
-      'NON_DRINKING',
-      'DRINKS_ALCOHOL',
+      '소수인원선호',
+      '조용한동행선호',
+      '수다떠는동행선호',
+      '조용한휴식',
+      '빡빡한일정',
+      '여유로운일정',
+      '숙소우선',
+      '음식우선',
+      '사진촬영',
+      '풍경촬영',
+      '비흡연',
+      '흡연',
+      '비음주',
+      '음주',
     ],
   },
 ];
@@ -192,74 +195,75 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
   const [activeTab, setActiveTab] = useState<string>('place');
   const [styleError, setStyleError] = useState<string>('');
 
+  // Form data
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     confirmPassword: '',
     nickname: '',
     gender: '',
+    phone: '',
     mbti: '',
-    travelStyles: new Set<string>(),
-    tendencies: new Set<string>(),
-    introOneLine: '',
-    introDetail: '',
+    travelStyles: new Set<TravelStyleType>(),
+    tendency: new Set<TravelTendencyType>(),
+    intro: '',
+    description: '',
   });
 
-  const handleInputChange = (
-    field: keyof typeof formData,
-    value: string | boolean
-  ) => {
+  //const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+
+  const handleInputChange = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSetChange = (
-    field: 'travelStyles' | 'tendencies',
-    value: string
-  ) => {
+  const toggleTravelStyle = (style: TravelStyleType) => {
     setFormData((prev) => {
-      const newSet = new Set(prev[field]);
-      if (newSet.has(value)) {
-        newSet.delete(value);
+      const newSet = new Set(prev.travelStyles);
+      if (newSet.has(style)) {
+        newSet.delete(style);
+        setStyleError('');
       } else {
-        if (field === 'travelStyles' && newSet.size >= 3) {
-          setStyleError('여행 스타일은 3개만 선택할 수 있어요.');
+        if (newSet.size >= 3) {
+          setStyleError('여행 스타일은 3개까지 선택할 수 있습니다.');
+          setTimeout(() => setStyleError(''), 3000);
           return prev;
         }
-        newSet.add(value);
+        newSet.add(style);
       }
-
-      if (field === 'travelStyles') {
-        setStyleError('');
-      }
-      return { ...prev, [field]: newSet };
+      return { ...prev, travelStyles: newSet };
     });
   };
 
-  const currentTabInfo = CATEGORIZED_KEYWORDS.find((t) => t.id === activeTab);
+  const toggleTravelTendency = (tendency: TravelTendencyType) => {
+    setFormData((prev) => {
+      const newSet = new Set(prev.tendency);
+      if (newSet.has(tendency)) {
+        newSet.delete(tendency);
+      } else {
+        newSet.add(tendency);
+      }
+      return { ...prev, tendency: newSet };
+    });
+  };
 
-  const numRows = currentTabInfo
-    ? Math.ceil(currentTabInfo.items.length / 2)
-    : 1;
-
-  const handleNext = () => {
+  const handleNextStep = () => {
     if (step === 2 && formData.travelStyles.size !== 3) {
-      setStyleError('여행 스타일을 3개 선택해주세요.');
+      setStyleError('여행 스타일 3개를 선택해주세요.');
+      setTimeout(() => setStyleError(''), 3000);
       return;
     }
-
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    setStep(step + 1);
+    setStyleError('');
+    setStep((prev) => Math.min(prev + 1, 3));
   };
 
-  const handleBack = () => {
-    setStep(step - 1);
+  const handlePrevStep = () => {
+    setStep((prev) => Math.max(prev - 1, 1));
   };
 
-  const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
-      alert('비밀번호가 일치하지 않습니다.');
       return;
     }
 
@@ -271,15 +275,16 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
           nickname: formData.nickname,
           gender: formData.gender,
           mbtiTypes: formData.mbti,
-          travelStyles: Array.from(formData.travelStyles),
-          tendency: Array.from(formData.tendencies),
-          intro: formData.introOneLine,
-          description: formData.introDetail,
+          travelStyles: formData.travelStyles,
+          tendency: formData.tendency,
+          intro: formData.intro,
+          description: formData.description,
         },
       };
-
+      // db쌓기(임베딩 까지)
       const signupResponse = await client.post('/auth/signup', requestData);
 
+      // 회원가입 성공(201 Created) 후, 바로 로그인 처리
       if (signupResponse.status === 201) {
         const loginResponse = await client.post('/auth/login', {
           email: formData.email,
@@ -287,14 +292,35 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
         });
 
         if (loginResponse.status === 200) {
-          handleNext(); // to Step 4
+          // // // 📌메인페이지 가기 전에 임베딩 처리 하기 (matching-profile 에 내용넣기)
+
+          // const userId =
+          //   signupResponse.data?.id || loginResponse.data?.user?.id;
+
+          // if (userId) {
+          //   const syncPayload = {
+          //     //userId,
+          //     description: formData.description || '',
+          //     // 필요하면 travelStyles / tendency도 추가
+          //   };
+          //   await client.post('/matching/profile/embedding', syncPayload);
+          //   console.log('임베딩 완료!');
+          // } else {
+          //   throw new Error('Unable to determine userId after signup/login');
+          // }
+
+          // summary 랑 embedding 호출
+          // 로그인 성공 시 성공 모달을 띄웁니다.
+          //setShowSuccessModal(true);
+          onSignup();
         }
       }
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
-        alert(error.response.data.message || '회원가입에 실패했습니다.');
+        // const apiError = error.response.data as ApiErrorResponse;
+        // setErrorMessage(apiError.message || '회원가입에 실패했습니다.');
       } else {
-        alert('알 수 없는 오류가 발생했습니다.');
+        // setErrorMessage('알 수 없는 오류가 발생했습니다.');
       }
       console.error('Signup error:', error);
     }
@@ -322,14 +348,21 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
 
   const { title, desc } = getStepHeader();
 
+  const currentTabInfo = CATEGORIZED_KEYWORDS.find(
+    (tab) => tab.id === activeTab
+  );
+  const numRows = currentTabInfo
+    ? Math.ceil(currentTabInfo.items.length / 2)
+    : 1;
+
   return (
     <div className="min-h-screen bg-slate-50 flex justify-center py-8 px-4 sm:px-6 lg:px-8 font-sans">
-      <div className="w-full max-w-md md:max-w-lg">
+      <div className="w-full max-w-lg md:max-w-md">
         <div className="bg-white rounded-2xl md:rounded-3xl shadow-xl overflow-hidden border border-slate-100 relative min-h-[560px] flex flex-col">
           {step > 1 && step < 4 && (
             <Button
               variant="ghost"
-              onClick={handleBack}
+              onClick={handlePrevStep}
               className="absolute top-8 left-6 text-slate-400 hover:text-slate-800 flex items-center gap-1 text-sm font-bold transition-colors z-10 h-auto p-0"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -360,7 +393,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                 <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-blue-500 rounded-full transition-all duration-500 ease-out"
-                    style={{ width: `${((step - 1) / 3) * 100}%` }}
+                    style={{ width: `${(step / 3) * 100}%` }}
                   ></div>
                 </div>
               </div>
@@ -377,40 +410,41 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
             <div className="flex-1 px-5 md:px-6 py-5 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="space-y-5 max-w-xl mx-auto w-full">
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                  <Label htmlFor="email" className="font-semibold">
                     이메일
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <Mail className="h-5 w-5 text-slate-400" />
-                    </div>
+                  </Label>
+                  <div className="relative mt-2">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <Input
+                      id="email"
                       type="email"
+                      placeholder="example@email.com"
                       value={formData.email}
                       onChange={(e) =>
                         handleInputChange('email', e.target.value)
                       }
-                      placeholder="example@email.com"
-                      className="w-full pl-12 pr-4 py-3.5 h-auto bg-slate-50/60 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
+                      className="pl-10"
+                      required
                     />
                   </div>
                 </div>
+
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                  <Label htmlFor="password" className="font-semibold">
                     비밀번호
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <Lock className="h-5 w-5 text-slate-400" />
-                    </div>
+                  </Label>
+                  <div className="relative mt-2">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <Input
+                      id="password"
                       type={showPassword ? 'text' : 'password'}
+                      placeholder="8자 이상 입력해주세요"
                       value={formData.password}
                       onChange={(e) =>
                         handleInputChange('password', e.target.value)
                       }
-                      placeholder="8자 이상 입력해주세요"
-                      className="w-full pl-12 pr-12 py-3.5 h-auto bg-slate-50/60 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
+                      className="pl-10 pr-10"
+                      required
                     />
                     <button
                       type="button"
@@ -425,22 +459,23 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                     </button>
                   </div>
                 </div>
+
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                  <Label htmlFor="confirmPassword" className="font-semibold">
                     비밀번호 확인
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <Check className="h-5 w-5 text-slate-400" />
-                    </div>
+                  </Label>
+                  <div className="relative mt-2">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <Input
+                      id="confirmPassword"
                       type={showConfirmPassword ? 'text' : 'password'}
+                      placeholder="비밀번호를 다시 입력해주세요"
                       value={formData.confirmPassword}
                       onChange={(e) =>
                         handleInputChange('confirmPassword', e.target.value)
                       }
-                      placeholder="비밀번호를 다시 입력해주세요"
-                      className="w-full pl-12 pr-12 py-3.5 h-auto bg-slate-50/60 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
+                      className="pl-10 pr-10"
+                      required
                     />
                     <button
                       type="button"
@@ -457,65 +492,74 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                     </button>
                   </div>
                 </div>
+
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                  <Label htmlFor="nickname" className="font-semibold">
                     닉네임
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <Smile className="h-5 w-5 text-slate-400" />
-                    </div>
+                  </Label>
+                  <div className="relative mt-2">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <Input
+                      id="nickname"
                       type="text"
+                      placeholder="사용할 닉네임을 입력해주세요"
                       value={formData.nickname}
                       onChange={(e) =>
                         handleInputChange('nickname', e.target.value)
                       }
-                      placeholder="사용할 닉네임을 입력해주세요"
-                      className="w-full pl-12 pr-4 py-3.5 h-auto bg-slate-50/60 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
+                      className="pl-10"
+                      required
                     />
                   </div>
                 </div>
+
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
-                    성별
-                  </label>
-                  <div className="flex gap-6">
-                    {['남성', '여성'].map((g) => (
-                      <label
-                        key={g}
-                        className="flex items-center gap-2 cursor-pointer group"
+                  <Label className="font-semibold">성별</Label>
+                  <div className="flex gap-4 mt-2">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="male"
+                        type="radio"
+                        value="남성"
+                        name="gender"
+                        checked={formData.gender === '남성'}
+                        onChange={(e) =>
+                          handleInputChange('gender', e.target.value)
+                        }
+                        className="h-4 w-4 accent-blue-600"
+                      />
+                      <Label
+                        htmlFor="male"
+                        className="cursor-pointer font-normal"
                       >
-                        <div
-                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${formData.gender === g ? 'border-blue-600' : 'border-slate-300 group-hover:border-blue-400'}`}
-                        >
-                          {formData.gender === g && (
-                            <div className="w-2.5 h-2.5 rounded-full bg-blue-600" />
-                          )}
-                        </div>
-                        <input
-                          type="radio"
-                          name="gender"
-                          value={g}
-                          checked={formData.gender === g}
-                          onChange={(e) =>
-                            handleInputChange('gender', e.target.value)
-                          }
-                          className="hidden"
-                        />
-                        <span
-                          className={`text-base font-medium transition-colors ${formData.gender === g ? 'text-blue-900' : 'text-slate-500'}`}
-                        >
-                          {g}
-                        </span>
-                      </label>
-                    ))}
+                        남성
+                      </Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="female"
+                        type="radio"
+                        value="여성"
+                        name="gender"
+                        checked={formData.gender === '여성'}
+                        onChange={(e) =>
+                          handleInputChange('gender', e.target.value)
+                        }
+                        className="h-4 w-4 accent-blue-600"
+                      />
+                      <Label
+                        htmlFor="female"
+                        className="cursor-pointer font-normal"
+                      >
+                        여성
+                      </Label>
+                    </div>
                   </div>
                 </div>
               </div>
               <div className="mt-6 pb-3">
                 <Button
-                  onClick={handleNext}
+                  onClick={handleNextStep}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 h-auto rounded-xl font-bold text-lg shadow-md shadow-blue-200 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
                 >
                   다음
@@ -532,7 +576,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                     <div className="p-2 bg-blue-50 rounded-full">
                       <Sparkles className="w-5 h-5 text-blue-600" />
                     </div>
-                    <h2 className="text-xl font-extrabold text-slate-900 text-left">
+                    <h2 className="text-lg font-extrabold text-slate-900 text-left">
                       여행 스타일 (3개 선택)
                     </h2>
                   </div>
@@ -547,12 +591,10 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                     return (
                       <Button
                         key={style.value}
-                        onClick={() =>
-                          handleSetChange('travelStyles', style.value)
-                        }
+                        onClick={() => toggleTravelStyle(style.value)}
                         variant={isSelected ? 'default' : 'outline'}
                         className={`
-                          px-4 py-1.5 h-auto rounded-xl text-sm font-medium transition-all duration-200 border select-none
+                          px-3 py-1.5 h-auto rounded-md text-xs font-medium transition-all duration-200 border select-none
                           ${
                             isSelected
                               ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-200 '
@@ -580,7 +622,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                     <div className="p-2 bg-blue-50 rounded-full">
                       <Compass className="w-5 h-5 text-blue-600" />
                     </div>
-                    <h2 className="text-xl font-extrabold text-slate-900 text-left">
+                    <h2 className="text-lg font-extrabold text-slate-900 text-left">
                       여행 성향
                     </h2>
                   </div>
@@ -597,7 +639,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                       const isActive = activeTab === tab.id;
                       const Icon = tab.icon;
                       const count = tab.items.filter((k) =>
-                        formData.tendencies.has(k)
+                        formData.tendency.has(k)
                       ).length;
 
                       return (
@@ -606,7 +648,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                           variant="ghost"
                           onClick={() => setActiveTab(tab.id)}
                           className={`
-                            justify-start h-auto flex items-center gap-2 px-3 py-2.5 text-sm font-medium transition-all relative text-left md:rounded-l-2xl w-32
+                            justify-start h-auto flex items-center gap-2 px-3 py-2 text-sm font-medium transition-all relative text-left md:rounded-l-2xl w-32
                             ${
                               isActive
                                 ? 'bg-white text-blue-600 shadow-md shadow-slate-100 z-10'
@@ -637,7 +679,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                   <div className="mb-6 text-left">
                     {currentTabInfo && (
                       <>
-                        <h3 className="text-xl font-bold text-slate-900 mb-1">
+                        <h3 className="text-lg font-bold text-slate-900 mb-1">
                           {currentTabInfo.title}
                         </h3>
                         <p className="text-slate-500 text-sm">
@@ -648,7 +690,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                   </div>
 
                   <div
-                    className="animate-in fade-in slide-in-from-right-4 duration-300 h-[300px]"
+                    className="animate-in fade-in slide-in-from-right-4 duration-300 h-[250px]"
                     key={activeTab}
                   >
                     <div
@@ -658,18 +700,15 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                       }}
                     >
                       {currentTabInfo &&
-                        currentTabInfo.items.map((itemKey) => {
-                          const label = TRAVEL_TENDENCY_TYPE[itemKey];
-                          const isSelected = formData.tendencies.has(itemKey);
+                        currentTabInfo.items.map((label) => {
+                          const isSelected = formData.tendency.has(label);
                           return (
                             <Button
-                              key={itemKey}
+                              key={label}
                               variant={isSelected ? 'default' : 'outline'}
-                              onClick={() =>
-                                handleSetChange('tendencies', itemKey)
-                              }
+                              onClick={() => toggleTravelTendency(label)}
                               className={`
-                              relative group py-2 px-2 h-full w-full rounded-xl text-sm font-medium transition-all duration-200 border text-center flex items-center justify-center gap-1.5 whitespace-normal
+                              relative group py-2 px-2 h-full w-full rounded-md text-sm font-medium transition-all duration-200 border text-center flex items-center justify-center gap-1.5 whitespace-normal
                               ${
                                 isSelected
                                   ? 'bg-blue-500 border-blue-500 text-white shadow-md shadow-blue-100'
@@ -686,7 +725,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                 </div>
               </div>
 
-              <div className="w-full px-6 mt-6">
+              <div className="w-full px-6 mt-3">
                 <div className="border-t border-dashed border-slate-100"></div>
               </div>
 
@@ -696,8 +735,8 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                     <div className="p-2 bg-blue-50 rounded-full">
                       <User className="w-5 h-5 text-blue-600" />
                     </div>
-                    <h2 className="text-xl font-extrabold text-slate-900 text-left">
-                      MBTI (선택)
+                    <h2 className="text-lg font-extrabold text-slate-900 text-left">
+                      MBTI 성격 유형
                     </h2>
                   </div>
                   <p className="text-sm text-slate-500 py-1 pl-1">
@@ -719,9 +758,9 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                 </select>
               </div>
 
-              <div className="px-5 md:px-6 py-5 bg-white border-t border-slate-50 flex justify-center mt-auto">
+              <div className="px-5 md:px-6 py-7  flex justify-center mt-auto">
                 <Button
-                  onClick={handleNext}
+                  onClick={handleNextStep}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 h-auto rounded-xl font-bold text-lg shadow-md shadow-blue-200 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
                 >
                   다음 단계로
@@ -735,57 +774,55 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
             <div className="flex-1 px-5 md:px-6 py-6 flex flex-col animate-in fade-in slide-in-from-right-8 duration-500">
               <div className="max-w-xl mx-auto w-full space-y-5">
                 <div>
-                  <label className="block text-lg font-bold text-slate-800 mb-3">
+                  <Label htmlFor="intro" className="font-semibold">
                     한줄소개
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <Pencil className="h-5 w-5 text-slate-400" />
-                    </div>
+                  </Label>
+                  <div className="relative mt-2">
+                    <Pen className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <Input
+                      id="intro"
                       type="text"
-                      value={formData.introOneLine}
-                      onChange={(e) =>
-                        handleInputChange('introOneLine', e.target.value)
-                      }
                       placeholder="예) 바다를 사랑하는 여행러 🌊"
-                      className="w-full pl-12 pr-4 py-3.5 h-auto bg-slate-50/30 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
+                      value={formData.intro}
+                      onChange={(e) =>
+                        handleInputChange('intro', e.target.value)
+                      }
+                      className="pl-10"
+                      maxLength={50}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-lg font-bold text-slate-800 mb-3">
+                  <Label htmlFor="description" className="font-semibold">
                     상세소개
-                  </label>
-                  <div className="relative">
-                    <div className="absolute top-4 left-4 pointer-events-none">
-                      <FileText className="h-5 w-5 text-slate-400" />
-                    </div>
+                  </Label>
+                  <div className="relative mt-2">
+                    <FileText className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
                     <Textarea
-                      value={formData.introDetail}
+                      id="description"
+                      placeholder="자신에 대해 자유롭게 소개해주세요. (여행 스타일, 좋아하는 것 등)"
+                      value={formData.description}
                       onChange={(e) =>
-                        handleInputChange('introDetail', e.target.value)
+                        handleInputChange('description', e.target.value)
                       }
-                      rows={6}
-                      placeholder="자신에 대해 자유롭게 소개해 주세요. (여행 스타일, 좋아하는 것 등)"
-                      className="w-full pl-12 pr-4 py-3.5 bg-slate-50/30 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400 resize-none leading-relaxed"
+                      className="pl-10 min-h-32"
                     />
                   </div>
-                  <p className="mt-2 text-xs text-slate-400 text-right">
-                    * 자세히 적어주실수록, 마음이 딱 맞는 동행을 만날 확률이
-                    높아져요!
-                  </p>
                 </div>
+                <p className="mt-2 text-xs text-slate-400 text-right">
+                  * 자세히 적어주실수록, 마음이 딱 맞는 동행을 만날 확률이
+                  높아져요!
+                </p>
+              </div>
 
-                <div className="pt-5">
-                  <Button
-                    onClick={handleSubmit}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 h-auto rounded-xl font-bold text-lg  shadow-blue-200 shadow-md flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
-                  >
-                    회원가입 완료
-                  </Button>
-                </div>
+              <div className="pt-5">
+                <Button
+                  onClick={handleSubmit}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 h-auto rounded-xl font-bold text-lg  shadow-blue-200 shadow-md flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
+                >
+                  회원가입 완료
+                </Button>
               </div>
             </div>
           )}
