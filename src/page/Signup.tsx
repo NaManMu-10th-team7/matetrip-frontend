@@ -7,6 +7,7 @@ import {
   Car,
   Sparkles,
   User,
+  Shapes,
   MapPin,
   Utensils,
   ArrowRight,
@@ -161,7 +162,7 @@ const CATEGORIZED_KEYWORDS: CategoryItem[] = [
   {
     id: 'etc',
     title: '기타',
-    icon: User,
+    icon: Shapes,
     question: '기타 선호사항이 있나요?',
     items: [
       '소수인원선호',
