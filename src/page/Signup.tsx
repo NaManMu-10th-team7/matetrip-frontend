@@ -403,7 +403,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
           {step < 4 && (
             <div className="px-5 md:px-6 pt-8 pb-3 bg-white flex flex-col items-center text-center relative">
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-blue-200">
+                <div className="bg-linear-to-br bg-blue-600 p-2.5 rounded-xl shadow-lg text-white">
                   <Map className="w-7 h-7 text-white" />
                 </div>
                 <span className="text-2xl font-extrabold text-slate-900 tracking-tight">

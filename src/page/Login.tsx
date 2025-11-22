@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Lock, Eye, EyeOff, Map as MapIcon } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Map } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -80,8 +80,8 @@ export function Login({ onLogin, onSignupClick }: LoginProps) {
         {/* Header Logo */}
         <div className="flex flex-col items-center justify-center mb-6">
           <div className="flex items-center gap-2 mb-2">
-            <div className="bg-gradient-to-br from-blue-500 to-purple-600 p-2.5 rounded-xl shadow-lg text-white">
-              <MapIcon size={24} strokeWidth={2.5} />
+            <div className="bg-linear-to-br bg-blue-600 p-2.5 rounded-xl shadow-lg text-white">
+              <Map className="w-7 h-7 text-white" />
             </div>
             <h1 className="text-3xl font-bold tracking-tight text-gray-900">
               MateTrip
@@ -173,7 +173,7 @@ export function Login({ onLogin, onSignupClick }: LoginProps) {
 
             <Button
               type="submit"
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              className="w-full bg-gradient-to-r bg-blue-600 hover:bg-blue-700"
             >
               로그인
             </Button>
