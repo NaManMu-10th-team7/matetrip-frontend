@@ -19,7 +19,6 @@ import {
   ConsoleLogger,
   DefaultDeviceController,
   DefaultMeetingSession,
-  type Meeting,
   MeetingSessionConfiguration,
   type VideoTileState,
   LogLevel,
@@ -30,8 +29,8 @@ import { useAuthStore } from '../store/authStore';
 import client from '../api/client';
 
 // amazon-chime-sdk-js는 브라우저 환경에서 node의 global 객체를 기대하므로 안전하게 polyfill
-if (typeof global === 'undefined' && typeof window !== 'undefined') {
-  (window as unknown as { global: typeof window }).global = window;
+if (typeof (global as any) === 'undefined' && typeof window !== 'undefined') {
+  (window as any).global = window;
 }
 
 interface Props {
@@ -39,20 +38,23 @@ interface Props {
   onClose: () => void;
   activeMembers?: {
     id: string;
-    name: string;
+    name:string;
     avatar?: string;
+    userId?: string;
+    profileId?: string;
+    email?: string;
   }[];
 }
 
 interface JoinResponse {
-  meeting: Meeting;
+  meeting: any; // `Meeting` 타입이 export되지 않으므로 any로 변경
   attendee: Attendee;
 }
 
 type MeetingStatus = 'idle' | 'joining' | 'joined' | 'error';
 
 interface TileInfo {
-  tileId: number;
+  tileId: number | null; // null이 될 수 있으므로 타입 변경
   attendeeId: string;
   name: string;
   externalUserId?: string;
@@ -195,19 +197,21 @@ export const VideoChat = ({
         audioVideoDidStart: () => setStatus('joined'),
         videoTileDidUpdate: (tileState: VideoTileState) => {
           if (!tileState.boundAttendeeId || tileState.isContent) return;
+          
+          const boundAttendeeId = tileState.boundAttendeeId;
 
           const isLocal =
-            tileState.boundAttendeeId ===
-            meetingSession.configuration.credentials.attendeeId;
+            boundAttendeeId ===
+            meetingSession.configuration.credentials?.attendeeId;
           const name = resolveParticipantName(
-            tileState.boundAttendeeId,
+            boundAttendeeId,
             tileState.boundExternalUserId,
             isLocal
           );
           const isVideoActive = !!tileState.active && !tileState.paused;
 
           if (!isLocal) {
-            attendeeNamesRef.current[tileState.boundAttendeeId] = name;
+            attendeeNamesRef.current[boundAttendeeId] = name;
             updateParticipantCount(attendeeNamesRef.current);
           }
 
@@ -217,7 +221,7 @@ export const VideoChat = ({
               ...others,
               {
                 tileId: tileState.tileId,
-                attendeeId: tileState.boundAttendeeId,
+                attendeeId: boundAttendeeId,
                 name,
                 externalUserId: tileState.boundExternalUserId || undefined,
                 isLocal,
@@ -225,10 +229,12 @@ export const VideoChat = ({
               },
             ];
           });
-
-          const videoEl = videoElementRefs.current[tileState.tileId];
-          if (videoEl) {
-            audioVideo.bindVideoElement(tileState.tileId, videoEl);
+          
+          if (tileState.tileId) {
+            const videoEl = videoElementRefs.current[tileState.tileId];
+            if (videoEl) {
+              audioVideo.bindVideoElement(tileState.tileId, videoEl);
+            }
           }
         },
         videoTileWasRemoved: (tileId: number) => {
@@ -263,7 +269,7 @@ export const VideoChat = ({
                 [attendeeId]: resolveParticipantName(
                   attendeeId,
                   externalUserId || externalMatch || undefined,
-                  attendeeId === meetingSession.configuration.credentials.attendeeId
+                  attendeeId === meetingSession.configuration.credentials?.attendeeId
                 ),
               }
             : {}),
@@ -310,11 +316,11 @@ export const VideoChat = ({
     if (!audioVideoRef.current) return;
     const audioVideo = audioVideoRef.current;
     if (isMicMuted) {
-      const success = audioVideo.realtimeUnmuteLocalAudio();
-      if (success) setIsMicMuted(false);
+      audioVideo.realtimeUnmuteLocalAudio();
+      setIsMicMuted(false);
     } else {
-      const success = audioVideo.realtimeMuteLocalAudio();
-      if (success) setIsMicMuted(true);
+      audioVideo.realtimeMuteLocalAudio();
+      setIsMicMuted(true);
     }
   };
 
@@ -380,12 +386,12 @@ export const VideoChat = ({
   const resolveParticipantName = useCallback(
     (
       attendeeId: string,
-      externalUserId: string | undefined,
+      externalUserId: string | undefined | null,
       isLocal: boolean
     ) => {
       if (isLocal) return localDisplayName;
 
-      const extName = nameFromExternal(externalUserId);
+      const extName = nameFromExternal(externalUserId ?? undefined);
       if (extName) return extName;
 
       const mappedByAttendeeId =
@@ -457,7 +463,11 @@ export const VideoChat = ({
             className="relative flex aspect-video w-full min-h-[160px] max-h-[220px] overflow-hidden rounded-md bg-gray-900 text-white shadow-inner"
           >
             <video
-              ref={(el) => bindVideoElement(tile.tileId, el)}
+              ref={(el) => {
+                if (tile.tileId) {
+                  bindVideoElement(tile.tileId, el);
+                }
+              }}
               className={`h-full w-full object-cover ${
                 tile.isLocal
                   ? !isCameraOn

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, memo } from 'react';
-import { Send, Phone, Video, ChevronUp, ChevronDown } from 'lucide-react';
+import { Send, Video, ChevronUp, ChevronDown } from 'lucide-react';
 import { Button } from './ui/button';
 import type { Poi } from '../hooks/usePoiSocket';
 import { Input } from './ui/input';

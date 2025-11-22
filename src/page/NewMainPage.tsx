@@ -599,15 +599,17 @@ export function NewMainPage({
       />
 
       {/* PoiDetailPanel: 오버레이의 형제 요소로 분리 */}
-      <PoiDetailPanel
-        placeId={selectedPlaceIdForPanel}
-        isVisible={showPlaceDetailPanel}
-        onClose={handleClosePlaceDetailPanel}
-        onNearbyPlaceSelect={handleOpenPlaceDetailPanel}
-        onPoiSelect={() => {}}
-        widthClass="w-1/2"
-        onClick={(e) => e.stopPropagation()}
-      />
+      {selectedPlaceIdForPanel && (
+        <PoiDetailPanel
+          placeId={selectedPlaceIdForPanel}
+          isVisible={showPlaceDetailPanel}
+          onClose={handleClosePlaceDetailPanel}
+          onNearbyPlaceSelect={handleOpenPlaceDetailPanel}
+          onPoiSelect={() => {}}
+          widthClass="w-1/2"
+          onClick={(e) => e.stopPropagation()}
+        />
+      )}
 
       {/* PostDetailPanel: 오버레이의 형제 요소로 분리 */}
       <div

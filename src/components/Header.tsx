@@ -3,7 +3,7 @@ import { Map, LogIn, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
 import { useAuthStore } from '../store/authStore';
 import { NotificationPanel } from './NotificationPanel'; // new-ui의 컴포넌트 사용
-import { SearchBar } from './SearchBar'; // new-ui의 컴포넌트 사용
+// import { SearchBar } from './SearchBar'; // new-ui의 컴포넌트 사용
 import client from '../api/client';
 
 interface HeaderProps {
@@ -13,7 +13,6 @@ interface HeaderProps {
   onLogoutClick: () => void;
   onProfileClick: () => void;
   onLogoClick: () => void;
-  onSearch?: (query: string) => void; // onSearch prop 추가
 }
 
 export function Header({
@@ -23,7 +22,6 @@ export function Header({
   onLogoutClick,
   onProfileClick,
   onLogoClick,
-  onSearch,
 }: HeaderProps) {
   const { user } = useAuthStore();
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
@@ -76,7 +74,7 @@ export function Header({
 
           {/* 중앙: 검색창 */}
           <div className="flex-1 max-w-2xl">
-            <SearchBar onSearch={onSearch} />
+            {/* <SearchBar onSearch={onSearch} /> */}
           </div>
 
           {/* 오른쪽: 알림 + 프로필 */}

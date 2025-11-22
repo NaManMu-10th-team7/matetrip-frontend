@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Compass, Loader2 } from 'lucide-react';
-import { SearchBar } from '../components/SearchBar';
+import { Compass, Loader2, Search } from 'lucide-react';
 import { InspirationCard } from '../components/InspirationCard';
 import { useAuthStore } from '../store/authStore';
 import client from '../api/client';
@@ -41,7 +40,8 @@ export function InspirationPage({ onViewAccommodation }: InspirationPageProps) {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
-  const [_searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentSearch, setCurrentSearch] = useState('');
   const { isAuthLoading } = useAuthStore();
 
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -66,106 +66,94 @@ export function InspirationPage({ onViewAccommodation }: InspirationPageProps) {
     }));
   };
 
-  // 초기 데이터 로드
-  const fetchInitialPlaces = useCallback(async () => {
-    if (isAuthLoading) return;
-
-    setIsLoading(true);
-    setPage(1);
-    setHasMore(true);
-
-    try {
-      const response = await client.get<PopularPlaceResponse[]>(
-        '/places/popular',
-        {
-          params: {
-            page: 1,
-            limit: ITEMS_PER_PAGE,
-          },
-        }
-      );
-
-      const transformedData = transformResponse(response.data, 0);
-      setPlaces(transformedData);
-
-      // 받아온 데이터가 limit보다 적으면 더 이상 데이터가 없음
-      if (response.data.length < ITEMS_PER_PAGE) {
-        setHasMore(false);
+  const fetchPlaces = useCallback(
+    async (query?: string, isNewSearch = false) => {
+      if (isNewSearch) {
+        setIsLoading(true);
+        setPage(1);
+        setHasMore(true);
+        setPlaces([]);
+        setCurrentSearch(query || '');
+      } else {
+        setIsLoadingMore(true);
       }
-    } catch (error) {
-      console.error('Failed to fetch popular places:', error);
-      setPlaces([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [isAuthLoading]);
 
-  // 추가 데이터 로드 (무한 스크롤)
-  const fetchMorePlaces = useCallback(async () => {
-    if (isLoadingMore || !hasMore) return;
+      const currentPage = isNewSearch ? 1 : page + 1;
+      const endpoint = query ? '/places/search' : '/places/popular';
+      const params = query
+        ? { query, page: currentPage, limit: ITEMS_PER_PAGE }
+        : { page: currentPage, limit: ITEMS_PER_PAGE };
 
-    setIsLoadingMore(true);
-    const nextPage = page + 1;
+      try {
+        const response = await client.get<PopularPlaceResponse[]>(endpoint, {
+          params,
+        });
 
-    try {
-      const response = await client.get<PopularPlaceResponse[]>(
-        '/places/popular',
-        {
-          params: {
-            page: nextPage,
-            limit: ITEMS_PER_PAGE,
-          },
+        const transformedData = transformResponse(
+          response.data,
+          isNewSearch ? 0 : places.length
+        );
+
+        setPlaces((prev) =>
+          isNewSearch ? transformedData : [...prev, ...transformedData]
+        );
+
+        if (isNewSearch) {
+          setPage(1);
+        } else {
+          setPage(currentPage);
         }
-      );
 
-      const transformedData = transformResponse(response.data, places.length);
-      setPlaces((prev) => [...prev, ...transformedData]);
-      setPage(nextPage);
-
-      if (response.data.length < ITEMS_PER_PAGE) {
-        setHasMore(false);
+        if (response.data.length < ITEMS_PER_PAGE) {
+          setHasMore(false);
+        }
+      } catch (error) {
+        console.error('Failed to fetch places:', error);
+        if (isNewSearch) setPlaces([]);
+      } finally {
+        setIsLoading(false);
+        setIsLoadingMore(false);
       }
-    } catch (error) {
-      console.error('Failed to fetch more places:', error);
-    } finally {
-      setIsLoadingMore(false);
-    }
-  }, [isLoadingMore, hasMore, page, places.length]);
+    },
+    [page, places.length]
+  );
 
   // 초기 로드
   useEffect(() => {
-    fetchInitialPlaces();
-  }, [fetchInitialPlaces]);
+    if (!isAuthLoading) {
+      fetchPlaces(undefined, true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthLoading]);
 
   // Intersection Observer 설정 (무한 스크롤)
   useEffect(() => {
-    if (isLoading) return;
+    if (isLoading || isLoadingMore || !hasMore) return;
 
     observerRef.current = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !isLoadingMore) {
-          fetchMorePlaces();
+        if (entries[0].isIntersecting) {
+          fetchPlaces(searchQuery || undefined, false);
         }
       },
       { threshold: 0.1 }
     );
 
+    const currentObserver = observerRef.current;
     if (loadMoreRef.current) {
-      observerRef.current.observe(loadMoreRef.current);
+      currentObserver.observe(loadMoreRef.current);
     }
 
     return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
+      if (currentObserver) {
+        currentObserver.disconnect();
       }
     };
-  }, [isLoading, hasMore, isLoadingMore, fetchMorePlaces]);
+  }, [isLoading, isLoadingMore, hasMore, fetchPlaces, searchQuery]);
 
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    // TODO: 검색 API 구현 시 활성화
-    // 현재는 인기 장소 목록만 표시
-    console.log('검색어:', query);
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchPlaces(searchQuery.trim(), true);
   };
 
   const handleCardClick = (place: Place) => {
@@ -173,9 +161,6 @@ export function InspirationPage({ onViewAccommodation }: InspirationPageProps) {
       onViewAccommodation(place.id);
     }
 
-    console.log('전송되니?');
-
-    // InspirationDetail 페이지로 라우팅 (장소 정보 전달)
     navigate(`/inspiration/${place.id}`, {
       state: {
         title: place.title,
@@ -188,7 +173,6 @@ export function InspirationPage({ onViewAccommodation }: InspirationPageProps) {
 
   return (
     <div className="bg-white min-h-screen">
-      {/* 모바일 반응형 컨테이너 */}
       <PageContainer>
         {/* Header Section */}
         <div className="mb-8">
@@ -200,9 +184,18 @@ export function InspirationPage({ onViewAccommodation }: InspirationPageProps) {
           </p>
 
           {/* Search Bar */}
-          <div className="w-full">
-            <SearchBar onSearch={handleSearch} />
-          </div>
+          <form onSubmit={handleSearchSubmit} className="flex-1 relative">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="여행지, 관심사, 여행 스타일로 검색..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </form>
         </div>
 
         {/* Places Section */}
@@ -210,17 +203,21 @@ export function InspirationPage({ onViewAccommodation }: InspirationPageProps) {
           <div className="flex items-center gap-2 mb-6">
             <Compass className="w-5 h-5 text-blue-600" />
             <h2 className="text-2xl font-bold text-gray-900">
-              {isLoading ? (
+              {isLoading && !isLoadingMore ? (
                 <div className="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>
               ) : (
                 '인기 장소'
               )}
             </h2>
           </div>
+          {currentSearch && !isLoading && (
+            <p className="text-gray-600 mb-6">
+              '{currentSearch}'에 대한 검색 결과입니다.
+            </p>
+          )}
 
-          {isLoading ? (
-            // 로딩 스켈레톤 - 모바일 반응형 그리드
-            <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
+          {isLoading && !isLoadingMore ? (
+            <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-x-6 gap-y-22">
               {Array.from({ length: 10 }).map((_, index) => (
                 <div key={index} className="animate-pulse">
                   <div className="bg-gray-200 h-[252px] rounded-2xl mb-3"></div>
@@ -236,7 +233,6 @@ export function InspirationPage({ onViewAccommodation }: InspirationPageProps) {
             </div>
           ) : (
             <>
-              {/* 장소 카드 그리드 - 모바일 반응형 */}
               <div className="grid sm:grid-cols-3 lg:grid-cols-5 gap-x-6 gap-y-22">
                 {places.map((place) => (
                   <InspirationCard
@@ -250,7 +246,6 @@ export function InspirationPage({ onViewAccommodation }: InspirationPageProps) {
                 ))}
               </div>
 
-              {/* 무한 스크롤 로딩 인디케이터 */}
               <div ref={loadMoreRef} className="mt-8 flex justify-center">
                 {isLoadingMore && (
                   <div className="flex items-center gap-2 text-gray-500">
