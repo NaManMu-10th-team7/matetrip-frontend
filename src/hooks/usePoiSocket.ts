@@ -191,9 +191,10 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
       return;
     }
 
-    const socket = io(`${WEBSOCKET_POI_URL}/poi`, {
-      transports: ['websocket'],
-    });
+    const socket = io(`${WEBSOCKET_POI_URL}`, {  
+			path: '/ws/poi',
+			transports: ['websocket'] 
+		});
     socketRef.current = socket;
 
     const handleSync = (payload: { pois: Poi[] }) => {
