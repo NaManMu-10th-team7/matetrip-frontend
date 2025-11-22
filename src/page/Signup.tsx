@@ -338,8 +338,8 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
 
   return (
     <div className="min-h-screen bg-slate-50 flex justify-center py-8 px-4 sm:px-6 lg:px-8 font-sans">
-      <div className="max-w-2xl w-full">
-        <div className="bg-white rounded-[2.5rem] shadow-xl overflow-hidden border border-slate-100 relative min-h-[700px] flex flex-col">
+      <div className="w-full max-w-xl md:max-w-2xl">
+        <div className="bg-white rounded-2xl md:rounded-3xl shadow-xl overflow-hidden border border-slate-100 relative min-h-[560px] flex flex-col">
           {step > 1 && step < 4 && (
             <button
               onClick={handleBack}
@@ -351,7 +351,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
           )}
 
           {step < 4 && (
-            <div className="px-6 pt-10 pb-4 bg-white flex flex-col items-center text-center relative">
+            <div className="px-5 md:px-6 pt-8 pb-3 bg-white flex flex-col items-center text-center relative">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-blue-200">
                   <MapPin className="text-white w-6 h-6" />
@@ -361,13 +361,13 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                 </span>
               </div>
 
-              <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+              <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
                 {title}
               </h1>
-              <p className="text-slate-500 text-sm mt-2 mb-8">{desc}</p>
+              <p className="text-slate-500 text-sm mt-1 mb-6">{desc}</p>
 
               <div className="w-full max-w-xs flex items-center justify-center gap-3">
-                <div className="text-blue-600 font-bold text-lg whitespace-nowrap">
+                <div className="text-blue-600 font-bold text-base whitespace-nowrap">
                   Step {step}
                 </div>
                 <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
@@ -388,8 +388,8 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
           )}
 
           {step === 1 && (
-            <div className="flex-1 px-6 py-6 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="space-y-5 max-w-lg mx-auto w-full">
+            <div className="flex-1 px-5 md:px-6 py-5 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="space-y-5 max-w-xl mx-auto w-full">
                 {/* Email */}
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">
@@ -552,10 +552,10 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                 </div>
                 */}
               </div>
-              <div className="mt-8 pb-4">
+              <div className="mt-6 pb-3">
                 <button
                   onClick={handleNext}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold text-lg shadow-md shadow-blue-200 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold text-lg shadow-md shadow-blue-200 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
                 >
                   다음
                 </button>
@@ -565,7 +565,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
 
           {step === 2 && (
             <div className="flex-1 flex flex-col animate-in fade-in slide-in-from-right-8 duration-500">
-              <div className="px-6 py-6">
+              <div className="px-5 md:px-6 py-5">
                 <div className="flex flex-col gap-1 mb-5">
                   <div className="flex items-center justify-start gap-2">
                     <div className="p-2 bg-blue-50 rounded-full">
@@ -606,11 +606,11 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                 )}
               </div>
 
-              <div className="w-full px-6">
+              <div className="w-full px-5 md:px-6">
                 <div className="border-t border-dashed border-slate-100"></div>
               </div>
 
-              <div className="px-6 pt-6">
+              <div className="px-5 md:px-6 pt-6">
                 <div className="flex flex-col gap-1 mb-5">
                   <div className="flex items-center justify-start gap-2">
                     <div className="p-2 bg-blue-50 rounded-full">
@@ -668,7 +668,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                   </div>
                 </div>
 
-                <div className="flex-1 min-w-0 py-6 pr-3 pl-0 md:pl-1 bg-white md:rounded-l-2xl">
+                <div className="flex-1 min-w-0 py-5 md:py-6 pr-3 pl-0 md:pl-1 bg-white md:rounded-l-2xl">
                   <div className="mb-6 text-left">
                     {currentTabInfo && (
                       <>
@@ -686,7 +686,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                     className="animate-in fade-in slide-in-from-right-4 duration-300"
                     key={activeTab}
                   >
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 min-h-[400px]">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 min-h-[410px]">
                       {currentTabInfo &&
                         currentTabInfo.items.map((itemKey) => {
                           const label = TRAVEL_TENDENCY_TYPE[itemKey];
@@ -717,7 +717,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                 <div className="border-t border-dashed border-slate-100"></div>
               </div>
 
-              <div className="px-6 py-6 bg-white">
+              <div className="px-5 md:px-6 py-5 bg-white">
                 <div className="flex items-center justify-start gap-2 mb-5">
                   <div className="p-2 bg-blue-50 rounded-full">
                     <User className="w-5 h-5 text-blue-600" />
@@ -748,10 +748,10 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                 </div>
               </div>
 
-              <div className="p-6 bg-white border-t border-slate-50 flex justify-center mt-auto">
+              <div className="px-5 md:px-6 py-5 bg-white border-t border-slate-50 flex justify-center mt-auto">
                 <button
                   onClick={handleNext}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold text-lg shadow-md shadow-blue-200 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold text-lg shadow-md shadow-blue-200 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
                 >
                   다음 단계로
                   <ArrowRight className="w-5 h-5" />
@@ -761,8 +761,8 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
           )}
 
           {step === 3 && (
-            <div className="flex-1 px-6 py-8 flex flex-col animate-in fade-in slide-in-from-right-8 duration-500">
-              <div className="max-w-lg mx-auto w-full space-y-6">
+            <div className="flex-1 px-5 md:px-6 py-6 flex flex-col animate-in fade-in slide-in-from-right-8 duration-500">
+              <div className="max-w-xl mx-auto w-full space-y-5">
                 <div>
                   <label className="block text-lg font-bold text-slate-800 mb-3">
                     한줄소개
@@ -777,7 +777,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                       value={userInfo.introOneLine}
                       onChange={handleInputChange}
                       placeholder="예) 바다를 사랑하는 여행러 🌊"
-                      className="w-full pl-11 pr-4 py-4 bg-slate-50/30 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
+                      className="w-full pl-11 pr-4 py-3.5 bg-slate-50/30 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
                     />
                   </div>
                 </div>
@@ -796,7 +796,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                       onChange={handleInputChange}
                       rows={6}
                       placeholder="자신에 대해 자유롭게 소개해 주세요. (여행 스타일, 좋아하는 것 등)"
-                      className="w-full pl-11 pr-4 py-4 bg-slate-50/30 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400 resize-none leading-relaxed"
+                      className="w-full pl-11 pr-4 py-3.5 bg-slate-50/30 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400 resize-none leading-relaxed"
                     />
                   </div>
                   <p className="mt-2 text-xs text-slate-400 text-right">
@@ -805,10 +805,10 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                   </p>
                 </div>
 
-                <div className="pt-6">
+                <div className="pt-5">
                   <button
                     onClick={handleSubmit}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold text-lg  shadow-blue-200 shadow-md flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold text-lg  shadow-blue-200 shadow-md flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
                   >
                     회원가입 완료
                   </button>
