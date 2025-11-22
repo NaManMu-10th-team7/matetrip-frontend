@@ -3,7 +3,7 @@ name: Deploy Frontend to S3
 on:
   push:
     branches:
-      - develop          # main 브랜치에 푸시될 때마다 배포
+      - prod          # main 브랜치에 푸시될 때마다 배포
   workflow_dispatch:  # 필요하면 수동 실행도 가능
 
 jobs:
