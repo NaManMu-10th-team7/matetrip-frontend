@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { MapPin, Search as SearchIcon } from 'lucide-react'; // SearchIcon 추가
+import { MapPin, Search as SearchIcon, Sparkles } from 'lucide-react'; // SearchIcon, Sparkles 추가
 import { Button } from '../components/ui/button';
 import client from '../api/client';
 import { type Post, type Writer } from '../types/post';
 import { MainPostCardSkeleton } from '../components/AIMatchingSkeletion';
-import { MatchingCarousel } from '../components/MatchingCarousel';
+// import { MatchingCarousel } from '../components/MatchingCarousel';
 import { GridMatchingCard } from '../components/GridMatchingCard';
 import { PostDetail } from './PostDetail';
 // import { Dialog, DialogContent } from '../components/ui/dialog'; // Dialog 관련 임포트 제거
@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 import type { MatchingResult } from '../types/matchSearch'; // MatchingResult 타입 임포트
 import type { KeywordValue } from '../utils/keyword'; // KeywordValue 타입 임포트
 import { ProfileModal } from '../components/ProfileModal'; // ProfileModal 임포트 추가
+import PageContainer from '../components/PageContainer';
 
 interface MainPageProps {
   onSearch: (params: {
@@ -440,12 +441,15 @@ export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
 
   return (
     <div className="bg-white min-h-screen">
-      <div className="max-w-7xl mx-auto px-16 py-22">
+      <PageContainer>
         {/* Header Section */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-center text-gray-900 mb-2">
-            MateTrip AI가 추천하는 최적의 여행 파트너
-          </h1>
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-7 h-7 text-blue-600" />
+            <h1 className="text-2xl font-bold text-gray-900">
+              MateTrip AI가 추천하는 최적의 여행 파트너
+            </h1>
+          </div>
         </div>
         {/* 로그인하지 않은 사용자를 위한 안내 배너 */}
         {!isLoggedIn && (
@@ -473,8 +477,8 @@ export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
             </div>
           </div>
         )}
-        {/* Recommended Posts Section - 모든 사용자에게 표시 */}
-        {!searchResults && ( // 검색 결과가 없을 때만 캐러셀 표시
+        {/* Recommended Posts Section - 캐러셀 (주석 처리) */}
+        {/* {!searchResults && ( // 검색 결과가 없을 때만 캐러셀 표시
           <section className="mb-12">
             {isLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
@@ -495,7 +499,7 @@ export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
               />
             )}
           </section>
-        )}
+        )} */}
 
         {/* 전체 추천 동행 그리드 또는 검색 결과 */}
         <section className="mb-12">
@@ -601,7 +605,7 @@ export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
             </div>
           )}
         </section>
-      </div>
+      </PageContainer>
 
       {/* PostDetail Panel 및 오버레이 */}
       <div

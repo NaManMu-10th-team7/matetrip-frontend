@@ -12,6 +12,7 @@ import type { MatchCandidateDto } from '../types/matching';
 import { GridMatchingCard } from '../components/GridMatchingCard';
 import { MainPostCardSkeleton } from '../components/AIMatchingSkeletion';
 import { PoiDetailPanel } from '../components/ScheduleSidebar'; // PoiDetailPanel 임포트
+import PageContainer from '../components/PageContainer';
 // import { usePlaceDetail } from '../hooks/usePlaceDetail'; // usePlaceDetail 훅 임포트 - 제거
 
 interface PopularPlaceResponse {
@@ -273,8 +274,14 @@ export function NewMainPage({
         };
       })
       .filter(
-        (item): item is { post: Post; score: number; tendency: string[]; style: string[] } =>
-          item !== null
+        (
+          item
+        ): item is {
+          post: Post;
+          score: number;
+          tendency: string[];
+          style: string[];
+        } => item !== null
       )
       .slice(0, 5);
   }, [matches, posts]);
@@ -374,7 +381,8 @@ export function NewMainPage({
     handleOpenPostDetailPanel(postId);
   };
 
-  const handlePlaceClick = (placeId: string) => { // _place: PlaceDto 인자 제거
+  const handlePlaceClick = (placeId: string) => {
+    // _place: PlaceDto 인자 제거
     console.log('handlePlaceClick called with placeId:', placeId);
     if (!isLoggedIn) {
       navigate('/login');
@@ -403,159 +411,160 @@ export function NewMainPage({
   };
 
   return (
-    <div className="flex h-full bg-white relative">
+    <div className="flex h-full bg-white relative overflow-y-auto">
       {/* Center Content */}
-      <div className="flex-1 overflow-y-auto px-8 md:px-16 lg:px-24 py-6 md:py-8 lg:py-12">
-        {/* Section 1: AI 추천 동행 (유저-게시글 매칭) */}
-        <section className="mb-8 md:mb-10 lg:mb-12">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3">
-            <div>
-              <h2 className="text-xl md:text-xl font-bold text-gray-900">
-                {user?.profile.nickname}님의 성향에 맞을 수도 있는 동행의
-                여행일정
-              </h2>
-              <p className="text-xs md:text-sm text-gray-600 mt-1">
-                MateTrip AI가 추천하는 최적의 여행 파트너
-              </p>
-            </div>
-            <Button
-              onClick={handleAllViewMatching}
-              variant="ghost"
-              className="text-sm self-start sm:self-auto"
-            >
-              View All
-            </Button>
-          </div>
-
-          {(() => {
-            console.log('🎯 Section 1 렌더링 조건:', {
-              isLoggedIn,
-              isMatchesLoading,
-              isPostsLoading,
-              matchedPostsLength: matchedPosts.length,
-              렌더링할내용: !isLoggedIn
-                ? '로그인 필요'
-                : isMatchesLoading || isPostsLoading
-                  ? '로딩 중'
-                  : matchedPosts.length === 0
-                    ? '추천 없음'
-                    : '카드 렌더링',
-            });
-            return null;
-          })()}
-          {!isLoggedIn ? (
-            <div className="bg-gradient-to-r from-blue-50 to-pink-50 rounded-2xl p-6 border border-blue-100">
-              <div className="text-center">
-                <h3 className="text-lg font-bold text-gray-900 mb-2">
-                  로그인이 필요합니다
-                </h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  당신에게 딱 맞는 동행을 AI가 추천해드려요
+      <div className="flex-1">
+        {/* max-w-7xl 컨테이너 및 여백 적용, flex-col과 gap으로 섹션 간 간격 조절 */}
+        <PageContainer className="flex flex-col gap-y-8 md:gap-y-10 lg:gap-y-12">
+          {/* Section 1: AI 추천 동행 (유저-게시글 매칭) */}
+          <section>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">
+                  {user?.profile.nickname}님의 성향에 맞을 수도 있는 동행의
+                  여행일정
+                </h2>
+                <p className="text-xs md:text-sm text-gray-600 mt-1">
+                  MateTrip AI가 추천하는 최적의 여행 파트너
                 </p>
-                <Button
-                  onClick={() => navigate('/login')}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  로그인하기
-                </Button>
               </div>
+              <Button
+                onClick={handleAllViewMatching}
+                variant="ghost"
+                className="text-sm self-start sm:self-auto"
+              >
+                View All
+              </Button>
             </div>
-          ) : isMatchesLoading || isPostsLoading ? (
-            <div className="grid grid-cols-5 gap-4 md:gap-6">
-              {Array.from({ length: 5 }).map((_, index) => (
-                <MainPostCardSkeleton key={index} />
-              ))}
-            </div>
-          ) : matchedPosts.length === 0 ? (
-            <div className="text-center text-gray-500 py-10">
-              추천할 동행이 없습니다.
-            </div>
-          ) : (
-            <div className="grid grid-cols-5 gap-4 md:gap-6">
-              {matchedPosts.map(({ post, score, tendency, style }, index) => {
-                // tendency와 style을 string[]에서 string으로 변환
-                const formattedTendency = tendency.join(', ');
-                const formattedStyle = style.join(', ');
 
-                return (
-                  <GridMatchingCard
-                    key={post.id}
-                    post={post}
-                    matchingInfo={{
-                      score: score,
-                      tendency: formattedTendency, // 변환된 string 사용
-                      style: formattedStyle,       // 변환된 string 사용
-                    }}
-                    rank={index + 1}
-                    writerProfileImageUrl={
-                      post.writer?.profile?.profileImageId
-                        ? (writerProfileImages[
-                            post.writer.profile.profileImageId
-                          ] ?? null)
-                        : null
-                    }
-                    writerNickname={post.writer?.profile?.nickname ?? null}
-                    onClick={() => handlePostClick(post.id)}
+            {(() => {
+              console.log('🎯 Section 1 렌더링 조건:', {
+                isLoggedIn,
+                isMatchesLoading,
+                isPostsLoading,
+                matchedPostsLength: matchedPosts.length,
+                렌더링할내용: !isLoggedIn
+                  ? '로그인 필요'
+                  : isMatchesLoading || isPostsLoading
+                    ? '로딩 중'
+                    : matchedPosts.length === 0
+                      ? '추천 없음'
+                      : '카드 렌더링',
+              });
+              return null;
+            })()}
+            {!isLoggedIn ? (
+              <div className="bg-gradient-to-r from-blue-50 to-pink-50 rounded-2xl p-6 border border-blue-100">
+                <div className="text-center">
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">
+                    로그인이 필요합니다
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    당신에게 딱 맞는 동행을 AI가 추천해드려요
+                  </p>
+                  <Button
+                    onClick={() => navigate('/login')}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    로그인하기
+                  </Button>
+                </div>
+              </div>
+            ) : isMatchesLoading || isPostsLoading ? (
+              <div className="grid grid-cols-5 gap-4 md:gap-6">
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <MainPostCardSkeleton key={index} />
+                ))}
+              </div>
+            ) : matchedPosts.length === 0 ? (
+              <div className="text-center text-gray-500 py-10">
+                추천할 동행이 없습니다.
+              </div>
+            ) : (
+              <div className="grid grid-cols-5 gap-4 md:gap-6">
+                {matchedPosts.map(({ post, score, tendency, style }, index) => {
+                  // tendency와 style을 string[]에서 string으로 변환
+                  const formattedTendency = tendency.join(', ');
+                  const formattedStyle = style.join(', ');
+
+                  return (
+                    <GridMatchingCard
+                      key={post.id}
+                      post={post}
+                      matchingInfo={{
+                        score: score,
+                        tendency: formattedTendency, // 변환된 string 사용
+                        style: formattedStyle, // 변환된 string 사용
+                      }}
+                      rank={index + 1}
+                      writerProfileImageUrl={
+                        post.writer?.profile?.profileImageId
+                          ? (writerProfileImages[
+                              post.writer.profile.profileImageId
+                            ] ?? null)
+                          : null
+                      }
+                      writerNickname={post.writer?.profile?.nickname ?? null}
+                      onClick={() => handlePostClick(post.id)}
+                    />
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
+          {/* Section 2: 장소 추천 */}
+          <PlaceRecommendationSection onPlaceClick={handlePlaceClick} />
+
+          {/* Section 3: Inspiration */}
+          <section>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Hot Place</h2>
+                <p className="text-xs md:text-sm text-gray-600 mt-1text-xs md:text-sm text-gray-600 mt-1">
+                  MateTrip 유저들의 Pick!
+                </p>
+              </div>
+              <Button
+                onClick={handleAllViewInspiration}
+                variant="ghost"
+                className="text-sm self-start sm:self-auto"
+              >
+                View All
+              </Button>
+            </div>
+
+            {isInspirationsLoading ? (
+              <div className="grid grid-cols-5 gap-4 md:gap-6">
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="w-full h-64 bg-gray-200 rounded-xl animate-pulse"
                   />
-                );
-              })}
-            </div>
-          )}
-        </section>
-
-        {/* Section 2: 장소 추천 */}
-        <PlaceRecommendationSection onPlaceClick={handlePlaceClick} />
-
-        {/* Section 3: Inspiration */}
-        <section className="mb-8 md:mb-10 lg:mb-12">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3">
-            <div>
-              <h2 className="text-xl md:text-xl font-bold text-gray-900">
-                Hot Place
-              </h2>
-              <p className="text-xs md:text-sm text-gray-600 mt-1text-xs md:text-sm text-gray-600 mt-1">
-                MateTrip 유저들의 Pick!
-              </p>
-            </div>
-            <Button
-              onClick={handleAllViewInspiration}
-              variant="ghost"
-              className="text-sm self-start sm:self-auto"
-            >
-              View All
-            </Button>
-          </div>
-
-          {isInspirationsLoading ? (
-            <div className="grid grid-cols-5 gap-4 md:gap-6">
-              {Array.from({ length: 5 }).map((_, index) => (
-                <div
-                  key={index}
-                  className="w-full h-64 bg-gray-200 rounded-xl animate-pulse"
-                />
-              ))}
-            </div>
-          ) : inspirations.length === 0 ? (
-            <div className="text-center text-gray-500 py-10">
-              추천할 장소가 없습니다.
-            </div>
-          ) : (
-            <div className="grid grid-cols-5 gap-4 md:gap-6">
-              {inspirations.map((place, index) => (
-                <InspirationCard
-                  key={place.id}
-                  imageUrl={place.imageUrl}
-                  title={place.title}
-                  address={place.address}
-                  category={place.category}
-                  summary={place.summary}
-                  rank={index + 1} // rank prop 추가
-                  onClick={() => handleInspirationClick(place)}
-                />
-              ))}
-            </div>
-          )}
-        </section>
+                ))}
+              </div>
+            ) : inspirations.length === 0 ? (
+              <div className="text-center text-gray-500 py-10">
+                추천할 장소가 없습니다.
+              </div>
+            ) : (
+              <div className="grid grid-cols-5 gap-4 md:gap-6">
+                {inspirations.map((place, index) => (
+                  <InspirationCard
+                    key={place.id}
+                    imageUrl={place.imageUrl}
+                    title={place.title}
+                    address={place.address}
+                    category={place.category}
+                    summary={place.summary}
+                    rank={index + 1} // rank prop 추가
+                    onClick={() => handleInspirationClick(place)}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+        </PageContainer>
       </div>
 
       {/* PostDetail Modal - 전체 상세보기 (제거) */}
@@ -611,13 +620,18 @@ export function NewMainPage({
           <PostDetail
             postId={selectedPostIdForPanel}
             onJoinWorkspace={(postId, workspaceName) => {
-              console.log('🔵 [NewMainPage] PostDetail onJoinWorkspace called', { postId, workspaceName });
+              console.log(
+                '🔵 [NewMainPage] PostDetail onJoinWorkspace called',
+                { postId, workspaceName }
+              );
               // 워크스페이스 입장: 먼저 실행한 후 패널 닫기
               onJoinWorkspace(postId, workspaceName);
               handleClosePostDetailPanel();
             }}
             onViewProfile={(userId) => {
-              console.log('🔵 [NewMainPage] PostDetail onViewProfile called', { userId });
+              console.log('🔵 [NewMainPage] PostDetail onViewProfile called', {
+                userId,
+              });
               // 프로필 모달 열기: PostDetail 패널은 유지
               onViewProfile(userId);
             }}

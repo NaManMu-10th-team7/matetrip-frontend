@@ -5,6 +5,7 @@ import { SearchBar } from '../components/SearchBar';
 import { InspirationCard } from '../components/InspirationCard';
 import { useAuthStore } from '../store/authStore';
 import client from '../api/client';
+import PageContainer from '../components/PageContainer';
 
 // 백엔드 응답 타입 (GetPopularPlacesResDto)
 interface PopularPlaceResponse {
@@ -188,13 +189,13 @@ export function InspirationPage({ onViewAccommodation }: InspirationPageProps) {
   return (
     <div className="bg-white min-h-screen">
       {/* 모바일 반응형 컨테이너 */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-16 py-6 sm:py-8 md:py-12">
+      <PageContainer>
         {/* Header Section */}
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-medium text-gray-900 mb-2">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
             당신을 위한 AI 장소추천
           </h1>
-          <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
+          <p className="text-base text-gray-600 mb-6">
             인기 있는 장소를 둘러보고 여행 영감을 얻으세요.
           </p>
 
@@ -205,10 +206,10 @@ export function InspirationPage({ onViewAccommodation }: InspirationPageProps) {
         </div>
 
         {/* Places Section */}
-        <section className="mb-8 sm:mb-12">
-          <div className="flex items-center gap-2 mb-4 sm:mb-6">
+        <section className="mb-12">
+          <div className="flex items-center gap-2 mb-6">
             <Compass className="w-5 h-5 text-blue-600" />
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-gray-900">
               {isLoading ? (
                 <div className="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>
               ) : (
@@ -236,7 +237,7 @@ export function InspirationPage({ onViewAccommodation }: InspirationPageProps) {
           ) : (
             <>
               {/* 장소 카드 그리드 - 모바일 반응형 */}
-              <div className="grid sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 lg:gap-8">
+              <div className="grid sm:grid-cols-3 lg:grid-cols-5 gap-x-6 gap-y-22">
                 {places.map((place) => (
                   <InspirationCard
                     key={place.id}
@@ -266,7 +267,7 @@ export function InspirationPage({ onViewAccommodation }: InspirationPageProps) {
             </>
           )}
         </section>
-      </div>
+      </PageContainer>
     </div>
   );
 }
