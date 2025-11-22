@@ -6,6 +6,7 @@ import { type Post } from '../types/post';
 import { MainPostCardSkeleton } from '../components/AIMatchingSkeletion';
 import { WorkspaceCard } from '../components/WorkspaceCard';
 import { useAuthStore } from '../store/authStore';
+import { PostDetail } from './PostDetail'; // PostDetail 임포트
 
 type SearchParams = {
   startDate?: string;
@@ -15,12 +16,12 @@ type SearchParams = {
 };
 
 interface AllPostsPageProps {
-  onViewPost: (postId: string) => void;
+  // onViewPost: (postId: string) => void; // onViewPost prop 제거
   fetchTrigger: number;
 }
 
 export function AllPostsPage({
-  onViewPost,
+  // onViewPost, // onViewPost prop 제거
   fetchTrigger,
 }: AllPostsPageProps) {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -34,6 +35,12 @@ export function AllPostsPage({
   const [endDate, setEndDate] = useState('');
   const [location, setLocation] = useState('');
   const filterRef = useRef<HTMLDivElement>(null);
+
+  // PostDetail Panel 관련 상태
+  const [showPostDetailPanel, setShowPostDetailPanel] = useState(false);
+  const [selectedPostIdForPanel, setSelectedPostIdForPanel] = useState<
+    string | null
+  >(null);
 
   const fetchPosts = useCallback(
     async (params?: SearchParams) => {
@@ -129,6 +136,18 @@ export function AllPostsPage({
 
   // 활성화된 필터 개수
   const activeFilterCount = [startDate, endDate, location].filter(Boolean).length;
+
+  // PostDetail Panel 열기 핸들러
+  const handleOpenPostDetailPanel = (postId: string) => {
+    setSelectedPostIdForPanel(postId);
+    setShowPostDetailPanel(true);
+  };
+
+  // PostDetail Panel 닫기 핸들러
+  const handleClosePostDetailPanel = () => {
+    setShowPostDetailPanel(false);
+    setSelectedPostIdForPanel(null);
+  };
 
   return (
     <div className="bg-white min-h-screen">
@@ -274,12 +293,45 @@ export function AllPostsPage({
                 <WorkspaceCard
                   key={post.id}
                   post={post}
-                  onClick={() => onViewPost(post.id)}
+                  onClick={() => handleOpenPostDetailPanel(post.id)} // 패널 열기 핸들러 연결
                 />
               ))}
             </div>
           )}
         </section>
+      </div>
+
+      {/* PostDetail Panel 및 오버레이 */}
+      <div
+        className={`fixed inset-0 z-20 bg-black/50 transition-opacity duration-300 ${
+          showPostDetailPanel
+            ? 'opacity-100 pointer-events-auto'
+            : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={handleClosePostDetailPanel}
+      >
+        {/* PostDetail Panel */}
+        <div
+          className={`fixed right-0 top-0 h-full bg-white shadow-lg transform transition-transform duration-300 ease-in-out z-30
+            ${showPostDetailPanel ? 'translate-x-0' : 'translate-x-full'} w-1/2`}
+          onClick={(e) => e.stopPropagation()} // 패널 내부 클릭 시 오버레이 닫힘 방지
+        >
+          {selectedPostIdForPanel && (
+            <PostDetail
+              postId={selectedPostIdForPanel}
+              // onJoinWorkspace, onViewProfile, onEditPost, onDeleteSuccess는 App.tsx에서 전달받아야 함
+              // AllPostsPage에서는 이 기능들이 직접 필요하지 않으므로, App.tsx에서 PostDetail을 렌더링하는 방식으로 돌아가거나,
+              // AllPostsPageProps에 이 prop들을 추가해야 합니다.
+              // 현재는 App.tsx에서 PostDetail을 렌더링하는 방식이므로, 여기서는 onOpenChange만 연결합니다.
+              onOpenChange={handleClosePostDetailPanel} // 패널 닫기 핸들러 연결
+              // 임시로 빈 함수 전달 (App.tsx에서 처리)
+              onJoinWorkspace={() => {}}
+              onViewProfile={() => {}}
+              onEditPost={() => {}}
+              onDeleteSuccess={() => {}}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

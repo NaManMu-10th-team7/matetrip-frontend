@@ -315,7 +315,7 @@ export function Workspace({
     // [수정] postLocation이 있으면 좌표로 변환하여 지도 초기 위치 설정
     if (postLocation) {
       const geocoder = new window.kakao.maps.services.Geocoder();
-      geocoder.addressSearch(postLocation, (result, status) => {
+      geocoder.addressSearch(postLocation, (result: any, status: any) => { // result, status에 any 타입 명시
         if (status === window.kakao.maps.services.Status.OK && result[0]) {
           setInitialMapCenter({
             lat: Number(result[0].y),

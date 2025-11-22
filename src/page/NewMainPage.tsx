@@ -7,7 +7,7 @@ import { PostDetail } from './PostDetail';
 import { useAuthStore } from '../store/authStore';
 import client, { API_BASE_URL } from '../api/client';
 import { type Post } from '../types/post';
-import { type PlaceDto, type CategoryCode } from '../types/place'; // CategoryCode 임포트
+import { /*type PlaceDto,*/ type CategoryCode } from '../types/place'; // PlaceDto 임포트 제거
 import type { MatchCandidateDto } from '../types/matching';
 import { GridMatchingCard } from '../components/GridMatchingCard';
 import { MainPostCardSkeleton } from '../components/AIMatchingSkeletion';
@@ -41,10 +41,10 @@ interface NewMainPageProps {
   onViewProfile: (userId: string) => void;
   onEditPost: (post: Post) => void;
   onDeleteSuccess?: () => void;
-  onViewPost: (postId: string) => void; // Add onViewPost prop
+  // onViewPost: (postId: string) => void; // onViewPost prop 제거
 }
 
-type SelectedType = 'post' | 'place' | 'inspiration' | null;
+// type SelectedType = 'post' | 'place' | 'inspiration' | null; // 제거
 
 // AIMatchingPage.tsx에서 가져온 헬퍼 함수들 (수정: 배열 반환)
 const normalizeTextList = (values?: unknown): string[] => {
@@ -86,7 +86,7 @@ export function NewMainPage({
   onViewProfile,
   onEditPost,
   onDeleteSuccess,
-  onViewPost, // Destructure onViewPost
+  // onViewPost, // Destructure onViewPost 제거
 }: NewMainPageProps) {
   const navigate = useNavigate();
   const { user, isAuthLoading } = useAuthStore();
@@ -102,14 +102,20 @@ export function NewMainPage({
   const [isMatchesLoading, setIsMatchesLoading] = useState(true);
   const [isInspirationsLoading, setIsInspirationsLoading] = useState(true);
 
-  // Selection states (기존 PostDetail 모달 관련)
-  const [selectedType, setSelectedType] = useState<SelectedType>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [showPostDetailModal, setShowPostDetailModal] = useState(false);
+  // Selection states (기존 PostDetail 모달 관련) - 제거
+  // const [selectedType, setSelectedType] = useState<SelectedType>(null);
+  // const [selectedId, setSelectedId] = useState<string | null>(null);
+  // const [showPostDetailModal, setShowPostDetailModal] = useState(false);
 
   // [신규] PoiDetailPanel 관련 상태
   const [showPlaceDetailPanel, setShowPlaceDetailPanel] = useState(false);
   const [selectedPlaceIdForPanel, setSelectedPlaceIdForPanel] = useState<
+    string | null
+  >(null);
+
+  // [신규] PostDetailPanel 관련 상태
+  const [showPostDetailPanel, setShowPostDetailPanel] = useState(false);
+  const [selectedPostIdForPanel, setSelectedPostIdForPanel] = useState<
     string | null
   >(null);
 
@@ -343,14 +349,29 @@ export function NewMainPage({
     setSelectedPlaceIdForPanel(null);
   };
 
+  // [신규] PostDetailPanel 열기 핸들러
+  const handleOpenPostDetailPanel = (postId: string) => {
+    console.log('handleOpenPostDetailPanel called with postId:', postId);
+    setSelectedPostIdForPanel(postId);
+    setShowPostDetailPanel(true);
+  };
+
+  // [신규] PostDetailPanel 닫기 핸들러
+  const handleClosePostDetailPanel = () => {
+    console.log('handleClosePostDetailPanel called.');
+    setShowPostDetailPanel(false);
+    setSelectedPostIdForPanel(null);
+  };
+
   // Handlers
   const handlePostClick = (postId: string) => {
     console.log('🟢 handlePostClick 호출됨!', {
       postId,
       isLoggedIn,
-      현재상태: { selectedType, selectedId },
+      // 현재상태: { selectedType, selectedId }, // 제거
     });
-    onViewPost(postId); // Use the onViewPost prop
+    // onViewPost(postId); // Use the onViewPost prop 대신 패널 열기
+    handleOpenPostDetailPanel(postId);
   };
 
   const handlePlaceClick = (placeId: string) => { // _place: PlaceDto 인자 제거
@@ -537,8 +558,8 @@ export function NewMainPage({
         </section>
       </div>
 
-      {/* PostDetail Modal - 전체 상세보기 */}
-      {showPostDetailModal && selectedId && (
+      {/* PostDetail Modal - 전체 상세보기 (제거) */}
+      {/* {showPostDetailModal && selectedId && (
         <PostDetail
           postId={selectedId}
           onJoinWorkspace={onJoinWorkspace}
@@ -553,16 +574,19 @@ export function NewMainPage({
             }
           }}
         />
-      )}
+      )} */}
 
       {/* [신규] PoiDetailPanel 및 오버레이 */}
       <div
         className={`fixed inset-0 z-20 bg-black/50 transition-opacity duration-300 ${
-          showPlaceDetailPanel
+          showPlaceDetailPanel || showPostDetailPanel
             ? 'opacity-100 pointer-events-auto'
             : 'opacity-0 pointer-events-none'
         }`}
-        onClick={handleClosePlaceDetailPanel}
+        onClick={() => {
+          if (showPlaceDetailPanel) handleClosePlaceDetailPanel();
+          if (showPostDetailPanel) handleClosePostDetailPanel();
+        }}
       >
         <PoiDetailPanel
           placeId={selectedPlaceIdForPanel}
@@ -574,6 +598,24 @@ export function NewMainPage({
           // 패널 내부 클릭 시 이벤트 전파 방지
           onClick={(e) => e.stopPropagation()}
         />
+
+        {/* [신규] PostDetailPanel */}
+        <div
+          className={`fixed right-0 top-0 h-full bg-white shadow-lg transform transition-transform duration-300 ease-in-out z-30
+            ${showPostDetailPanel ? 'translate-x-0' : 'translate-x-full'} w-1/2`}
+          onClick={(e) => e.stopPropagation()} // 패널 내부 클릭 시 오버레이 닫힘 방지
+        >
+          {selectedPostIdForPanel && (
+            <PostDetail
+              postId={selectedPostIdForPanel}
+              onJoinWorkspace={onJoinWorkspace}
+              onViewProfile={onViewProfile}
+              onEditPost={onEditPost}
+              onDeleteSuccess={onDeleteSuccess || (() => {})}
+              onOpenChange={handleClosePostDetailPanel} // 패널 닫기 핸들러 연결
+            />
+          )}
+        </div>
       </div>
     </div>
   );

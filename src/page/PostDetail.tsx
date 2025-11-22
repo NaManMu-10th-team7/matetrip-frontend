@@ -22,8 +22,8 @@ import { Badge } from '../components/ui/badge';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogTitle,
+  DialogDescription, // 다시 임포트
+  DialogTitle, // 다시 임포트
 } from '../components/ui/dialog';
 import {
   AlertDialog,
@@ -485,10 +485,10 @@ export function PostDetail({
 
   return (
     <>
-      <DialogTitle className="sr-only">{post.title}</DialogTitle>
-      <DialogDescription className="sr-only">
-        {post.location} 여행 상세 정보
-      </DialogDescription>
+      {/* <DialogTitle className="sr-only">{post.title}</DialogTitle> // 제거 */}
+      {/* <DialogDescription className="sr-only"> // 제거 */}
+      {/* {post.location} 여행 상세 정보 // 제거 */}
+      {/* </DialogDescription> // 제거 */}
 
       <div className="px-6 py-4 border-b bg-white flex-shrink-0 flex items-center justify-between">
         <button
@@ -596,7 +596,7 @@ export function PostDetail({
                           <Badge
                             key={style}
                             variant="secondary"
-                            className="text-xs bg-black text-white"
+                            className="text-black bg-gray-100" // 색상 변경
                           >
                             {translateKeyword(style)}
                           </Badge>

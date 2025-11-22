@@ -4,6 +4,7 @@ import { Button } from './ui/button';
 import { PostCard } from './PostCard';
 import client from '../api/client';
 import { type Post } from '../types/post';
+import { PostDetail } from '../page/PostDetail'; // PostDetail 임포트
 
 interface SearchResultsProps {
   searchParams: {
@@ -12,17 +13,23 @@ interface SearchResultsProps {
     location?: string;
     title?: string;
   };
-  onViewPost: (postId: string) => void;
+  // onViewPost: (postId: string) => void; // onViewPost prop 제거
 }
 
 export function SearchResults({
   searchParams,
-  onViewPost,
+  // onViewPost, // onViewPost prop 제거
 }: SearchResultsProps) {
   const [results, setResults] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [sortBy, setSortBy] = useState<'match' | 'latest'>('match');
+
+  // PostDetail Panel 관련 상태
+  const [showPostDetailPanel, setShowPostDetailPanel] = useState(false);
+  const [selectedPostIdForPanel, setSelectedPostIdForPanel] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -55,6 +62,18 @@ export function SearchResults({
 
     fetchResults();
   }, [searchParams]);
+
+  // PostDetail Panel 열기 핸들러
+  const handleOpenPostDetailPanel = (postId: string) => {
+    setSelectedPostIdForPanel(postId);
+    setShowPostDetailPanel(true);
+  };
+
+  // PostDetail Panel 닫기 핸들러
+  const handleClosePostDetailPanel = () => {
+    setShowPostDetailPanel(false);
+    setSelectedPostIdForPanel(null);
+  };
 
   const searchKeywords = Object.values(searchParams).filter(Boolean).join(', ');
 
@@ -125,7 +144,7 @@ export function SearchResults({
             <div key={post.id} className="relative">
               <PostCard
                 post={post}
-                onClick={() => onViewPost(post.id)}
+                onClick={() => handleOpenPostDetailPanel(post.id)} // 패널 열기 핸들러 연결
                 // post.image가 없을 경우 기본 이미지 URL을 전달합니다.
                 image={
                   'https://images.unsplash.com/photo-1533106418989-87423dec6922?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0cmF2ZWx8ZW58MXx8fHwxNzIxNzE2MDMwfDA&ixlib=rb-4.1.0&q=80&w=1080'
@@ -146,6 +165,35 @@ export function SearchResults({
           <p className="text-gray-600">다른 조건으로 검색해보세요</p>
         </div>
       )}
+
+      {/* PostDetail Panel 및 오버레이 */}
+      <div
+        className={`fixed inset-0 z-20 bg-black/50 transition-opacity duration-300 ${
+          showPostDetailPanel
+            ? 'opacity-100 pointer-events-auto'
+            : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={handleClosePostDetailPanel}
+      >
+        {/* PostDetail Panel */}
+        <div
+          className={`fixed right-0 top-0 h-full bg-white shadow-lg transform transition-transform duration-300 ease-in-out z-30
+            ${showPostDetailPanel ? 'translate-x-0' : 'translate-x-full'} w-1/2`}
+          onClick={(e) => e.stopPropagation()} // 패널 내부 클릭 시 오버레이 닫힘 방지
+        >
+          {selectedPostIdForPanel && (
+            <PostDetail
+              postId={selectedPostIdForPanel}
+              // SearchResults에서는 이 기능들이 직접 필요하지 않으므로, 임시로 빈 함수 전달
+              onJoinWorkspace={() => {}}
+              onViewProfile={() => {}}
+              onEditPost={() => {}}
+              onDeleteSuccess={() => {}}
+              onOpenChange={handleClosePostDetailPanel} // 패널 닫기 핸들러 연결
+            />
+          )}
+        </div>
+      </div>
     </div>
   );
 }
