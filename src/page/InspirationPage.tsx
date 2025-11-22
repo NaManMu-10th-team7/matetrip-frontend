@@ -241,7 +241,7 @@ export function InspirationPage({ onViewAccommodation }: InspirationPageProps) {
                   <InspirationCard
                     key={place.id}
                     imageUrl={place.imageUrl}
-                    badgeText={place.badgeText}
+                    rank={places.indexOf(place) + 1}
                     title={place.title}
                     address={place.address}
                     onClick={() => handleCardClick(place)}

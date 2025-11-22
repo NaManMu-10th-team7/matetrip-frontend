@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import {
   MapPin,
@@ -15,11 +15,17 @@ import { API_BASE_URL } from '../api/client';
 import type { MatchRecruitingPostDto } from '../types/matchSearch';
 import type { Post } from '../types/post';
 
+// ExtendedMatchingInfo 인터페이스를 제거합니다.
+// interface ExtendedMatchingInfo extends Omit<MatchingInfo, 'tendency' | 'style'> {
+//   tendency?: string[];
+//   style?: string[];
+// }
+
 interface GridMatchingCardProps {
   /** 추천 카드에 표시할 모집글 정보 (Post 또는 MatchRecruitingPostDto) */
   post: Post | MatchRecruitingPostDto;
   /** 이 카드에만 필요한 매칭 정보 */
-  matchingInfo: MatchingInfo;
+  matchingInfo: MatchingInfo; // ExtendedMatchingInfo 대신 MatchingInfo 사용
   /** 카드 클릭 이벤트 핸들러 */
   onClick?: () => void;
   /** 추천 순위 (1부터 시작) */
@@ -54,6 +60,7 @@ export function GridMatchingCard({
     participations,
     maxParticipants,
   } = post;
+  // tendency와 style은 이제 string 타입으로 받습니다.
   const { score, tendency, style, vectorScore } = matchingInfo;
 
   const safeScore =
@@ -66,6 +73,7 @@ export function GridMatchingCard({
       : null;
 
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
+  const [isHovered, setIsHovered] = useState(false); // Hover 상태 추가
 
   const currentParticipants =
     1 + (participations?.filter((p) => p.status === '승인').length ?? 0);
@@ -126,10 +134,18 @@ export function GridMatchingCard({
     };
   }, [post.imageId]);
 
+  // 매칭 키워드 존재 여부
+  const hasMatchingKeywords = useMemo(() => {
+    // tendency와 style이 string이므로, 존재 여부와 길이가 0보다 큰지 확인
+    return (tendency && tendency.length > 0) || (style && style.length > 0) || (safeVectorScore !== null && safeVectorScore > 0);
+  }, [tendency, style, safeVectorScore]);
+
   return (
     <div
       className="flex flex-col gap-3 w-full cursor-pointer hover:opacity-90 transition-opacity"
       onClick={onClick}
+      onMouseEnter={() => setIsHovered(true)} // Hover 시작 시 상태 변경
+      onMouseLeave={() => setIsHovered(false)} // Hover 종료 시 상태 변경
     >
       {/* 이미지 영역 */}
       <div className="relative h-[290px] bg-gray-300 rounded-[16px] overflow-hidden w-full">
@@ -175,7 +191,7 @@ export function GridMatchingCard({
             </p>
           </div>
 
-          {/* 매칭 정보 (매칭률 + 뱃지) */}
+          {/* 매칭 정보 (매칭률) */}
           <div className="flex flex-col items-end gap-2 pb-1 min-w-0">
             <div className="flex items-baseline gap-1 flex-shrink-0">
               <p className="text-base font-medium text-white leading-tight mr-1">
@@ -186,40 +202,73 @@ export function GridMatchingCard({
               </p>
               <p className="text-sm font-medium text-white leading-tight">%</p>
             </div>
-            {/* 일치하는 성향/스타일/프로필 유사도 */}
-            {(style || tendency || safeVectorScore !== null) && (
-              <div className="flex flex-wrap items-center justify-end gap-1.5 -mb-0.5">
-                {style && (
-                  <Badge
-                    variant="outline"
-                    className="border-blue-500/50 bg-blue-950/50 text-blue-300 text-xs px-2 py-1"
-                  >
-                    <Tag className="w-3 h-3 mr-1" />
-                    {style}
-                  </Badge>
-                )}
-                {tendency && (
-                  <Badge
-                    variant="outline"
-                    className="border-purple-500/50 bg-purple-950/50 text-purple-300 text-xs px-2 py-1"
-                  >
-                    <Sparkles className="w-3 h-3 mr-1" />
-                    {tendency}
-                  </Badge>
-                )}
-                {safeVectorScore !== null && (
-                  <Badge
-                    variant="outline"
-                    className="border-green-500/50 bg-green-950/50 text-green-300 text-xs px-2 py-1"
-                  >
-                    <UserCheck className="w-3 h-3 mr-1" />
-                    프로필 유사도 {safeVectorScore}%
-                  </Badge>
-                )}
-              </div>
-            )}
           </div>
         </div>
+
+        {/* 일치하는 성향/스타일/프로필 유사도 (hover 시 이미지 중앙에 오버레이) */}
+        {hasMatchingKeywords && (
+          <div
+            className={`absolute inset-0 flex flex-col items-start justify-center bg-black/50 transition-opacity duration-300 ${ // items-start로 변경
+              isHovered ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            }`}
+          >
+            <p className="text-white text-lg font-bold mb-4 w-full text-center"> {/* w-full text-center 추가 */}
+              우리, 이렇게 잘 맞아요!
+            </p>
+            <div className="flex flex-col gap-3 w-full px-4"> {/* max-w-xs mx-auto 제거, w-full 유지 */}
+              {/* style이 string이므로 split하여 배열로 만든 후 map 사용 */}
+              {style && style.length > 0 && (
+                <div className="flex flex-col items-start gap-1">
+                  <p className="text-white text-sm font-semibold mb-1">취향 저격! 여행 스타일</p>
+                  <div className="flex flex-wrap gap-1 justify-start">
+                    {style.split(', ').map((s, idx) => ( // string을 split하여 배열로 사용
+                      <Badge
+                        key={idx}
+                        variant="outline"
+                        className="border-blue-500/50 bg-blue-950/50 text-blue-300 text-sm px-3 py-1.5"
+                      >
+                        <Tag className="w-4 h-4 mr-1" />
+                        {s}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* tendency가 string이므로 split하여 배열로 만든 후 map 사용 */}
+              {tendency && tendency.length > 0 && (
+                <div className="flex flex-col items-start gap-1">
+                  <p className="text-white text-sm font-semibold mb-1">환상의 호흡! 여행 성향</p>
+                  <div className="flex flex-wrap gap-1 justify-start">
+                    {tendency.split(', ').map((t, idx) => ( // string을 split하여 배열로 사용
+                      <Badge
+                        key={idx}
+                        variant="outline"
+                        className="border-purple-500/50 bg-purple-950/50 text-purple-300 text-sm px-3 py-1.5"
+                      >
+                        <Sparkles className="w-4 h-4 mr-1" />
+                        {t}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {safeVectorScore !== null && (
+                <div className="flex flex-col items-start gap-1">
+                  <p className="text-white text-sm font-semibold mb-1">찰떡궁합! 프로필 유사도</p>
+                  <Badge
+                    variant="outline"
+                    className="border-green-500/50 bg-green-950/50 text-green-300 text-sm px-3 py-1.5"
+                  >
+                    <UserCheck className="w-4 h-4 mr-1" />
+                    {safeVectorScore}%
+                  </Badge>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 정보 영역 */}

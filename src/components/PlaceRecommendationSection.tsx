@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from './ui/button';
-import { PlaceCard } from './PlaceCard';
+import { InspirationCard } from './InspirationCard'; // Changed from PlaceCard
 import { useAuthStore } from '../store/authStore';
 import client from '../api/client';
 import { type PlaceDto } from '../types/place';
@@ -29,10 +29,12 @@ interface BehaviorRecommendationResponse {
 }
 
 interface PlaceWithReason extends PlaceDto {
-  recommendationReason?: string;
+  recommendationReason?: BehaviorRecommendationResponse['reason']; // reason 객체 전체를 저장
 }
 
-export function PlaceRecommendationSection({ onPlaceClick }: PlaceRecommendationSectionProps) {
+export function PlaceRecommendationSection({
+  onPlaceClick,
+}: PlaceRecommendationSectionProps) {
   const [places, setPlaces] = useState<PlaceWithReason[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user, isAuthLoading } = useAuthStore();
@@ -57,11 +59,11 @@ export function PlaceRecommendationSection({ onPlaceClick }: PlaceRecommendation
           {
             params: {
               userId: user.userId,
-              limit: 3,
+              limit: 5, // Changed from 4 to 5
             },
           }
         );
-        
+
         // Convert to PlaceDto format with recommendation reason
         const placesData: PlaceWithReason[] = response.data.map((item) => {
           return {
@@ -73,10 +75,10 @@ export function PlaceRecommendationSection({ onPlaceClick }: PlaceRecommendation
             image_url: item.image_url,
             longitude: item.longitude,
             latitude: item.latitude,
-            recommendationReason: item.reason.message,
+            recommendationReason: item.reason, // reason 객체 전체를 전달
           };
         });
-        
+
         setPlaces(placesData);
       } catch (error) {
         console.error('Failed to fetch place recommendations:', error);
@@ -89,15 +91,13 @@ export function PlaceRecommendationSection({ onPlaceClick }: PlaceRecommendation
     fetchBehaviorPlaces();
   }, [isAuthLoading, isLoggedIn, user?.userId]);
 
-  const handlePlaceClick = (placeId: string) => {
+  const handlePlaceClick = (placeId: string, place: PlaceDto) => {
     if (!isLoggedIn) {
       navigate('/login');
       return;
     }
-    const place = places.find(p => p.id === placeId);
-    if (place) {
-      onPlaceClick(placeId, place);
-    }
+    // The original onPlaceClick from props expects placeId and placeDto
+    onPlaceClick(placeId, place);
   };
 
   const handleAllViewClick = () => {
@@ -116,7 +116,7 @@ export function PlaceRecommendationSection({ onPlaceClick }: PlaceRecommendation
             여기 갈래? 말래?
           </h2>
           <p className="text-xs md:text-sm text-gray-600 mt-1">
-            MateTrip AI가 추천하는 성향기반 장소추천
+            MateTrip AI가 추천하는 성향 기반 장소 추천
           </p>
         </div>
         <Button
@@ -125,7 +125,7 @@ export function PlaceRecommendationSection({ onPlaceClick }: PlaceRecommendation
           disabled={true}
           className="text-sm self-start sm:self-auto"
         >
-          All View
+          View All
         </Button>
       </div>
 
@@ -147,11 +147,11 @@ export function PlaceRecommendationSection({ onPlaceClick }: PlaceRecommendation
           </div>
         </div>
       ) : isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {Array.from({ length: 3 }).map((_, index) => (
+        <div className="grid grid-cols-5 gap-4 md:gap-6">
+          {Array.from({ length: 5 }).map((_, index) => (
             <div
               key={index}
-              className="w-full aspect-[203/241] bg-gray-200 rounded-[16px] animate-pulse"
+              className="w-full h-64 bg-gray-200 rounded-xl animate-pulse" // Adjusted for InspirationCard skeleton size
             />
           ))}
         </div>
@@ -160,12 +160,19 @@ export function PlaceRecommendationSection({ onPlaceClick }: PlaceRecommendation
           추천할 장소가 없습니다.
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+        <div className="grid grid-cols-5 gap-4 md:gap-6">
           {places.map((place) => (
-            <PlaceCard
+            <InspirationCard
               key={place.id}
-              place={place}
-              onClick={handlePlaceClick}
+              imageUrl={place.image_url}
+              title={place.title}
+              address={place.address}
+              category={place.category}
+              summary={place.summary}
+              recommendationReasonText={place.recommendationReason?.message} // message 전달
+              referencedPlaceInReason={place.recommendationReason?.referencePlace} // referencePlace 전달
+              onReferencePlaceClick={(placeId) => handlePlaceClick(placeId, place)} // 클릭 핸들러 전달
+              onClick={() => handlePlaceClick(place.id, place)}
             />
           ))}
         </div>

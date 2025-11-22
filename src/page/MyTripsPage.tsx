@@ -5,22 +5,37 @@ import { type Post } from '../types/post';
 import { MainPostCardSkeleton } from '../components/AIMatchingSkeletion';
 import { WorkspaceCarousel } from '../components/WorkspaceCarousel';
 import { useAuthStore } from '../store/authStore';
+import { PostDetail } from './PostDetail'; // PostDetail 임포트
 
 interface MyTripsPageProps {
-  onViewPost: (postId: string) => void;
+  // onViewPost: (postId: string) => void; // onViewPost prop 제거
   isLoggedIn: boolean;
   fetchTrigger: number;
+  onJoinWorkspace: (postId: string, workspaceName: string) => void;
+  onViewProfile: (userId: string) => void;
+  onEditPost: (post: Post) => void;
+  onDeleteSuccess?: () => void;
 }
 
 export function MyTripsPage({
-  onViewPost,
+  // onViewPost, // onViewPost prop 제거
   isLoggedIn,
   fetchTrigger,
+  onJoinWorkspace,
+  onViewProfile,
+  onEditPost,
+  onDeleteSuccess,
 }: MyTripsPageProps) {
   const [plannedPosts, setPlannedPosts] = useState<Post[]>([]);
   const [participatingPosts, setParticipatingPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user, isAuthLoading } = useAuthStore();
+
+  // PostDetail Panel 관련 상태
+  const [showPostDetailPanel, setShowPostDetailPanel] = useState(false);
+  const [selectedPostIdForPanel, setSelectedPostIdForPanel] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     if (isAuthLoading) {
@@ -69,6 +84,18 @@ export function MyTripsPage({
     fetchUserPosts();
   }, [isLoggedIn, user?.userId, isAuthLoading, fetchTrigger]);
 
+  // PostDetail Panel 열기 핸들러
+  const handleOpenPostDetailPanel = (postId: string) => {
+    setSelectedPostIdForPanel(postId);
+    setShowPostDetailPanel(true);
+  };
+
+  // PostDetail Panel 닫기 핸들러
+  const handleClosePostDetailPanel = () => {
+    setShowPostDetailPanel(false);
+    setSelectedPostIdForPanel(null);
+  };
+
   return (
     <div className="bg-white min-h-screen">
       <div className="max-w-7xl mx-auto px-16 py-12">
@@ -111,7 +138,7 @@ export function MyTripsPage({
           ) : (
             <WorkspaceCarousel
               posts={participatingPosts}
-              onCardClick={(post) => onViewPost(post.id)}
+              onCardClick={(post) => handleOpenPostDetailPanel(post.id)} // 패널 열기 핸들러 연결
             />
           )}
         </section>
@@ -141,10 +168,46 @@ export function MyTripsPage({
           ) : (
             <WorkspaceCarousel
               posts={plannedPosts}
-              onCardClick={(post) => onViewPost(post.id)}
+              onCardClick={(post) => handleOpenPostDetailPanel(post.id)} // 패널 열기 핸들러 연결
             />
           )}
         </section>
+      </div>
+
+      {/* PostDetail Panel 및 오버레이 */}
+      <div
+        className={`fixed inset-0 z-20 bg-black/50 transition-opacity duration-300 ${
+          showPostDetailPanel
+            ? 'opacity-100 pointer-events-auto'
+            : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={handleClosePostDetailPanel}
+      >
+        {/* PostDetail Panel */}
+        <div
+          className={`fixed right-0 top-0 h-full bg-white shadow-lg transform transition-transform duration-300 ease-in-out z-30
+            ${showPostDetailPanel ? 'translate-x-0' : 'translate-x-full'} w-1/2`}
+          onClick={(e) => e.stopPropagation()} // 패널 내부 클릭 시 오버레이 닫힘 방지
+        >
+          {selectedPostIdForPanel && (
+            <PostDetail
+              postId={selectedPostIdForPanel}
+              onOpenChange={handleClosePostDetailPanel}
+              onJoinWorkspace={(postId, workspaceName) => {
+                console.log('🔵 [MyTripsPage] PostDetail onJoinWorkspace called', { postId, workspaceName });
+                onJoinWorkspace(postId, workspaceName);
+                handleClosePostDetailPanel();
+              }}
+              onViewProfile={(userId) => {
+                console.log('🔵 [MyTripsPage] PostDetail onViewProfile called', { userId });
+                // 프로필 모달 열기: PostDetail 패널은 유지
+                onViewProfile(userId);
+              }}
+              onEditPost={onEditPost}
+              onDeleteSuccess={onDeleteSuccess || (() => {})}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

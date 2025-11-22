@@ -27,7 +27,7 @@ import { translateKeyword } from '../utils/keyword';
 import { WorkspaceCard } from './WorkspaceCard';
 import { EditProfileModal } from './EditProfileModal'; // Import EditProfileModal
 import type { TravelStyleType } from '../constants/travelStyle';
-import type { TravelTendencyType } from '../constants/travelTendencyType'; // prettier-ignore
+import type { TravelTendencyType } from '../constants/travelTendencyType'; // prettier-ignore // 경로 수정
 import type { GenderType } from '../constants/gender';
 import type { MbtiType } from '../constants/mbti';
 
@@ -35,7 +35,7 @@ interface ProfileModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   userId: string | null;
-  onViewPost: (postId: string) => void;
+  // onViewPost: (postId: string) => void; // 제거
   onLogoutClick?: () => void;
   onProfileUpdated?: () => void;
 }
@@ -97,10 +97,8 @@ function ProfileModalSkeleton({
                   <div className="w-24 h-24 rounded-full bg-gray-200 animate-pulse" />
                   <div className="flex flex-col gap-2 pt-2">
                     <div className="h-8 bg-gray-200 rounded w-32 animate-pulse" />
-                    <div className="flex flex-wrap gap-2">
-                      <div className="h-6 bg-gray-200 rounded w-20 animate-pulse" />
-                      <div className="h-6 bg-gray-200 rounded w-24 animate-pulse" />
-                    </div>
+                    <div className="h-6 bg-gray-200 rounded w-20 animate-pulse" />
+                    <div className="h-6 bg-gray-200 rounded w-24 animate-pulse" />
                   </div>
                 </div>
               </div>
@@ -142,7 +140,7 @@ export function ProfileModal({
   open,
   onOpenChange,
   userId,
-  onViewPost,
+  // onViewPost, // 제거
   onLogoutClick,
   onProfileUpdated,
 }: ProfileModalProps) {
@@ -282,9 +280,10 @@ export function ProfileModal({
     setIsEditProfileModalOpen(true);
   };
 
-  const handleCardClick = (post: Post) => {
-    onViewPost(post.id);
-  };
+  // handleCardClick 함수 제거
+  // const handleCardClick = (post: Post) => {
+  //   onViewPost(post.id);
+  // };
 
   if (!open) {
     return null;
@@ -525,7 +524,8 @@ export function ProfileModal({
                         <WorkspaceCard
                           key={post.id}
                           post={post}
-                          onClick={() => handleCardClick(post)}
+                          // onClick={() => handleCardClick(post)} // handleCardClick 제거
+                          onClick={() => {}} // 임시 빈 함수
                         />
                       ))
                     ) : (

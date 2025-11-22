@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect /*, useCallback*/ } from 'react'; // useCallback 제거
 import {
   Routes,
   Route,
@@ -16,24 +16,24 @@ import { AIChatPanel } from './components/AIChatPanel';
 import { InspirationPage } from './page/InspirationPage';
 import { InspirationDetail } from './page/InspirationDetail';
 import { SearchResults } from './components/SearchResults';
-import { PostDetail } from './page/PostDetail';
+// import { PostDetail } from './page/PostDetail'; // PostDetail 임포트 제거
 import { Workspace } from './page/Workspace';
 import { CreatePostModal } from './components/CreatePostModal';
 import { EditPostModal } from './components/EditPostModal';
 import { Login } from './page/Login';
 import { Signup } from './page/Signup';
 import { ReviewPage } from './page/ReviewPage';
-import { NotFound } from './page/NotFound';
 import { useAuthStore } from './store/authStore'; // Zustand 스토어 임포트
 import { NotificationListener } from './components/NotificationListener';
 import client from './api/client';
 import type { CreateWorkspaceResponse } from './types/workspace';
 import type { Post } from './types/post';
-import { Toaster, toast } from 'sonner';
-import { Dialog, DialogContent } from './components/ui/dialog';
+import { Toaster /*, toast*/ } from 'sonner'; // toast 제거
+// import { Dialog, DialogContent } from './components/ui/dialog'; // Dialog 관련 임포트 제거
 import { ProfileModal } from './components/ProfileModal';
 import PublicOnlyRoute from './components/PublicOnlyRoute';
 import { MatchSearchResults } from './components/MatchSearchResults';
+import RealMainPage from './page/RealMainPage';
 // Layout component for pages with Sidebar
 function Layout({
   isLoggedIn,
@@ -92,12 +92,12 @@ function NewMainPageWrapper({
 function AIMatchingPageWrapper({
   isLoggedIn,
   onCreatePost,
-  onViewPost,
+  // onViewPost, // onViewPost prop 제거
   fetchTrigger,
 }: {
   isLoggedIn: boolean;
   onCreatePost: () => void;
-  onViewPost: (postId: string) => void;
+  // onViewPost: (postId: string) => void; // onViewPost prop type 제거
   fetchTrigger: number;
 }) {
   const navigate = useNavigate();
@@ -123,7 +123,7 @@ function AIMatchingPageWrapper({
   return (
     <AIMatchingPageComponent
       onSearch={handleSearch}
-      onViewPost={onViewPost}
+      // onViewPost={onViewPost} // onViewPost prop 제거
       isLoggedIn={finalIsLoggedIn}
       onCreatePost={onCreatePost}
       fetchTrigger={fetchTrigger}
@@ -132,19 +132,44 @@ function AIMatchingPageWrapper({
 }
 
 function AllPostsPageWrapper({
-  onViewPost,
+  // onViewPost, // onViewPost prop 제거
   fetchTrigger,
+  onJoinWorkspace,
+  onViewProfile,
+  onEditPost,
+  onDeleteSuccess,
 }: {
-  onViewPost: (postId: string) => void;
+  // onViewPost: (postId: string) => void; // onViewPost prop type 제거
   fetchTrigger: number;
+  onJoinWorkspace: (postId: string, workspaceName: string) => void;
+  onViewProfile: (userId: string) => void;
+  onEditPost: (post: Post) => void;
+  onDeleteSuccess?: () => void;
 }) {
   return (
-    <AllPostsPage onViewPost={onViewPost} fetchTrigger={fetchTrigger} />
+    <AllPostsPage
+      // onViewPost={onViewPost} // onViewPost prop 제거
+      fetchTrigger={fetchTrigger}
+      onJoinWorkspace={onJoinWorkspace}
+      onViewProfile={onViewProfile}
+      onEditPost={onEditPost}
+      onDeleteSuccess={onDeleteSuccess}
+    />
   );
 }
 
-function SearchResultsWrapper() {
-  const navigate = useNavigate();
+function SearchResultsWrapper({
+  onJoinWorkspace,
+  onViewProfile,
+  onEditPost,
+  onDeleteSuccess,
+}: {
+  onJoinWorkspace: (postId: string, workspaceName: string) => void;
+  onViewProfile: (userId: string) => void;
+  onEditPost: (post: Post) => void;
+  onDeleteSuccess?: () => void;
+}) {
+  // const navigate = useNavigate(); // 제거
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
 
@@ -156,11 +181,20 @@ function SearchResultsWrapper() {
     keyword: searchParams.get('keyword') || undefined,
   };
 
-  const handleViewPost = (postId: string) => {
-    navigate(`/posts/${postId}`);
-  };
+  // handleViewPost 제거
+  // const handleViewPost = (postId: string) => {
+  //   navigate(`/posts/${postId}`);
+  // };
 
-  return <SearchResults searchParams={params} onViewPost={handleViewPost} />;
+  return (
+    <SearchResults
+      searchParams={params}
+      onJoinWorkspace={onJoinWorkspace}
+      onViewProfile={onViewProfile}
+      onEditPost={onEditPost}
+      onDeleteSuccess={onDeleteSuccess}
+    />
+  );
 }
 
 function WorkspaceWrapper() {
@@ -233,10 +267,10 @@ export default function App() {
     userId: string | null;
   }>({ open: false, userId: null });
 
-  const [postDetailModalState, setPostDetailModalState] = useState<{
-    open: boolean;
-    postId: string | null;
-  }>({ open: false, postId: null });
+  // const [postDetailModalState, setPostDetailModalState] = useState<{ // 제거
+  //   open: boolean;
+  //   postId: string | null;
+  // }>({ open: false, postId: null });
 
   const [chatPanelOpen, setChatPanelOpen] = useState(false);
 
@@ -256,7 +290,7 @@ export default function App() {
     // 로그인 성공 후, Zustand 스토어의 checkAuth를 호출하여 상태를 동기화합니다.
     // 이 시점에서 서버는 HttpOnly 쿠키를 설정했을 것입니다.
     checkAuth();
-    navigate('/');
+    navigate('/main');
   };
 
   const handleLogout = async () => {
@@ -275,14 +309,15 @@ export default function App() {
     setProfileModalState({ open: true, userId });
   };
 
-  const handleViewPost = useCallback(
-    (postId: string) => {
-      navigate(`/posts/${postId}`, {
-        state: { background: location },
-      });
-    },
-    [navigate, location]
-  );
+  // handleViewPost 제거
+  // const handleViewPost = useCallback(
+  //   (postId: string) => {
+  //     navigate(`/posts/${postId}`, {
+  //       state: { background: location },
+  //     });
+  //   },
+  //   [navigate, location]
+  // );
 
   const handleDeleteSuccess = () => {
     setFetchTrigger((prev) => prev + 1); // fetch 트리거 상태 변경
@@ -292,13 +327,14 @@ export default function App() {
     setChatPanelOpen(true);
   };
 
-  const handleClosePostDetail = () => {
-    if (background) {
-      navigate(background.pathname + background.search, { replace: true });
-    } else {
-      navigate('/', { replace: true });
-    }
-  };
+  // handleClosePostDetail 제거
+  // const handleClosePostDetail = () => {
+  //   if (background) {
+  //     navigate(background.pathname + background.search, { replace: true });
+  //   } else {
+  //     navigate('/', { replace: true });
+  //   }
+  // };
 
   return (
     <div className="h-screen bg-gray-50">
@@ -308,6 +344,9 @@ export default function App() {
       {isLoggedIn && <NotificationListener />}
       <Routes location={background || location}>
         {/* Routes without Header */}
+        {/* Landing Page */}
+        <Route path="/" element={<RealMainPage />} />
+
         <Route element={<PublicOnlyRoute />}>
           <Route
             path="/login"
@@ -332,17 +371,18 @@ export default function App() {
           }
         >
           <Route
-            path="/"
+            path="/main"
             element={
               <NewMainPageWrapper
                 onCreatePost={() => setShowCreatePost(true)}
                 onJoinWorkspace={(postId, workspaceName) => {
                   const createAndNavigate = async () => {
                     try {
-                      const response = await client.post<CreateWorkspaceResponse>(
-                        '/workspace',
-                        { postId, workspaceName }
-                      );
+                      const response =
+                        await client.post<CreateWorkspaceResponse>(
+                          '/workspace',
+                          { postId, workspaceName }
+                        );
                       const { planDayDtos, workspaceResDto } = response.data;
                       const { id, workspaceName: resWorkspaceName } =
                         workspaceResDto;
@@ -353,7 +393,10 @@ export default function App() {
                         },
                       });
                     } catch (error) {
-                      console.error('Failed to create or join workspace:', error);
+                      console.error(
+                        'Failed to create or join workspace:',
+                        error
+                      );
                       alert('워크스페이스에 입장하는 중 오류가 발생했습니다.');
                     }
                   };
@@ -373,7 +416,7 @@ export default function App() {
             element={
               <AIMatchingPageWrapper
                 isLoggedIn={isLoggedIn}
-                onViewPost={handleViewPost}
+                // onViewPost={handleViewPost} // onViewPost prop 제거
                 onCreatePost={() => setShowCreatePost(true)}
                 fetchTrigger={fetchTrigger}
               />
@@ -383,8 +426,41 @@ export default function App() {
             path="/all-posts"
             element={
               <AllPostsPageWrapper
-                onViewPost={handleViewPost}
+                // onViewPost={handleViewPost} // onViewPost prop 제거
                 fetchTrigger={fetchTrigger}
+                onJoinWorkspace={(postId, workspaceName) => {
+                  const createAndNavigate = async () => {
+                    try {
+                      const response =
+                        await client.post<CreateWorkspaceResponse>(
+                          '/workspace',
+                          { postId, workspaceName }
+                        );
+                      const { planDayDtos, workspaceResDto } = response.data;
+                      const { id, workspaceName: resWorkspaceName } =
+                        workspaceResDto;
+                      navigate(`/workspace/${id}`, {
+                        state: {
+                          workspaceName: resWorkspaceName,
+                          planDayDtos,
+                        },
+                      });
+                    } catch (error) {
+                      console.error(
+                        'Failed to create or join workspace:',
+                        error
+                      );
+                      alert('워크스페이스에 입장하는 중 오류가 발생했습니다.');
+                    }
+                  };
+                  createAndNavigate();
+                }}
+                onViewProfile={handleViewProfile}
+                onEditPost={(post) => {
+                  setSelectedPostForEdit(post);
+                  setShowEditPost(true);
+                }}
+                onDeleteSuccess={handleDeleteSuccess}
               />
             }
           />
@@ -395,22 +471,93 @@ export default function App() {
             path="/save"
             element={
               <MyTripsPage
-                onViewPost={handleViewPost}
+                // onViewPost={handleViewPost} // onViewPost prop 제거
                 isLoggedIn={isLoggedIn}
                 fetchTrigger={fetchTrigger}
+                onJoinWorkspace={(postId, workspaceName) => {
+                  const createAndNavigate = async () => {
+                    try {
+                      const response =
+                        await client.post<CreateWorkspaceResponse>(
+                          '/workspace',
+                          { postId, workspaceName }
+                        );
+                      const { planDayDtos, workspaceResDto } = response.data;
+                      const { id, workspaceName: resWorkspaceName } =
+                        workspaceResDto;
+                      navigate(`/workspace/${id}`, {
+                        state: {
+                          workspaceName: resWorkspaceName,
+                          planDayDtos,
+                        },
+                      });
+                    } catch (error) {
+                      console.error(
+                        'Failed to create or join workspace:',
+                        error
+                      );
+                      alert('워크스페이스에 입장하는 중 오류가 발생했습니다.');
+                    }
+                  };
+                  createAndNavigate();
+                }}
+                onViewProfile={handleViewProfile}
+                onEditPost={(post) => {
+                  setSelectedPostForEdit(post);
+                  setShowEditPost(true);
+                }}
+                onDeleteSuccess={handleDeleteSuccess}
               />
             }
           />
-          <Route path="/search" element={<SearchResultsWrapper />} />
+          <Route
+            path="/search"
+            element={
+              <SearchResultsWrapper
+                onJoinWorkspace={(postId, workspaceName) => {
+                  const createAndNavigate = async () => {
+                    try {
+                      const response =
+                        await client.post<CreateWorkspaceResponse>(
+                          '/workspace',
+                          { postId, workspaceName }
+                        );
+                      const { planDayDtos, workspaceResDto } = response.data;
+                      const { id, workspaceName: resWorkspaceName } =
+                        workspaceResDto;
+                      navigate(`/workspace/${id}`, {
+                        state: {
+                          workspaceName: resWorkspaceName,
+                          planDayDtos,
+                        },
+                      });
+                    } catch (error) {
+                      console.error(
+                        'Failed to create or join workspace:',
+                        error
+                      );
+                      alert('워크스페이스에 입장하는 중 오류가 발생했습니다.');
+                    }
+                  };
+                  createAndNavigate();
+                }}
+                onViewProfile={handleViewProfile}
+                onEditPost={(post) => {
+                  setSelectedPostForEdit(post);
+                  setShowEditPost(true);
+                }}
+                onDeleteSuccess={handleDeleteSuccess}
+              />
+            }
+          />
           {/* 매칭용 검색 라우트 추가  */}
           <Route path="/match-search" element={<MatchSearchResults />} />
           <Route path="/workspace/:id" element={<WorkspaceWrapper />} />
           <Route path="/review" element={<ReviewPageWrapper />} />
-          <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
-      {/* Modals */}
-      {background && (
+      {/* Modals (PostDetail 관련 Routes 제거) */}
+      {/* {background && (
         <Routes>
           <Route
             path="/posts/:id"
@@ -473,7 +620,7 @@ setShowEditPost(true);
             }
           />
         </Routes>
-      )}
+      )} */}
       <AIChatPanel open={chatPanelOpen} onOpenChange={setChatPanelOpen} />
       {showCreatePost && (
         <CreatePostModal onClose={() => setShowCreatePost(false)} />
@@ -485,9 +632,9 @@ setShowEditPost(true);
           onSuccess={() => {
             setShowEditPost(false); // 모달 닫기
             // PostDetail 모달이 열려있다면, 그 모달도 닫고 새로고침
-            if (postDetailModalState.open) {
-              setPostDetailModalState({ open: false, postId: null });
-            }
+            // if (postDetailModalState.open) { // 제거
+            //   setPostDetailModalState({ open: false, postId: null });
+            // }
             handleDeleteSuccess(); // 재사용
           }}
         />
@@ -498,7 +645,7 @@ setShowEditPost(true);
           setProfileModalState((prev) => ({ ...prev, open }))
         }
         userId={profileModalState.userId}
-        onViewPost={handleViewPost}
+        // onViewPost={handleViewPost} // onViewPost prop 제거
         onLogoutClick={handleLogout}
         onProfileUpdated={handleProfileUpdated}
       />

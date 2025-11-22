@@ -53,7 +53,6 @@ export const FamousPlacesCarousel = ({
     containScroll: 'trimSnaps',
   });
 
-  // places 배열의 내용이 변경될 때만 새로운 값을 갖는 안정적인 의존성 생성
   const placesIdString = useMemo(
     () => JSON.stringify(places.map((p) => p.id)),
     [places]
@@ -67,7 +66,7 @@ export const FamousPlacesCarousel = ({
     if (emblaApi) emblaApi.scrollNext();
   }, [emblaApi]);
 
-  // 사용자가 캐러셀을 넘길 때(select 이벤트) 호출되는 효과
+  // Restore the select handler to move the map when the user scrolls the carousel.
   useEffect(() => {
     if (!emblaApi) return;
 
@@ -84,15 +83,13 @@ export const FamousPlacesCarousel = ({
     };
   }, [emblaApi, places, onPlaceSelect]);
 
-  // places 목록이 실제로 변경되었을 때 캐러셀을 리셋하는 효과
+  // This effect re-initializes the carousel when the places list changes.
+  // This no longer moves the map, fixing the "snap back" bug.
   useEffect(() => {
-    if (emblaApi && places.length > 0) {
+    if (emblaApi) {
       emblaApi.reInit();
-      emblaApi.scrollTo(0);
-      onPlaceSelect(places[0]);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [emblaApi, placesIdString, onPlaceSelect]);
+  }, [emblaApi, placesIdString]);
 
   if (places.length === 0) {
     return null;

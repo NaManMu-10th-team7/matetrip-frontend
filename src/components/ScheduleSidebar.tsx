@@ -29,6 +29,13 @@ import { usePlaceStore } from '../store/placeStore';
 import { usePlaceDetail, type NearbyPlace } from '../hooks/usePlaceDetail';
 import { InspirationCard } from './InspirationCard';
 
+// Kakao Maps API 로드를 위한 전역 선언
+declare global {
+  interface Window {
+    kakao: any;
+  }
+}
+
 interface PoiItemProps {
   poi: Poi & { image_url?: string; summary?: string };
   color?: string;
@@ -369,28 +376,63 @@ function DayItineraryItem({
   );
 }
 
-function PoiDetailPanel({
+export function PoiDetailPanel({
   placeId,
   isVisible,
   onClose,
   onNearbyPlaceSelect,
   onPoiSelect,
+  widthClass = 'w-full', // widthClass prop 추가 및 기본값 설정
+  onClick, // onClick prop 추가
 }: {
   placeId: string | null;
   isVisible: boolean;
   onClose: () => void;
   onNearbyPlaceSelect: (placeId: string) => void;
   onPoiSelect?: (place: Pick<Poi, 'latitude' | 'longitude'>) => void;
+  widthClass?: string; // widthClass prop 타입 정의
+  onClick?: (e: React.MouseEvent) => void; // onClick prop 타입 정의
 }) {
   const { placeDetail, nearbyPlaces, isLoading, error } =
     usePlaceDetail(placeId);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<HTMLDivElement>(null); // 카카오맵을 렌더링할 div의 ref
 
   useEffect(() => {
     if (placeId && scrollContainerRef.current) {
       scrollContainerRef.current.scrollTop = 0;
     }
   }, [placeId]);
+
+  // 디버깅을 위한 로그 추가
+  useEffect(() => {
+    console.log(`[PoiDetailPanel] isVisible changed: ${isVisible}`);
+    console.log(`[PoiDetailPanel] placeId changed: ${placeId}`);
+  }, [isVisible, placeId]);
+
+  // 카카오맵 초기화 및 마커 표시 로직
+  useEffect(() => {
+    if (isVisible && mapRef.current && placeDetail && window.kakao) {
+      const { latitude, longitude } = placeDetail;
+      if (latitude && longitude) {
+        const options = {
+          center: new window.kakao.maps.LatLng(latitude, longitude),
+          level: 3, // 지도의 확대 레벨
+        };
+        const map = new window.kakao.maps.Map(mapRef.current, options);
+
+        // 마커를 생성하고 지도에 표시합니다
+        const marker = new window.kakao.maps.Marker({
+          position: new window.kakao.maps.LatLng(latitude, longitude),
+        });
+        marker.setMap(map);
+
+        // 지도가 로드된 후 지도를 다시 그립니다 (크기 조정 문제 해결)
+        map.relayout();
+        map.setCenter(new window.kakao.maps.LatLng(latitude, longitude));
+      }
+    }
+  }, [isVisible, placeDetail]); // isVisible과 placeDetail이 변경될 때마다 실행
 
   const handleNearbyClick = (place: NearbyPlace) => {
     onNearbyPlaceSelect(place.id);
@@ -408,6 +450,7 @@ function PoiDetailPanel({
           </div>
           <div className="w-full h-[40vh] bg-gray-200 rounded-lg animate-pulse"></div>
           <div className="space-y-3 pt-2 animate-pulse">
+            <div className="w-full h-[200px] bg-gray-200 rounded-lg"></div> {/* Map Skeleton */}
             <div className="flex items-start gap-3">
               <div className="w-5 h-5 bg-gray-200 rounded mt-1 flex-shrink-0"></div>
               <div className="h-5 bg-gray-200 rounded w-full"></div>
@@ -473,6 +516,9 @@ function PoiDetailPanel({
             </div>
           )}
         </div>
+        
+        {/* 카카오맵 렌더링 영역을 주소/요약 정보 아래, 주변 장소 위에 배치 */}
+        <div ref={mapRef} style={{ width: '100%', height: '200px' }} className="rounded-lg"></div>
 
         {nearbyPlaces.length > 0 && (
           <div className="pt-8">
@@ -490,7 +536,6 @@ function PoiDetailPanel({
                 >
                   <InspirationCard
                     imageUrl={place.imageUrl}
-                    badgeText=""
                     title={place.title}
                     address={place.address}
                     category={place.category}
@@ -506,9 +551,13 @@ function PoiDetailPanel({
 
   return (
     <div
-      className={`absolute top-0 left-0 w-full h-full bg-white z-30 transition-transform duration-300 ease-in-out ${
-        isVisible ? 'translate-x-0' : 'translate-x-full'
-      }`}
+      className={`absolute top-0 right-0 h-full bg-white z-30 ${widthClass}`}
+      style={{
+        transform: isVisible ? 'translateX(0)' : 'translateX(100%)',
+        transition: 'transform 0.3s ease-in-out', // transition 속성 직접 명시
+      }}
+      onClick={onClick} // onClick prop 적용
+      data-is-visible={isVisible} // 디버깅용 속성 추가
     >
       <div className="flex flex-col h-full">
         <div className="flex items-center justify-start px-2 py-2 border-b">
@@ -736,6 +785,8 @@ export function ScheduleSidebar({
           onClose={handleCloseDetailPanel}
           onNearbyPlaceSelect={handleNearbyPlaceSelect}
           onPoiSelect={onPoiSelect}
+          widthClass="w-full" // ScheduleSidebar 내부에서는 기존 너비 유지
+          onClick={(e) => e.stopPropagation()} // 이벤트 전파 방지
         />
       </div>
     </div>
