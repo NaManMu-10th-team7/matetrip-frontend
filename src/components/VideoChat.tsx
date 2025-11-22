@@ -27,7 +27,6 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { useAuthStore } from '../store/authStore';
 import client from '../api/client';
-import type { ActiveMember } from '../types/member';
 
 // amazon-chime-sdk-js는 브라우저 환경에서 node의 global 객체를 기대하므로 안전하게 polyfill
 if (typeof (global as any) === 'undefined' && typeof window !== 'undefined') {
@@ -39,7 +38,7 @@ interface Props {
   onClose: () => void;
   activeMembers?: {
     id: string;
-    name:string;
+    name: string;
     avatar?: string;
     userId?: string;
     profileId?: string;
@@ -86,22 +85,18 @@ export const VideoChat = ({
   const videoElementRefs = useRef<Record<number, HTMLVideoElement | null>>({});
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
   const observerRef = useRef<AudioVideoObserver | null>(null);
-  const attendeePresenceHandlerRef =
-    useRef<
-      | ((
-          attendeeId: string,
-          present: boolean,
-          externalUserId?: string,
-          dropped?: boolean
-        ) => void)
-      | null
-    >(null);
+  const attendeePresenceHandlerRef = useRef<
+    | ((
+        attendeeId: string,
+        present: boolean,
+        externalUserId?: string,
+        dropped?: boolean
+      ) => void)
+    | null
+  >(null);
   const attendeeNamesRef = useRef<Record<string, string>>({});
 
-  const localDisplayName = useMemo(
-    () => username?.trim() || 'Me',
-    [username]
-  );
+  const localDisplayName = useMemo(() => username?.trim() || 'Me', [username]);
 
   const resetSessionState = useCallback(() => {
     setIsMicMuted(true);
@@ -136,17 +131,23 @@ export const VideoChat = ({
 
   useEffect(() => cleanupMeeting, [cleanupMeeting]);
 
-  const bindVideoElement = useCallback((tileId: number, el: HTMLVideoElement | null) => {
-    videoElementRefs.current[tileId] = el;
-    if (audioVideoRef.current && el) {
-      audioVideoRef.current.bindVideoElement(tileId, el);
-    }
-  }, []);
+  const bindVideoElement = useCallback(
+    (tileId: number, el: HTMLVideoElement | null) => {
+      videoElementRefs.current[tileId] = el;
+      if (audioVideoRef.current && el) {
+        audioVideoRef.current.bindVideoElement(tileId, el);
+      }
+    },
+    []
+  );
 
-  const updateParticipantCount = useCallback((names: Record<string, string>) => {
-    const uniqueIds = Object.keys(names);
-    setParticipantCount(uniqueIds.length);
-  }, []);
+  const updateParticipantCount = useCallback(
+    (names: Record<string, string>) => {
+      const uniqueIds = Object.keys(names);
+      setParticipantCount(uniqueIds.length);
+    },
+    []
+  );
 
   const handleJoin = async () => {
     if (!workspaceId || !userId) {
@@ -198,7 +199,7 @@ export const VideoChat = ({
         audioVideoDidStart: () => setStatus('joined'),
         videoTileDidUpdate: (tileState: VideoTileState) => {
           if (!tileState.boundAttendeeId || tileState.isContent) return;
-          
+
           const boundAttendeeId = tileState.boundAttendeeId;
 
           const isLocal =
@@ -230,7 +231,7 @@ export const VideoChat = ({
               },
             ];
           });
-          
+
           if (tileState.tileId) {
             const videoEl = videoElementRefs.current[tileState.tileId];
             if (videoEl) {
@@ -258,10 +259,10 @@ export const VideoChat = ({
         present: boolean,
         externalUserId?: string
       ) => {
-      const externalMatch =
-        nameFromExternal(externalUserId) ||
-        activeMemberNameMap[attendeeId] ||
-        activeMemberNameMap[attendeeId.toLowerCase()];
+        const externalMatch =
+          nameFromExternal(externalUserId) ||
+          activeMemberNameMap[attendeeId] ||
+          activeMemberNameMap[attendeeId.toLowerCase()];
 
         attendeeNamesRef.current = {
           ...attendeeNamesRef.current,
@@ -270,7 +271,8 @@ export const VideoChat = ({
                 [attendeeId]: resolveParticipantName(
                   attendeeId,
                   externalUserId || externalMatch || undefined,
-                  attendeeId === meetingSession.configuration.credentials?.attendeeId
+                  attendeeId ===
+                    meetingSession.configuration.credentials?.attendeeId
                 ),
               }
             : {}),
@@ -376,7 +378,9 @@ export const VideoChat = ({
     (externalUserId?: string) => {
       if (!externalUserId) return null;
       const trimmed = externalUserId.trim();
-      const byId = activeMemberNameMap[trimmed] || activeMemberNameMap[trimmed.toLowerCase()];
+      const byId =
+        activeMemberNameMap[trimmed] ||
+        activeMemberNameMap[trimmed.toLowerCase()];
       if (byId) return byId;
       if (!isUuid(trimmed)) return trimmed;
       return null;
@@ -403,7 +407,8 @@ export const VideoChat = ({
       const stored = attendeeNamesRef.current[attendeeId];
       if (stored && !isUuid(stored)) return stored;
 
-      if (externalUserId && !isUuid(externalUserId)) return externalUserId.trim();
+      if (externalUserId && !isUuid(externalUserId))
+        return externalUserId.trim();
 
       return '참가자';
     },
@@ -641,7 +646,11 @@ export const VideoChat = ({
           disabled={status !== 'joined'}
           className="h-10 w-10 rounded-full"
         >
-          {isMicMuted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+          {isMicMuted ? (
+            <MicOff className="h-5 w-5" />
+          ) : (
+            <Mic className="h-5 w-5" />
+          )}
         </Button>
         <Button
           size="icon"
