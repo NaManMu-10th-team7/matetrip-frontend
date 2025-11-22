@@ -1,63 +1,197 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
   Map,
+  Tent,
+  Heart,
+  Camera,
+  Car,
+  Sparkles,
+  User,
+  Shapes,
+  MapPin,
+  Utensils,
+  ArrowRight,
+  Compass,
   Mail,
   Lock,
   Eye,
   EyeOff,
-  User,
-  Phone,
+  ArrowLeft,
   Pen,
   FileText,
-  CheckCircle2,
-  ArrowLeft,
 } from 'lucide-react';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
-import { Badge } from '../components/ui/badge';
-import { Textarea } from '../components/ui/textarea';
-import { Progress } from '../components/ui/progress';
 import axios from 'axios';
 import client from '../api/client';
+import { MBTI_TYPES } from '../constants/mbti';
 import {
   TRAVEL_STYLE_OPTIONS,
   type TravelStyleType,
 } from '../constants/travelStyle';
-import {
-  TENDENCY_OPTIONS,
-  type TravelTendencyType,
-} from '../constants/travelTendencyType';
+import { type TravelTendencyType } from '../constants/travelTendencyType';
+import { Button } from '../components/ui/button';
+import { Label } from '../components/ui/label';
+import { Input } from '../components/ui/input';
+import { Textarea } from '../components/ui/textarea';
+
+interface CategoryItem {
+  id: string;
+  title: string;
+  icon: React.ElementType;
+  question: string;
+  items: TravelTendencyType[];
+}
 
 interface SignupProps {
   onSignup: () => void;
   onLoginClick: () => void;
 }
 
-const MBTI_TYPES = [
-  'ISTJ',
-  'ISFJ',
-  'INFJ',
-  'INTJ',
-  'ISTP',
-  'ISFP',
-  'INFP',
-  'INTP',
-  'ESTP',
-  'ESFP',
-  'ENFP',
-  'ENTP',
-  'ESTJ',
-  'ESFJ',
-  'ENFJ',
-  'ENTJ',
+// --- 데이터 정의 ---
+const CATEGORIZED_KEYWORDS: CategoryItem[] = [
+  {
+    id: 'place',
+    title: '장소',
+    icon: MapPin,
+    question: '어떤 여행지를 좋아하시나요?',
+    items: [
+      '도시',
+      '시골',
+      '전통도시',
+      '휴양도시',
+      '항구도시',
+      '전통시장',
+      '야시장',
+      '바다',
+      '섬',
+      '산',
+      '계곡',
+      '호수',
+    ],
+  },
+  {
+    id: 'activity',
+    title: '활동',
+    icon: Tent,
+    question: '어떤 액티비티를 즐기고 싶으신가요?',
+    items: [
+      '트레킹',
+      '등산',
+      '캠핑',
+      '자전거',
+      '서핑',
+      '스노클링',
+      '프리다이빙',
+      '낚시',
+      '스키',
+      '스노보드',
+      '골프',
+      '러닝',
+    ],
+  },
+  {
+    id: 'food',
+    title: '음식',
+    icon: Utensils,
+    question: '여행 중 음식은 무엇이 좋으세요?',
+    items: [
+      '길거리음식',
+      '로컬레스토랑',
+      '맛집탐방',
+      '카페디저트',
+      '비건필요',
+      '돼지고기비선호',
+      '해산물비선호',
+      '매운맛선호',
+      '순한맛선호',
+      '해산물선호',
+      '육류선호',
+    ],
+  },
+  {
+    id: 'culture',
+    title: '문화',
+    icon: Camera,
+    question: '관심 있는 문화 생활이 있으신가요?',
+    items: [
+      '건축물탐방',
+      '야경감상',
+      '박물관',
+      '미술관',
+      '유적지탐방',
+      '공연뮤지컬',
+      '콘서트',
+      '스포츠관람',
+      '현지축제',
+      '놀이공원',
+      '아쿠아리움',
+      '동물원',
+    ],
+  },
+  {
+    id: 'stay',
+    title: '숙소',
+    icon: Heart,
+    question: '편안한 밤을 위해 어디서 머물까요?',
+    items: [
+      '호텔',
+      '리조트',
+      '게스트하우스',
+      '모텔',
+      '펜션',
+      '에어비앤비',
+      '글램핑',
+      '풀빌라',
+    ],
+  },
+  {
+    id: 'transport',
+    title: '이동/방식',
+    icon: Car,
+    question: '어떤 이동수단과 여행방식을 선호하시나요?',
+    items: [
+      '렌터카',
+      '캠핑카',
+      '대중교통',
+      '기차여행',
+      '오토바이여행',
+      '배낭여행',
+      '호캉스',
+      '운전가능',
+    ],
+  },
+  {
+    id: 'etc',
+    title: '기타',
+    icon: Shapes,
+    question: '기타 선호사항이 있나요?',
+    items: [
+      '소수인원선호',
+      '조용한동행선호',
+      '수다떠는동행선호',
+      '조용한휴식',
+      '빡빡한일정',
+      '여유로운일정',
+      '숙소우선',
+      '음식우선',
+      '사진촬영',
+      '풍경촬영',
+      '비흡연',
+      '흡연',
+      '비음주',
+      '음주',
+    ],
+  },
 ];
 
 export function Signup({ onSignup, onLoginClick }: SignupProps) {
-  const [step, setStep] = useState(1);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [showSuccessModal] = useState(false);
+  const [step, setStep] = useState<number>(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [showConfirmPassword, setShowConfirmPassword] =
+    useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<string>('place');
+  const [styleError, setStyleError] = useState<string>('');
+  const [descriptionError, setDescriptionError] = useState<string>('');
 
   // Form data
   const [formData, setFormData] = useState({
@@ -68,37 +202,85 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
     gender: '',
     phone: '',
     mbti: '',
-    travelStyles: [] as TravelStyleType[],
-    tendency: [] as TravelTendencyType[],
+    travelStyles: new Set<TravelStyleType>(),
+    tendency: new Set<TravelTendencyType>(),
     intro: '',
     description: '',
   });
 
-  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+  //const [isPhoneVerified, setIsPhoneVerified] = useState(false);
 
   const handleInputChange = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const toggleTravelStyle = (style: TravelStyleType) => {
-    setFormData((prev) => ({
-      ...prev,
-      travelStyles: prev.travelStyles.includes(style)
-        ? prev.travelStyles.filter((s) => s !== style)
-        : [...prev.travelStyles, style],
-    }));
+    setFormData((prev) => {
+      const newSet = new Set(prev.travelStyles);
+      if (newSet.has(style)) {
+        newSet.delete(style);
+        setStyleError('');
+      } else {
+        if (newSet.size >= 3) {
+          setStyleError('여행 스타일은 3개까지 선택할 수 있습니다.');
+          setTimeout(() => setStyleError(''), 3000);
+          return prev;
+        }
+        newSet.add(style);
+      }
+      return { ...prev, travelStyles: newSet };
+    });
   };
 
-  const toggleTravelTendency = (travelTendency: TravelTendencyType) => {
-    setFormData((prev) => ({
-      ...prev,
-      tendency: prev.tendency.includes(travelTendency)
-        ? prev.tendency.filter((p) => p !== travelTendency)
-        : [...prev.tendency, travelTendency],
-    }));
+  const toggleTravelTendency = (tendency: TravelTendencyType) => {
+    setFormData((prev) => {
+      const newSet = new Set(prev.tendency);
+      if (newSet.has(tendency)) {
+        newSet.delete(tendency);
+      } else {
+        newSet.add(tendency);
+      }
+      return { ...prev, tendency: newSet };
+    });
+  };
+
+  // 상세소개 검증: 길이/내용/반복/특수문자 비율 등을 점검
+  const isValidSummary = (summary?: string): boolean => {
+    const text = summary?.trim();
+    if (!text || text.length < 10) {
+      return false;
+    }
+    const punctuationCount = (text.match(/[^\w가-힣\s]/g) ?? []).length; // 특수문자 비율 40% 이하
+    const punctuationRatio = punctuationCount / text.length;
+    if (punctuationRatio > 0.4) {
+      return false;
+    }
+
+    const tokens = text.split(/\s+/).filter(Boolean); // 단어 다양성 검사
+    const uniqueTokenCount = new Set(tokens).size;
+    if (uniqueTokenCount <= 2 && text.length < 20) {
+      return false;
+    }
+
+    if (/(.)\1{6,}/.test(text)) {
+      // 동일 문자 7회 이상 반복 금지
+      return false;
+    }
+    const uniqueChars = new Set(text.replace(/\s+/g, '').split('')); // 문자 종류가 3개 이하인 긴 텍스트 거르기
+    if (uniqueChars.size <= 3 && text.length >= 10) {
+      return false;
+    }
+
+    return true;
   };
 
   const handleNextStep = () => {
+    if (step === 2 && formData.travelStyles.size !== 3) {
+      setStyleError('여행 스타일 3개를 선택해주세요.');
+      setTimeout(() => setStyleError(''), 3000);
+      return;
+    }
+    setStyleError('');
     setStep((prev) => Math.min(prev + 1, 3));
   };
 
@@ -106,14 +288,27 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
     setStep((prev) => Math.max(prev - 1, 1));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
+    e?.preventDefault();
+
+    if (isSubmitting) return;
 
     if (formData.password !== formData.confirmPassword) {
       return;
     }
 
+    if (!isValidSummary(formData.description)) {
+      setDescriptionError('상세소개를 10자 이상, 의미있는 내용으로 채워주세요');
+      return;
+    }
+
     try {
+      setIsSubmitting(true);
+
+      // Sets → Arrays로 변환해 백엔드가 기대하는 배열 형태로 전달
+      const travelStylesArray = Array.from(formData.travelStyles);
+      const tendencyArray = Array.from(formData.tendency);
+
       const requestData = {
         email: formData.email,
         password: formData.password,
@@ -121,8 +316,8 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
           nickname: formData.nickname,
           gender: formData.gender,
           mbtiTypes: formData.mbti,
-          travelStyles: formData.travelStyles,
-          tendency: formData.tendency,
+          travelStyles: travelStylesArray,
+          tendency: tendencyArray,
           intro: formData.intro,
           description: formData.description,
         },
@@ -169,309 +364,440 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
         // setErrorMessage('알 수 없는 오류가 발생했습니다.');
       }
       console.error('Signup error:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const progressValue = (step / 3) * 100;
+  // 타이틀 및 설명 텍스트 동적 생성
+  const getStepHeader = () => {
+    switch (step) {
+      case 1:
+        return { title: '회원가입', desc: '기본 정보를 입력해주세요.' };
+      case 2:
+        return {
+          title: '회원가입',
+          desc: '여행 취향을 분석하여 딱 맞는 친구를 찾아드릴게요.',
+        };
+      case 3:
+        return {
+          title: '회원가입',
+          desc: '프로필을 완성하고 자신을 소개해 보세요.',
+        };
+      default:
+        return { title: '가입 완료', desc: '' };
+    }
+  };
+
+  const { title, desc } = getStepHeader();
+
+  const currentTabInfo = CATEGORIZED_KEYWORDS.find(
+    (tab) => tab.id === activeTab
+  );
+  const numRows = currentTabInfo
+    ? Math.ceil(currentTabInfo.items.length / 2)
+    : 1;
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-gray-50">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="flex items-center gap-3 mb-8 justify-center">
-          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-            <Map className="w-7 h-7 text-white" />
-          </div>
-          <span className="text-3xl text-gray-900">MateTrip</span>
-        </div>
-        <div className="bg-white rounded-2xl shadow-sm border p-8">
-          {/* Progress */}
-          <div className="mb-8">
-            <div className="text-center mb-2">
-              <h3 className="text-2xl font-bold text-gray-900">회원가입</h3>
-            </div>
-            <span className="block text-center text-sm text-gray-500 mb-4">
-              Step {step}/3
-            </span>
-            <Progress value={progressValue} className="h-2" />
-          </div>
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+      <div className="flex-1 flex justify-center items-center py-8 px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-lg md:max-w-md">
+          <div className="bg-white rounded-2xl md:rounded-3xl shadow-sm overflow-hidden border border-slate-100 relative min-h-[560px] flex flex-col">
+            {isSubmitting && (
+              <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-20 flex flex-col items-center justify-center gap-3">
+                <div className="w-10 h-10 border-4 border-[color:var(--primary-10)] border-t-[color:var(--primary)] rounded-full animate-spin" />
+                <div className="text-sm font-semibold text-slate-700">
+                  추천 동행 매칭 중...
+                </div>
+              </div>
+            )}
+            {step > 1 && step < 4 && (
+              <Button
+                variant="ghost"
+                onClick={handlePrevStep}
+                className="absolute top-8 left-6 text-slate-400 hover:text-slate-800 flex items-center gap-1 text-sm font-bold transition-colors z-10 h-auto p-0"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                이전
+              </Button>
+            )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Step 1: Basic Info */}
+            {step < 4 && (
+              <div className="px-5 md:px-6 pt-8 pb-3 bg-white flex flex-col items-center text-center relative">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="bg-linear-to-br bg-primary p-2.5 rounded-xl shadow-primary-soft text-white">
+                    <Map className="w-7 h-7 text-white" />
+                  </div>
+                  <span className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                    MateTrip
+                  </span>
+                </div>
+
+                <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
+                  {title}
+                </h1>
+                <p className="text-slate-500 text-sm mt-1 mb-6">{desc}</p>
+
+                <div className="w-full max-w-xs flex items-center justify-center gap-3">
+                  <div className="text-primary font-bold text-base whitespace-nowrap">
+                    Step {step}
+                  </div>
+                  <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
+                      style={{ width: `${(step / 3) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {step < 4 && <div className="w-full px-6 my-2" />}
+
             {step === 1 && (
-              <>
-                <p className="text-gray-600 mb-6">기본 정보를 입력해주세요</p>
-
-                <div>
-                  <Label htmlFor="email" className="font-semibold">
-                    이메일
-                  </Label>
-                  <div className="relative mt-2">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="example@email.com"
-                      value={formData.email}
-                      onChange={(e) =>
-                        handleInputChange('email', e.target.value)
-                      }
-                      className="pl-10"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="password" className="font-semibold">
-                    비밀번호
-                  </Label>
-                  <div className="relative mt-2">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <Input
-                      id="password"
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="8자 이상 입력해주세요"
-                      value={formData.password}
-                      onChange={(e) =>
-                        handleInputChange('password', e.target.value)
-                      }
-                      className="pl-10 pr-10"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="w-5 h-5" />
-                      ) : (
-                        <Eye className="w-5 h-5" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="confirmPassword" className="font-semibold">
-                    비밀번호 확인
-                  </Label>
-                  <div className="relative mt-2">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <Input
-                      id="confirmPassword"
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      placeholder="비밀번호를 다시 입력해주세요"
-                      value={formData.confirmPassword}
-                      onChange={(e) =>
-                        handleInputChange('confirmPassword', e.target.value)
-                      }
-                      className="pl-10 pr-10"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShowConfirmPassword(!showConfirmPassword)
-                      }
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      {showConfirmPassword ? (
-                        <EyeOff className="w-5 h-5" />
-                      ) : (
-                        <Eye className="w-5 h-5" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="nickname" className="font-semibold">
-                    닉네임
-                  </Label>
-                  <div className="relative mt-2">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <Input
-                      id="nickname"
-                      type="text"
-                      placeholder="사용할 닉네임을 입력해주세요"
-                      value={formData.nickname}
-                      onChange={(e) =>
-                        handleInputChange('nickname', e.target.value)
-                      }
-                      className="pl-10"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label className="font-semibold">성별</Label>
-                  <div className="flex gap-4 mt-2">
-                    <div className="flex items-center gap-2">
+              <div className="flex-1 px-5 md:px-6 py-5 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="space-y-5 max-w-xl mx-auto w-full">
+                  <div>
+                    <Label htmlFor="email" className="font-semibold">
+                      이메일
+                    </Label>
+                    <div className="relative mt-2">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <Input
-                        id="male"
-                        type="radio"
-                        value="남성"
-                        name="gender"
-                        checked={formData.gender === '남성'}
+                        id="email"
+                        type="email"
+                        placeholder="example@email.com"
+                        value={formData.email}
                         onChange={(e) =>
-                          handleInputChange('gender', e.target.value)
-                        }
-                        className="h-4 w-4 accent-blue-600"
-                      />
-                      <Label
-                        htmlFor="male"
-                        className="cursor-pointer font-normal"
-                      >
-                        남성
-                      </Label>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        id="female"
-                        type="radio"
-                        value="여성"
-                        name="gender"
-                        checked={formData.gender === '여성'}
-                        onChange={(e) =>
-                          handleInputChange('gender', e.target.value)
-                        }
-                        className="h-4 w-4 accent-blue-600"
-                      />
-                      <Label
-                        htmlFor="female"
-                        className="cursor-pointer font-normal"
-                      >
-                        여성
-                      </Label>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="phone" className="font-semibold">
-                    연락처
-                  </Label>
-                  <div className="flex gap-2 mt-2">
-                    <div className="relative flex-1">
-                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                      <Input
-                        id="phone"
-                        type="tel"
-                        placeholder="010-0000-0000"
-                        value={formData.phone}
-                        onChange={(e) =>
-                          handleInputChange('phone', e.target.value)
+                          handleInputChange('email', e.target.value)
                         }
                         className="pl-10"
                         required
                       />
                     </div>
-                    <Button
-                      type="button"
-                      variant={isPhoneVerified ? 'outline' : 'default'}
-                      className={isPhoneVerified ? 'gap-1' : ''}
-                      onClick={() => setIsPhoneVerified(true)}
-                    >
-                      {isPhoneVerified ? (
-                        <>
-                          <CheckCircle2 className="w-4 h-4 text-green-600" />
-                          <span className="text-green-600">인증완료</span>
-                        </>
-                      ) : (
-                        '인증하기'
-                      )}
-                    </Button>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="password" className="font-semibold">
+                      비밀번호
+                    </Label>
+                    <div className="relative mt-2">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <Input
+                        id="password"
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="8자 이상 입력해주세요"
+                        value={formData.password}
+                        onChange={(e) =>
+                          handleInputChange('password', e.target.value)
+                        }
+                        className="pl-10 pr-10"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="confirmPassword" className="font-semibold">
+                      비밀번호 확인
+                    </Label>
+                    <div className="relative mt-2">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <Input
+                        id="confirmPassword"
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        placeholder="비밀번호를 다시 입력해주세요"
+                        value={formData.confirmPassword}
+                        onChange={(e) =>
+                          handleInputChange('confirmPassword', e.target.value)
+                        }
+                        className="pl-10 pr-10"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="nickname" className="font-semibold">
+                      닉네임
+                    </Label>
+                    <div className="relative mt-2">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <Input
+                        id="nickname"
+                        type="text"
+                        placeholder="사용할 닉네임을 입력해주세요"
+                        value={formData.nickname}
+                        onChange={(e) =>
+                          handleInputChange('nickname', e.target.value)
+                        }
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="font-semibold">성별</Label>
+                    <div className="flex gap-4 mt-2">
+                      <div className="flex items-center gap-2">
+                        <Input
+                          id="male"
+                          type="radio"
+                          value="남성"
+                          name="gender"
+                          checked={formData.gender === '남성'}
+                          onChange={(e) =>
+                            handleInputChange('gender', e.target.value)
+                          }
+                          className="h-4 w-4 accent-[var(--primary)]"
+                        />
+                        <Label
+                          htmlFor="male"
+                          className="cursor-pointer font-normal"
+                        >
+                          남성
+                        </Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          id="female"
+                          type="radio"
+                          value="여성"
+                          name="gender"
+                          checked={formData.gender === '여성'}
+                          onChange={(e) =>
+                            handleInputChange('gender', e.target.value)
+                          }
+                          className="h-4 w-4 accent-[var(--primary)]"
+                        />
+                        <Label
+                          htmlFor="female"
+                          className="cursor-pointer font-normal"
+                        >
+                          여성
+                        </Label>
+                      </div>
+                    </div>
                   </div>
                 </div>
-
-                <Button
-                  type="button"
-                  onClick={handleNextStep}
-                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                >
-                  다음
-                </Button>
-              </>
+                <div className="mt-6 pb-3">
+                  <Button
+                    onClick={handleNextStep}
+                    className="w-full bg-primary hover:bg-primary-strong text-white py-2 h-auto rounded-lg font-bold text-lg shadow-primary-soft flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
+                  >
+                    다음 단계로
+                    <ArrowRight className="w-5 h-5" />
+                  </Button>
+                </div>
+              </div>
             )}
 
-            {/* Step 2: Travel Style */}
             {step === 2 && (
-              <>
-                <div className="mb-4">
-                  <button
-                    type="button"
-                    onClick={handlePrevStep}
-                    className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
-                  >
-                    <ArrowLeft className="w-4 h-4" />
-                    이전
-                  </button>
+              <div className="flex-1 flex flex-col animate-in fade-in slide-in-from-right-8 duration-500">
+                <div className="px-5 md:px-6 py-3">
+                  <div className="flex flex-col gap-1 mb-5">
+                    <div className="flex items-center justify-start gap-2">
+                      <div className="p-2 bg-primary-10 rounded-full">
+                        <Sparkles className="w-5 h-5 text-primary" />
+                      </div>
+                      <h2 className="text-lg font-extrabold text-slate-900 text-left flex items-center gap-2">
+                        여행 스타일
+                        <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary-10 text-primary ">
+                          3개 선택 필수
+                        </span>
+                      </h2>
+                    </div>
+                    <p className="text-sm text-slate-500 py-1">
+                      나를 가장 잘 표현하는 키워드를 3가지 골라주세요
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap justify-start gap-2.5">
+                    {TRAVEL_STYLE_OPTIONS.map((style) => {
+                      const isSelected = formData.travelStyles.has(style.value);
+                      return (
+                        <Button
+                          key={style.value}
+                          onClick={() => toggleTravelStyle(style.value)}
+                          variant="outline"
+                          className={`
+                          px-3 py-1.5 h-auto rounded-md text-xs font-medium transition-all duration-200 border select-none
+                          ${
+                            isSelected
+                              ? 'bg-primary border-primary text-white shadow-primary-soft hover:bg-primary-strong hover:text-white active:bg-primary-strong'
+                              : 'bg-white text-slate-600 border-slate-200 hover:border-primary hover:bg-primary-10 hover:text-slate-800'
+                          }
+                        `}
+                        >
+                          {style.label}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  {styleError && (
+                    <p className="text-xs text-rose-500 mt-2">{styleError}</p>
+                  )}
                 </div>
 
-                <p className="text-gray-600 mb-6">
-                  선호하는 여행 스타일을 선택해주세요 (복수 선택 가능)
-                </p>
+                <div className="w-full px-5 md:px-6" />
 
-                <div>
-                  <Label className="font-semibold">여행 스타일</Label>
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {TRAVEL_STYLE_OPTIONS.map(({ value, label }) => (
-                      <Badge
-                        key={value}
-                        variant={
-                          formData.travelStyles.includes(value)
-                            ? 'default'
-                            : 'outline'
-                        }
-                        className={`cursor-pointer transition-colors ${
-                          formData.travelStyles.includes(value)
-                            ? 'bg-blue-600 hover:bg-blue-700'
-                            : 'hover:bg-gray-100'
-                        }`}
-                        onClick={() => toggleTravelStyle(value)}
-                      >
-                        {label}
-                      </Badge>
-                    ))}
+                <div className="px-5 md:px-6 pt-3">
+                  <div className="flex flex-col gap-1 mb-5">
+                    <div className="flex items-center justify-start gap-2">
+                      <div className="p-2 bg-primary-10 rounded-full">
+                        <Compass className="w-5 h-5 text-primary" />
+                      </div>
+                      <h2 className="text-lg font-extrabold text-slate-900 text-left">
+                        여행 성향
+                      </h2>
+                    </div>
+                    <p className="text-sm text-slate-500 py-1">
+                      마음 가는 키워드를 자유롭게 골라주세요.
+                    </p>
                   </div>
                 </div>
 
-                <div>
-                  <Label className="font-semibold">여행 성향</Label>
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {TENDENCY_OPTIONS.map(({ value, label }) => (
-                      <Badge
-                        key={value}
-                        variant={
-                          formData.tendency.includes(value)
-                            ? 'default'
-                            : 'outline'
-                        }
-                        className={`cursor-pointer transition-colors ${
-                          formData.tendency.includes(value)
-                            ? 'bg-blue-600 hover:bg-blue-700'
-                            : 'hover:bg-gray-100'
-                        }`}
-                        onClick={() => toggleTravelTendency(value)}
+                <div className="flex flex-col md:flex-row flex-1 px-1 md:px-3 gap-2 md:gap-3 min-h-0">
+                  <div className="w-full md:w-48 max-w-40 shrink-0 bg-slate-100/40 md:rounded-l-2xl mb-4 md:mb-0">
+                    <div className="flex flex-row md:flex-col overflow-x-auto md:overflow-visible scrollbar-hide p-2 md:p-2.5 gap-2">
+                      {CATEGORIZED_KEYWORDS.map((tab) => {
+                        const isActive = activeTab === tab.id;
+                        const Icon = tab.icon;
+                        const count = tab.items.filter((k) =>
+                          formData.tendency.has(k)
+                        ).length;
+
+                        return (
+                          <Button
+                            key={tab.id}
+                            variant="ghost"
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`
+                            justify-start h-auto flex items-center gap-2 px-3 py-2 text-sm font-medium transition-all relative text-left md:rounded-l-2xl w-full
+                            ${
+                              isActive
+                                ? 'bg-white text-primary shadow-md shadow-slate-100 z-10'
+                                : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'
+                            }
+                          `}
+                          >
+                            <div
+                              className={`p-1 rounded-2xl transition-colors ${isActive ? 'bg-primary-10 text-primary' : 'bg-transparent text-slate-400'}`}
+                            >
+                              <Icon className="w-4 h-4" />
+                            </div>
+                            <span className="whitespace-nowrap">
+                              {tab.title}
+                            </span>
+                            {count > 0 && (
+                              <span
+                                className={`ml-auto w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold ${isActive ? 'bg-primary text-white' : 'bg-slate-200 text-slate-500'}`}
+                              >
+                                {count}
+                              </span>
+                            )}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="flex-1 min-w-0 py-5 md:py-6 pr-3 pl-0 md:pl-1 bg-white md:rounded-l-2xl">
+                    <div className="mb-6 text-left">
+                      {currentTabInfo && (
+                        <>
+                          <h3 className="text-md font-bold text-slate-900 mb-1">
+                            {currentTabInfo.title}
+                          </h3>
+                          <p className="text-slate-500 text-xs">
+                            {currentTabInfo.question}
+                          </p>
+                        </>
+                      )}
+                    </div>
+
+                    <div
+                      className="animate-in fade-in slide-in-from-right-4 duration-300 h-[250px]"
+                      key={activeTab}
+                    >
+                      <div
+                        className="grid grid-cols-2 gap-2.5 h-full"
+                        style={{
+                          gridTemplateRows: `repeat(${numRows}, minmax(0, 1fr))`,
+                        }}
                       >
-                        {label}
-                      </Badge>
-                    ))}
+                        {currentTabInfo &&
+                          currentTabInfo.items.map((label) => {
+                            const isSelected = formData.tendency.has(label);
+                            return (
+                              <Button
+                                key={label}
+                                variant="outline"
+                                onClick={() => toggleTravelTendency(label)}
+                                className={`
+                              relative group py-2 px-2 h-full w-full min-w-[120px] rounded-md text-sm font-medium transition-all duration-200 border text-center flex items-center justify-center gap-1.5 whitespace-nowrap
+                              ${
+                                isSelected
+                                  ? 'bg-primary border-primary text-white shadow-primary-soft hover:bg-primary-strong hover:text-white active:bg-primary-strong'
+                                  : 'bg-white text-slate-600 border-slate-100 hover:border-primary hover:bg-primary-10 hover:text-slate-800'
+                              }
+                            `}
+                              >
+                                {label}
+                              </Button>
+                            );
+                          })}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <div>
-                  <Label htmlFor="mbti" className="font-semibold">
-                    MBTI (선택)
-                  </Label>
+                <div className="w-full px-6 mt-1" />
+
+                <div className="px-5 md:px-6 pt-2">
+                  <div className="flex flex-col gap-1 mb-4">
+                    <div className="flex items-center justify-start gap-2">
+                      <div className="p-2 bg-primary-10 rounded-full">
+                        <User className="w-5 h-5 text-primary" />
+                      </div>
+                      <h2 className="text-lg font-extrabold text-slate-900 text-left">
+                        MBTI 성격 유형
+                      </h2>
+                    </div>
+                    <p className="text-sm text-slate-500 py-1 pl-1">
+                      MBTI를 선택하여 자신을 더 잘 표현해보세요.
+                    </p>
+                  </div>
                   <select
                     id="mbti"
                     value={formData.mbti}
                     onChange={(e) => handleInputChange('mbti', e.target.value)}
-                    className="w-full mt-2 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                    className="w-full mt-1 px-4 py-3 h-auto border bg-white border-slate-200 rounded-xl focus:ring-2 focus:ring-[color:var(--primary)] focus:border-transparent outline-none transition-all font-medium text-slate-900"
                   >
                     <option value="">MBTI를 선택해주세요</option>
                     {MBTI_TYPES.map((mbti) => (
@@ -482,115 +808,108 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                   </select>
                 </div>
 
-                <Button
-                  type="button"
-                  onClick={handleNextStep}
-                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                >
-                  다음
-                </Button>
-              </>
-            )}
-
-            {/* Step 3: Terms */}
-            {step === 3 && (
-              <>
-                <div className="mb-4">
-                  <button
-                    type="button"
-                    onClick={handlePrevStep}
-                    className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+                <div className="px-5 md:px-6 py-7  flex justify-center mt-auto">
+                  <Button
+                    onClick={handleNextStep}
+                    className="w-full bg-primary hover:bg-primary-strong text-white py-2 h-auto rounded-lg font-bold text-lg shadow-primary-soft flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
                   >
-                    <ArrowLeft className="w-4 h-4" />
-                    이전
-                  </button>
+                    다음 단계로
+                    <ArrowRight className="w-5 h-5" />
+                  </Button>
                 </div>
-
-                <p className="text-gray-600 mb-6">
-                  프로필을 완성하고 자신을 소개해보세요.
-                </p>
-
-                <div>
-                  <Label htmlFor="intro" className="font-semibold">
-                    한줄소개
-                  </Label>
-                  <div className="relative mt-2">
-                    <Pen className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <Input
-                      id="intro"
-                      type="text"
-                      placeholder="예) 바다를 사랑하는 여행러 🌊"
-                      value={formData.intro}
-                      onChange={(e) =>
-                        handleInputChange('intro', e.target.value)
-                      }
-                      className="pl-10"
-                      maxLength={50}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="description" className="font-semibold">
-                    상세소개
-                  </Label>
-                  <div className="relative mt-2">
-                    <FileText className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-                    <Textarea
-                      id="description"
-                      placeholder="자신에 대해 자유롭게 소개해주세요. (여행 스타일, 좋아하는 것 등)"
-                      value={formData.description}
-                      onChange={(e) =>
-                        handleInputChange('description', e.target.value)
-                      }
-                      className="pl-10 min-h-32"
-                    />
-                  </div>
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                >
-                  회원가입 완료
-                </Button>
-              </>
+              </div>
             )}
-          </form>
-        </div>
 
-        <p className="mt-6 text-center text-sm text-gray-600">
-          이미 계정이 있으신가요?{' '}
-          <button
-            type="button"
-            onClick={onLoginClick}
-            className="text-blue-600 hover:text-blue-700"
-          >
-            로그인
-          </button>
-        </p>
-      </div>
+            {step === 3 && (
+              <div className="flex-1 px-5 md:px-6 py-6 flex flex-col animate-in fade-in slide-in-from-right-8 duration-500">
+                <div className="max-w-xl mx-auto w-full space-y-4">
+                  <div>
+                    <Label htmlFor="intro" className="font-semibold">
+                      한줄소개
+                    </Label>
+                    <div className="relative mt-2">
+                      <Pen className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <Input
+                        id="intro"
+                        type="text"
+                        placeholder="예) 바다를 사랑하는 여행러 🌊"
+                        value={formData.intro}
+                        onChange={(e) =>
+                          handleInputChange('intro', e.target.value)
+                        }
+                        className="pl-10"
+                        maxLength={50}
+                      />
+                    </div>
+                  </div>
 
-      {/* Success Modal */}
-      {showSuccessModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-8 text-center">
-            <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-6" />
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">
-              회원가입 성공!
-            </h3>
-            <p className="text-gray-600 mb-8">
-              MateTrip에 오신 것을 환영합니다.
-            </p>
-            <Button
-              onClick={onSignup}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-            >
-              확인
-            </Button>
+                  <div>
+                    <Label
+                      htmlFor="description"
+                      className="font-semibold flex items-center gap-2"
+                    >
+                      상세소개
+                      <span className="relative inline-flex items-center group">
+                        <span className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full border border-primary bg-primary-10 text-[10px] font-semibold text-primary shadow-[0_1px_3px_rgba(59,130,246,0.25)] hover:bg-primary-10 hover:border-primary transition-colors cursor-default">
+                          i
+                        </span>
+                        <span className="absolute left-full top-1/2 z-10 ml-2 -translate-y-1/2 block w-72 md:w-80 rounded-lg bg-white px-3 py-2 text-[11px] font-medium text-black text-left whitespace-normal break-words shadow-lg opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none transition-all duration-150">
+                          키워드 유사도와 상세소개 유사도를 합산하여 프로필
+                          유사도를 측정합니다.
+                          <br />
+                          적절하지 않은 상세소개는 등록되지 않을 수 있습니다.
+                        </span>
+                      </span>
+                    </Label>
+                    <div className="relative mt-2">
+                      <FileText className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                      <Textarea
+                        id="description"
+                        placeholder="자신에 대해 자유롭게 소개해주세요. (여행 스타일, 좋아하는 것 등)"
+                        value={formData.description}
+                        onChange={(e) => {
+                          setDescriptionError('');
+                          handleInputChange('description', e.target.value);
+                        }}
+                        className="pl-10 min-h-32"
+                      />
+                    </div>
+                    {descriptionError && (
+                      <p className="text-xs text-rose-500 mt-2">
+                        {descriptionError}
+                      </p>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-400 text-right">
+                    * 자세히 적을수록, 마음이 딱 맞는 동행을 만날 확률이
+                    높아져요!
+                  </p>
+                </div>
+
+                <div className="pt-7">
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={isSubmitting}
+                    className="w-full bg-primary hover:bg-primary-strong disabled:bg-primary-80 disabled:cursor-not-allowed text-white py-2 h-auto rounded-lg font-bold text-lg shadow-primary-soft shadow-md flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
+                  >
+                    {isSubmitting ? '추천 동행 매칭 중...' : '회원가입 완료'}
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
+          <p className="mt-4 mb-4 text-center text-sm text-gray-600">
+            이미 계정이 있으신가요?{' '}
+            <button
+              type="button"
+              onClick={onLoginClick}
+              className="text-primary hover:text-primary-strong"
+            >
+              로그인
+            </button>
+          </p>
         </div>
-      )}
+      </div>
     </div>
   );
 }
