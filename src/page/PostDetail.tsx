@@ -746,11 +746,13 @@ export function PostDetail({
                     </h3>
                     <div className="space-y-3">
                       {approvedParticipants.length > 0 ? (
-                        approvedParticipants.map((p) => (
-                          <div
-                            key={p.id}
-                            className="flex items-center gap-3 p-3 rounded-xl border"
-                          >
+                        approvedParticipants.map((p) => {
+                          const matchInfo = post.matchResult?.find(
+                            (m) => m.userId === p.requester.id
+                          );
+                          return (
+                            <div key={p.id} className="rounded-xl border">
+                              <div className="flex items-center gap-3 p-3">
                             <ImageWithFallback
                               src={
                                 (p.requester.profile.profileImageId
@@ -764,38 +766,90 @@ export function PostDetail({
                               className="w-10 h-10 rounded-full object-cover"
                             />
                             <div className="flex-1 min-w-0">
-                              <span className="text-gray-900 font-semibold">
-                                {p.requester.profile.nickname}
-                              </span>
-                              <div className="flex items-center gap-1 text-sm text-gray-600">
-                                <Thermometer className="w-5 h-5" />
-                                <span>
-                                  {formatMannerTemperature(p.requester.profile)}
-                                </span>
-                              </div>
-                            </div>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-xs h-7"
-                              onClick={() => {
-                                console.log(
-                                  '🔵 [PostDetail] View approved participant profile clicked.',
+                                  <div className="flex justify-between items-start">
+                                <div>
+                                  <span className="text-gray-900 font-semibold">
+                                    {p.requester.profile.nickname}
+                                  </span>
+                                  {isAuthor && matchInfo && (
+                                    <p className="text-sm text-gray-600">
+                                      매칭률: {Math.round(matchInfo.score * 100)}%
+                                    </p>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1 text-sm text-gray-600 flex-shrink-0 ml-2">
                                   {
-                                    requesterId: p.requester.id,
+                                    <>
+                                      <Thermometer className="w-5 h-5" />
+                                      <span>{formatMannerTemperature(p.requester.profile)}</span>
+                                    </>
                                   }
-                                );
-                                if (p.requester.id) {
-                                  onViewProfile(p.requester.id);
-                                } else {
-                                  console.warn('⚠️ Requester ID is missing!');
-                                }
-                              }}
-                            >
-                              프로필 보기
-                            </Button>
-                          </div>
-                        ))
+                                </div>
+                              </div>
+                                <div className="flex justify-between items-end mt-2">
+                                  <div className="flex flex-wrap gap-1">
+                                    {p.requester.profile.travelStyles
+                                      ?.slice(0, 3)
+                                      .map((style) => (
+                                        <Badge
+                                          key={style}
+                                          variant="secondary"
+                                          className="rounded-full px-2 py-0.5 text-xs bg-gray-100"
+                                        >
+                                          {translateKeyword(style)}
+                                        </Badge>
+                                      ))}
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-xs h-7"
+                                    onClick={() => {
+                                      console.log(
+                                        '🔵 [PostDetail] View approved participant profile clicked.',
+                                        {
+                                          requesterId: p.requester.id,
+                                        }
+                                      );
+                                      if (p.requester.id) {
+                                        onViewProfile(p.requester.id);
+                                      } else {
+                                        console.warn(
+                                          '⚠️ Requester ID is missing!'
+                                        );
+                                      }
+                                    }
+                                    }
+                                  >
+                                    프로필 보기
+                                  </Button>
+                                </div>
+                            </div>
+                              </div>
+                              {isAuthor && matchInfo && (
+                                <div className="p-3 pt-2">
+                                  <p className="text-xs text-gray-500 mb-2">
+                                    일치하는 키워드
+                                  </p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {[
+                                      ...(matchInfo.overlappingTravelStyles || []),
+                                      ...(matchInfo.overlappingTendencies || []),
+                                    ].map((keyword) => (
+                                      <Badge
+                                        key={keyword}
+                                        variant="secondary"
+                                        className="rounded-full px-2 py-0.5 text-xs bg-blue-50 text-blue-700 border border-blue-200"
+                                      >
+                                        {translateKeyword(keyword)}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })
                       ) : (
                         <p className="text-gray-500 text-sm p-4 rounded-xl border text-center">
                           아직 확정된 동행이 없습니다.
@@ -811,12 +865,13 @@ export function PostDetail({
                     </h3>
                     <div className="space-y-3">
                       {pendingRequests.length > 0 ? (
-                        pendingRequests.map((request) => (
-                          <div
-                            key={request.id}
-                            className="p-3 rounded-xl border"
-                          >
-                            <div className="flex items-center gap-3 mb-2">
+                        pendingRequests.map((request) => {
+                          const matchInfo = post.matchResult?.find(
+                            (m) => m.userId === request.requester.id
+                          );
+                          return (
+                            <div key={request.id} className="rounded-xl border">
+                              <div className="flex items-center gap-3 p-3">
                               <ImageWithFallback
                                 src={
                                   (request.requester.profile.profileImageId
@@ -830,41 +885,92 @@ export function PostDetail({
                                 className="w-10 h-10 rounded-full object-cover"
                               />
                               <div className="flex-1 min-w-0">
-                                <span className="text-gray-900 font-semibold">
-                                  {request.requester.profile.nickname}
-                                </span>
-                                <div className="flex items-center gap-1 text-sm text-gray-600">
-                                  <Thermometer className="w-5 h-5" />
-                                  <span>
-                                    {formatMannerTemperature(
-                                      request.requester.profile
+                                  <div className="flex justify-between items-start">
+                                  <div>
+                                    <span className="text-gray-900 font-semibold">
+                                      {request.requester.profile.nickname}
+                                    </span>
+                                    {isAuthor && matchInfo && (
+                                      <p className="text-sm text-gray-600">
+                                        매칭률: {Math.round(matchInfo.score * 100)}%
+                                      </p>
                                     )}
-                                  </span>
-                                </div>
-                              </div>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="text-xs h-7"
-                                onClick={() => {
-                                  console.log(
-                                    '🔵 [PostDetail] View pending participant profile clicked.',
+                                  </div>
+                                  <div className="flex items-center gap-1 text-sm text-gray-600 flex-shrink-0 ml-2">
                                     {
-                                      requesterId: request.requester.id,
+                                      <>
+                                        <Thermometer className="w-5 h-5" />
+                                        <span>
+                                          {formatMannerTemperature(request.requester.profile)}
+                                        </span>
+                                      </>
                                     }
-                                  );
-                                  if (request.requester.id) {
-                                    onViewProfile(request.requester.id);
-                                  } else {
-                                    console.warn('⚠️ Requester ID is missing!');
-                                  }
-                                }}
-                              >
-                                프로필 보기
-                              </Button>
-                            </div>
-                            {isAuthor && (
-                              <div className="flex gap-2">
+                                  </div>
+                                </div>
+                                  <div className="flex justify-between items-end mt-2">
+                                    <div className="flex flex-wrap gap-1">
+                                      {request.requester.profile.travelStyles
+                                        ?.slice(0, 3)
+                                        .map((style) => (
+                                          <Badge
+                                            key={style}
+                                            variant="secondary"
+                                            className="rounded-full px-2 py-0.5 text-xs bg-gray-100"
+                                          >
+                                            {translateKeyword(style)}
+                                          </Badge>
+                                        ))}
+                                    </div>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="text-xs h-7"
+                                      onClick={() => {
+                                        console.log(
+                                          '🔵 [PostDetail] View pending participant profile clicked.',
+                                          {
+                                            requesterId: request.requester.id,
+                                          }
+                                        );
+                                        if (request.requester.id) {
+                                          onViewProfile(request.requester.id);
+                                        } else {
+                                          console.warn(
+                                            '⚠️ Requester ID is missing!'
+                                          );
+                                        }
+                                      }
+                                    }
+                                    >
+                                      프로필 보기
+                                    </Button>
+                                  </div>
+                              </div>
+                              </div>
+                              {isAuthor && matchInfo && (
+                                <div className="p-3 pt-0">
+                                  <p className="text-xs text-gray-500 mb-2">
+                                    일치하는 키워드
+                                  </p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {[
+                                      ...(matchInfo.overlappingTravelStyles || []),
+                                      ...(matchInfo.overlappingTendencies || []),
+                                    ].map((keyword) => (
+                                      <Badge
+                                        key={keyword}
+                                        variant="secondary"
+                                        className="rounded-full px-2 py-0.5 text-xs bg-blue-50 text-blue-700 border border-blue-200"
+                                      >
+                                        {translateKeyword(keyword)}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              <div className="p-3 pt-0">
+                                {isAuthor && (
+                                  <div className="flex gap-2">
                                 <Button
                                   size="sm"
                                   onClick={() =>
@@ -887,20 +993,22 @@ export function PostDetail({
                                   거절
                                 </Button>
                               </div>
-                            )}
-                            {user?.userId === request.requester.id && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="w-full text-sm text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300"
-                                onClick={() => setCancelModalOpen(true)}
-                              >
-                                <X className="w-5 h-5 mr-1" />
-                                동행 신청 취소
-                              </Button>
-                            )}
-                          </div>
-                        ))
+                                )}
+                                {user?.userId === request.requester.id && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="w-full text-sm text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300"
+                                    onClick={() => setCancelModalOpen(true)}
+                                  >
+                                    <X className="w-5 h-5 mr-1" />
+                                    동행 신청 취소
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })
                       ) : (
                         <p className="text-gray-500 text-sm p-4 rounded-xl border text-center">
                           대기중인 동행이 없습니다.
@@ -919,7 +1027,7 @@ export function PostDetail({
                       AI 추천 동행 (상위 {Math.min(post.matchResult.length, 3)}
                       명)
                     </h3>
-                    <div className="space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {post.matchResult.slice(0, 3).map((candidate) => {
                         const recommendedProfile =
                           recommendedUserProfiles[candidate.userId];
@@ -930,50 +1038,71 @@ export function PostDetail({
                         return (
                           <div
                             key={candidate.userId}
-                            className="flex items-center gap-3 p-3 bg-white rounded-lg border"
+                            className="rounded-xl border bg-white overflow-hidden flex flex-col"
                           >
-                            <ImageWithFallback
-                              src={
-                                recommendedProfile?.imageUrl ||
-                                `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                                  fallbackAvatarName
-                                )}&background=random&rounded=true`
-                              }
-                              alt={fallbackAvatarName}
-                              className="w-10 h-10 rounded-full object-cover flex-shrink-0 bg-gray-100"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-gray-900 font-semibold">
-                                {recommendedProfile?.nickname ||
-                                  candidate.profile?.nickname ||
-                                  '사용자'}
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                매칭률: {Math.round(candidate.score * 100)}%
-                              </p>
-                            </div>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-xs h-7"
-                              onClick={() => {
-                                console.log(
-                                  '🔵 [PostDetail] View recommended user profile clicked.',
-                                  {
-                                    userId: candidate.userId,
+                            <div className="p-4 flex-1">
+                              <div className="flex items-start gap-4">
+                                <ImageWithFallback
+                                  src={
+                                    recommendedProfile?.imageUrl ||
+                                    `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                      fallbackAvatarName
+                                    )}&background=random&rounded=true`
                                   }
-                                );
-                                if (candidate.userId) {
-                                  onViewProfile(candidate.userId);
-                                } else {
-                                  console.warn(
-                                    '⚠️ Candidate userId is missing!'
-                                  );
-                                }
-                              }}
-                            >
-                              프로필 보기
-                            </Button>
+                                  alt={fallbackAvatarName}
+                                  className="w-12 h-12 rounded-full object-cover flex-shrink-0 bg-gray-100"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex justify-between items-center mb-1">
+                                    <p className="text-gray-900 font-semibold truncate">
+                                      {recommendedProfile?.nickname ||
+                                        candidate.profile?.nickname ||
+                                        '사용자'}
+                                    </p>
+                                  </div>
+                                  <p className="text-sm text-gray-500">
+                                    매칭률: {Math.round(candidate.score * 100)}%
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="mt-4">
+                                <p className="text-xs text-gray-500 mb-2">
+                                  일치하는 키워드
+                                </p>
+                                <div className="flex flex-wrap gap-1 h-12 overflow-hidden">
+                                  {[
+                                    ...(candidate.overlappingTravelStyles || []),
+                                    ...(candidate.overlappingTendencies || []),
+                                  ].map((keyword) => (
+                                    <Badge
+                                      key={keyword}
+                                      variant="secondary"
+                                      className="rounded-full px-2 py-0.5 text-xs bg-blue-50 text-blue-700 border border-blue-200"
+                                    >
+                                      {translateKeyword(keyword)}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="p-4 pt-0">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="w-full"
+                                onClick={() => {
+                                  if (candidate.userId) {
+                                    onViewProfile(candidate.userId);
+                                  } else {
+                                    console.warn(
+                                      '⚠️ Candidate userId is missing!'
+                                    );
+                                  }
+                                }}
+                              >
+                                프로필 보기
+                              </Button>
+                            </div>
                           </div>
                         );
                       })}
