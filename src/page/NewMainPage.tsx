@@ -5,8 +5,6 @@ import { MainPostCard } from '../components/MainPostCard';
 import { PlaceRecommendationSection } from '../components/PlaceRecommendationSection';
 import { InspirationCard } from '../components/InspirationCard';
 import { PostDetail } from './PostDetail';
-import { PostPreview } from '../components/PostPreview';
-import { SimpleKakaoMap } from '../components/SimpleKakaoMap';
 import { useAuthStore } from '../store/authStore';
 import client from '../api/client';
 import { type Post } from '../types/post';
@@ -44,7 +42,6 @@ interface NewMainPageProps {
 type SelectedType = 'post' | 'place' | 'inspiration' | null;
 
 export function NewMainPage({
-  onCreatePost,
   onJoinWorkspace,
   onViewProfile,
   onEditPost,
@@ -67,7 +64,7 @@ export function NewMainPage({
   // Selection states
   const [selectedType, setSelectedType] = useState<SelectedType>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [selectedPlace, setSelectedPlace] = useState<PlaceDto | null>(null);
+  const [_selectedPlace, setSelectedPlace] = useState<PlaceDto | null>(null);
   const [showPostDetailModal, setShowPostDetailModal] = useState(false);
 
   // Fetch all posts
@@ -110,7 +107,7 @@ export function NewMainPage({
       try {
         const response = await client.post<MatchCandidateDto[]>(
           '/profile/matching/search',
-          { limit: 3 }
+          { limit: 5 } // Changed from 4 to 5
         );
         if (!isMounted) return;
         setMatches(response.data ?? []);
@@ -142,7 +139,7 @@ export function NewMainPage({
       try {
         const response = await client.get<PopularPlaceResponse[]>(
           '/places/popular',
-          { params: { page: 1, limit: 3 } }
+          { params: { page: 1, limit: 5 } } // Changed from 4 to 5
         );
 
         // 각 장소의 상세 정보를 가져와서 latitude, longitude 포함
@@ -207,7 +204,7 @@ export function NewMainPage({
       return post ? { post, score: Math.round(match.score * 100) } : null;
     })
     .filter((item): item is { post: Post; score: number } => item !== null)
-    .slice(0, 3);
+    .slice(0, 5); // Changed from 4 to 5
 
   // Handlers
   const handlePostClick = (postId: string) => {
@@ -267,7 +264,7 @@ export function NewMainPage({
   return (
     <div className="flex h-full bg-white relative">
       {/* Center Content */}
-      <div className="flex-1 overflow-y-auto px-4 md:px-8 lg:px-16 py-6 md:py-8 lg:py-12 lg:mr-[400px] xl:mr-[900px] ">
+      <div className="flex-1 overflow-y-auto px-8 md:px-16 lg:px-24 py-6 md:py-8 lg:py-12">
         {/* Section 1: AI 추천 동행 (유저-게시글 매칭) */}
         <section className="mb-8 md:mb-10 lg:mb-12">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3">
@@ -285,7 +282,7 @@ export function NewMainPage({
               variant="ghost"
               className="text-sm self-start sm:self-auto"
             >
-              All View
+              View All
             </Button>
           </div>
 
@@ -323,8 +320,8 @@ export function NewMainPage({
               </div>
             </div>
           ) : isMatchesLoading || isPostsLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-              {Array.from({ length: 3 }).map((_, index) => (
+            <div className="grid grid-cols-5 gap-4 md:gap-6">
+              {Array.from({ length: 5 }).map((_, index) => (
                 <div
                   key={index}
                   className="w-full aspect-[203/241] bg-gray-200 rounded-[16px] animate-pulse"
@@ -336,7 +333,7 @@ export function NewMainPage({
               추천할 동행이 없습니다.
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            <div className="grid grid-cols-5 gap-4 md:gap-6">
               {matchedPosts.map(({ post, score }) => {
                 console.log('🟡 MainPostCard 렌더링:', {
                   postId: post.id,
@@ -369,7 +366,7 @@ export function NewMainPage({
                 Hot Place
               </h2>
               <p className="text-xs md:text-sm text-gray-600 mt-1text-xs md:text-sm text-gray-600 mt-1">
-                MateTrip 유저들의 Pick‼
+                MateTrip 유저들의 Pick!
               </p>
             </div>
             <Button
@@ -377,13 +374,13 @@ export function NewMainPage({
               variant="ghost"
               className="text-sm self-start sm:self-auto"
             >
-              All View
+              View All
             </Button>
           </div>
 
           {isInspirationsLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-              {Array.from({ length: 3 }).map((_, index) => (
+            <div className="grid grid-cols-5 gap-4 md:gap-6">
+              {Array.from({ length: 5 }).map((_, index) => (
                 <div
                   key={index}
                   className="w-full h-64 bg-gray-200 rounded-xl animate-pulse"
@@ -395,7 +392,7 @@ export function NewMainPage({
               추천할 장소가 없습니다.
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            <div className="grid grid-cols-5 gap-4 md:gap-6">
               {inspirations.map((place, index) => (
                 <InspirationCard
                   key={place.id}
@@ -409,71 +406,6 @@ export function NewMainPage({
             </div>
           )}
         </section>
-      </div>
-
-      {/* Right Fixed Panel */}
-      <div className="md:hidden lg:block fixed right-0 top-0 lg:w-[400px] xl:w-[900px] h-screen border-l border-gray-200 bg-white overflow-hidden z-10">
-        {selectedType === 'post' && selectedId ? (
-          <PostPreview
-            postId={selectedId}
-            onJoinWorkspace={onJoinWorkspace}
-            onViewFullDetail={() => setShowPostDetailModal(true)}
-            onClose={() => {
-              setSelectedType(null);
-              setSelectedId(null);
-            }}
-          />
-        ) : (selectedType === 'place' || selectedType === 'inspiration') &&
-          selectedPlace ? (
-          <div className="relative h-full w-full">
-            <SimpleKakaoMap
-              latitude={selectedPlace.latitude}
-              longitude={selectedPlace.longitude}
-              placeName={selectedPlace.title}
-            />
-
-            {/* 여행 만들기 버튼 */}
-            <Button
-              onClick={() => {
-                if (!isLoggedIn) {
-                  navigate('/login');
-                  return;
-                }
-                onCreatePost();
-              }}
-              className="absolute bottom-6 left-6 z-[9999] bg-[#101828] text-white shadow-lg"
-            >
-              여행 만들기
-            </Button>
-          </div>
-        ) : (
-          <div className="relative h-full w-full bg-gray-100 flex items-center justify-center">
-            {/* 초기 안내 화면 */}
-            <div className="text-center px-8">
-              <div className="mb-4">
-                <svg
-                  className="w-16 h-16 mx-auto text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
-                  />
-                </svg>
-              </div>
-              <p className="text-sm text-gray-500 leading-relaxed">
-                여행 카드를 선택하면
-                <br />
-                상세 정보를 확인할 수 있습니다
-              </p>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* PostDetail Modal - 전체 상세보기 */}

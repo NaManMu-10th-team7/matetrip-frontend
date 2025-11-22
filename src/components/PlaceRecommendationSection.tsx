@@ -32,7 +32,9 @@ interface PlaceWithReason extends PlaceDto {
   recommendationReason?: string;
 }
 
-export function PlaceRecommendationSection({ onPlaceClick }: PlaceRecommendationSectionProps) {
+export function PlaceRecommendationSection({
+  onPlaceClick,
+}: PlaceRecommendationSectionProps) {
   const [places, setPlaces] = useState<PlaceWithReason[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user, isAuthLoading } = useAuthStore();
@@ -57,11 +59,11 @@ export function PlaceRecommendationSection({ onPlaceClick }: PlaceRecommendation
           {
             params: {
               userId: user.userId,
-              limit: 3,
+              limit: 5, // Changed from 4 to 5
             },
           }
         );
-        
+
         // Convert to PlaceDto format with recommendation reason
         const placesData: PlaceWithReason[] = response.data.map((item) => {
           return {
@@ -76,7 +78,7 @@ export function PlaceRecommendationSection({ onPlaceClick }: PlaceRecommendation
             recommendationReason: item.reason.message,
           };
         });
-        
+
         setPlaces(placesData);
       } catch (error) {
         console.error('Failed to fetch place recommendations:', error);
@@ -94,7 +96,7 @@ export function PlaceRecommendationSection({ onPlaceClick }: PlaceRecommendation
       navigate('/login');
       return;
     }
-    const place = places.find(p => p.id === placeId);
+    const place = places.find((p) => p.id === placeId);
     if (place) {
       onPlaceClick(placeId, place);
     }
@@ -116,7 +118,7 @@ export function PlaceRecommendationSection({ onPlaceClick }: PlaceRecommendation
             여기 갈래? 말래?
           </h2>
           <p className="text-xs md:text-sm text-gray-600 mt-1">
-            MateTrip AI가 추천하는 성향기반 장소추천
+            MateTrip AI가 추천하는 성향 기반 장소 추천
           </p>
         </div>
         <Button
@@ -125,7 +127,7 @@ export function PlaceRecommendationSection({ onPlaceClick }: PlaceRecommendation
           disabled={true}
           className="text-sm self-start sm:self-auto"
         >
-          All View
+          View All
         </Button>
       </div>
 
@@ -147,11 +149,11 @@ export function PlaceRecommendationSection({ onPlaceClick }: PlaceRecommendation
           </div>
         </div>
       ) : isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {Array.from({ length: 3 }).map((_, index) => (
+        <div className="grid grid-cols-5 gap-4 md:gap-6">
+          {Array.from({ length: 5 }).map((_, index) => (
             <div
               key={index}
-              className="w-full aspect-[203/241] bg-gray-200 rounded-[16px] animate-pulse"
+              className="aspect-[203/241] bg-gray-200 rounded-[16px] animate-pulse"
             />
           ))}
         </div>
@@ -160,7 +162,7 @@ export function PlaceRecommendationSection({ onPlaceClick }: PlaceRecommendation
           추천할 장소가 없습니다.
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+        <div className="grid grid-cols-5 gap-4 md:gap-6">
           {places.map((place) => (
             <PlaceCard
               key={place.id}
