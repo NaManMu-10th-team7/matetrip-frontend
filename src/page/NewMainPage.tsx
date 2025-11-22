@@ -7,7 +7,7 @@ import { PostDetail } from './PostDetail';
 import { useAuthStore } from '../store/authStore';
 import client, { API_BASE_URL } from '../api/client';
 import { type Post } from '../types/post';
-import { type PlaceDto } from '../types/place';
+import { type PlaceDto, CategoryCode } from '../types/place'; // CategoryCode 임포트
 import type { MatchCandidateDto } from '../types/matching';
 import { GridMatchingCard } from '../components/GridMatchingCard';
 import { MainPostCardSkeleton } from '../components/AIMatchingSkeletion';
@@ -30,6 +30,7 @@ interface Place {
   summary?: string;
   latitude: number;
   longitude: number;
+  category: CategoryCode; // category 필드 추가
 }
 
 interface NewMainPageProps {
@@ -54,9 +55,6 @@ const normalizeTextList = (values?: unknown): string[] => {
     .map((value) => {
       if (!value) {
         return '';
-      }
-      if (typeof value === 'string') {
-        return value;
       }
       if (typeof value === 'object') {
         const candidate = value as Record<string, unknown>;
@@ -201,6 +199,7 @@ export function NewMainPage({
                 summary: detailResponse.data.summary,
                 latitude: detailResponse.data.latitude,
                 longitude: detailResponse.data.longitude,
+                category: detailResponse.data.category, // category 추가
               };
             } catch (error) {
               console.error(
@@ -215,6 +214,7 @@ export function NewMainPage({
                 summary: undefined,
                 latitude: 37.5665,
                 longitude: 126.978,
+                category: '기타', // 기본값 설정
               };
             }
           })
@@ -349,7 +349,7 @@ export function NewMainPage({
     setSelectedId(place.id);
     const placeDto: PlaceDto = {
       id: place.id,
-      category: '기타' as any,
+      category: place.category, // place.category 사용
       title: place.title,
       address: place.address,
       summary: place.summary,
@@ -509,7 +509,10 @@ export function NewMainPage({
                   imageUrl={place.imageUrl}
                   title={place.title}
                   address={place.address}
-                  badgeText={`현재 가장 인기있는 장소 TOP. ${index + 1}`}
+                  category={place.category}
+                  summary={place.summary}
+                  rank={index + 1} // rank prop 추가
+                  // badgeText={`현재 가장 인기있는 장소 TOP. ${index + 1}`} // badgeText 제거
                   onClick={() => handleInspirationClick(place)}
                 />
               ))}
