@@ -41,6 +41,7 @@ interface NewMainPageProps {
   onViewProfile: (userId: string) => void;
   onEditPost: (post: Post) => void;
   onDeleteSuccess?: () => void;
+  onViewPost: (postId: string) => void; // Add onViewPost prop
 }
 
 type SelectedType = 'post' | 'place' | 'inspiration' | null;
@@ -85,6 +86,7 @@ export function NewMainPage({
   onViewProfile,
   onEditPost,
   onDeleteSuccess,
+  onViewPost, // Destructure onViewPost
 }: NewMainPageProps) {
   const navigate = useNavigate();
   const { user, isAuthLoading } = useAuthStore();
@@ -348,11 +350,7 @@ export function NewMainPage({
       isLoggedIn,
       현재상태: { selectedType, selectedId },
     });
-    setSelectedType('post');
-    setSelectedId(postId);
-    console.log('🟢 State 설정 완료:', {
-      새로운상태: { selectedType: 'post', selectedId: postId },
-    });
+    onViewPost(postId); // Use the onViewPost prop
   };
 
   const handlePlaceClick = (placeId: string) => { // _place: PlaceDto 인자 제거

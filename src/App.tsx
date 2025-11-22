@@ -71,12 +71,14 @@ function NewMainPageWrapper({
   onViewProfile,
   onEditPost,
   onDeleteSuccess,
+  onViewPost, // Add onViewPost prop
 }: {
   onCreatePost: () => void;
   onJoinWorkspace: (postId: string, workspaceName: string) => void;
   onViewProfile: (userId: string) => void;
   onEditPost: (post: Post) => void;
   onDeleteSuccess?: () => void;
+  onViewPost: (postId: string) => void; // Add onViewPost prop type
 }) {
   return (
     <NewMainPage
@@ -85,6 +87,7 @@ function NewMainPageWrapper({
       onViewProfile={onViewProfile}
       onEditPost={onEditPost}
       onDeleteSuccess={onDeleteSuccess}
+      onViewPost={onViewPost} // Pass onViewPost to NewMainPage
     />
   );
 }
@@ -365,6 +368,7 @@ export default function App() {
                   setShowEditPost(true);
                 }}
                 onDeleteSuccess={handleDeleteSuccess}
+                onViewPost={handleViewPost} // Pass handleViewPost to NewMainPageWrapper
               />
             }
           />
