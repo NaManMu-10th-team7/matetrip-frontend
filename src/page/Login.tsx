@@ -80,7 +80,7 @@ export function Login({ onLogin, onSignupClick }: LoginProps) {
         {/* Header Logo */}
         <div className="flex flex-col items-center justify-center mb-6">
           <div className="flex items-center gap-2 mb-2">
-            <div className="bg-linear-to-br bg-blue-600 p-2.5 rounded-xl shadow-lg text-white">
+            <div className="bg-linear-to-br bg-primary p-2.5 rounded-xl shadow-lg text-white">
               <Map className="w-7 h-7 text-white" />
             </div>
             <h1 className="text-3xl font-bold tracking-tight text-gray-900">
@@ -165,7 +165,7 @@ export function Login({ onLogin, onSignupClick }: LoginProps) {
               <button
                 type="button"
                 onClick={() => setShowForgotPassword(true)}
-                className="text-sm text-blue-600 hover:text-blue-700"
+                className="text-sm text-primary hover:text-primary-strong"
               >
                 비밀번호 찾기
               </button>
@@ -173,7 +173,7 @@ export function Login({ onLogin, onSignupClick }: LoginProps) {
 
             <Button
               type="submit"
-              className="w-full bg-gradient-to-r bg-blue-600 hover:bg-blue-700"
+              className="w-full bg-gradient-to-r bg-primary hover:bg-primary-strong"
             >
               로그인
             </Button>
@@ -184,7 +184,7 @@ export function Login({ onLogin, onSignupClick }: LoginProps) {
             <button
               type="button"
               onClick={onSignupClick}
-              className="text-blue-600 hover:text-blue-700"
+              className="text-primary hover:text-primary-strong"
             >
               회원가입
             </button>
@@ -244,7 +244,7 @@ export function Login({ onLogin, onSignupClick }: LoginProps) {
                 </Button>
                 <Button
                   type="submit"
-                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                  className="flex-1 bg-primary hover:bg-primary-strong"
                 >
                   임시 비밀번호 발송
                 </Button>

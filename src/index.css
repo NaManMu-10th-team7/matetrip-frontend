@@ -1,4 +1,5 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+@import './styles/globals.css';
 
 /*! tailwindcss v4.1.3 | MIT License | https://tailwindcss.com */
 @layer properties {
@@ -3074,4 +3075,13 @@ html {
 
 .group:hover .marquee-on-hover {
   animation: marquee 4s linear;
+}
+
+/* Force primary palette override after Tailwind output */
+:root {
+  --primary: #006dff !important;
+  --primary-strong: #0265e6 !important;
+  --primary-80: rgba(0, 109, 255, 0.8) !important;
+  --primary-10: rgba(0, 109, 255, 0.1) !important;
+  --shadow-primary-soft: 0 1px 5px rgba(0, 109, 255, 0.2) !important;
 }

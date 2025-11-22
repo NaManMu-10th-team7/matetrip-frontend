@@ -403,7 +403,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
           <div className="bg-white rounded-2xl md:rounded-3xl shadow-sm overflow-hidden border border-slate-100 relative min-h-[560px] flex flex-col">
             {isSubmitting && (
               <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-20 flex flex-col items-center justify-center gap-3">
-                <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+                <div className="w-10 h-10 border-4 border-[color:var(--primary-10)] border-t-[color:var(--primary)] rounded-full animate-spin" />
                 <div className="text-sm font-semibold text-slate-700">
                   추천 동행 매칭 중...
                 </div>
@@ -423,7 +423,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
             {step < 4 && (
               <div className="px-5 md:px-6 pt-8 pb-3 bg-white flex flex-col items-center text-center relative">
                 <div className="flex items-center gap-2 mb-4">
-                  <div className="bg-linear-to-br bg-blue-600 p-2.5 rounded-xl shadow-lg text-white">
+                  <div className="bg-linear-to-br bg-primary p-2.5 rounded-xl shadow-lg text-white">
                     <Map className="w-7 h-7 text-white" />
                   </div>
                   <span className="text-2xl font-extrabold text-slate-900 tracking-tight">
@@ -437,12 +437,12 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                 <p className="text-slate-500 text-sm mt-1 mb-6">{desc}</p>
 
                 <div className="w-full max-w-xs flex items-center justify-center gap-3">
-                  <div className="text-blue-600 font-bold text-base whitespace-nowrap">
+                  <div className="text-primary font-bold text-base whitespace-nowrap">
                     Step {step}
                   </div>
                   <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-blue-500 rounded-full transition-all duration-500 ease-out"
+                      className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
                       style={{ width: `${(step / 3) * 100}%` }}
                     ></div>
                   </div>
@@ -572,7 +572,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                           onChange={(e) =>
                             handleInputChange('gender', e.target.value)
                           }
-                          className="h-4 w-4 accent-blue-600"
+                          className="h-4 w-4 accent-[var(--primary)]"
                         />
                         <Label
                           htmlFor="male"
@@ -591,7 +591,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                           onChange={(e) =>
                             handleInputChange('gender', e.target.value)
                           }
-                          className="h-4 w-4 accent-blue-600"
+                          className="h-4 w-4 accent-[var(--primary)]"
                         />
                         <Label
                           htmlFor="female"
@@ -606,7 +606,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                 <div className="mt-6 pb-3">
                   <Button
                     onClick={handleNextStep}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 h-auto rounded-lg font-bold text-lg shadow-md shadow-blue-200 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
+                    className="w-full bg-primary hover:bg-primary-strong text-white py-2 h-auto rounded-lg font-bold text-lg shadow-primary-soft flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
                   >
                     다음 단계로
                     <ArrowRight className="w-5 h-5" />
@@ -620,12 +620,12 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                 <div className="px-5 md:px-6 py-3">
                   <div className="flex flex-col gap-1 mb-5">
                     <div className="flex items-center justify-start gap-2">
-                      <div className="p-2 bg-blue-50 rounded-full">
-                        <Sparkles className="w-5 h-5 text-blue-600" />
+                      <div className="p-2 bg-primary-10 rounded-full">
+                        <Sparkles className="w-5 h-5 text-primary" />
                       </div>
                       <h2 className="text-lg font-extrabold text-slate-900 text-left flex items-center gap-2">
                         여행 스타일
-                        <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-600 border border-blue-100">
+                        <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary-10 text-primary ">
                           3개 선택 필수
                         </span>
                       </h2>
@@ -647,8 +647,8 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                           px-3 py-1.5 h-auto rounded-md text-xs font-medium transition-all duration-200 border select-none
                           ${
                             isSelected
-                              ? 'bg-blue-500 border-blue-500 text-white shadow-md shadow-blue-100 hover:bg-blue-600 hover:text-white active:bg-blue-700'
-                              : 'bg-white text-slate-600 border-slate-200 hover:border-blue-200 hover:bg-blue-50/30 hover:text-slate-800'
+                              ? 'bg-primary border-primary text-white shadow-primary-soft hover:bg-primary-strong hover:text-white active:bg-primary-strong'
+                              : 'bg-white text-slate-600 border-slate-200 hover:border-primary hover:bg-primary-10 hover:text-slate-800'
                           }
                         `}
                         >
@@ -667,8 +667,8 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                 <div className="px-5 md:px-6 pt-3">
                   <div className="flex flex-col gap-1 mb-5">
                     <div className="flex items-center justify-start gap-2">
-                      <div className="p-2 bg-blue-50 rounded-full">
-                        <Compass className="w-5 h-5 text-blue-600" />
+                      <div className="p-2 bg-primary-10 rounded-full">
+                        <Compass className="w-5 h-5 text-primary" />
                       </div>
                       <h2 className="text-lg font-extrabold text-slate-900 text-left">
                         여행 성향
@@ -699,13 +699,13 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                             justify-start h-auto flex items-center gap-2 px-3 py-2 text-sm font-medium transition-all relative text-left md:rounded-l-2xl w-32
                             ${
                               isActive
-                                ? 'bg-white text-blue-600 shadow-md shadow-slate-100 z-10'
+                                ? 'bg-white text-primary shadow-md shadow-slate-100 z-10'
                                 : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'
                             }
                           `}
                           >
                             <div
-                              className={`p-1 rounded-2xl transition-colors ${isActive ? 'bg-blue-50 text-blue-600' : 'bg-transparent text-slate-400'}`}
+                              className={`p-1 rounded-2xl transition-colors ${isActive ? 'bg-primary-10 text-primary' : 'bg-transparent text-slate-400'}`}
                             >
                               <Icon className="w-4 h-4" />
                             </div>
@@ -714,7 +714,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                             </span>
                             {count > 0 && (
                               <span
-                                className={`ml-auto w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold ${isActive ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-500'}`}
+                                className={`ml-auto w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold ${isActive ? 'bg-primary text-white' : 'bg-slate-200 text-slate-500'}`}
                               >
                                 {count}
                               </span>
@@ -761,8 +761,8 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                               relative group py-2 px-2 h-full w-full min-w-[120px] rounded-md text-sm font-medium transition-all duration-200 border text-center flex items-center justify-center gap-1.5 whitespace-nowrap
                               ${
                                 isSelected
-                                  ? 'bg-blue-500 border-blue-500 text-white shadow-md shadow-blue-100 hover:bg-blue-600 hover:text-white active:bg-blue-700'
-                                  : 'bg-white text-slate-600 border-slate-100 hover:border-blue-200 hover:bg-blue-50/30 hover:text-slate-800'
+                                  ? 'bg-primary border-primary text-white shadow-primary-soft hover:bg-primary-strong hover:text-white active:bg-primary-strong'
+                                  : 'bg-white text-slate-600 border-slate-100 hover:border-primary hover:bg-primary-10 hover:text-slate-800'
                               }
                             `}
                               >
@@ -780,8 +780,8 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                 <div className="px-5 md:px-6 pt-2">
                   <div className="flex flex-col gap-1 mb-4">
                     <div className="flex items-center justify-start gap-2">
-                      <div className="p-2 bg-blue-50 rounded-full">
-                        <User className="w-5 h-5 text-blue-600" />
+                      <div className="p-2 bg-primary-10 rounded-full">
+                        <User className="w-5 h-5 text-primary" />
                       </div>
                       <h2 className="text-lg font-extrabold text-slate-900 text-left">
                         MBTI 성격 유형
@@ -795,7 +795,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                     id="mbti"
                     value={formData.mbti}
                     onChange={(e) => handleInputChange('mbti', e.target.value)}
-                    className="w-full mt-1 px-4 py-3 h-auto bg-slate-50/60 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900"
+                    className="w-full mt-1 px-4 py-3 h-auto border bg-white border-slate-200 rounded-xl focus:ring-2 focus:ring-[color:var(--primary)] focus:border-transparent outline-none transition-all font-medium text-slate-900"
                   >
                     <option value="">MBTI를 선택해주세요</option>
                     {MBTI_TYPES.map((mbti) => (
@@ -809,7 +809,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                 <div className="px-5 md:px-6 py-7  flex justify-center mt-auto">
                   <Button
                     onClick={handleNextStep}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 h-auto rounded-lg font-bold text-lg shadow-md shadow-blue-200 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
+                    className="w-full bg-primary hover:bg-primary-strong text-white py-2 h-auto rounded-lg font-bold text-lg shadow-primary-soft flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
                   >
                     다음 단계로
                     <ArrowRight className="w-5 h-5" />
@@ -848,7 +848,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                     >
                       상세소개
                       <span className="relative inline-flex items-center group">
-                        <span className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full border border-blue-200 bg-blue-50 text-[10px] font-semibold text-blue-600 shadow-[0_1px_3px_rgba(59,130,246,0.25)] hover:bg-blue-100 hover:border-blue-300 transition-colors cursor-default">
+                        <span className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full border border-primary bg-primary-10 text-[10px] font-semibold text-primary shadow-[0_1px_3px_rgba(59,130,246,0.25)] hover:bg-primary-10 hover:border-primary transition-colors cursor-default">
                           i
                         </span>
                         <span className="absolute left-full top-1/2 z-10 ml-2 -translate-y-1/2 block w-72 md:w-80 rounded-lg bg-white px-3 py-2 text-[11px] font-medium text-black text-left whitespace-normal break-words shadow-lg opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none transition-all duration-150">
@@ -888,7 +888,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                   <Button
                     onClick={handleSubmit}
                     disabled={isSubmitting}
-                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white py-2 h-auto rounded-lg font-bold text-lg  shadow-blue-200 shadow-md flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
+                    className="w-full bg-primary hover:bg-primary-strong disabled:bg-primary-80 disabled:cursor-not-allowed text-white py-2 h-auto rounded-lg font-bold text-lg shadow-primary-soft shadow-md flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
                   >
                     {isSubmitting ? '추천 동행 매칭 중...' : '회원가입 완료'}
                   </Button>
@@ -901,7 +901,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
             <button
               type="button"
               onClick={onLoginClick}
-              className="text-blue-600 hover:text-blue-700"
+              className="text-primary hover:text-primary-strong"
             >
               로그인
             </button>
