@@ -570,7 +570,7 @@ export function NewMainPage({
           onClose={handleClosePlaceDetailPanel}
           onNearbyPlaceSelect={handleOpenPlaceDetailPanel} // 주변 장소 클릭 시 해당 장소 상세 보기
           onPoiSelect={() => {}} // NewMainPage에서는 지도 이동 기능이 필요 없으므로 빈 함수 전달
-          widthClass="w-1/3" // 메인 화면의 1/3 너비로 설정
+          widthClass="w-1/2" // 메인 화면의 1/2 너비로 설정
           // 패널 내부 클릭 시 이벤트 전파 방지
           onClick={(e) => e.stopPropagation()}
         />
