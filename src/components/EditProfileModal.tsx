@@ -16,7 +16,7 @@ import {
   Heart,
   Car,
   MapPin,
-  User as UserIcon,
+  Shapes,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Badge } from './ui/badge';
@@ -163,7 +163,7 @@ const TENDENCY_CATEGORIES: Array<{
   {
     id: 'etc',
     title: '기타',
-    icon: UserIcon,
+    icon: Shapes,
     items: [
       '소수인원선호',
       '조용한동행선호',
