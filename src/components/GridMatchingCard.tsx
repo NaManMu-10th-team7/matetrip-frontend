@@ -15,17 +15,17 @@ import { API_BASE_URL } from '../api/client';
 import type { MatchRecruitingPostDto } from '../types/matchSearch';
 import type { Post } from '../types/post';
 
-// MatchingInfo 인터페이스를 확장하여 tendency와 style을 string[]로 명시
-interface ExtendedMatchingInfo extends MatchingInfo {
-  tendency?: string[];
-  style?: string[];
-}
+// ExtendedMatchingInfo 인터페이스를 제거합니다.
+// interface ExtendedMatchingInfo extends Omit<MatchingInfo, 'tendency' | 'style'> {
+//   tendency?: string[];
+//   style?: string[];
+// }
 
 interface GridMatchingCardProps {
   /** 추천 카드에 표시할 모집글 정보 (Post 또는 MatchRecruitingPostDto) */
   post: Post | MatchRecruitingPostDto;
   /** 이 카드에만 필요한 매칭 정보 */
-  matchingInfo: ExtendedMatchingInfo; // 확장된 인터페이스 사용
+  matchingInfo: MatchingInfo; // ExtendedMatchingInfo 대신 MatchingInfo 사용
   /** 카드 클릭 이벤트 핸들러 */
   onClick?: () => void;
   /** 추천 순위 (1부터 시작) */
@@ -60,7 +60,7 @@ export function GridMatchingCard({
     participations,
     maxParticipants,
   } = post;
-  // tendency와 style을 string[] 타입으로 받도록 변경
+  // tendency와 style은 이제 string 타입으로 받습니다.
   const { score, tendency, style, vectorScore } = matchingInfo;
 
   const safeScore =
@@ -136,6 +136,7 @@ export function GridMatchingCard({
 
   // 매칭 키워드 존재 여부
   const hasMatchingKeywords = useMemo(() => {
+    // tendency와 style이 string이므로, 존재 여부와 길이가 0보다 큰지 확인
     return (tendency && tendency.length > 0) || (style && style.length > 0) || (safeVectorScore !== null && safeVectorScore > 0);
   }, [tendency, style, safeVectorScore]);
 
@@ -215,11 +216,12 @@ export function GridMatchingCard({
               우리, 이렇게 잘 맞아요!
             </p>
             <div className="flex flex-col gap-3 w-full px-4"> {/* max-w-xs mx-auto 제거, w-full 유지 */}
+              {/* style이 string이므로 split하여 배열로 만든 후 map 사용 */}
               {style && style.length > 0 && (
                 <div className="flex flex-col items-start gap-1">
                   <p className="text-white text-sm font-semibold mb-1">취향 저격! 여행 스타일</p>
                   <div className="flex flex-wrap gap-1 justify-start">
-                    {style.map((s, idx) => (
+                    {style.split(', ').map((s, idx) => ( // string을 split하여 배열로 사용
                       <Badge
                         key={idx}
                         variant="outline"
@@ -233,11 +235,12 @@ export function GridMatchingCard({
                 </div>
               )}
 
+              {/* tendency가 string이므로 split하여 배열로 만든 후 map 사용 */}
               {tendency && tendency.length > 0 && (
                 <div className="flex flex-col items-start gap-1">
                   <p className="text-white text-sm font-semibold mb-1">환상의 호흡! 여행 성향</p>
                   <div className="flex flex-wrap gap-1 justify-start">
-                    {tendency.map((t, idx) => (
+                    {tendency.split(', ').map((t, idx) => ( // string을 split하여 배열로 사용
                       <Badge
                         key={idx}
                         variant="outline"

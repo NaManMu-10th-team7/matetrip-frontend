@@ -7,7 +7,7 @@ import { PostDetail } from './PostDetail';
 import { useAuthStore } from '../store/authStore';
 import client, { API_BASE_URL } from '../api/client';
 import { type Post } from '../types/post';
-import { type PlaceDto, CategoryCode } from '../types/place'; // CategoryCode 임포트
+import { type PlaceDto, type CategoryCode } from '../types/place'; // CategoryCode 임포트
 import type { MatchCandidateDto } from '../types/matching';
 import { GridMatchingCard } from '../components/GridMatchingCard';
 import { MainPostCardSkeleton } from '../components/AIMatchingSkeletion';
@@ -443,11 +443,19 @@ export function NewMainPage({
           ) : (
             <div className="grid grid-cols-5 gap-4 md:gap-6">
               {matchedPosts.map(({ post, score, tendency, style }, index) => {
+                // tendency와 style을 string[]에서 string으로 변환
+                const formattedTendency = tendency.join(', ');
+                const formattedStyle = style.join(', ');
+
                 return (
                   <GridMatchingCard
                     key={post.id}
                     post={post}
-                    matchingInfo={{ score: score, tendency: tendency, style: style }}
+                    matchingInfo={{
+                      score: score,
+                      tendency: formattedTendency, // 변환된 string 사용
+                      style: formattedStyle,       // 변환된 string 사용
+                    }}
                     rank={index + 1}
                     writerProfileImageUrl={
                       post.writer?.profile?.profileImageId

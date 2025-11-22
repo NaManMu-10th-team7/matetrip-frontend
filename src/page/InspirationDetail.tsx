@@ -135,7 +135,6 @@ export function InspirationDetail() {
               >
                 <InspirationCard
                   imageUrl={place.imageUrl}
-                  badgeText=""
                   title={place.title}
                   address={place.address}
                 />

@@ -47,11 +47,11 @@ export interface MatchingInfo {
   /**
    * 여행 성향 키워드 (예: "즉흥적, 주도적")
    */
-  tendency?: string;
+  tendency?: string; // Changed from string[] to string
   /**
    * 여행 스타일 키워드 (예: "호텔")
    */
-  style?: string;
+  style?: string; // Changed from string[] to string
   /**
    * 프로필 유사도 (0-100)
    */

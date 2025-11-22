@@ -10,10 +10,10 @@ import { PostDetail } from './PostDetail';
 import { Dialog, DialogContent } from '../components/ui/dialog';
 import { useAuthStore } from '../store/authStore';
 import type {
-  MatchingInfo,
   MatchCandidateDto,
   MatchRecruitingPostDto,
   MatchResponseDto,
+  MatchingInfo, // MatchingInfo 임포트 추가
 } from '../types/matching';
 import { MatchingSearchBar } from '../components/MatchingSearchBar';
 import { toast } from 'sonner';
@@ -68,14 +68,6 @@ const normalizeTextList = (values?: unknown): string[] => {
     .filter((text) => text.length > 0);
 
   return normalized;
-};
-
-const normalizeOverlapText = (values?: unknown): string | undefined => {
-  const normalized = normalizeTextList(values);
-  if (!normalized.length) {
-    return undefined;
-  }
-  return normalized.join(', ');
 };
 
 const toPercent = (value?: number) => {
@@ -259,15 +251,19 @@ export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
   }, [isFilterOpen]);
 
   const { recommendedPosts, matchingInfoByPostId } = useMemo(() => {
-    const entries: Array<{ post: Post; info: MatchingInfo }> = [];
+    // info 타입을 MatchingInfo와 일치하도록 수정
+    const entries: Array<{
+      post: Post;
+      info: MatchingInfo; // MatchingInfo 타입으로 변경
+    }> = [];
     const seenPostIds = new Set<string>();
 
     matches.forEach((candidate) => {
       const writer = buildWriterFromCandidate(candidate);
-      const tendencyText = normalizeOverlapText(
+      const tendencyList = normalizeTextList(
         candidate.overlappingTendencies
       );
-      const styleText = normalizeOverlapText(candidate.overlappingTravelStyles);
+      const styleList = normalizeTextList(candidate.overlappingTravelStyles);
 
       (candidate.recruitingPosts ?? []).forEach((matchPost) => {
         if (seenPostIds.has(matchPost.id)) {
@@ -290,8 +286,8 @@ export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
               candidate.vectorScore !== undefined
                 ? toPercent(candidate.vectorScore)
                 : undefined,
-            tendency: tendencyText,
-            style: styleText,
+            tendency: tendencyList.join(', '), // string[]를 string으로 변환
+            style: styleList.join(', '),       // string[]를 string으로 변환
           },
         });
       });
@@ -299,7 +295,9 @@ export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
 
     return {
       recommendedPosts: entries.map((entry) => entry.post),
-      matchingInfoByPostId: entries.reduce<Record<string, MatchingInfo>>(
+      matchingInfoByPostId: entries.reduce<
+        Record<string, MatchingInfo> // MatchingInfo 타입으로 변경
+      >(
         (acc, entry) => {
           acc[entry.post.id] = entry.info;
           return acc;
@@ -520,7 +518,12 @@ export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
                     <GridMatchingCard
                       key={result.post.id}
                       post={result.post}
-                      matchingInfo={result.matchingInfo}
+                      matchingInfo={{
+                        ...result.matchingInfo,
+                        // 이미 MatchingSearchBar에서 string으로 변환되어 오므로 다시 변환할 필요 없음
+                        // tendency: normalizeTextList(result.matchingInfo.tendency),
+                        // style: normalizeTextList(result.matchingInfo.style),
+                      }}
                       rank={index + 1}
                       writerProfileImageUrl={
                         result.writerProfileImageId
