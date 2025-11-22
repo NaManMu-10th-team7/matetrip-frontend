@@ -15,12 +15,13 @@ import {
   Camera,
   Heart,
   Car,
+  MapPin,
   User as UserIcon,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Badge } from './ui/badge';
 import { TRAVEL_STYLE_TYPES } from '../constants/travelStyle';
-import { TRAVEL_TENDENCY_TYPE } from '../constants/travelTendencyType';
+//import { TRAVEL_TENDENCY_TYPE } from '../constants/travelTendencyType';
 //import type { UserProfile } from '../types/user';
 import { API_BASE_URL } from '../api/client';
 import type { UpdateProfileDto } from '../types/updateprofiledto';
@@ -57,7 +58,7 @@ const TENDENCY_CATEGORIES: Array<{
   {
     id: 'place',
     title: '장소',
-    icon: Map,
+    icon: MapPin,
     items: [
       '도시',
       '시골',
