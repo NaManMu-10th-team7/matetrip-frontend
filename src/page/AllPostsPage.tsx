@@ -18,11 +18,19 @@ type SearchParams = {
 interface AllPostsPageProps {
   // onViewPost: (postId: string) => void; // onViewPost prop 제거
   fetchTrigger: number;
+  onJoinWorkspace: (postId: string, workspaceName: string) => void;
+  onViewProfile: (userId: string) => void;
+  onEditPost: (post: Post) => void;
+  onDeleteSuccess?: () => void;
 }
 
 export function AllPostsPage({
   // onViewPost, // onViewPost prop 제거
   fetchTrigger,
+  onJoinWorkspace,
+  onViewProfile,
+  onEditPost,
+  onDeleteSuccess,
 }: AllPostsPageProps) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -319,16 +327,19 @@ export function AllPostsPage({
           {selectedPostIdForPanel && (
             <PostDetail
               postId={selectedPostIdForPanel}
-              // onJoinWorkspace, onViewProfile, onEditPost, onDeleteSuccess는 App.tsx에서 전달받아야 함
-              // AllPostsPage에서는 이 기능들이 직접 필요하지 않으므로, App.tsx에서 PostDetail을 렌더링하는 방식으로 돌아가거나,
-              // AllPostsPageProps에 이 prop들을 추가해야 합니다.
-              // 현재는 App.tsx에서 PostDetail을 렌더링하는 방식이므로, 여기서는 onOpenChange만 연결합니다.
-              onOpenChange={handleClosePostDetailPanel} // 패널 닫기 핸들러 연결
-              // 임시로 빈 함수 전달 (App.tsx에서 처리)
-              onJoinWorkspace={() => {}}
-              onViewProfile={() => {}}
-              onEditPost={() => {}}
-              onDeleteSuccess={() => {}}
+              onOpenChange={handleClosePostDetailPanel}
+              onJoinWorkspace={(postId, workspaceName) => {
+                console.log('🔵 [AllPostsPage] PostDetail onJoinWorkspace called', { postId, workspaceName });
+                onJoinWorkspace(postId, workspaceName);
+                handleClosePostDetailPanel();
+              }}
+              onViewProfile={(userId) => {
+                console.log('🔵 [AllPostsPage] PostDetail onViewProfile called', { userId });
+                onViewProfile(userId);
+                handleClosePostDetailPanel();
+              }}
+              onEditPost={onEditPost}
+              onDeleteSuccess={onDeleteSuccess || (() => {})}
             />
           )}
         </div>

@@ -133,19 +133,41 @@ function AIMatchingPageWrapper({
 function AllPostsPageWrapper({
   // onViewPost, // onViewPost prop 제거
   fetchTrigger,
+  onJoinWorkspace,
+  onViewProfile,
+  onEditPost,
+  onDeleteSuccess,
 }: {
   // onViewPost: (postId: string) => void; // onViewPost prop type 제거
   fetchTrigger: number;
+  onJoinWorkspace: (postId: string, workspaceName: string) => void;
+  onViewProfile: (userId: string) => void;
+  onEditPost: (post: Post) => void;
+  onDeleteSuccess?: () => void;
 }) {
   return (
     <AllPostsPage
       // onViewPost={onViewPost} // onViewPost prop 제거
       fetchTrigger={fetchTrigger}
+      onJoinWorkspace={onJoinWorkspace}
+      onViewProfile={onViewProfile}
+      onEditPost={onEditPost}
+      onDeleteSuccess={onDeleteSuccess}
     />
   );
 }
 
-function SearchResultsWrapper() {
+function SearchResultsWrapper({
+  onJoinWorkspace,
+  onViewProfile,
+  onEditPost,
+  onDeleteSuccess,
+}: {
+  onJoinWorkspace: (postId: string, workspaceName: string) => void;
+  onViewProfile: (userId: string) => void;
+  onEditPost: (post: Post) => void;
+  onDeleteSuccess?: () => void;
+}) {
   // const navigate = useNavigate(); // 제거
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
@@ -164,7 +186,13 @@ function SearchResultsWrapper() {
   // };
 
   return (
-    <SearchResults searchParams={params} /* onViewPost={handleViewPost} */ />
+    <SearchResults
+      searchParams={params}
+      onJoinWorkspace={onJoinWorkspace}
+      onViewProfile={onViewProfile}
+      onEditPost={onEditPost}
+      onDeleteSuccess={onDeleteSuccess}
+    />
   );
 }
 
@@ -396,6 +424,39 @@ export default function App() {
               <AllPostsPageWrapper
                 // onViewPost={handleViewPost} // onViewPost prop 제거
                 fetchTrigger={fetchTrigger}
+                onJoinWorkspace={(postId, workspaceName) => {
+                  const createAndNavigate = async () => {
+                    try {
+                      const response =
+                        await client.post<CreateWorkspaceResponse>(
+                          '/workspace',
+                          { postId, workspaceName }
+                        );
+                      const { planDayDtos, workspaceResDto } = response.data;
+                      const { id, workspaceName: resWorkspaceName } =
+                        workspaceResDto;
+                      navigate(`/workspace/${id}`, {
+                        state: {
+                          workspaceName: resWorkspaceName,
+                          planDayDtos,
+                        },
+                      });
+                    } catch (error) {
+                      console.error(
+                        'Failed to create or join workspace:',
+                        error
+                      );
+                      alert('워크스페이스에 입장하는 중 오류가 발생했습니다.');
+                    }
+                  };
+                  createAndNavigate();
+                }}
+                onViewProfile={handleViewProfile}
+                onEditPost={(post) => {
+                  setSelectedPostForEdit(post);
+                  setShowEditPost(true);
+                }}
+                onDeleteSuccess={handleDeleteSuccess}
               />
             }
           />
@@ -409,10 +470,82 @@ export default function App() {
                 // onViewPost={handleViewPost} // onViewPost prop 제거
                 isLoggedIn={isLoggedIn}
                 fetchTrigger={fetchTrigger}
+                onJoinWorkspace={(postId, workspaceName) => {
+                  const createAndNavigate = async () => {
+                    try {
+                      const response =
+                        await client.post<CreateWorkspaceResponse>(
+                          '/workspace',
+                          { postId, workspaceName }
+                        );
+                      const { planDayDtos, workspaceResDto } = response.data;
+                      const { id, workspaceName: resWorkspaceName } =
+                        workspaceResDto;
+                      navigate(`/workspace/${id}`, {
+                        state: {
+                          workspaceName: resWorkspaceName,
+                          planDayDtos,
+                        },
+                      });
+                    } catch (error) {
+                      console.error(
+                        'Failed to create or join workspace:',
+                        error
+                      );
+                      alert('워크스페이스에 입장하는 중 오류가 발생했습니다.');
+                    }
+                  };
+                  createAndNavigate();
+                }}
+                onViewProfile={handleViewProfile}
+                onEditPost={(post) => {
+                  setSelectedPostForEdit(post);
+                  setShowEditPost(true);
+                }}
+                onDeleteSuccess={handleDeleteSuccess}
               />
             }
           />
-          <Route path="/search" element={<SearchResultsWrapper />} />
+          <Route
+            path="/search"
+            element={
+              <SearchResultsWrapper
+                onJoinWorkspace={(postId, workspaceName) => {
+                  const createAndNavigate = async () => {
+                    try {
+                      const response =
+                        await client.post<CreateWorkspaceResponse>(
+                          '/workspace',
+                          { postId, workspaceName }
+                        );
+                      const { planDayDtos, workspaceResDto } = response.data;
+                      const { id, workspaceName: resWorkspaceName } =
+                        workspaceResDto;
+                      navigate(`/workspace/${id}`, {
+                        state: {
+                          workspaceName: resWorkspaceName,
+                          planDayDtos,
+                        },
+                      });
+                    } catch (error) {
+                      console.error(
+                        'Failed to create or join workspace:',
+                        error
+                      );
+                      alert('워크스페이스에 입장하는 중 오류가 발생했습니다.');
+                    }
+                  };
+                  createAndNavigate();
+                }}
+                onViewProfile={handleViewProfile}
+                onEditPost={(post) => {
+                  setSelectedPostForEdit(post);
+                  setShowEditPost(true);
+                }}
+                onDeleteSuccess={handleDeleteSuccess}
+              />
+            }
+          />
           {/* 매칭용 검색 라우트 추가  */}
           <Route path="/match-search" element={<MatchSearchResults />} />
           <Route path="/workspace/:id" element={<WorkspaceWrapper />} />

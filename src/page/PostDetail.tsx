@@ -20,16 +20,11 @@ import React from 'react'; // Import React to use React.ReactNode
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription, // 다시 임포트
-  DialogTitle, // 다시 임포트
-} from '../components/ui/dialog';
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogContent,
   AlertDialogDescription,
+  AlertDialogCancel,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
@@ -354,10 +349,6 @@ export function PostDetail({
     }
   };
 
-  const handleViewProfile = (userId: string) => {
-    onViewProfile(userId);
-  };
-
   const handleCancelApplication = async () => {
     if (!userParticipation) return;
     try {
@@ -478,22 +469,37 @@ export function PostDetail({
   }
 
   const handleButtonClick = () => {
-    if (!isLoggedIn || buttonConfig.disabled) return;
+    console.log('🔵 [PostDetail] Bottom button clicked.', {
+      isLoggedIn,
+      buttonConfig,
+      isAuthor,
+      userParticipationStatus: userParticipation?.status,
+      postId: post?.id,
+      postTitle: post?.title,
+      onJoinWorkspaceType: typeof onJoinWorkspace,
+    });
 
-    if (isAuthor || userParticipation?.status === '승인') {
+    if (!isLoggedIn || buttonConfig.disabled) {
+      console.log('⚠️ Button disabled or not logged in');
+      return;
+    }
+
+    if ((isAuthor || userParticipation?.status === '승인') && post) {
+      console.log('🔵 [PostDetail] Calling onJoinWorkspace...', {
+        postId: post.id,
+        postTitle: post.title,
+      });
+      console.log('🟢 [PostDetail] About to call onJoinWorkspace');
       onJoinWorkspace(post.id, post.title);
+      console.log('🟢 [PostDetail] onJoinWorkspace called successfully');
     } else if (!userParticipation && !isFull) {
+      console.log('🔵 [PostDetail] Calling handleApply...');
       handleApply();
     }
   };
 
   return (
-    <div className="absolute inset-0 flex flex-col rounded-lg overflow-hidden">
-      {/* <DialogTitle className="sr-only">{post.title}</DialogTitle> // 제거 */}
-      {/* <DialogDescription className="sr-only"> // 제거 */}
-      {/* {post.location} 여행 상세 정보 // 제거 */}
-      {/* </DialogDescription> // 제거 */}
-
+    <div className="flex flex-col overflow-hidden h-full">
       {/* 헤더 영역 */}
       <div className="relative flex-shrink-0">
         <ImageWithFallback
@@ -579,8 +585,7 @@ export function PostDetail({
                 <div className="flex items-center gap-2">
                   <Users className="w-6 h-6" />
                   <span>
-                    {approvedParticipants.length + 1} / {post.maxParticipants}
-                    명
+                    {approvedParticipants.length + 1} / {post.maxParticipants}명
                   </span>
                 </div>
               </div>
@@ -626,9 +631,28 @@ export function PostDetail({
                         size="sm"
                         variant="outline"
                         className="flex-shrink-0"
-                        onClick={() =>
-                          post.writer?.id && handleViewProfile(post.writer.id)
-                        }
+                        onClick={() => {
+                          console.log(
+                            '🔵 [PostDetail] View writer profile clicked.',
+                            {
+                              writerId: post.writer?.id,
+                              hasWriter: !!post.writer,
+                              onViewProfileType: typeof onViewProfile,
+                            }
+                          );
+                          if (post.writer?.id) {
+                            console.log(
+                              '🟢 [PostDetail] About to call onViewProfile with:',
+                              post.writer.id
+                            );
+                            onViewProfile(post.writer.id);
+                            console.log(
+                              '🟢 [PostDetail] onViewProfile called successfully'
+                            );
+                          } else {
+                            console.warn('⚠️ Writer ID is missing!');
+                          }
+                        }}
                       >
                         프로필 보기
                       </Button>
@@ -742,9 +766,7 @@ export function PostDetail({
                               <div className="flex items-center gap-1 text-sm text-gray-600">
                                 <Thermometer className="w-5 h-5" />
                                 <span>
-                                  {formatMannerTemperature(
-                                    p.requester.profile
-                                  )}
+                                  {formatMannerTemperature(p.requester.profile)}
                                 </span>
                               </div>
                             </div>
@@ -752,7 +774,19 @@ export function PostDetail({
                               size="sm"
                               variant="outline"
                               className="text-xs h-7"
-                              onClick={() => handleViewProfile(p.requester.id)}
+                              onClick={() => {
+                                console.log(
+                                  '🔵 [PostDetail] View approved participant profile clicked.',
+                                  {
+                                    requesterId: p.requester.id,
+                                  }
+                                );
+                                if (p.requester.id) {
+                                  onViewProfile(p.requester.id);
+                                } else {
+                                  console.warn('⚠️ Requester ID is missing!');
+                                }
+                              }}
                             >
                               프로필 보기
                             </Button>
@@ -783,8 +817,7 @@ export function PostDetail({
                                 src={
                                   (request.requester.profile.profileImageId
                                     ? (participantProfileUrls[
-                                        request.requester.profile
-                                          .profileImageId
+                                        request.requester.profile.profileImageId
                                       ] ?? null)
                                     : null) ??
                                   `https://ui-avatars.com/api/?name=${request.requester.profile.nickname}&background=random`
@@ -809,9 +842,19 @@ export function PostDetail({
                                 size="sm"
                                 variant="outline"
                                 className="text-xs h-7"
-                                onClick={() =>
-                                  handleViewProfile(request.requester.id)
-                                }
+                                onClick={() => {
+                                  console.log(
+                                    '🔵 [PostDetail] View pending participant profile clicked.',
+                                    {
+                                      requesterId: request.requester.id,
+                                    }
+                                  );
+                                  if (request.requester.id) {
+                                    onViewProfile(request.requester.id);
+                                  } else {
+                                    console.warn('⚠️ Requester ID is missing!');
+                                  }
+                                }}
                               >
                                 프로필 보기
                               </Button>
@@ -845,7 +888,7 @@ export function PostDetail({
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="w-full text-sm text-red-600 hover:text-red-700 hover:bg-red-50"
+                                className="w-full text-sm text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300"
                                 onClick={() => setCancelModalOpen(true)}
                               >
                                 <X className="w-5 h-5 mr-1" />
@@ -865,9 +908,7 @@ export function PostDetail({
               )}
 
               {activeTab === 'recommendations' &&
-                (isAuthor &&
-                post.matchResult &&
-                post.matchResult.length > 0 ? (
+                (isAuthor && post.matchResult && post.matchResult.length > 0 ? (
                   <div className="rounded-xl border p-6">
                     <h3 className="text-gray-900 text-lg font-bold mb-4 flex items-center gap-2">
                       <UserPlus className="w-6 h-6 mr-2" />
@@ -911,9 +952,21 @@ export function PostDetail({
                               size="sm"
                               variant="outline"
                               className="text-xs h-7"
-                              onClick={() =>
-                                handleViewProfile(candidate.userId)
-                              }
+                              onClick={() => {
+                                console.log(
+                                  '🔵 [PostDetail] View recommended user profile clicked.',
+                                  {
+                                    userId: candidate.userId,
+                                  }
+                                );
+                                if (candidate.userId) {
+                                  onViewProfile(candidate.userId);
+                                } else {
+                                  console.warn(
+                                    '⚠️ Candidate userId is missing!'
+                                  );
+                                }
+                              }}
                             >
                               프로필 보기
                             </Button>
@@ -945,55 +998,45 @@ export function PostDetail({
       </div>
 
       {/* 각종 모달 */}
-      <Dialog open={cancelModalOpen} onOpenChange={setCancelModalOpen}>
-        <DialogContent className="max-w-md">
-          <DialogTitle className="text-gray-900">동행 신청 취소</DialogTitle>
-          <DialogDescription>
-            정말로 동행 신청을 취소하시겠습니까?
-            <br />이 작업은 되돌릴 수 없습니다.
-          </DialogDescription>
-          <div className="flex gap-3 mt-6">
-            <Button
-              variant="outline"
-              className="flex-1"
-              onClick={() => setCancelModalOpen(false)}
-            >
-              아니오
-            </Button>
-            <Button
-              className="flex-1 bg-red-600 hover:bg-red-700"
-              onClick={handleCancelApplication}
-            >
-              예, 취소합니다
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <AlertDialog open={cancelModalOpen} onOpenChange={setCancelModalOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>동행 신청 취소</AlertDialogTitle>
+            <AlertDialogDescription>
+              정말로 동행 신청을 취소하시겠습니까?
+              <br />이 작업은 되돌릴 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>아니오</AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <Button variant="destructive" onClick={handleCancelApplication}>
+                예, 취소합니다
+              </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
-        <DialogContent className="max-w-md">
-          <DialogTitle className="text-gray-900">게시글 삭제</DialogTitle>
-          <DialogDescription>
-            정말로 이 게시글을 삭제하시겠습니까?
-            <br />이 작업은 되돌릴 수 없습니다.
-          </DialogDescription>
-          <div className="flex gap-3 mt-6">
-            <Button
-              variant="outline"
-              className="flex-1"
-              onClick={() => setDeleteModalOpen(false)}
-            >
-              아니오
-            </Button>
-            <Button
-              className="flex-1 bg-red-600 hover:bg-red-700"
-              onClick={handleDeletePost}
-            >
-              예, 삭제합니다
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <AlertDialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>게시글 삭제</AlertDialogTitle>
+            <AlertDialogDescription>
+              정말로 이 게시글을 삭제하시겠습니까?
+              <br />이 작업은 되돌릴 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>아니오</AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <Button variant="destructive" onClick={handleDeletePost}>
+                예, 삭제합니다
+              </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog
         open={showDeleteSuccessAlert}

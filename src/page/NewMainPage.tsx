@@ -587,35 +587,46 @@ export function NewMainPage({
           if (showPlaceDetailPanel) handleClosePlaceDetailPanel();
           if (showPostDetailPanel) handleClosePostDetailPanel();
         }}
-      >
-        <PoiDetailPanel
-          placeId={selectedPlaceIdForPanel}
-          isVisible={showPlaceDetailPanel}
-          onClose={handleClosePlaceDetailPanel}
-          onNearbyPlaceSelect={handleOpenPlaceDetailPanel} // 주변 장소 클릭 시 해당 장소 상세 보기
-          onPoiSelect={() => {}} // NewMainPage에서는 지도 이동 기능이 필요 없으므로 빈 함수 전달
-          widthClass="w-1/2" // 메인 화면의 1/2 너비로 설정
-          // 패널 내부 클릭 시 이벤트 전파 방지
-          onClick={(e) => e.stopPropagation()}
-        />
+      />
 
-        {/* [신규] PostDetailPanel */}
-        <div
-          className={`fixed right-0 top-0 h-full bg-white shadow-lg transform transition-transform duration-300 ease-in-out z-30
-            ${showPostDetailPanel ? 'translate-x-0' : 'translate-x-full'} w-1/2`}
-          onClick={(e) => e.stopPropagation()} // 패널 내부 클릭 시 오버레이 닫힘 방지
-        >
-          {selectedPostIdForPanel && (
-            <PostDetail
-              postId={selectedPostIdForPanel}
-              onJoinWorkspace={onJoinWorkspace}
-              onViewProfile={onViewProfile}
-              onEditPost={onEditPost}
-              onDeleteSuccess={onDeleteSuccess || (() => {})}
-              onOpenChange={handleClosePostDetailPanel} // 패널 닫기 핸들러 연결
-            />
-          )}
-        </div>
+      {/* PoiDetailPanel: 오버레이의 형제 요소로 분리 */}
+      <PoiDetailPanel
+        placeId={selectedPlaceIdForPanel}
+        isVisible={showPlaceDetailPanel}
+        onClose={handleClosePlaceDetailPanel}
+        onNearbyPlaceSelect={handleOpenPlaceDetailPanel}
+        onPoiSelect={() => {}}
+        widthClass="w-1/2"
+        onClick={(e) => e.stopPropagation()}
+      />
+
+      {/* PostDetailPanel: 오버레이의 형제 요소로 분리 */}
+      <div
+        className={`fixed right-0 top-0 h-full bg-white shadow-lg transform transition-transform duration-300 ease-in-out z-30 ${
+          showPostDetailPanel ? 'translate-x-0' : 'translate-x-full'
+        } w-1/2`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {selectedPostIdForPanel && (
+          <PostDetail
+            postId={selectedPostIdForPanel}
+            onJoinWorkspace={(postId, workspaceName) => {
+              console.log('🔵 [NewMainPage] PostDetail onJoinWorkspace called', { postId, workspaceName });
+              // 워크스페이스 입장: 먼저 실행한 후 패널 닫기
+              onJoinWorkspace(postId, workspaceName);
+              handleClosePostDetailPanel();
+            }}
+            onViewProfile={(userId) => {
+              console.log('🔵 [NewMainPage] PostDetail onViewProfile called', { userId });
+              // 프로필 모달 열기: 먼저 실행한 후 패널 닫기
+              onViewProfile(userId);
+              handleClosePostDetailPanel();
+            }}
+            onEditPost={onEditPost}
+            onDeleteSuccess={onDeleteSuccess || (() => {})}
+            onOpenChange={handleClosePostDetailPanel}
+          />
+        )}
       </div>
     </div>
   );

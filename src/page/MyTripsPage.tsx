@@ -11,12 +11,20 @@ interface MyTripsPageProps {
   // onViewPost: (postId: string) => void; // onViewPost prop 제거
   isLoggedIn: boolean;
   fetchTrigger: number;
+  onJoinWorkspace: (postId: string, workspaceName: string) => void;
+  onViewProfile: (userId: string) => void;
+  onEditPost: (post: Post) => void;
+  onDeleteSuccess?: () => void;
 }
 
 export function MyTripsPage({
   // onViewPost, // onViewPost prop 제거
   isLoggedIn,
   fetchTrigger,
+  onJoinWorkspace,
+  onViewProfile,
+  onEditPost,
+  onDeleteSuccess,
 }: MyTripsPageProps) {
   const [plannedPosts, setPlannedPosts] = useState<Post[]>([]);
   const [participatingPosts, setParticipatingPosts] = useState<Post[]>([]);
@@ -184,12 +192,19 @@ export function MyTripsPage({
           {selectedPostIdForPanel && (
             <PostDetail
               postId={selectedPostIdForPanel}
-              // MyTripsPage에서는 이 기능들이 직접 필요하지 않으므로, 임시로 빈 함수 전달
-              onJoinWorkspace={() => {}}
-              onViewProfile={() => {}}
-              onEditPost={() => {}}
-              onDeleteSuccess={() => {}}
-              onOpenChange={handleClosePostDetailPanel} // 패널 닫기 핸들러 연결
+              onOpenChange={handleClosePostDetailPanel}
+              onJoinWorkspace={(postId, workspaceName) => {
+                console.log('🔵 [MyTripsPage] PostDetail onJoinWorkspace called', { postId, workspaceName });
+                onJoinWorkspace(postId, workspaceName);
+                handleClosePostDetailPanel();
+              }}
+              onViewProfile={(userId) => {
+                console.log('🔵 [MyTripsPage] PostDetail onViewProfile called', { userId });
+                onViewProfile(userId);
+                handleClosePostDetailPanel();
+              }}
+              onEditPost={onEditPost}
+              onDeleteSuccess={onDeleteSuccess || (() => {})}
             />
           )}
         </div>

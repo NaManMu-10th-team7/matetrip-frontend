@@ -14,11 +14,19 @@ interface SearchResultsProps {
     title?: string;
   };
   // onViewPost: (postId: string) => void; // onViewPost prop 제거
+  onJoinWorkspace: (postId: string, workspaceName: string) => void;
+  onViewProfile: (userId: string) => void;
+  onEditPost: (post: Post) => void;
+  onDeleteSuccess?: () => void;
 }
 
 export function SearchResults({
   searchParams,
   // onViewPost, // onViewPost prop 제거
+  onJoinWorkspace,
+  onViewProfile,
+  onEditPost,
+  onDeleteSuccess,
 }: SearchResultsProps) {
   const [results, setResults] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -184,12 +192,19 @@ export function SearchResults({
           {selectedPostIdForPanel && (
             <PostDetail
               postId={selectedPostIdForPanel}
-              // SearchResults에서는 이 기능들이 직접 필요하지 않으므로, 임시로 빈 함수 전달
-              onJoinWorkspace={() => {}}
-              onViewProfile={() => {}}
-              onEditPost={() => {}}
-              onDeleteSuccess={() => {}}
-              onOpenChange={handleClosePostDetailPanel} // 패널 닫기 핸들러 연결
+              onOpenChange={handleClosePostDetailPanel}
+              onJoinWorkspace={(postId, workspaceName) => {
+                console.log('🔵 [SearchResults] PostDetail onJoinWorkspace called', { postId, workspaceName });
+                onJoinWorkspace(postId, workspaceName);
+                handleClosePostDetailPanel();
+              }}
+              onViewProfile={(userId) => {
+                console.log('🔵 [SearchResults] PostDetail onViewProfile called', { userId });
+                onViewProfile(userId);
+                handleClosePostDetailPanel();
+              }}
+              onEditPost={onEditPost}
+              onDeleteSuccess={onDeleteSuccess || (() => {})}
             />
           )}
         </div>
