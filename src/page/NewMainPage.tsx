@@ -1,15 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
-import { MainPostCard } from '../components/MainPostCard';
 import { PlaceRecommendationSection } from '../components/PlaceRecommendationSection';
 import { InspirationCard } from '../components/InspirationCard';
 import { PostDetail } from './PostDetail';
 import { useAuthStore } from '../store/authStore';
-import client from '../api/client';
+import client, { API_BASE_URL } from '../api/client';
 import { type Post } from '../types/post';
 import { type PlaceDto } from '../types/place';
 import type { MatchCandidateDto } from '../types/matching';
+import { GridMatchingCard } from '../components/GridMatchingCard';
+import { MainPostCardSkeleton } from '../components/AIMatchingSkeletion';
 
 interface PopularPlaceResponse {
   addplace_id: string;
@@ -41,6 +42,44 @@ interface NewMainPageProps {
 
 type SelectedType = 'post' | 'place' | 'inspiration' | null;
 
+// AIMatchingPage.tsx에서 가져온 헬퍼 함수들 (수정: 배열 반환)
+const normalizeTextList = (values?: unknown): string[] => {
+  if (!values) {
+    return [];
+  }
+
+  const arrayValues = Array.isArray(values) ? values : [values];
+
+  const normalized = arrayValues
+    .map((value) => {
+      if (!value) {
+        return '';
+      }
+      if (typeof value === 'string') {
+        return value;
+      }
+      if (typeof value === 'object') {
+        const candidate = value as Record<string, unknown>;
+        if (typeof candidate.label === 'string') {
+          return candidate.label;
+        }
+        if (typeof candidate.value === 'string') {
+          return candidate.value;
+        }
+        if (typeof candidate.name === 'string') {
+          return candidate.name;
+        }
+      }
+      return String(value);
+    })
+    .map((text) => text.trim())
+    .filter((text) => text.length > 0);
+
+  return normalized;
+};
+
+// normalizeOverlapText는 이제 사용하지 않음 (개별 키워드 배열로 전달)
+
 export function NewMainPage({
   onJoinWorkspace,
   onViewProfile,
@@ -66,6 +105,11 @@ export function NewMainPage({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [_selectedPlace, setSelectedPlace] = useState<PlaceDto | null>(null);
   const [showPostDetailModal, setShowPostDetailModal] = useState(false);
+
+  // 작성자 프로필 이미지 관리
+  const [writerProfileImages, setWriterProfileImages] = useState<
+    Record<string, string | null>
+  >({});
 
   // Fetch all posts
   useEffect(() => {
@@ -107,7 +151,7 @@ export function NewMainPage({
       try {
         const response = await client.post<MatchCandidateDto[]>(
           '/profile/matching/search',
-          { limit: 5 } // Changed from 4 to 5
+          { limit: 5 }
         );
         if (!isMounted) return;
         setMatches(response.data ?? []);
@@ -139,14 +183,12 @@ export function NewMainPage({
       try {
         const response = await client.get<PopularPlaceResponse[]>(
           '/places/popular',
-          { params: { page: 1, limit: 5 } } // Changed from 4 to 5
+          { params: { page: 1, limit: 5 } }
         );
 
-        // 각 장소의 상세 정보를 가져와서 latitude, longitude 포함
         const detailedPlaces = await Promise.all(
           response.data.map(async (item) => {
             try {
-              // 각 장소의 상세 정보 가져오기
               const detailResponse = await client.get(
                 `/places/${item.addplace_id}`
               );
@@ -165,14 +207,13 @@ export function NewMainPage({
                 `Failed to fetch detail for ${item.addplace_id}:`,
                 error
               );
-              // 상세 정보를 가져오지 못한 경우 기본값 사용
               return {
                 id: item.addplace_id,
                 title: item.title,
                 address: item.address,
                 imageUrl: item.image_url,
                 summary: undefined,
-                latitude: 37.5665, // 서울 시청 기본값
+                latitude: 37.5665,
                 longitude: 126.978,
               };
             }
@@ -190,26 +231,97 @@ export function NewMainPage({
     fetchInspirations();
   }, [isAuthLoading]);
 
-  // Calculate matched posts with scores
-  const matchedPosts = matches
-    .map((match) => {
-      const post = posts.find((p) => {
-        const writerIds = [
-          p.writerId,
-          p.writer?.id,
-          p.writerProfile?.id,
-        ].filter(Boolean);
-        return writerIds.includes(match.userId);
-      });
-      return post ? { post, score: Math.round(match.score * 100) } : null;
-    })
-    .filter((item): item is { post: Post; score: number } => item !== null)
-    .slice(0, 5); // Changed from 4 to 5
+  // Calculate matched posts with scores using useMemo
+  const matchedPosts = useMemo(() => {
+    return matches
+      .map((match) => {
+        const post = posts.find((p) => {
+          const writerIds = [
+            p.writerId,
+            p.writer?.id,
+            p.writerProfile?.id,
+          ].filter(Boolean);
+          return writerIds.includes(match.userId);
+        });
+
+        if (!post) return null;
+
+        // normalizeTextList를 사용하여 배열로 전달
+        const tendencyKeywords = normalizeTextList(match.overlappingTendencies);
+        const styleKeywords = normalizeTextList(match.overlappingTravelStyles);
+
+        return {
+          post,
+          score: Math.round(match.score * 100),
+          tendency: tendencyKeywords, // 배열로 저장
+          style: styleKeywords, // 배열로 저장
+        };
+      })
+      .filter(
+        (item): item is { post: Post; score: number; tendency: string[]; style: string[] } =>
+          item !== null
+      )
+      .slice(0, 5);
+  }, [matches, posts]);
+
+  // 작성자 프로필 이미지 일괄 로드
+  useEffect(() => {
+    const fetchAllWriterProfileImages = async () => {
+      const imageIds = matchedPosts
+        .map((item) => item.post.writer?.profile?.profileImageId)
+        .filter((id): id is string => id != null && id.length > 0);
+
+      const uniqueImageIds = Array.from(new Set(imageIds));
+
+      if (uniqueImageIds.length === 0) {
+        setWriterProfileImages({});
+        return;
+      }
+
+      try {
+        const results = await Promise.all(
+          uniqueImageIds.map(async (imageId) => {
+            try {
+              const response = await fetch(
+                `${API_BASE_URL}/binary-content/${imageId}/presigned-url`,
+                {
+                  credentials: 'include',
+                }
+              );
+
+              if (!response.ok) {
+                throw new Error('프로필 이미지를 불러오지 못했습니다.');
+              }
+
+              const payload = await response.json();
+              const { url } = payload;
+              return { imageId, url };
+            } catch (error) {
+              console.error(`Failed to load profile image ${imageId}:`, error);
+              return { imageId, url: null };
+            }
+          })
+        );
+
+        const imageMap: Record<string, string | null> = {};
+        results.forEach(({ imageId, url }) => {
+          imageMap[imageId] = url;
+        });
+        setWriterProfileImages(imageMap);
+      } catch (error) {
+        console.error('Failed to fetch writer profile images:', error);
+      }
+    };
+
+    if (matchedPosts.length > 0) {
+      fetchAllWriterProfileImages();
+    } else {
+      setWriterProfileImages({});
+    }
+  }, [matchedPosts]);
 
   // Handlers
   const handlePostClick = (postId: string) => {
-    // PostDetail 내부에서 로그인 상태에 따라 버튼을 처리하므로
-    // 여기서는 바로 표시
     console.log('🟢 handlePostClick 호출됨!', {
       postId,
       isLoggedIn,
@@ -235,7 +347,6 @@ export function NewMainPage({
   const handleInspirationClick = (place: Place) => {
     setSelectedType('inspiration');
     setSelectedId(place.id);
-    // Convert Place to PlaceDto
     const placeDto: PlaceDto = {
       id: place.id,
       category: '기타' as any,
@@ -322,10 +433,7 @@ export function NewMainPage({
           ) : isMatchesLoading || isPostsLoading ? (
             <div className="grid grid-cols-5 gap-4 md:gap-6">
               {Array.from({ length: 5 }).map((_, index) => (
-                <div
-                  key={index}
-                  className="w-full aspect-[203/241] bg-gray-200 rounded-[16px] animate-pulse"
-                />
+                <MainPostCardSkeleton key={index} />
               ))}
             </div>
           ) : matchedPosts.length === 0 ? (
@@ -334,20 +442,22 @@ export function NewMainPage({
             </div>
           ) : (
             <div className="grid grid-cols-5 gap-4 md:gap-6">
-              {matchedPosts.map(({ post, score }) => {
-                console.log('🟡 MainPostCard 렌더링:', {
-                  postId: post.id,
-                  title: post.title,
-                  score,
-                  handlePostClick: typeof handlePostClick,
-                });
+              {matchedPosts.map(({ post, score, tendency, style }, index) => {
                 return (
-                  <MainPostCard
+                  <GridMatchingCard
                     key={post.id}
                     post={post}
-                    matchingScore={score}
-                    imageUrl={post.imageId || undefined}
-                    onClick={handlePostClick}
+                    matchingInfo={{ score: score, tendency: tendency, style: style }}
+                    rank={index + 1}
+                    writerProfileImageUrl={
+                      post.writer?.profile?.profileImageId
+                        ? (writerProfileImages[
+                            post.writer.profile.profileImageId
+                          ] ?? null)
+                        : null
+                    }
+                    writerNickname={post.writer?.profile?.nickname ?? null}
+                    onClick={() => handlePostClick(post.id)}
                   />
                 );
               })}
