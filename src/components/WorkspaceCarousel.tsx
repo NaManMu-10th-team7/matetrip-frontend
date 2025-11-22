@@ -26,7 +26,7 @@ export function WorkspaceCarousel({
   // buttonText,
 }: WorkspaceCarouselProps) {
   const [api, setApi] = useState<CarouselApi>();
-  const autoScrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const autoScrollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const resetAutoScroll = () => {
     if (autoScrollIntervalRef.current) {

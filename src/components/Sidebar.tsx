@@ -79,7 +79,7 @@ export function Sidebar({
           className={`border-b border-gray-200 py-6 h-[81px] flex items-center justify-center ${isExpanded ? 'px-6' : 'px-4'}`}
         >
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/main')}
             className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
           >
             <div className="w-8 h-8 bg-[#101828] rounded-[10px] flex items-center justify-center shrink-0">
@@ -119,11 +119,11 @@ export function Sidebar({
 
             {/* Main */}
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/main')}
               className={`flex items-center gap-3 h-12 rounded-[10px] transition-colors ${
                 isExpanded ? 'px-4' : 'justify-center'
               } ${
-                isActive('/')
+                isActive('/main')
                   ? 'bg-[#101828] text-white'
                   : 'text-[#364153] hover:bg-gray-100'
               }`}

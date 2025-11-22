@@ -27,6 +27,7 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { useAuthStore } from '../store/authStore';
 import client from '../api/client';
+import type { ActiveMember } from '../types/member';
 
 // amazon-chime-sdk-js는 브라우저 환경에서 node의 global 객체를 기대하므로 안전하게 polyfill
 if (typeof (global as any) === 'undefined' && typeof window !== 'undefined') {
@@ -223,7 +224,7 @@ export const VideoChat = ({
                 tileId: tileState.tileId,
                 attendeeId: boundAttendeeId,
                 name,
-                externalUserId: tileState.boundExternalUserId || undefined,
+                externalUserId: tileState.boundExternalUserId ?? undefined,
                 isLocal,
                 isVideoActive,
               },
@@ -355,11 +356,11 @@ export const VideoChat = ({
     };
 
     activeMembers.forEach((member) => {
-      addKey(member.id, member.name);
-      addKey(member.userId, member.name);
-      addKey(member.profileId, member.name);
-      addKey(member.email, member.name);
-      addKey(member.name, member.name);
+      addKey(member.id, member.name); // `id` is `userId` from ActiveMember
+      if (member.userId) addKey(member.userId, member.name);
+      if (member.profileId) addKey(member.profileId, member.name);
+      if (member.email) addKey(member.email, member.name);
+      if (member.name) addKey(member.name, member.name);
     });
     return map;
   }, [activeMembers]);
@@ -420,15 +421,17 @@ export const VideoChat = ({
 
     let changed = false;
     const updated = tiles.map((tile) => {
-      const newName = resolveParticipantName(
-        tile.attendeeId,
-        tile.externalUserId,
-        tile.isLocal
-      );
-      if (newName !== tile.name) {
-        attendeeNamesRef.current[tile.attendeeId] = newName;
-        changed = true;
-        return { ...tile, name: newName };
+      if (tile.attendeeId) {
+        const newName = resolveParticipantName(
+          tile.attendeeId,
+          tile.externalUserId,
+          tile.isLocal
+        );
+        if (newName !== tile.name) {
+          attendeeNamesRef.current[tile.attendeeId] = newName;
+          changed = true;
+          return { ...tile, name: newName };
+        }
       }
       return tile;
     });
