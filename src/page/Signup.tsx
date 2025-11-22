@@ -61,13 +61,15 @@ const CATEGORIZED_KEYWORDS: CategoryItem[] = [
     id: 'place',
     title: '장소',
     icon: MapPin,
-    question: '어떤 여행지로 떠나고 싶으신가요?',
+    question: '어떤 여행지를 좋아하시나요?',
     items: [
       'CITY',
       'RURAL',
       'TRADITIONAL_CITY',
       'RESORT_CITY',
       'PORT_TOWN',
+      'TRADITIONAL_MARKET',
+      'NIGHT_MARKET',
       'BEACH',
       'ISLAND',
       'MOUNTAIN',
@@ -93,9 +95,6 @@ const CATEGORIZED_KEYWORDS: CategoryItem[] = [
       'SNOWBOARDING',
       'GOLF',
       'RUNNING',
-      'AMUSEMENT_PARK',
-      'AQUARIUM',
-      'ZOO',
     ],
   },
   {
@@ -104,13 +103,10 @@ const CATEGORIZED_KEYWORDS: CategoryItem[] = [
     icon: Utensils,
     question: '여행 중 식사는 어떻게 하시겠어요?',
     items: [
-      'TRADITIONAL_MARKET',
-      'NIGHT_MARKET',
       'STREET_FOOD',
       'LOCAL_RESTAURANT',
       'FOODIE_TOUR',
       'CAFE_DESSERT',
-      'SPEND_ON_FOOD',
       'VEGAN_FRIENDLY',
       'NO_PORK',
       'NO_SEAFOOD',
@@ -118,8 +114,6 @@ const CATEGORIZED_KEYWORDS: CategoryItem[] = [
       'MILD_FOOD_PREF',
       'SEAFOOD_PREF',
       'MEAT_PREF',
-      'NON_DRINKING',
-      'DRINKS_ALCOHOL',
     ],
   },
   {
@@ -137,8 +131,9 @@ const CATEGORIZED_KEYWORDS: CategoryItem[] = [
       'CONCERT',
       'SPORTS_VIEWING',
       'LOCAL_FESTIVAL',
-      'PHOTOGRAPHY',
-      'LANDSCAPE_PHOTOGRAPHY',
+      'AMUSEMENT_PARK',
+      'AQUARIUM',
+      'ZOO',
     ],
   },
   {
@@ -147,10 +142,6 @@ const CATEGORIZED_KEYWORDS: CategoryItem[] = [
     icon: Heart,
     question: '편안한 밤을 위해 어디서 머물까요?',
     items: [
-      'HOTEL_STAYCATION',
-      'QUIET_RELAXATION',
-      'PACKED_SCHEDULE',
-      'LEISURELY_SCHEDULE',
       'HOTEL',
       'RESORT',
       'GUESTHOUSE',
@@ -159,27 +150,44 @@ const CATEGORIZED_KEYWORDS: CategoryItem[] = [
       'AIRBNB',
       'GLAMPING',
       'PRIVATE_POOL_VILLA',
-      'SPEND_ON_LODGING',
+    ],
+  },
+  {
+    id: 'transport',
+    title: '이동/방식',
+    icon: Car,
+    question: '어떤 이동 수단과 여행 방식을 선호하시나요?',
+    items: [
+      'TRANSPORT_RENTAL_CAR',
+      'CAMPER_VAN',
+      'PUBLIC_TRANSPORT',
+      'TRAIN_TRIP',
+      'MOTORCYCLE_TRIP',
+      'BACKPACKING',
+      'HOTEL_STAYCATION',
+      'CAN_DRIVE',
     ],
   },
   {
     id: 'etc',
     title: '기타',
-    icon: Car,
-    question: '이동 수단이나 기타 선호사항이 있나요?',
+    icon: User,
+    question: '기타 선호사항이 있나요?',
     items: [
-      'TRANSPORT_RENTAL_CAR',
-      'MOTORCYCLE_TRIP',
-      'CAMPER_VAN',
-      'PUBLIC_TRANSPORT',
-      'TRAIN_TRIP',
-      'BACKPACKING',
-      'CAN_DRIVE',
-      'NON_SMOKER',
-      'SMOKER',
       'SMALL_GROUP_PREFERRED',
       'QUIET_COMPANION_PREFERRED',
       'TALKATIVE_COMPANION_PREFERRED',
+      'QUIET_RELAXATION',
+      'PACKED_SCHEDULE',
+      'LEISURELY_SCHEDULE',
+      'SPEND_ON_LODGING',
+      'SPEND_ON_FOOD',
+      'PHOTOGRAPHY',
+      'LANDSCAPE_PHOTOGRAPHY',
+      'NON_SMOKER',
+      'SMOKER',
+      'NON_DRINKING',
+      'DRINKS_ALCOHOL',
     ],
   },
 ];
@@ -249,7 +257,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
 
   const handleNext = () => {
     if (step === 2 && selectedStyles.size !== 3) {
-      setStyleError('여행 스타일을 꼭 3개 선택해주세요.');
+      setStyleError('여행 스타일을 3개 선택해주세요.');
       return;
     }
 
@@ -345,7 +353,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
           {step < 4 && (
             <div className="px-6 pt-10 pb-4 bg-white flex flex-col items-center text-center relative">
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
+                <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-blue-200">
                   <MapPin className="text-white w-6 h-6" />
                 </div>
                 <span className="text-2xl font-extrabold text-slate-900 tracking-tight">
@@ -368,7 +376,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                     style={{ width: `${(step / 3) * 100}%` }}
                   ></div>
                 </div>
-                <div className="text-slate-400 text-sm font-medium">3</div>
+                {/* <div className="text-slate-400 text-sm font-medium">3</div> */}
               </div>
             </div>
           )}
@@ -397,7 +405,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                       value={userInfo.email}
                       onChange={handleInputChange}
                       placeholder="example@email.com"
-                      className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
+                      className="w-full pl-11 pr-4 py-3.5 bg-slate-50/60 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
                     />
                   </div>
                 </div>
@@ -416,7 +424,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                       value={userInfo.password}
                       onChange={handleInputChange}
                       placeholder="8자 이상 입력해주세요"
-                      className="w-full pl-11 pr-12 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
+                      className="w-full pl-11 pr-12 py-3.5 bg-slate-50/60 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
                     />
                     <button
                       type="button"
@@ -446,7 +454,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                       value={userInfo.confirmPassword}
                       onChange={handleInputChange}
                       placeholder="비밀번호를 다시 입력해주세요"
-                      className="w-full pl-11 pr-12 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
+                      className="w-full pl-11 pr-12 py-3.5 bg-slate-50/60 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
                     />
                     <button
                       type="button"
@@ -478,7 +486,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                       value={userInfo.nickname}
                       onChange={handleInputChange}
                       placeholder="사용할 닉네임을 입력해주세요"
-                      className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
+                      className="w-full pl-11 pr-4 py-3.5 bg-slate-50/60 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
                     />
                   </div>
                 </div>
@@ -517,7 +525,8 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                     ))}
                   </div>
                 </div>
-                {/* Phone */}
+                {/* 연락처 섹션 숨김 처리 요청으로 주석 */}
+                {/*
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">
                     연락처
@@ -533,7 +542,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                         value={userInfo.phone}
                         onChange={handleInputChange}
                         placeholder="010-0000-0000"
-                        className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
+                        className="w-full pl-11 pr-4 py-3.5 bg-slate-50/60 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
                       />
                     </div>
                     <button className="bg-slate-900 text-white px-5 rounded-xl font-bold text-sm hover:bg-slate-800 transition-colors whitespace-nowrap">
@@ -541,11 +550,12 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                     </button>
                   </div>
                 </div>
+                */}
               </div>
               <div className="mt-8 pb-4">
                 <button
                   onClick={handleNext}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold text-lg shadow-xl shadow-blue-200 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold text-lg shadow-md shadow-blue-200 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
                 >
                   다음
                 </button>
@@ -581,7 +591,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                           px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 border select-none
                           ${
                             isSelected
-                              ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-200 scale-105'
+                              ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-200 '
                               : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50'
                           }
                         `}
@@ -617,7 +627,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
               </div>
 
               <div className="flex flex-col md:flex-row flex-1 px-1 md:px-3 gap-2 md:gap-3">
-                <div className="w-full md:w-40 max-w-[150px] shrink-0 bg-slate-100/60 md:rounded-l-2xl mb-4 md:mb-0">
+                <div className="w-full md:w-40 max-w-[150px] shrink-0 bg-slate-100/40 md:rounded-l-2xl mb-4 md:mb-0">
                   <div className="flex flex-row md:flex-col overflow-x-auto md:overflow-visible scrollbar-hide p-2 md:p-2.5 gap-2">
                     {CATEGORIZED_KEYWORDS.map((tab) => {
                       const isActive = activeTab === tab.id;
@@ -631,16 +641,16 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                           key={tab.id}
                           onClick={() => setActiveTab(tab.id)}
                           className={`
-                            flex items-center gap-2 px-3 py-2.5 text-sm font-medium transition-all relative text-left rounded-[1.0rem] w-32
+                            flex items-center gap-2 px-3 py-2.5 text-sm font-medium transition-all relative text-left md:rounded-l-2xl w-32
                             ${
                               isActive
-                                ? 'bg-white text-blue-600 shadow-md shadow-slate-100 scale-105 z-10'
+                                ? 'bg-white text-blue-600 shadow-md shadow-slate-100 z-10'
                                 : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'
                             }
                           `}
                         >
                           <div
-                            className={`p-1 rounded-full transition-colors ${isActive ? 'bg-blue-50 text-blue-600' : 'bg-transparent text-slate-400'}`}
+                            className={`p-1 rounded-2xl transition-colors ${isActive ? 'bg-blue-50 text-blue-600' : 'bg-transparent text-slate-400'}`}
                           >
                             <Icon className="w-4 h-4" />
                           </div>
@@ -658,7 +668,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                   </div>
                 </div>
 
-                <div className="flex-1 min-w-0 py-6 pr-3 pl-0 md:pl-1 bg-white md:rounded-r-[2rem]">
+                <div className="flex-1 min-w-0 py-6 pr-3 pl-0 md:pl-1 bg-white md:rounded-l-2xl">
                   <div className="mb-6 text-left">
                     {currentTabInfo && (
                       <>
@@ -676,7 +686,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                     className="animate-in fade-in slide-in-from-right-4 duration-300"
                     key={activeTab}
                   >
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 min-h-[400px]">
                       {currentTabInfo &&
                         currentTabInfo.items.map((itemKey) => {
                           const label = TRAVEL_TENDENCY_TYPE[itemKey];
@@ -689,7 +699,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                               relative group py-3 px-2 rounded-xl text-sm font-medium transition-all duration-200 border text-center flex items-center justify-center gap-1.5
                               ${
                                 isSelected
-                                  ? 'bg-blue-500 border-blue-500 text-white shadow-lg shadow-blue-100 scale-105'
+                                  ? 'bg-blue-500 border-blue-500 text-white shadow-md shadow-blue-100'
                                   : 'bg-white text-slate-600 border-slate-100 hover:border-blue-200 hover:bg-blue-50/30'
                               }
                             `}
@@ -741,7 +751,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
               <div className="p-6 bg-white border-t border-slate-50 flex justify-center mt-auto">
                 <button
                   onClick={handleNext}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold text-lg shadow-xl shadow-blue-200 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold text-lg shadow-md shadow-blue-200 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
                 >
                   다음 단계로
                   <ArrowRight className="w-5 h-5" />
@@ -767,7 +777,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                       value={userInfo.introOneLine}
                       onChange={handleInputChange}
                       placeholder="예) 바다를 사랑하는 여행러 🌊"
-                      className="w-full pl-11 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
+                      className="w-full pl-11 pr-4 py-4 bg-slate-50/30 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400"
                     />
                   </div>
                 </div>
@@ -786,15 +796,19 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                       onChange={handleInputChange}
                       rows={6}
                       placeholder="자신에 대해 자유롭게 소개해 주세요. (여행 스타일, 좋아하는 것 등)"
-                      className="w-full pl-11 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400 resize-none leading-relaxed"
+                      className="w-full pl-11 pr-4 py-4 bg-slate-50/30 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all font-medium text-slate-900 placeholder-slate-400 resize-none leading-relaxed"
                     />
                   </div>
+                  <p className="mt-2 text-xs text-slate-400 text-right">
+                    * 자세히 적어주실수록, 마음이 딱 맞는 동행을 만날 확률이
+                    높아져요!
+                  </p>
                 </div>
 
                 <div className="pt-6">
                   <button
                     onClick={handleSubmit}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold text-lg shadow-xl shadow-blue-200 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold text-lg  shadow-blue-200 shadow-md flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
                   >
                     회원가입 완료
                   </button>
