@@ -11,6 +11,8 @@ import { type PlaceDto, type CategoryCode } from '../types/place'; // CategoryCo
 import type { MatchCandidateDto } from '../types/matching';
 import { GridMatchingCard } from '../components/GridMatchingCard';
 import { MainPostCardSkeleton } from '../components/AIMatchingSkeletion';
+import { PoiDetailPanel } from '../components/ScheduleSidebar'; // PoiDetailPanel 임포트
+import { usePlaceDetail } from '../hooks/usePlaceDetail'; // usePlaceDetail 훅 임포트
 
 interface PopularPlaceResponse {
   addplace_id: string;
@@ -98,11 +100,16 @@ export function NewMainPage({
   const [isMatchesLoading, setIsMatchesLoading] = useState(true);
   const [isInspirationsLoading, setIsInspirationsLoading] = useState(true);
 
-  // Selection states
+  // Selection states (기존 PostDetail 모달 관련)
   const [selectedType, setSelectedType] = useState<SelectedType>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [_selectedPlace, setSelectedPlace] = useState<PlaceDto | null>(null);
   const [showPostDetailModal, setShowPostDetailModal] = useState(false);
+
+  // [신규] PoiDetailPanel 관련 상태
+  const [showPlaceDetailPanel, setShowPlaceDetailPanel] = useState(false);
+  const [selectedPlaceIdForPanel, setSelectedPlaceIdForPanel] = useState<
+    string | null
+  >(null);
 
   // 작성자 프로필 이미지 관리
   const [writerProfileImages, setWriterProfileImages] = useState<
@@ -320,6 +327,20 @@ export function NewMainPage({
     }
   }, [matchedPosts]);
 
+  // [신규] PoiDetailPanel 열기 핸들러
+  const handleOpenPlaceDetailPanel = (placeId: string) => {
+    console.log('handleOpenPlaceDetailPanel called with placeId:', placeId);
+    setSelectedPlaceIdForPanel(placeId);
+    setShowPlaceDetailPanel(true);
+  };
+
+  // [신규] PoiDetailPanel 닫기 핸들러
+  const handleClosePlaceDetailPanel = () => {
+    console.log('handleClosePlaceDetailPanel called.');
+    setShowPlaceDetailPanel(false);
+    setSelectedPlaceIdForPanel(null);
+  };
+
   // Handlers
   const handlePostClick = (postId: string) => {
     console.log('🟢 handlePostClick 호출됨!', {
@@ -334,30 +355,20 @@ export function NewMainPage({
     });
   };
 
-  const handlePlaceClick = (placeId: string, place: PlaceDto) => {
+  const handlePlaceClick = (placeId: string, _place: PlaceDto) => {
+    console.log('handlePlaceClick called with placeId:', placeId);
     if (!isLoggedIn) {
       navigate('/login');
       return;
     }
-    setSelectedType('place');
-    setSelectedId(placeId);
-    setSelectedPlace(place);
+    // 기존 setSelectedType, setSelectedId, setSelectedPlace는 더 이상 필요 없음
+    handleOpenPlaceDetailPanel(placeId); // 패널 열기
   };
 
   const handleInspirationClick = (place: Place) => {
-    setSelectedType('inspiration');
-    setSelectedId(place.id);
-    const placeDto: PlaceDto = {
-      id: place.id,
-      category: place.category, // place.category 사용
-      title: place.title,
-      address: place.address,
-      summary: place.summary,
-      image_url: place.imageUrl,
-      longitude: place.longitude,
-      latitude: place.latitude,
-    };
-    setSelectedPlace(placeDto);
+    console.log('handleInspirationClick called with placeId:', place.id);
+    // 기존 setSelectedType, setSelectedId, setSelectedPlace는 더 이상 필요 없음
+    handleOpenPlaceDetailPanel(place.id); // 패널 열기
   };
 
   const handleAllViewMatching = () => {
@@ -520,7 +531,6 @@ export function NewMainPage({
                   category={place.category}
                   summary={place.summary}
                   rank={index + 1} // rank prop 추가
-                  // badgeText={`현재 가장 인기있는 장소 TOP. ${index + 1}`} // badgeText 제거
                   onClick={() => handleInspirationClick(place)}
                 />
               ))}
@@ -546,6 +556,15 @@ export function NewMainPage({
           }}
         />
       )}
+
+      {/* [신규] PoiDetailPanel */}
+      <PoiDetailPanel
+        placeId={selectedPlaceIdForPanel}
+        isVisible={showPlaceDetailPanel}
+        onClose={handleClosePlaceDetailPanel}
+        onNearbyPlaceSelect={handleOpenPlaceDetailPanel} // 주변 장소 클릭 시 해당 장소 상세 보기
+        onPoiSelect={() => {}} // NewMainPage에서는 지도 이동 기능이 필요 없으므로 빈 함수 전달
+      />
     </div>
   );
 }

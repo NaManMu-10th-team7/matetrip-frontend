@@ -369,7 +369,7 @@ function DayItineraryItem({
   );
 }
 
-function PoiDetailPanel({
+export function PoiDetailPanel({
   placeId,
   isVisible,
   onClose,

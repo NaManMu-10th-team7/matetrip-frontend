@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from './ui/button';
-import { PlaceCard } from './PlaceCard';
+import { InspirationCard } from './InspirationCard'; // Changed from PlaceCard
 import { useAuthStore } from '../store/authStore';
 import client from '../api/client';
 import { type PlaceDto } from '../types/place';
@@ -91,15 +91,13 @@ export function PlaceRecommendationSection({
     fetchBehaviorPlaces();
   }, [isAuthLoading, isLoggedIn, user?.userId]);
 
-  const handlePlaceClick = (placeId: string) => {
+  const handlePlaceClick = (placeId: string, place: PlaceDto) => {
     if (!isLoggedIn) {
       navigate('/login');
       return;
     }
-    const place = places.find((p) => p.id === placeId);
-    if (place) {
-      onPlaceClick(placeId, place);
-    }
+    // The original onPlaceClick from props expects placeId and placeDto
+    onPlaceClick(placeId, place);
   };
 
   const handleAllViewClick = () => {
@@ -153,7 +151,7 @@ export function PlaceRecommendationSection({
           {Array.from({ length: 5 }).map((_, index) => (
             <div
               key={index}
-              className="aspect-[203/241] bg-gray-200 rounded-[16px] animate-pulse"
+              className="w-full h-64 bg-gray-200 rounded-xl animate-pulse" // Adjusted for InspirationCard skeleton size
             />
           ))}
         </div>
@@ -164,10 +162,14 @@ export function PlaceRecommendationSection({
       ) : (
         <div className="grid grid-cols-5 gap-4 md:gap-6">
           {places.map((place) => (
-            <PlaceCard
+            <InspirationCard
               key={place.id}
-              place={place}
-              onClick={handlePlaceClick}
+              imageUrl={place.image_url}
+              title={place.title}
+              address={place.address}
+              category={place.category}
+              summary={place.summary}
+              onClick={() => handlePlaceClick(place.id, place)}
             />
           ))}
         </div>
