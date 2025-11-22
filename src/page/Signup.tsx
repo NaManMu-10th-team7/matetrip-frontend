@@ -25,17 +25,11 @@ import {
   TRAVEL_STYLE_OPTIONS,
   type TravelStyleType,
 } from '../constants/travelStyle';
-import {
-  TRAVEL_TENDENCY_TYPE,
-  type TravelTendencyType,
-} from '../constants/travelTendencyType';
+import { type TravelTendencyType } from '../constants/travelTendencyType';
 import { Button } from '../components/ui/button';
 import { Label } from '../components/ui/label';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
-
-// --- 타입 정의 ---
-type TravelTendencyKey = keyof typeof TRAVEL_TENDENCY_TYPE;
 
 interface CategoryItem {
   id: string;
@@ -194,6 +188,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
     useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<string>('place');
   const [styleError, setStyleError] = useState<string>('');
+  const [descriptionError, setDescriptionError] = useState<string>('');
 
   // Form data
   const [formData, setFormData] = useState({
@@ -246,6 +241,36 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
     });
   };
 
+  // 상세소개 검증: 길이/내용/반복/특수문자 비율 등을 점검
+  const isValidSummary = (summary?: string): boolean => {
+    const text = summary?.trim();
+    if (!text || text.length < 10) {
+      return false;
+    }
+    const punctuationCount = (text.match(/[^\w가-힣\s]/g) ?? []).length; // 특수문자 비율 40% 이하
+    const punctuationRatio = punctuationCount / text.length;
+    if (punctuationRatio > 0.4) {
+      return false;
+    }
+
+    const tokens = text.split(/\s+/).filter(Boolean); // 단어 다양성 검사
+    const uniqueTokenCount = new Set(tokens).size;
+    if (uniqueTokenCount <= 2 && text.length < 20) {
+      return false;
+    }
+
+    if (/(.)\1{6,}/.test(text)) {
+      // 동일 문자 7회 이상 반복 금지
+      return false;
+    }
+    const uniqueChars = new Set(text.replace(/\s+/g, '').split('')); // 문자 종류가 3개 이하인 긴 텍스트 거르기
+    if (uniqueChars.size <= 3 && text.length >= 10) {
+      return false;
+    }
+
+    return true;
+  };
+
   const handleNextStep = () => {
     if (step === 2 && formData.travelStyles.size !== 3) {
       setStyleError('여행 스타일 3개를 선택해주세요.');
@@ -264,6 +289,11 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
+      return;
+    }
+
+    if (!isValidSummary(formData.description)) {
+      setDescriptionError('상세소개를 10자 이상, 의미있는 내용으로 채워주세요');
       return;
     }
 
@@ -790,8 +820,22 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                 </div>
 
                 <div>
-                  <Label htmlFor="description" className="font-semibold">
+                  <Label
+                    htmlFor="description"
+                    className="font-semibold flex items-center gap-2"
+                  >
                     상세소개
+                    <span className="relative inline-flex items-center group">
+                      <span className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full border border-blue-200 bg-blue-50 text-[10px] font-semibold text-blue-600 shadow-[0_1px_3px_rgba(59,130,246,0.25)] hover:bg-blue-100 hover:border-blue-300 transition-colors cursor-default">
+                        i
+                      </span>
+                      <span className="absolute left-full top-1/2 z-10 ml-2 -translate-y-1/2 block w-72 md:w-80 rounded-lg bg-white px-3 py-2 text-[11px] font-medium text-black text-left whitespace-normal break-words shadow-lg opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none transition-all duration-150">
+                        키워드 유사도와 상세소개 유사도를 합산하여 프로필
+                        유사도를 측정합니다.
+                        <br />
+                        적절하지 않은 상세소개는 등록되지 않을 수 있습니다.
+                      </span>
+                    </span>
                   </Label>
                   <div className="relative mt-2">
                     <FileText className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
@@ -799,12 +843,18 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                       id="description"
                       placeholder="자신에 대해 자유롭게 소개해주세요. (여행 스타일, 좋아하는 것 등)"
                       value={formData.description}
-                      onChange={(e) =>
-                        handleInputChange('description', e.target.value)
-                      }
+                      onChange={(e) => {
+                        setDescriptionError('');
+                        handleInputChange('description', e.target.value);
+                      }}
                       className="pl-10 min-h-32"
                     />
                   </div>
+                  {descriptionError && (
+                    <p className="text-xs text-rose-500 mt-2">
+                      {descriptionError}
+                    </p>
+                  )}
                 </div>
                 <p className="text-xs text-slate-400 text-right">
                   * 자세히 적을수록, 마음이 딱 맞는 동행을 만날 확률이 높아져요!
