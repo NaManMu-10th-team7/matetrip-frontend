@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  MapPin,
+  Map,
   Tent,
   Heart,
   Camera,
@@ -55,7 +55,7 @@ const CATEGORIZED_KEYWORDS: CategoryItem[] = [
   {
     id: 'place',
     title: '장소',
-    icon: MapPin,
+    icon: Map,
     question: '어떤 여행지를 좋아하시나요?',
     items: [
       '도시',
@@ -96,7 +96,7 @@ const CATEGORIZED_KEYWORDS: CategoryItem[] = [
     id: 'food',
     title: '음식',
     icon: Utensils,
-    question: '여행 중 식사는 어떻게 하시겠어요?',
+    question: '여행 중 식사는 무엇이 좋으세요?',
     items: [
       '길거리음식',
       '로컬레스토랑',
@@ -374,7 +374,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
             <div className="px-5 md:px-6 pt-8 pb-3 bg-white flex flex-col items-center text-center relative">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-blue-200">
-                  <MapPin className="text-white w-6 h-6" />
+                  <Map className="w-7 h-7 text-white" />
                 </div>
                 <span className="text-2xl font-extrabold text-slate-900 tracking-tight">
                   MateTrip
@@ -400,11 +400,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
             </div>
           )}
 
-          {step < 4 && (
-            <div className="w-full px-6 my-2">
-              <div className="border-t border-dashed border-slate-100"></div>
-            </div>
-          )}
+          {step < 4 && <div className="w-full px-6 my-2" />}
 
           {step === 1 && (
             <div className="flex-1 px-5 md:px-6 py-5 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -560,9 +556,10 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
               <div className="mt-6 pb-3">
                 <Button
                   onClick={handleNextStep}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 h-auto rounded-xl font-bold text-lg shadow-md shadow-blue-200 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 h-auto rounded-lg font-bold text-lg shadow-md shadow-blue-200 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
                 >
-                  다음
+                  다음 단계로
+                  <ArrowRight className="w-5 h-5" />
                 </Button>
               </div>
             </div>
@@ -570,14 +567,17 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
 
           {step === 2 && (
             <div className="flex-1 flex flex-col animate-in fade-in slide-in-from-right-8 duration-500">
-              <div className="px-5 md:px-6 py-5">
+              <div className="px-5 md:px-6 py-3">
                 <div className="flex flex-col gap-1 mb-5">
                   <div className="flex items-center justify-start gap-2">
                     <div className="p-2 bg-blue-50 rounded-full">
                       <Sparkles className="w-5 h-5 text-blue-600" />
                     </div>
-                    <h2 className="text-lg font-extrabold text-slate-900 text-left">
-                      여행 스타일 (3개 선택)
+                    <h2 className="text-lg font-extrabold text-slate-900 text-left flex items-center gap-2">
+                      여행 스타일
+                      <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-600 border border-blue-100">
+                        3개 선택 필수
+                      </span>
                     </h2>
                   </div>
                   <p className="text-sm text-slate-500 py-1">
@@ -592,13 +592,13 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                       <Button
                         key={style.value}
                         onClick={() => toggleTravelStyle(style.value)}
-                        variant={isSelected ? 'default' : 'outline'}
+                        variant="outline"
                         className={`
                           px-3 py-1.5 h-auto rounded-md text-xs font-medium transition-all duration-200 border select-none
                           ${
                             isSelected
-                              ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-200 '
-                              : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50'
+                              ? 'bg-blue-500 border-blue-500 text-white shadow-md shadow-blue-100 hover:bg-blue-600 hover:text-white active:bg-blue-700'
+                              : 'bg-white text-slate-600 border-slate-200 hover:border-blue-200 hover:bg-blue-50/30 hover:text-slate-800'
                           }
                         `}
                       >
@@ -612,11 +612,9 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                 )}
               </div>
 
-              <div className="w-full px-5 md:px-6">
-                <div className="border-t border-dashed border-slate-100"></div>
-              </div>
+              <div className="w-full px-5 md:px-6" />
 
-              <div className="px-5 md:px-6 pt-6">
+              <div className="px-5 md:px-6 pt-3">
                 <div className="flex flex-col gap-1 mb-5">
                   <div className="flex items-center justify-start gap-2">
                     <div className="p-2 bg-blue-50 rounded-full">
@@ -679,10 +677,10 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                   <div className="mb-6 text-left">
                     {currentTabInfo && (
                       <>
-                        <h3 className="text-lg font-bold text-slate-900 mb-1">
+                        <h3 className="text-md font-bold text-slate-900 mb-1">
                           {currentTabInfo.title}
                         </h3>
-                        <p className="text-slate-500 text-sm">
+                        <p className="text-slate-500 text-xs">
                           {currentTabInfo.question}
                         </p>
                       </>
@@ -705,14 +703,14 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                           return (
                             <Button
                               key={label}
-                              variant={isSelected ? 'default' : 'outline'}
+                              variant="outline"
                               onClick={() => toggleTravelTendency(label)}
                               className={`
-                              relative group py-2 px-2 h-full w-full rounded-md text-sm font-medium transition-all duration-200 border text-center flex items-center justify-center gap-1.5 whitespace-normal
+                              relative group py-2 px-2 h-full w-full min-w-[120px] rounded-md text-sm font-medium transition-all duration-200 border text-center flex items-center justify-center gap-1.5 whitespace-nowrap
                               ${
                                 isSelected
-                                  ? 'bg-blue-500 border-blue-500 text-white shadow-md shadow-blue-100'
-                                  : 'bg-white text-slate-600 border-slate-100 hover:border-blue-200 hover:bg-blue-50/30'
+                                  ? 'bg-blue-500 border-blue-500 text-white shadow-md shadow-blue-100 hover:bg-blue-600 hover:text-white active:bg-blue-700'
+                                  : 'bg-white text-slate-600 border-slate-100 hover:border-blue-200 hover:bg-blue-50/30 hover:text-slate-800'
                               }
                             `}
                             >
@@ -725,11 +723,9 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                 </div>
               </div>
 
-              <div className="w-full px-6 mt-3">
-                <div className="border-t border-dashed border-slate-100"></div>
-              </div>
+              <div className="w-full px-6 mt-1" />
 
-              <div className="px-5 md:px-6 pt-6">
+              <div className="px-5 md:px-6 pt-2">
                 <div className="flex flex-col gap-1 mb-4">
                   <div className="flex items-center justify-start gap-2">
                     <div className="p-2 bg-blue-50 rounded-full">
@@ -761,7 +757,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
               <div className="px-5 md:px-6 py-7  flex justify-center mt-auto">
                 <Button
                   onClick={handleNextStep}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 h-auto rounded-xl font-bold text-lg shadow-md shadow-blue-200 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 h-auto rounded-lg font-bold text-lg shadow-md shadow-blue-200 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
                 >
                   다음 단계로
                   <ArrowRight className="w-5 h-5" />
@@ -772,7 +768,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
 
           {step === 3 && (
             <div className="flex-1 px-5 md:px-6 py-6 flex flex-col animate-in fade-in slide-in-from-right-8 duration-500">
-              <div className="max-w-xl mx-auto w-full space-y-5">
+              <div className="max-w-xl mx-auto w-full space-y-4">
                 <div>
                   <Label htmlFor="intro" className="font-semibold">
                     한줄소개
@@ -810,16 +806,15 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                     />
                   </div>
                 </div>
-                <p className="mt-2 text-xs text-slate-400 text-right">
-                  * 자세히 적어주실수록, 마음이 딱 맞는 동행을 만날 확률이
-                  높아져요!
+                <p className="text-xs text-slate-400 text-right">
+                  * 자세히 적을수록, 마음이 딱 맞는 동행을 만날 확률이 높아져요!
                 </p>
               </div>
 
-              <div className="pt-5">
+              <div className="pt-7">
                 <Button
                   onClick={handleSubmit}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 h-auto rounded-xl font-bold text-lg  shadow-blue-200 shadow-md flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 h-auto rounded-lg font-bold text-lg  shadow-blue-200 shadow-md flex items-center justify-center gap-2 transition-all transform hover:-translate-y-1 active:scale-95"
                 >
                   회원가입 완료
                 </Button>
