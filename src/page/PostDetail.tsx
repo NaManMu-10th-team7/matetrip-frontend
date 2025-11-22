@@ -45,6 +45,7 @@ import client from '../api/client';
 import { type Post, type Participation } from '../types/post';
 import { translateKeyword } from '../utils/keyword';
 import { useAuthStore } from '../store/authStore';
+import { PostDetailSkeleton } from './PostDetailSkeleton';
 import { toast } from 'sonner';
 
 interface PostDetailProps {
@@ -391,7 +392,7 @@ export function PostDetail({
   };
 
   if (isLoading) {
-    return <div className="text-center py-16">게시글을 불러오는 중...</div>;
+    return <PostDetailSkeleton />;
   }
 
   if (error) {
@@ -425,7 +426,8 @@ export function PostDetail({
       buttonConfig = {
         text: '워크스페이스 입장',
         disabled: false,
-        className: 'w-full bg-black text-white hover:bg-gray-800 py-3 text-lg', // 크기 키움
+        className:
+          'w-full rounded-full border border-black bg-transparent text-black hover:bg-black hover:text-white px-6 py-4 text-lg',
         icon: <DoorOpen className="w-5 h-5 mr-2" />, // 아이콘 추가
       };
     } else if (userParticipation) {
@@ -435,7 +437,7 @@ export function PostDetail({
             text: '워크스페이스 입장',
             disabled: false,
             className:
-              'w-full bg-black text-white hover:bg-gray-800 py-3 text-lg', // 크기 키움
+              'w-full rounded-full border border-black bg-transparent text-black hover:bg-black hover:text-white px-6 py-4 text-lg',
             icon: <DoorOpen className="w-5 h-5 mr-2" />, // 아이콘 추가
           };
           break;
@@ -467,7 +469,8 @@ export function PostDetail({
       buttonConfig = {
         text: '동행 신청하기',
         disabled: false,
-        className: 'w-full bg-black text-white hover:bg-gray-800 py-3 text-lg', // 크기 키움
+        className:
+          'w-full rounded-full border border-black bg-transparent text-black hover:bg-black hover:text-white px-6 py-6 text-lg',
         icon: null,
       };
     }
@@ -490,14 +493,14 @@ export function PostDetail({
       {/* {post.location} 여행 상세 정보 // 제거 */}
       {/* </DialogDescription> // 제거 */}
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar bg-gray-50">
+      <div className="flex-1 overflow-y-auto custom-scrollbar bg-white">
         <div className="relative">
           {/* 헤더 영역 높이를 키우고, 제목을 이미지 안으로 이동합니다. */}
           <div className="relative flex-shrink-0 bg-gray-50">
             <ImageWithFallback
               src={remoteCoverImageUrl || 'https://via.placeholder.com/800x280'}
               alt={post.title}
-              className="w-full h-[280px] object-cover"
+              className="w-full h-[350px] object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
 
@@ -552,53 +555,56 @@ export function PostDetail({
                 </div>
               </div>
 
-              {/* 중앙 제목 */}
-              <div className="flex items-center justify-center">
-                <h2 className="text-5xl font-bold text-center break-words">
-                  {post.title}
-                </h2>
-              </div>
-
-              {/* 하단 여행 정보 */}
-              <div className="flex flex-col items-center gap-3 pb-2">
-                <div className="flex justify-center items-center gap-8 text-base">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-6 h-6" />
-                    <span>{post.location}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-6 h-6" />
-                    <span>
-                      {post.startDate} ~ {post.endDate}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Users className="w-6 h-6" />
-                    <span>
-                      {approvedParticipants.length + 1} / {post.maxParticipants}
-                      명
-                    </span>
-                  </div>
+              {/* 중앙 제목 및 하단 정보 그룹 */}
+              <div className="flex flex-col items-center gap-4">
+                {/* 중앙 제목 */}
+                <div className="flex items-center justify-center">
+                  <h2 className="text-5xl font-bold text-center break-words line-clamp-2">
+                    {post.title}
+                  </h2>
                 </div>
-                {post.keywords && post.keywords.length > 0 && (
-                  <div className="flex flex-wrap justify-center gap-2 mt-1">
-                    {post.keywords.map((keyword, index) => (
-                      <Badge
-                        key={index}
-                        variant="outline"
-                        className="rounded-full px-3 py-1 text-white border-white/50 bg-white/10 backdrop-blur-sm text-sm"
-                      >
-                        {translateKeyword(keyword)}
-                      </Badge>
-                    ))}
+
+                {/* 하단 여행 정보 */}
+                <div className="flex flex-col items-center gap-3 pb-2">
+                  <div className="flex justify-center items-center gap-8 text-base">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-6 h-6" />
+                      <span>{post.location}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-6 h-6" />
+                      <span>
+                        {post.startDate} ~ {post.endDate}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Users className="w-6 h-6" />
+                      <span>
+                        {approvedParticipants.length + 1} /{' '}
+                        {post.maxParticipants}명
+                      </span>
+                    </div>
                   </div>
-                )}
+                  {post.keywords && post.keywords.length > 0 && (
+                    <div className="flex flex-wrap justify-center gap-2 mt-1">
+                      {post.keywords.map((keyword, index) => (
+                        <Badge
+                          key={index}
+                          variant="outline"
+                          className="rounded-full px-3 py-1 text-white border-white/50 bg-white/10 backdrop-blur-sm text-sm"
+                        >
+                          {translateKeyword(keyword)}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="flex bg-white">
-            <div className="flex-1 p-6">
+          <div className="bg-white">
+            <div className="p-8">
               <div className="mb-6">
                 <div className="grid grid-cols-1 gap-4">
                   <div className="p-4 rounded-xl border shadow-md">
@@ -726,10 +732,7 @@ export function PostDetail({
                   <div className="space-y-3">
                     {pendingRequests.length > 0 ? (
                       pendingRequests.map((request) => (
-                        <div
-                          key={request.id}
-                          className="p-3 rounded-xl border"
-                        >
+                        <div key={request.id} className="p-3 rounded-xl border">
                           <div className="flex items-center gap-3 mb-2">
                             <ImageWithFallback
                               src={
@@ -810,86 +813,81 @@ export function PostDetail({
                   </div>
                 </div>
               </div>
-            </div>
-            <div className="w-96 border-l p-8 flex-shrink-0">
-              <div className="space-y-6 sticky top-8">
-                <Button
-                  className={`flex items-center justify-center ${buttonConfig.className}`}
-                  disabled={buttonConfig.disabled}
-                  onClick={handleButtonClick}
-                >
-                  {buttonConfig.icon}
-                  {buttonConfig.text}
-                </Button>
 
-                {/* AI 추천 동행 섹션 */}
-                {isAuthor &&
-                  post.matchResult &&
-                  post.matchResult.length > 0 && (
-                    <div className="bg-gray-50 rounded-xl p-6 shadow-sm space-y-4">
-                      <h3 className="text-gray-900 pb-2 border-b font-bold flex items-center gap-2">
-                        <UserPlus className="w-6 h-6" /> {/* 크기 조정 */}
-                        AI 추천 동행 (상위{' '}
-                        {Math.min(post.matchResult.length, 3)}
-                        명)
-                      </h3>
-                      <div className="space-y-3">
-                        {post.matchResult.slice(0, 3).map((candidate) => {
-                          const recommendedProfile =
-                            recommendedUserProfiles[candidate.userId];
+              {/* AI 추천 동행 섹션 */}
+              {isAuthor && post.matchResult && post.matchResult.length > 0 && (
+                <div className="mt-8 rounded-xl border p-6">
+                  <h3 className="text-gray-900 text-lg font-bold mb-4 flex items-center gap-2">
+                    <UserPlus className="w-6 h-6" /> {/* 크기 조정 */}
+                    AI 추천 동행 (상위 {Math.min(post.matchResult.length, 3)}명)
+                  </h3>
+                  <div className="space-y-3">
+                    {post.matchResult.slice(0, 3).map((candidate) => {
+                      const recommendedProfile =
+                        recommendedUserProfiles[candidate.userId];
 
-                          const fallbackAvatarName =
-                            recommendedProfile?.nickname ||
-                            candidate.profile?.nickname ||
-                            'user';
+                      const fallbackAvatarName =
+                        recommendedProfile?.nickname ||
+                        candidate.profile?.nickname ||
+                        'user';
 
-                          return (
-                            <div
-                              key={candidate.userId}
-                              className="flex items-center gap-3 p-3 bg-white rounded-lg border"
-                            >
-                              <ImageWithFallback
-                                src={
-                                  recommendedProfile?.imageUrl ||
-                                  `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                                    fallbackAvatarName
-                                  )}&background=random&rounded=true`
-                                }
-                                alt={fallbackAvatarName}
-                                className="w-10 h-10 rounded-full object-cover flex-shrink-0 bg-gray-100"
-                              />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-gray-900 font-semibold">
-                                  {recommendedProfile?.nickname ||
-                                    candidate.profile?.nickname ||
-                                    '사용자'}
-                                </p>
-                                <p className="text-sm text-gray-600">
-                                  매칭률: {Math.round(candidate.score * 100)}%
-                                </p>
-                              </div>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="text-xs h-7"
-                                onClick={() =>
-                                  handleViewProfile(candidate.userId)
-                                }
-                              >
-                                프로필 보기
-                              </Button>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-              </div>
+                      return (
+                        <div
+                          key={candidate.userId}
+                          className="flex items-center gap-3 p-3 bg-white rounded-lg border"
+                        >
+                          <ImageWithFallback
+                            src={
+                              recommendedProfile?.imageUrl ||
+                              `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                fallbackAvatarName
+                              )}&background=random&rounded=true`
+                            }
+                            alt={fallbackAvatarName}
+                            className="w-10 h-10 rounded-full object-cover flex-shrink-0 bg-gray-100"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-gray-900 font-semibold">
+                              {recommendedProfile?.nickname ||
+                                candidate.profile?.nickname ||
+                                '사용자'}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              매칭률: {Math.round(candidate.score * 100)}%
+                            </p>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs h-7"
+                            onClick={() => handleViewProfile(candidate.userId)}
+                          >
+                            프로필 보기
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
 
+      {/* 하단 고정 버튼 영역 */}
+      <div className="p-6 bg-white border-t border-gray-200">
+        <Button
+          className={`flex items-center justify-center ${buttonConfig.className}`}
+          disabled={buttonConfig.disabled}
+          onClick={handleButtonClick}
+        >
+          {buttonConfig.icon}
+          {buttonConfig.text}
+        </Button>
+      </div>
+
+      {/* 각종 모달 */}
       <Dialog open={cancelModalOpen} onOpenChange={setCancelModalOpen}>
         <DialogContent className="max-w-md">
           <DialogTitle className="text-gray-900">동행 신청 취소</DialogTitle>
