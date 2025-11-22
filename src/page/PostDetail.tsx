@@ -409,7 +409,8 @@ export function PostDetail({
   } = {
     text: '로그인 후 신청 가능',
     disabled: true,
-    className: 'w-full',
+    className:
+      'w-full rounded-full border border-gray-300 bg-gray-100 text-gray-400 px-6 py-4 text-lg',
     icon: null,
   };
 
@@ -437,7 +438,8 @@ export function PostDetail({
           buttonConfig = {
             text: '이미 신청한 동행입니다',
             disabled: true,
-            className: 'w-full bg-gray-400',
+            className:
+              'w-full rounded-full border border-gray-300 bg-gray-100 text-gray-400 px-6 py-4 text-lg',
             icon: null,
           };
           break;
@@ -445,7 +447,8 @@ export function PostDetail({
           buttonConfig = {
             text: '거절된 동행입니다',
             disabled: true,
-            className: 'w-full bg-gray-400',
+            className:
+              'w-full rounded-full border border-gray-300 bg-gray-100 text-gray-400 px-6 py-4 text-lg',
             icon: null,
           };
           break;
@@ -454,7 +457,8 @@ export function PostDetail({
       buttonConfig = {
         text: '모집이 마감되었습니다',
         disabled: true,
-        className: 'w-full bg-gray-400',
+        className:
+          'w-full rounded-full border border-gray-300 bg-gray-100 text-gray-400 px-6 py-4 text-lg',
         icon: null,
       };
     } else {
