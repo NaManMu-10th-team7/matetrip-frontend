@@ -76,11 +76,11 @@ export function Login({ onLogin, onSignupClick }: LoginProps) {
   return (
     <div className="min-h-screen w-full bg-gray-50 flex flex-col items-center justify-center p-4 font-sans">
       {/* Card Container */}
-      <div className="w-full max-w-lg md:max-w-md bg-white shadow-sm rounded-3xl shadow-gray-200/50 p-8 md:p-10 border border-gray-100">
+      <div className="w-full max-w-lg md:max-w-md bg-white shadow-sm rounded-3xl p-8 md:p-10 border border-gray-100">
         {/* Header Logo */}
         <div className="flex flex-col items-center justify-center mb-6">
           <div className="flex items-center gap-2 mb-2">
-            <div className="bg-linear-to-br bg-primary p-2.5 rounded-xl shadow-lg text-white">
+            <div className="bg-linear-to-br bg-primary p-2.5 rounded-xl shadow-primary-soft text-white">
               <Map className="w-7 h-7 text-white" />
             </div>
             <h1 className="text-3xl font-bold tracking-tight text-gray-900">
