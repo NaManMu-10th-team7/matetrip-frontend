@@ -388,7 +388,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
   return (
     <div className="min-h-screen bg-slate-50 flex justify-center py-8 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="w-full max-w-lg md:max-w-md">
-        <div className="bg-white rounded-2xl md:rounded-3xl shadow-xl overflow-hidden border border-slate-100 relative min-h-[560px] flex flex-col">
+        <div className="bg-white rounded-2xl md:rounded-3xl shadow-sm overflow-hidden border border-slate-100 relative min-h-[560px] flex flex-col">
           {step > 1 && step < 4 && (
             <Button
               variant="ghost"
