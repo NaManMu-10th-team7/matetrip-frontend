@@ -367,7 +367,7 @@ export function ProfileModal({
                         {profile.travelStyles?.map((style) => (
                           <Badge
                             key={style}
-                            className="bg-gray-800 text-gray-100 hover:bg-gray-700"
+                            className="bg-primary text-gray-100 hover:bg-primary-strong"
                           >
                             {translateKeyword(style)}
                           </Badge>
@@ -379,7 +379,7 @@ export function ProfileModal({
                     <div className="flex gap-2 flex-shrink-0">
                       <Button
                         size="sm"
-                        className="h-9 bg-gray-900 text-white hover:bg-gray-700"
+                        className="h-9 bg-primary text-white hover:bg-primary-strong"
                         onClick={handleEditProfile}
                       >
                         <Pencil className="w-4 h-4 mr-2" />
@@ -502,7 +502,7 @@ export function ProfileModal({
                           {profile.tendency.map((tendency) => (
                             <Badge
                               key={tendency}
-                              className="bg-gray-800 text-gray-100 hover:bg-gray-700"
+                              className="bg-primary text-gray-100 hover:bg-primary-strong"
                             >
                               {translateKeyword(tendency)}
                             </Badge>

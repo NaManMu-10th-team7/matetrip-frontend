@@ -500,7 +500,7 @@ export function EditProfileModal({
                           size="default"
                           variant="default"
                           onClick={handleImageUpload}
-                          className="flex-1"
+                          className="flex-1 bg-primary hover:bg-primary-strong"
                           disabled={isSaving || isImageDeleting}
                         >
                           <Upload className="w-4 h-4 mr-2" />
@@ -577,7 +577,7 @@ export function EditProfileModal({
                       <Badge
                         key={style}
                         variant="secondary"
-                        className="bg-gray-900 text-white px-3 py-1.5 flex items-center gap-2 rounded-full"
+                        className="bg-primary text-white px-3 py-1.5 flex items-center gap-2 rounded-full"
                       >
                         #{style}
                         <button
@@ -606,7 +606,7 @@ export function EditProfileModal({
                       <Badge
                         key={tendency}
                         variant="secondary"
-                        className="bg-gray-900 text-white px-3 py-1.5 flex items-center gap-2 rounded-full"
+                        className="bg-primary text-white px-3 py-1.5 flex items-center gap-2 rounded-full"
                       >
                         #{tendency}
                         <button
@@ -634,7 +634,7 @@ export function EditProfileModal({
                   )}
                   <Button
                     onClick={handleSaveProfile}
-                    className="w-full"
+                    className="w-full bg-primary hover:bg-primary-strong"
                     disabled={isSaving}
                   >
                     {isSaving ? '저장 중...' : '변경사항 저장'}
@@ -709,7 +709,7 @@ export function EditProfileModal({
                   }
                   className={`px-2 py-2 rounded-lg text-sm transition-colors ${
                     isSelected
-                      ? 'bg-gray-900 text-white'
+                      ? 'bg-primary text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
@@ -737,7 +737,7 @@ export function EditProfileModal({
                   onClick={() => handleToggleStyle(tag as TravelStyleType)}
                   className={`px-4 py-2 rounded-lg text-sm transition-colors ${
                     isSelected
-                      ? 'bg-gray-900 text-white'
+                      ? 'bg-primary text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
