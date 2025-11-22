@@ -617,7 +617,7 @@ export function MapPanel({
   const [highlightedPlaceId, setHighlightedPlaceId] = useState<string | null>(
     null
   );
-  const highlightTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [recommendedRouteInfo, setRecommendedRouteInfo] = useState<
     Record<string, RouteSegment[]>
@@ -634,7 +634,7 @@ export function MapPanel({
   }, [recommendedItinerary]);
 
   const [chatBubbles, setChatBubbles] = useState<Record<string, string>>({});
-  const chatBubbleTimers = useRef<Record<string, NodeJS.Timeout>>({});
+  const chatBubbleTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   useEffect(() => {
     if (latestChatMessage) {
