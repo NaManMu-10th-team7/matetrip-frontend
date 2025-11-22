@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Map, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import React, { useState } from 'react';
+import { Mail, Lock, Eye, EyeOff, Map } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -14,6 +14,9 @@ interface LoginProps {
   onSignupClick: () => void;
 }
 
+/**
+ * Main Application Component
+ */
 export function Login({ onLogin, onSignupClick }: LoginProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -21,7 +24,6 @@ export function Login({ onLogin, onSignupClick }: LoginProps) {
   const [rememberMe, setRememberMe] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
-
   const [errorMessage, setErrorMessage] = useState<string>('');
 
   const navigate = useNavigate();
@@ -64,11 +66,6 @@ export function Login({ onLogin, onSignupClick }: LoginProps) {
     }
   };
 
-  // const handleSocialLogin = (provider: 'google' | 'kakao') => {
-  //   // Handle social login logic
-  //   console.log(`Login with ${provider}`);
-  // };
-
   const handlePasswordReset = (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Send password reset email to:', resetEmail);
@@ -77,130 +74,137 @@ export function Login({ onLogin, onSignupClick }: LoginProps) {
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Right Side - Login Form */}
-      <div className="w-full flex flex-col items-center justify-center p-8 bg-gray-50">
-        {/* Logo */}
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-            <Map className="w-7 h-7 text-white" />
+    <div className="min-h-screen w-full bg-gray-50 flex flex-col items-center justify-center p-4 font-sans">
+      {/* Card Container */}
+      <div className="w-full max-w-lg md:max-w-md bg-white shadow-sm rounded-3xl p-8 md:p-10 border border-gray-100">
+        {/* Header Logo */}
+        <div className="flex flex-col items-center justify-center mb-6">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="bg-linear-to-br bg-primary p-2.5 rounded-xl shadow-primary-soft text-white">
+              <Map className="w-7 h-7 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+              MateTrip
+            </h1>
           </div>
-          <span className="text-3xl text-gray-900">MateTrip</span>
         </div>
 
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-2xl shadow-sm border p-8">
-            <div className="mb-8 text-center">
-              <h2 className="text-gray-900">로그인</h2>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div>
-                <Label htmlFor="email">이메일</Label>
-                <div className="relative mt-2">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="example@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="password">비밀번호</Label>
-                <div className="relative mt-2">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-10"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showPassword ? (
-                      <EyeOff className="w-5 h-5" />
-                    ) : (
-                      <Eye className="w-5 h-5" />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {errorMessage && (
-                <p className="text-red-500 text-sm text-center">
-                  {errorMessage}
-                </p>
-              )}
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="remember"
-                    checked={rememberMe}
-                    onCheckedChange={(checked) =>
-                      setRememberMe(checked as boolean)
-                    }
-                  />
-                  <label
-                    htmlFor="remember"
-                    className="text-sm text-gray-600 cursor-pointer"
-                  >
-                    로그인 상태 유지
-                  </label>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowForgotPassword(true)}
-                  className="text-sm text-blue-600 hover:text-blue-700"
-                >
-                  비밀번호 찾기
-                </button>
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-              >
-                로그인
-              </Button>
-            </form>
-
-            <p className="mt-8 text-center text-sm text-gray-600">
-              아직 계정이 없으신가요?{' '}
-              <button
-                type="button"
-                onClick={onSignupClick}
-                className="text-blue-600 hover:text-blue-700"
-              >
-                회원가입
-              </button>
+        {/* Login Content */}
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="text-center mb-8">
+            <h2 className="text-xl font-bold text-gray-800">로그인</h2>
+            <p className="text-gray-500 text-sm mt-1">
+              여행의 시작, 메이트트립과 함께하세요
             </p>
           </div>
 
-          <p className="mt-6 text-center text-xs text-gray-500">
-            로그인함으로써 MateTrip의{' '}
-            <a href="#" className="text-blue-600 hover:underline">
-              이용약관
-            </a>{' '}
-            및{' '}
-            <a href="#" className="text-blue-600 hover:underline">
-              개인정보처리방침
-            </a>
-            에 동의합니다.
-          </p>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <Label htmlFor="email">이메일</Label>
+              <div className="relative mt-2">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="example@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="pl-10"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="password">비밀번호</Label>
+              <div className="relative mt-2">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pl-10 pr-10"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {errorMessage && (
+              <p className="text-red-500 text-sm text-center">{errorMessage}</p>
+            )}
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="remember"
+                  checked={rememberMe}
+                  onCheckedChange={(checked) =>
+                    setRememberMe(checked as boolean)
+                  }
+                />
+                <label
+                  htmlFor="remember"
+                  className="text-sm text-gray-600 cursor-pointer"
+                >
+                  로그인 상태 유지
+                </label>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword(true)}
+                className="text-sm text-primary hover:text-primary-strong"
+              >
+                비밀번호 찾기
+              </button>
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full bg-gradient-to-r bg-primary hover:bg-primary-strong"
+            >
+              로그인
+            </Button>
+          </form>
+
+          <div className="text-center mt-6">
+            <p className="text-gray-500 mb-2">아직 계정이 없으신가요?</p>
+            <button
+              type="button"
+              onClick={onSignupClick}
+              className="text-primary hover:text-primary-strong"
+            >
+              회원가입
+            </button>
+          </div>
         </div>
+      </div>
+
+      {/* Footer Terms (Separated) */}
+      <div className="mt-8 text-center px-4 max-w-md animate-in fade-in duration-700">
+        <p className="text-xs text-gray-400 leading-relaxed">
+          로그인함으로써 MateTrip의{' '}
+          <a href="#" className="text-blue-500 hover:underline font-medium">
+            이용약관
+          </a>{' '}
+          및{' '}
+          <a href="#" className="text-blue-500 hover:underline font-medium">
+            개인정보처리방침
+          </a>
+          에 동의합니다.
+        </p>
       </div>
 
       {/* Forgot Password Modal */}
@@ -240,7 +244,7 @@ export function Login({ onLogin, onSignupClick }: LoginProps) {
                 </Button>
                 <Button
                   type="submit"
-                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                  className="flex-1 bg-primary hover:bg-primary-strong"
                 >
                   임시 비밀번호 발송
                 </Button>

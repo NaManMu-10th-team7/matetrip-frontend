@@ -8,7 +8,10 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: #030213;
+  --primary: #006dff;
+  --primary-strong: #0265e6;
+  --primary-80: rgba(0, 109, 255, 0.8); /* primary with 80% opacity */
+  --primary-10: rgba(0, 109, 255, 0.1); /* primary with 10% opacity */
   --primary-foreground: oklch(1 0 0);
   --secondary: oklch(0.95 0.0058 264.53);
   --secondary-foreground: #030213;
@@ -39,6 +42,10 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --shadow-card-soft: 0 8px 20px rgba(15, 23, 42, 0.06);
+  --shadow-card: 0 12px 32px rgba(15, 23, 42, 0.08);
+  --shadow-card-strong: 0 18px 44px rgba(15, 23, 42, 0.12);
+  --shadow-primary-soft: 0 2px 10px rgba(0, 109, 255, 0.18);
 }
 
 .dark {
@@ -124,13 +131,68 @@
     @apply border-border outline-ring/50;
   }
 
-  html, body {
+  html,
+  body {
     height: 100%;
     /* overflow: hidden; */ /* 이 부분을 제거 */
   }
 
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* 공통 카드/모달 그림자 토큰 */
+  .shadow-card-soft {
+    box-shadow: var(--shadow-card-soft);
+  }
+
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+
+  .shadow-card-strong {
+    box-shadow: var(--shadow-card-strong);
+  }
+
+  /* Primary palette helpers (only 3 tones) */
+  .bg-primary {
+    background-color: var(--primary);
+  }
+
+  .bg-primary-strong {
+    background-color: var(--primary-strong);
+  }
+
+  .bg-primary-80 {
+    background-color: var(--primary-80);
+  }
+
+  .bg-primary-10 {
+    background-color: var(--primary-10);
+  }
+
+  .text-primary {
+    color: var(--primary);
+  }
+
+  .hover\:text-primary-strong:hover {
+    color: var(--primary-strong);
+  }
+
+  .border-primary {
+    border-color: var(--primary);
+  }
+
+  .hover\:bg-primary-strong:hover {
+    background-color: var(--primary-strong) !important;
+  }
+
+  .active\:bg-primary-strong:active {
+    background-color: var(--primary-strong);
+  }
+
+  .shadow-primary-soft {
+    box-shadow: var(--shadow-primary-soft);
   }
 }
 
