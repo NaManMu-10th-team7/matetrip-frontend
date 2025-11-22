@@ -103,6 +103,7 @@ export function PostDetail({
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [showDeleteSuccessAlert, setShowDeleteSuccessAlert] = useState(false);
+  const [activeTab, setActiveTab] = useState('intro'); // 탭 상태 관리
   const [recommendedUserProfiles, setRecommendedUserProfiles] = useState<
     Record<
       string,
@@ -470,7 +471,7 @@ export function PostDetail({
         text: '동행 신청하기',
         disabled: false,
         className:
-          'w-full rounded-full border border-black bg-transparent text-black hover:bg-black hover:text-white px-6 py-6 text-lg',
+          'w-full rounded-full border border-black bg-transparent text-black hover:bg-black hover:text-white px-6 py-4 text-lg',
         icon: null,
       };
     }
@@ -656,218 +657,278 @@ export function PostDetail({
             </div>
           </div>
 
-          <div className="mb-6 rounded-xl border p-6">
-            <h3 className="flex items-center text-gray-900 text-lg font-bold mb-4">
-              <FileText className="w-6 h-6 mr-2" /> {/* 크기 조정 */}
-              여행 소개
-            </h3>
-            <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-              {post.content ||
-                '함께 즐거운 여행을 만들어갈 동행을 찾고 있습니다. 여행을 사랑하시는 분들의 많은 관심 부탁드립니다!'}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-8">
-            <div>
-              <h3 className="flex items-center text-gray-900 text-lg font-bold mb-4">
-                <UserCheck className="w-6 h-6 mr-2" /> {/* 크기 조정 */}
-                확정된 동행 ({approvedParticipants.length}명)
-              </h3>
-              <div className="space-y-3">
-                {approvedParticipants.length > 0 ? (
-                  approvedParticipants.map((p) => (
-                    <div
-                      key={p.id}
-                      className="flex items-center gap-3 p-3 rounded-xl border"
-                    >
-                      <ImageWithFallback
-                        src={
-                          (p.requester.profile.profileImageId
-                            ? (participantProfileUrls[
-                                p.requester.profile.profileImageId
-                              ] ?? null)
-                            : null) ??
-                          `https://ui-avatars.com/api/?name=${p.requester.profile.nickname}&background=random`
-                        }
-                        alt={p.requester.profile.nickname}
-                        className="w-10 h-10 rounded-full object-cover"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <span className="text-gray-900 font-semibold">
-                          {p.requester.profile.nickname}
-                        </span>
-                        <div className="flex items-center gap-1 text-sm text-gray-600">
-                          <Thermometer className="w-5 h-5" />{' '}
-                          {/* 크기 조정 */}
-                          <span>
-                            {formatMannerTemperature(p.requester.profile)}
-                          </span>
-                        </div>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-xs h-7"
-                        onClick={() => handleViewProfile(p.requester.id)}
-                      >
-                        프로필 보기
-                      </Button>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-gray-500 text-sm p-4 rounded-xl border text-center">
-                    아직 확정된 동행이 없습니다.
-                  </p>
+          <div className="w-full mt-4">
+            <div className="border-b">
+              <nav className="-mb-px flex space-x-6" aria-label="Tabs">
+                <button
+                  onClick={() => setActiveTab('intro')}
+                  className={`whitespace-nowrap border-b-2 py-2 px-1 text-base font-medium ${
+                    activeTab === 'intro'
+                      ? 'border-black text-black font-bold'
+                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                  }`}
+                >
+                  여행 소개
+                </button>
+                <button
+                  onClick={() => setActiveTab('participants')}
+                  className={`whitespace-nowrap border-b-2 py-2 px-1 text-base font-medium ${
+                    activeTab === 'participants'
+                      ? 'border-black text-black font-bold'
+                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                  }`}
+                >
+                  동행 목록
+                </button>
+                {isAuthor && (
+                  <button
+                    onClick={() => setActiveTab('recommendations')}
+                    className={`whitespace-nowrap border-b-2 py-2 px-1 text-base font-medium ${
+                      activeTab === 'recommendations'
+                        ? 'border-black text-black font-bold'
+                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                    }`}
+                  >
+                    AI 추천
+                  </button>
                 )}
-              </div>
+              </nav>
             </div>
 
-            <div>
-              <h3 className="flex items-center text-gray-900 text-lg font-bold mb-4">
-                <UserPlus className="w-6 h-6 mr-2" /> {/* 크기 조정 */}
-                대기중인 동행 ({pendingRequests.length}명)
-              </h3>
-              <div className="space-y-3">
-                {pendingRequests.length > 0 ? (
-                  pendingRequests.map((request) => (
-                    <div key={request.id} className="p-3 rounded-xl border">
-                      <div className="flex items-center gap-3 mb-2">
-                        <ImageWithFallback
-                          src={
-                            (request.requester.profile.profileImageId
-                              ? (participantProfileUrls[
-                                  request.requester.profile.profileImageId
-                                ] ?? null)
-                              : null) ??
-                            `https://ui-avatars.com/api/?name=${request.requester.profile.nickname}&background=random`
-                          }
-                          alt={request.requester.profile.nickname}
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <span className="text-gray-900 font-semibold">
-                            {request.requester.profile.nickname}
-                          </span>
-                          <div className="flex items-center gap-1 text-sm text-gray-600">
-                            <Thermometer className="w-5 h-5" />{' '}
-                            {/* 크기 조정 */}
-                            <span>
-                              {formatMannerTemperature(
-                                request.requester.profile
-                              )}
-                            </span>
+            <div className="mt-6">
+              {activeTab === 'intro' && (
+                <div className="rounded-xl border p-6">
+                  <h3 className="flex items-center text-gray-900 text-lg font-bold mb-4">
+                    <FileText className="w-6 h-6 mr-2" />
+                    여행 소개
+                  </h3>
+                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                    {post.content ||
+                      '함께 즐거운 여행을 만들어갈 동행을 찾고 있습니다. 여행을 사랑하시는 분들의 많은 관심 부탁드립니다!'}
+                  </p>
+                </div>
+              )}
+
+              {activeTab === 'participants' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div>
+                    <h3 className="flex items-center text-gray-900 text-lg font-bold mb-4">
+                      <UserCheck className="w-6 h-6 mr-2" />
+                      확정된 동행 ({approvedParticipants.length}명)
+                    </h3>
+                    <div className="space-y-3">
+                      {approvedParticipants.length > 0 ? (
+                        approvedParticipants.map((p) => (
+                          <div
+                            key={p.id}
+                            className="flex items-center gap-3 p-3 rounded-xl border"
+                          >
+                            <ImageWithFallback
+                              src={
+                                (p.requester.profile.profileImageId
+                                  ? (participantProfileUrls[
+                                      p.requester.profile.profileImageId
+                                    ] ?? null)
+                                  : null) ??
+                                `https://ui-avatars.com/api/?name=${p.requester.profile.nickname}&background=random`
+                              }
+                              alt={p.requester.profile.nickname}
+                              className="w-10 h-10 rounded-full object-cover"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <span className="text-gray-900 font-semibold">
+                                {p.requester.profile.nickname}
+                              </span>
+                              <div className="flex items-center gap-1 text-sm text-gray-600">
+                                <Thermometer className="w-5 h-5" />
+                                <span>
+                                  {formatMannerTemperature(
+                                    p.requester.profile
+                                  )}
+                                </span>
+                              </div>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-xs h-7"
+                              onClick={() => handleViewProfile(p.requester.id)}
+                            >
+                              프로필 보기
+                            </Button>
                           </div>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-xs h-7"
-                          onClick={() =>
-                            handleViewProfile(request.requester.id)
-                          }
-                        >
-                          프로필 보기
-                        </Button>
-                      </div>
-                      {isAuthor && (
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            onClick={() => handleAcceptRequest(request.id)}
-                            className="flex-1 gap-1 bg-black text-white hover:bg-gray-800"
-                          >
-                            <Check className="w-5 h-5" /> {/* 크기 조정 */}
-                            승인
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleRejectRequest(request.id)}
-                            className="flex-1 gap-1"
-                          >
-                            <X className="w-5 h-5" /> {/* 크기 조정 */}
-                            거절
-                          </Button>
-                        </div>
-                      )}
-                      {user?.userId === request.requester.id && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="w-full text-sm text-red-600 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => setCancelModalOpen(true)}
-                        >
-                          <X className="w-5 h-5 mr-1" /> {/* 크기 조정 */}
-                          동행 신청 취소
-                        </Button>
+                        ))
+                      ) : (
+                        <p className="text-gray-500 text-sm p-4 rounded-xl border text-center">
+                          아직 확정된 동행이 없습니다.
+                        </p>
                       )}
                     </div>
-                  ))
+                  </div>
+
+                  <div>
+                    <h3 className="flex items-center text-gray-900 text-lg font-bold mb-4">
+                      <UserPlus className="w-6 h-6 mr-2" />
+                      대기중인 동행 ({pendingRequests.length}명)
+                    </h3>
+                    <div className="space-y-3">
+                      {pendingRequests.length > 0 ? (
+                        pendingRequests.map((request) => (
+                          <div
+                            key={request.id}
+                            className="p-3 rounded-xl border"
+                          >
+                            <div className="flex items-center gap-3 mb-2">
+                              <ImageWithFallback
+                                src={
+                                  (request.requester.profile.profileImageId
+                                    ? (participantProfileUrls[
+                                        request.requester.profile
+                                          .profileImageId
+                                      ] ?? null)
+                                    : null) ??
+                                  `https://ui-avatars.com/api/?name=${request.requester.profile.nickname}&background=random`
+                                }
+                                alt={request.requester.profile.nickname}
+                                className="w-10 h-10 rounded-full object-cover"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <span className="text-gray-900 font-semibold">
+                                  {request.requester.profile.nickname}
+                                </span>
+                                <div className="flex items-center gap-1 text-sm text-gray-600">
+                                  <Thermometer className="w-5 h-5" />
+                                  <span>
+                                    {formatMannerTemperature(
+                                      request.requester.profile
+                                    )}
+                                  </span>
+                                </div>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-xs h-7"
+                                onClick={() =>
+                                  handleViewProfile(request.requester.id)
+                                }
+                              >
+                                프로필 보기
+                              </Button>
+                            </div>
+                            {isAuthor && (
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={() =>
+                                    handleAcceptRequest(request.id)
+                                  }
+                                  className="flex-1 gap-1 bg-black text-white hover:bg-gray-800"
+                                >
+                                  <Check className="w-5 h-5" />
+                                  승인
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() =>
+                                    handleRejectRequest(request.id)
+                                  }
+                                  className="flex-1 gap-1"
+                                >
+                                  <X className="w-5 h-5" />
+                                  거절
+                                </Button>
+                              </div>
+                            )}
+                            {user?.userId === request.requester.id && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="w-full text-sm text-red-600 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => setCancelModalOpen(true)}
+                              >
+                                <X className="w-5 h-5 mr-1" />
+                                동행 신청 취소
+                              </Button>
+                            )}
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-gray-500 text-sm p-4 rounded-xl border text-center">
+                          대기중인 동행이 없습니다.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'recommendations' &&
+                (isAuthor &&
+                post.matchResult &&
+                post.matchResult.length > 0 ? (
+                  <div className="rounded-xl border p-6">
+                    <h3 className="text-gray-900 text-lg font-bold mb-4 flex items-center gap-2">
+                      <UserPlus className="w-6 h-6 mr-2" />
+                      AI 추천 동행 (상위 {Math.min(post.matchResult.length, 3)}
+                      명)
+                    </h3>
+                    <div className="space-y-3">
+                      {post.matchResult.slice(0, 3).map((candidate) => {
+                        const recommendedProfile =
+                          recommendedUserProfiles[candidate.userId];
+                        const fallbackAvatarName =
+                          recommendedProfile?.nickname ||
+                          candidate.profile?.nickname ||
+                          'user';
+                        return (
+                          <div
+                            key={candidate.userId}
+                            className="flex items-center gap-3 p-3 bg-white rounded-lg border"
+                          >
+                            <ImageWithFallback
+                              src={
+                                recommendedProfile?.imageUrl ||
+                                `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                  fallbackAvatarName
+                                )}&background=random&rounded=true`
+                              }
+                              alt={fallbackAvatarName}
+                              className="w-10 h-10 rounded-full object-cover flex-shrink-0 bg-gray-100"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-gray-900 font-semibold">
+                                {recommendedProfile?.nickname ||
+                                  candidate.profile?.nickname ||
+                                  '사용자'}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                매칭률: {Math.round(candidate.score * 100)}%
+                              </p>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-xs h-7"
+                              onClick={() =>
+                                handleViewProfile(candidate.userId)
+                              }
+                            >
+                              프로필 보기
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 ) : (
-                  <p className="text-gray-500 text-sm p-4 rounded-xl border text-center">
-                    대기중인 동행이 없습니다.
-                  </p>
-                )}
-              </div>
+                  <div className="text-gray-500 text-sm p-4 rounded-xl border text-center">
+                    AI 추천 동행 정보가 없습니다.
+                  </div>
+                ))}
             </div>
           </div>
-
-          {/* AI 추천 동행 섹션 */}
-          {isAuthor && post.matchResult && post.matchResult.length > 0 && (
-            <div className="mt-8 rounded-xl border p-6">
-              <h3 className="text-gray-900 text-lg font-bold mb-4 flex items-center gap-2">
-                <UserPlus className="w-6 h-6" /> {/* 크기 조정 */}
-                AI 추천 동행 (상위 {Math.min(post.matchResult.length, 3)}명)
-              </h3>
-              <div className="space-y-3">
-                {post.matchResult.slice(0, 3).map((candidate) => {
-                  const recommendedProfile =
-                    recommendedUserProfiles[candidate.userId];
-
-                  const fallbackAvatarName =
-                    recommendedProfile?.nickname ||
-                    candidate.profile?.nickname ||
-                    'user';
-
-                  return (
-                    <div
-                      key={candidate.userId}
-                      className="flex items-center gap-3 p-3 bg-white rounded-lg border"
-                    >
-                      <ImageWithFallback
-                        src={
-                          recommendedProfile?.imageUrl ||
-                          `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                            fallbackAvatarName
-                          )}&background=random&rounded=true`
-                        }
-                        alt={fallbackAvatarName}
-                        className="w-10 h-10 rounded-full object-cover flex-shrink-0 bg-gray-100"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-gray-900 font-semibold">
-                          {recommendedProfile?.nickname ||
-                            candidate.profile?.nickname ||
-                            '사용자'}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          매칭률: {Math.round(candidate.score * 100)}%
-                        </p>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-xs h-7"
-                        onClick={() => handleViewProfile(candidate.userId)}
-                      >
-                        프로필 보기
-                      </Button>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
