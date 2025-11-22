@@ -355,7 +355,7 @@ export function NewMainPage({
     });
   };
 
-  const handlePlaceClick = (placeId: string, _place: PlaceDto) => {
+  const handlePlaceClick = (placeId: string) => { // _place: PlaceDto 인자 제거
     console.log('handlePlaceClick called with placeId:', placeId);
     if (!isLoggedIn) {
       navigate('/login');

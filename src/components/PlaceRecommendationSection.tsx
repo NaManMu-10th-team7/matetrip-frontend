@@ -29,7 +29,7 @@ interface BehaviorRecommendationResponse {
 }
 
 interface PlaceWithReason extends PlaceDto {
-  recommendationReason?: string;
+  recommendationReason?: BehaviorRecommendationResponse['reason']; // reason 객체 전체를 저장
 }
 
 export function PlaceRecommendationSection({
@@ -75,7 +75,7 @@ export function PlaceRecommendationSection({
             image_url: item.image_url,
             longitude: item.longitude,
             latitude: item.latitude,
-            recommendationReason: item.reason.message,
+            recommendationReason: item.reason, // reason 객체 전체를 전달
           };
         });
 
@@ -169,6 +169,9 @@ export function PlaceRecommendationSection({
               address={place.address}
               category={place.category}
               summary={place.summary}
+              recommendationReasonText={place.recommendationReason?.message} // message 전달
+              referencedPlaceInReason={place.recommendationReason?.referencePlace} // referencePlace 전달
+              onReferencePlaceClick={(placeId) => handlePlaceClick(placeId, place)} // 클릭 핸들러 전달
               onClick={() => handlePlaceClick(place.id, place)}
             />
           ))}
