@@ -618,9 +618,8 @@ export function NewMainPage({
             }}
             onViewProfile={(userId) => {
               console.log('🔵 [NewMainPage] PostDetail onViewProfile called', { userId });
-              // 프로필 모달 열기: 먼저 실행한 후 패널 닫기
+              // 프로필 모달 열기: PostDetail 패널은 유지
               onViewProfile(userId);
-              handleClosePostDetailPanel();
             }}
             onEditPost={onEditPost}
             onDeleteSuccess={onDeleteSuccess || (() => {})}

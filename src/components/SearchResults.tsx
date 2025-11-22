@@ -200,8 +200,8 @@ export function SearchResults({
               }}
               onViewProfile={(userId) => {
                 console.log('🔵 [SearchResults] PostDetail onViewProfile called', { userId });
+                // 프로필 모달 열기: PostDetail 패널은 유지
                 onViewProfile(userId);
-                handleClosePostDetailPanel();
               }}
               onEditPost={onEditPost}
               onDeleteSuccess={onDeleteSuccess || (() => {})}
