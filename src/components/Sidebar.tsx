@@ -75,7 +75,9 @@ export function Sidebar({
         }`}
       >
         {/* Logo Section */}
-        <div className="border-b border-gray-200 px-6 py-6 h-[81px] flex items-center">
+        <div
+          className={`border-b border-gray-200 py-6 h-[81px] flex items-center justify-center ${isExpanded ? 'px-6' : 'px-4'}`}
+        >
           <button
             onClick={() => navigate('/')}
             className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
