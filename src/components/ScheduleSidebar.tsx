@@ -375,12 +375,16 @@ export function PoiDetailPanel({
   onClose,
   onNearbyPlaceSelect,
   onPoiSelect,
+  widthClass = 'w-full', // widthClass prop 추가 및 기본값 설정
+  onClick, // onClick prop 추가
 }: {
   placeId: string | null;
   isVisible: boolean;
   onClose: () => void;
   onNearbyPlaceSelect: (placeId: string) => void;
   onPoiSelect?: (place: Pick<Poi, 'latitude' | 'longitude'>) => void;
+  widthClass?: string; // widthClass prop 타입 정의
+  onClick?: (e: React.MouseEvent) => void; // onClick prop 타입 정의
 }) {
   const { placeDetail, nearbyPlaces, isLoading, error } =
     usePlaceDetail(placeId);
@@ -391,6 +395,12 @@ export function PoiDetailPanel({
       scrollContainerRef.current.scrollTop = 0;
     }
   }, [placeId]);
+
+  // 디버깅을 위한 로그 추가
+  useEffect(() => {
+    console.log(`[PoiDetailPanel] isVisible changed: ${isVisible}`);
+    console.log(`[PoiDetailPanel] placeId changed: ${placeId}`);
+  }, [isVisible, placeId]);
 
   const handleNearbyClick = (place: NearbyPlace) => {
     onNearbyPlaceSelect(place.id);
@@ -505,9 +515,10 @@ export function PoiDetailPanel({
 
   return (
     <div
-      className={`absolute top-0 left-0 w-full h-full bg-white z-30 transition-transform duration-300 ease-in-out ${
-        isVisible ? 'translate-x-0' : 'translate-x-full'
-      }`}
+      className={`absolute top-0 right-0 h-full bg-white z-30 transition-transform duration-300 ease-in-out ${widthClass}`}
+      style={{ transform: isVisible ? 'translateX(0)' : 'translateX(100%)' }} // 직접 transform 스타일 적용
+      onClick={onClick} // onClick prop 적용
+      data-is-visible={isVisible} // 디버깅용 속성 추가
     >
       <div className="flex flex-col h-full">
         <div className="flex items-center justify-start px-2 py-2 border-b">
@@ -735,6 +746,8 @@ export function ScheduleSidebar({
           onClose={handleCloseDetailPanel}
           onNearbyPlaceSelect={handleNearbyPlaceSelect}
           onPoiSelect={onPoiSelect}
+          widthClass="w-full" // ScheduleSidebar 내부에서는 기존 너비 유지
+          onClick={(e) => e.stopPropagation()} // 이벤트 전파 방지
         />
       </div>
     </div>

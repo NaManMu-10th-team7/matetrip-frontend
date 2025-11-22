@@ -12,7 +12,7 @@ import type { MatchCandidateDto } from '../types/matching';
 import { GridMatchingCard } from '../components/GridMatchingCard';
 import { MainPostCardSkeleton } from '../components/AIMatchingSkeletion';
 import { PoiDetailPanel } from '../components/ScheduleSidebar'; // PoiDetailPanel 임포트
-import { usePlaceDetail } from '../hooks/usePlaceDetail'; // usePlaceDetail 훅 임포트
+// import { usePlaceDetail } from '../hooks/usePlaceDetail'; // usePlaceDetail 훅 임포트 - 제거
 
 interface PopularPlaceResponse {
   addplace_id: string;
@@ -557,14 +557,26 @@ export function NewMainPage({
         />
       )}
 
-      {/* [신규] PoiDetailPanel */}
-      <PoiDetailPanel
-        placeId={selectedPlaceIdForPanel}
-        isVisible={showPlaceDetailPanel}
-        onClose={handleClosePlaceDetailPanel}
-        onNearbyPlaceSelect={handleOpenPlaceDetailPanel} // 주변 장소 클릭 시 해당 장소 상세 보기
-        onPoiSelect={() => {}} // NewMainPage에서는 지도 이동 기능이 필요 없으므로 빈 함수 전달
-      />
+      {/* [신규] PoiDetailPanel 및 오버레이 */}
+      <div
+        className={`fixed inset-0 z-20 bg-black/50 transition-opacity duration-300 ${
+          showPlaceDetailPanel
+            ? 'opacity-100 pointer-events-auto'
+            : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={handleClosePlaceDetailPanel}
+      >
+        <PoiDetailPanel
+          placeId={selectedPlaceIdForPanel}
+          isVisible={showPlaceDetailPanel}
+          onClose={handleClosePlaceDetailPanel}
+          onNearbyPlaceSelect={handleOpenPlaceDetailPanel} // 주변 장소 클릭 시 해당 장소 상세 보기
+          onPoiSelect={() => {}} // NewMainPage에서는 지도 이동 기능이 필요 없으므로 빈 함수 전달
+          widthClass="w-1/3" // 메인 화면의 1/3 너비로 설정
+          // 패널 내부 클릭 시 이벤트 전파 방지
+          onClick={(e) => e.stopPropagation()}
+        />
+      </div>
     </div>
   );
 }
