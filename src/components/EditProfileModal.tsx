@@ -852,7 +852,7 @@ export function EditProfileModal({
             여행 성향 태그 선택
           </DialogTitle>
           <div className="flex flex-col md:flex-row gap-3 md:gap-4">
-            <div className="w-full md:w-44 max-w-[150px] shrink-0 bg-slate-100/50 md:rounded-l-2xl">
+            <div className="w-full md:w-48 max-w-[180px] shrink-0 bg-slate-100/50 md:rounded-l-2xl">
               <div className="flex flex-row md:flex-col overflow-x-auto md:overflow-visible scrollbar-hide p-2 md:p-2.5 gap-2">
                 {TENDENCY_CATEGORIES.map((tab) => {
                   const isActive = activeTendencyTab === tab.id;
@@ -867,7 +867,7 @@ export function EditProfileModal({
                       variant="ghost"
                       onClick={() => setActiveTendencyTab(tab.id)}
                       className={`
-                        justify-start h-auto flex items-center gap-2 px-3 py-2 text-sm font-medium transition-all relative text-left md:rounded-l-2xl w-32
+                        justify-start h-auto flex items-center gap-2 px-3 py-2 text-sm font-medium transition-all relative text-left md:rounded-l-2xl w-full
                         ${
                           isActive
                             ? 'bg-white text-primary shadow-md shadow-slate-100 z-10'
