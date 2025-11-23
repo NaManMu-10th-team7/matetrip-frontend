@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Star, CheckCircle } from 'lucide-react'; // [수정] CheckCircle 아이콘 임포트
+import { MapPin, Star, CheckCircle, ChevronRight } from 'lucide-react'; // [수정] CheckCircle 아이콘 임포트
 import { Button } from '../components/ui/button';
 import { PlaceRecommendationSection } from '../components/PlaceRecommendationSection';
 import { InspirationCard } from '../components/InspirationCard';
@@ -660,9 +660,10 @@ export function NewMainPage({
               <Button
                 onClick={handleAllViewMatching}
                 variant="ghost"
-                className="text-sm self-start sm:self-auto"
+                className="text-sm self-start sm:self-auto flex items-center text-gray-600 hover:text-gray-900"
               >
-                View All
+                전체보기
+                <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
             {!isLoggedIn ? (
@@ -681,7 +682,7 @@ export function NewMainPage({
                 </Button>
               </div>
             ) : isMatchesLoading || isPostsLoading ? (
-              <div className="grid grid-cols-5 gap-4 md:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start">
                 {Array.from({ length: 5 }).map((_, index) => (
                   <MainPostCardSkeleton key={index} />
                 ))}
@@ -691,7 +692,7 @@ export function NewMainPage({
                 추천할 동행이 없습니다.
               </div>
             ) : (
-              <div className="grid grid-cols-5 gap-4 md:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start">
                 {matchedPosts.map(({ post, score, tendency, style }, index) => (
                   <GridMatchingCard
                     key={post.id}
@@ -831,9 +832,10 @@ export function NewMainPage({
               <Button
                 onClick={handleAllViewInspiration}
                 variant="ghost"
-                className="text-sm self-start sm:self-auto"
+                className="text-sm self-start sm:self-auto flex items-center text-gray-600 hover:text-gray-900"
               >
-                View All
+                전체보기
+                <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
             {isInspirationsLoading ? (
