@@ -147,7 +147,7 @@ function ReviewablePlaceCard({
       className="group flex flex-col w-80 cursor-pointer overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:shadow-lg mr-4 flex-shrink-0"
       onClick={onClick}
     >
-      <div className="relative h-48 bg-gray-300 overflow-hidden w-full">
+      <div className="relative h-48 bg-cover bg-center overflow-hidden w-full">
         <img
           src={place.image_url || 'https://via.placeholder.com/300x200'}
           alt={place.title}
@@ -386,7 +386,7 @@ export function NewMainPage({
 
   // --- Data Fetching Effects ---
   useEffect(() => {
-    if (isAuthLoading) return;
+    if (isAuthLoading) return; // 인증 로딩 중에는 데이터 페칭을 하지 않음
     const fetchPosts = async () => {
       setIsPostsLoading(true);
       try {
@@ -432,7 +432,7 @@ export function NewMainPage({
   }, [isAuthLoading, isLoggedIn, user?.userId]);
 
   useEffect(() => {
-    if (isAuthLoading) return;
+    if (isAuthLoading) return; // 인증 로딩 중에는 데이터 페칭을 하지 않음
     const fetchInspirations = async () => {
       setIsInspirationsLoading(true);
       try {
@@ -510,8 +510,9 @@ export function NewMainPage({
   };
 
   useEffect(() => {
+    if (isAuthLoading) return; // 인증 로딩 중에는 데이터 페칭을 하지 않음
     fetchReviewablePlaces();
-  }, [isLoggedIn]);
+  }, [isLoggedIn, isAuthLoading]);
 
   // --- Memoized Calculations ---
   const matchedPosts = useMemo(() => {
@@ -666,6 +667,56 @@ export function NewMainPage({
     console.log('POI added to itinerary (from NewMainPage Hot Place):', poi);
     // Implement actual logic if needed
   };
+
+  // 인증 로딩 중일 때 스켈레톤 UI를 보여줍니다.
+  if (isAuthLoading) {
+    return (
+      <div className="flex flex-col min-h-screen bg-white p-4 sm:p-6 lg:p-8 animate-pulse">
+        {/* CTA/로그인 섹션 스켈레톤 */}
+        <div className="h-48 bg-gray-200 rounded-lg mb-8"></div>
+
+        {/* 맞춤 여행 추천 섹션 스켈레톤 */}
+        <div className="mb-8">
+          <div className="h-8 w-1/3 bg-gray-200 rounded mb-4"></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-64 bg-gray-200 rounded-xl"></div>
+            ))}
+          </div>
+        </div>
+
+        {/* 리뷰를 기다리는 장소 섹션 스켈레톤 */}
+        <div className="mb-8">
+          <div className="h-8 w-1/2 bg-gray-200 rounded mb-4"></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-48 bg-gray-200 rounded-xl"></div>
+            ))}
+          </div>
+        </div>
+
+        {/* Place Recommendation Section 스켈레톤 */}
+        <div className="mb-8">
+          <div className="h-8 w-1/3 bg-gray-200 rounded mb-4"></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-64 bg-gray-200 rounded-xl"></div>
+            ))}
+          </div>
+        </div>
+
+        {/* Hot Place 섹션 스켈레톤 */}
+        <div className="mb-8">
+          <div className="h-8 w-1/4 bg-gray-200 rounded mb-4"></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-64 bg-gray-200 rounded-xl"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex bg-white relative">

@@ -32,6 +32,7 @@ import { Label } from '../components/ui/label';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { useRef } from 'react';
+import { useAuthStore } from '../store/authStore'; // useAuthStore 임포트 추가
 
 interface CategoryItem {
   id: string;
@@ -220,6 +221,9 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
     intro: '',
     description: '',
   });
+
+  // useAuthStore에서 isAuthLoading 상태를 가져옵니다.
+  const { isAuthLoading } = useAuthStore();
 
   //const [isPhoneVerified, setIsPhoneVerified] = useState(false);
 
@@ -495,6 +499,60 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
   const numRows = currentTabInfo
     ? Math.ceil(currentTabInfo.items.length / 2)
     : 1;
+
+  // 인증 로딩 중일 때 스켈레톤 UI를 보여줍니다.
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col font-sans animate-pulse">
+        <div className="flex-1 flex justify-center items-center py-8 px-4 sm:px-6 lg:px-8">
+          <div className="w-full max-w-xl md:max-w-lg">
+            <div className="bg-white rounded-2xl md:rounded-3xl shadow-sm overflow-hidden border border-slate-100 relative min-h-[560px] flex flex-col p-8">
+              {/* Logo Skeleton */}
+              <div className="flex items-center justify-center gap-2 mb-8">
+                <div className="w-14 h-14 bg-gray-200 rounded-full"></div>
+                <div className="h-8 w-32 bg-gray-200 rounded"></div>
+              </div>
+
+              {/* Step Indicator Skeleton */}
+              <div className="w-full max-w-xs mx-auto flex items-center justify-center gap-3 mb-8">
+                <div className="h-6 w-16 bg-gray-200 rounded"></div>
+                <div className="flex-1 h-2 bg-gray-200 rounded-full"></div>
+              </div>
+
+              {/* Form Fields Skeleton */}
+              <div className="space-y-5 max-w-xl mx-auto w-full px-6">
+                <div className="h-6 w-20 bg-gray-200 rounded mb-2"></div>
+                <div className="h-10 bg-gray-200 rounded-md"></div>
+
+                <div className="h-6 w-24 bg-gray-200 rounded mb-2"></div>
+                <div className="h-10 bg-gray-200 rounded-md"></div>
+
+                <div className="h-6 w-28 bg-gray-200 rounded mb-2"></div>
+                <div className="h-10 bg-gray-200 rounded-md"></div>
+
+                <div className="h-6 w-16 bg-gray-200 rounded mb-2"></div>
+                <div className="h-10 bg-gray-200 rounded-md"></div>
+
+                <div className="h-6 w-12 bg-gray-200 rounded mb-2"></div>
+                <div className="flex gap-4 mt-2">
+                  <div className="h-8 w-20 bg-gray-200 rounded-full"></div>
+                  <div className="h-8 w-20 bg-gray-200 rounded-full"></div>
+                </div>
+              </div>
+
+              {/* Button Skeleton */}
+              <div className="mt-8 px-6">
+                <div className="h-12 w-full bg-gray-200 rounded-lg"></div>
+              </div>
+            </div>
+            <div className="mt-4 mb-4 text-center text-sm text-gray-200">
+              <div className="h-4 w-48 mx-auto bg-gray-200 rounded"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">

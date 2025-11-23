@@ -29,7 +29,7 @@ export function Sidebar({
   onProfileClick,
   onCreatePost,
 }: SidebarProps) {
-  const { user } = useAuthStore();
+  const { user, isAuthLoading } = useAuthStore(); // isAuthLoading 추가
   const location = useLocation();
   const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(true);
@@ -37,6 +37,11 @@ export function Sidebar({
 
   useEffect(() => {
     let cancelled = false;
+
+    // isAuthLoading 중에는 프로필 이미지 페칭을 하지 않음
+    if (isAuthLoading) {
+      return;
+    }
 
     const fetchProfileImage = async () => {
       const imageId = user?.profile?.profileImageId;
@@ -64,9 +69,51 @@ export function Sidebar({
     return () => {
       cancelled = true;
     };
-  }, [user?.profile?.profileImageId]);
+  }, [user?.profile?.profileImageId, isAuthLoading]); // isAuthLoading 의존성 추가
 
   const isActive = (path: string) => location.pathname === path;
+
+  // 인증 로딩 중일 때 스켈레톤 UI를 보여줍니다.
+  if (isAuthLoading) {
+    return (
+      <div
+        className={`relative flex shrink-0 bg-white border-r border-gray-200 h-screen flex-col animate-pulse ${
+          isExpanded ? 'w-[260px]' : 'w-[80px]'
+        }`}
+      >
+        {/* Logo Skeleton */}
+        <div className="border-b border-gray-200 py-6 h-[81px] flex items-center justify-center">
+          <div className="w-14 h-14 bg-gray-200 rounded-full"></div>
+          {isExpanded && <div className="h-6 w-24 bg-gray-200 rounded ml-2"></div>}
+        </div>
+
+        {/* Navigation Menu Skeleton */}
+        <nav className="flex-1 px-2 py-4 flex flex-col gap-1">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div
+              key={i}
+              className={`h-12 bg-gray-200 rounded-[10px] ${isExpanded ? 'w-full' : 'w-12 mx-auto'}`}
+            ></div>
+          ))}
+        </nav>
+
+        {/* Bottom Section Skeleton */}
+        <div className="border-t border-gray-200 px-4 py-4 mt-2">
+          <div
+            className={`flex items-center justify-between ${isExpanded ? 'flex-row gap-3' : 'flex-col gap-10'}`}
+          >
+            <div className="w-11 h-11 rounded-full bg-gray-200"></div>
+            {isExpanded && <div className="h-4 w-20 bg-gray-200 rounded"></div>}
+          </div>
+        </div>
+
+        {/* Toggle Button Skeleton (기존 버튼과 동일한 위치에 회색 블록으로 표시) */}
+        <div
+          className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-5 h-20 bg-gray-200 rounded-lg"
+        ></div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative flex shrink-0">

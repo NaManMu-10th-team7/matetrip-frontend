@@ -181,7 +181,7 @@ export function GridMatchingCard({
             <div className="flex items-center gap-2">
               <div className="flex items-baseline gap-1.5">
                 <p className="text-base font-semibold text-gray-500">매칭률</p>
-                <p className="text-2xl font-bold text-blue-600">
+                <p className="text-2xl font-bold text-primary">
                   {safeScore}%
                 </p>
               </div>
