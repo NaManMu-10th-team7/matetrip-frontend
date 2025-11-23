@@ -70,6 +70,40 @@ interface NewMainPageProps {
   onDeleteSuccess?: () => void;
 }
 
+// [수정] 카테고리별 리뷰 예시 데이터
+const CATEGORY_REVIEW_EXAMPLES: Record<string, string[]> = {
+  음식: [
+    '음식이 정말 맛있어요! 😋',
+    '분위기 좋은 맛집이에요.',
+    '가성비가 좋아서 만족스러웠어요.',
+    '직원분들이 친절해요.',
+  ],
+  숙박: [
+    '시설이 깨끗하고 편안했어요. 😴',
+    '직원분들이 친절하고 서비스가 좋았어요.',
+    '위치가 좋아서 여행하기 편했어요.',
+    '뷰가 정말 멋진 숙소였어요! 🌇',
+  ],
+  '인문(문화/예술/역사)': [
+    '유익하고 의미있는 시간이었어요. 🧐',
+    '볼거리가 많아서 시간 가는 줄 몰랐어요.',
+    '조용하고 평화로워서 힐링됐어요.',
+    '아이들과 함께 오기 좋은 곳 같아요.',
+  ],
+  자연: [
+    '경치가 정말 아름다워요. 🏞️',
+    '산책하기 좋은 곳이에요.',
+    '공기가 맑고 상쾌해서 좋았어요.',
+    '인생샷을 건질 수 있어요! 📸',
+  ],
+  default: [
+    '다음에 꼭 다시 방문하고 싶어요. 😊',
+    '기대했던 것보다는 조금 아쉬웠어요.',
+    '한 번쯤 가볼 만한 곳이에요.',
+    '전반적으로 만족스러웠습니다! 👍',
+  ],
+};
+
 // --- Helper Functions ---
 const normalizeTextList = (values?: unknown): string[] => {
   if (!values) return [];
@@ -123,7 +157,7 @@ function ReviewablePlaceCard({
   );
 }
 
-// [수정] 리뷰 모달 스타일 개선
+// [수정] 리뷰 모달에서 카테고리별 예시 사용
 function ReviewModal({
   isOpen,
   onClose,
@@ -157,6 +191,10 @@ function ReviewModal({
     onSubmit({ placeId: place.id, rating, content });
   };
 
+  const reviewExamples =
+    CATEGORY_REVIEW_EXAMPLES[place.category] ||
+    CATEGORY_REVIEW_EXAMPLES.default;
+
   return (
     <div
       className="fixed inset-0 bg-black/60 z-50 flex justify-center items-center"
@@ -166,7 +204,6 @@ function ReviewModal({
         className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header with background image */}
         <div
           className="relative h-32 bg-cover bg-center p-6 flex flex-col justify-end"
           style={{ backgroundImage: `url(${place.image_url})` }}
@@ -181,7 +218,6 @@ function ReviewModal({
           </div>
         </div>
 
-        {/* Content Area */}
         <div className="p-6">
           <div className="mb-5">
             <label className="block text-lg font-bold text-gray-800 mb-2">
@@ -213,12 +249,24 @@ function ReviewModal({
             >
               한 줄 리뷰
             </label>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {reviewExamples.map((example) => (
+                <button
+                  key={example}
+                  type="button"
+                  onClick={() => setContent(example)}
+                  className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200 transition-colors"
+                >
+                  {example}
+                </button>
+              ))}
+            </div>
             <input
               type="text"
               id="review-content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="예: 정말 좋은 경험이었어요!"
+              placeholder="직접 입력하거나 위 예시를 선택하세요."
               className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base"
             />
           </div>
