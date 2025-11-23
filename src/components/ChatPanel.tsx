@@ -106,6 +106,26 @@ function ChatRecommendedPlaceCard({
   );
 }
 
+// [신규] AI 응답 대기 중 애니메이션 컴포넌트
+function AiLoadingIndicator() {
+  const [dots, setDots] = useState('.');
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDots((prev) => (prev.length < 3 ? `${prev}.` : '.'));
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-gray-600">
+      <p className="text-sm" style={{ minWidth: '20px' }}>
+        {dots}
+      </p>
+    </div>
+  );
+}
+
 // [신규] 각 채팅 메시지를 렌더링하는 별도의 컴포넌트
 const ChatMessageItem = memo(function ChatMessageItem({
   msg,
@@ -122,7 +142,7 @@ const ChatMessageItem = memo(function ChatMessageItem({
   onCardClick: (poi: Pick<Poi, 'latitude' | 'longitude'>) => void;
   workspaceId: string;
 }) {
-  const [isCollapsed, setIsCollapsed] = useState(true);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const { user } = useAuthStore();
 
   const isAi = msg.role === 'ai';
@@ -197,9 +217,13 @@ const ChatMessageItem = memo(function ChatMessageItem({
           <span className="text-xs text-gray-500">{formatTimestamp(msg.createdAt)}</span>
         </div>
         <div className={cn('rounded-lg px-4 py-2', isAiRecommendation ? 'w-full bg-transparent p-0' : isSystem ? 'bg-gray-100 text-gray-700 italic' : 'bg-gray-100 text-gray-900')}>
-          <p className="text-sm" style={{ wordBreak: 'break-word' }}>
+          {msg.isLoading ? (
+            <AiLoadingIndicator />
+          ) : (
+            <p className="text-sm" style={{ wordBreak: 'break-word' }}>
             {!isAiRecommendation && msg.message}
           </p>
+          )}
           {isAiRecommendation && (
             <div className="border border-primary rounded-lg bg-primary-10 overflow-hidden">
               <div className="p-3 border-b border-gray-200">
