@@ -5,7 +5,7 @@ import {
   Star,
   CheckCircle,
   ChevronRight,
-  Plus, // PlusCircle 대신 Plus 아이콘으로 변경
+  Plus,
   Sparkles,
   Flame,
 } from 'lucide-react';
@@ -735,14 +735,15 @@ export function NewMainPage({
                 {user.profile.nickname}님, 새로운 여행을 떠나보세요!
               </h2>
               <p className="mt-2 text-gray-200 max-w-2xl">
-                나와 꼭 맞는 동행자와 함께 잊지 못할 추억을 만들 수 있어요.
-                지금 바로 여행 계획을 시작해보세요.
+                나와 꼭 맞는 동행자와 함께 잊지 못할 추억을 만들 수 있어요. 지금
+                바로 여행 계획을 시작해보세요.
               </p>
               <Button
                 onClick={onCreatePost}
                 className="mt-6 bg-primary text-primary-foreground hover:bg-primary-strong font-bold py-5 px-12 text-lg flex items-center gap-2 transition-colors w-fit"
               >
-                <Plus className="w-5 h-5" />새로운 여행
+                <Plus className="w-5 h-5" />
+                새로운 여행
               </Button>
             </div>
           </section>
@@ -767,7 +768,7 @@ export function NewMainPage({
                 <Button
                   onClick={handleAllViewMatching}
                   variant="ghost"
-                  className="text-sm self-start sm:self-auto flex items-center text-gray-600 hover:text-gray-900"
+                  className="text-sm self-start sm:self-auto flex items-center text-gray-600 hover:bg-primary hover:text-primary-foreground"
                 >
                   전체보기
                   <ChevronRight className="w-4 h-4 ml-1" />
@@ -919,9 +920,7 @@ export function NewMainPage({
                                   <ReviewablePlaceCard
                                     key={place.id}
                                     place={place}
-                                    onClick={() =>
-                                      handleOpenReviewModal(place)
-                                    }
+                                    onClick={() => handleOpenReviewModal(place)}
                                   />
                                 ))}
                               </ReviewablePlacesCarousel>
@@ -959,7 +958,7 @@ export function NewMainPage({
                 <Button
                   onClick={handleAllViewInspiration}
                   variant="ghost"
-                  className="text-sm self-start sm:self-auto flex items-center text-gray-600 hover:text-gray-900"
+                  className="text-sm self-start sm:self-auto flex items-center text-gray-600 hover:bg-primary hover:text-primary-foreground"
                 >
                   전체보기
                   <ChevronRight className="w-4 h-4 ml-1" />
@@ -993,9 +992,11 @@ export function NewMainPage({
                         latitude: place.latitude,
                         category: place.category as AiPlace['category'],
                         recommendationReason: undefined, // Hot Place doesn't have this
-                      }}
+                      }} // recommendationReasonStyle="text-primary"
                       onAddPoiToItinerary={handleAddPoiToItinerary}
-                      onCardClick={(_poiLatLon) => handleInspirationClick(place)}
+                      onCardClick={(_poiLatLon) =>
+                        handleInspirationClick(place)
+                      }
                       showAddButton={false} // '일정에 추가' 버튼을 숨깁니다.
                     />
                   ))}

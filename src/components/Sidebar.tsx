@@ -265,7 +265,7 @@ export function Sidebar({
                 }`}
                 title={!isExpanded ? '새로운 여행' : ''}
               >
-                <Plus className="w-6 h-6 shrink-0" /> {/* PlusCircle 대신 Plus로 변경 */}
+                <Plus className="w-6 h-6 shrink-0" />
                 {isExpanded && (
                   <span className="font-semibold text-base whitespace-nowrap">
                     새로운 여행
