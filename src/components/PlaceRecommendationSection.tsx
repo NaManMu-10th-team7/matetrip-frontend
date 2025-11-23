@@ -60,7 +60,7 @@ export function PlaceRecommendationSection({
           {
             params: {
               userId: user.userId,
-              limit: 5,
+              limit: 10,
             },
           }
         );
