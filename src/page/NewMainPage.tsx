@@ -157,7 +157,6 @@ function ReviewablePlaceCard({
   );
 }
 
-// [수정] 리뷰 모달에서 카테고리별 예시 사용
 function ReviewModal({
   isOpen,
   onClose,
@@ -578,6 +577,7 @@ export function NewMainPage({
     setSelectedPlaceForReview(null);
   };
 
+  // [수정] API 호출 로직 변경
   const handleSubmitReview = async ({
     placeId,
     rating,
@@ -588,7 +588,7 @@ export function NewMainPage({
     content: string;
   }) => {
     try {
-      await client.post(`/places/${placeId}/reviews`, { rating, content });
+      await client.post('/place-user-reviews', { placeId, rating, content });
       alert('리뷰가 성공적으로 등록되었습니다.');
       handleCloseReviewModal();
       fetchReviewablePlaces();
