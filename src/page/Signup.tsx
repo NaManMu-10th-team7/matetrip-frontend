@@ -500,7 +500,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
       <div className="flex-1 flex justify-center items-center py-8 px-4 sm:px-6 lg:px-8">
-        <div className="w-full max-w-lg md:max-w-md">
+        <div className="w-full max-w-xl md:max-w-lg">
           <div className="bg-white rounded-2xl md:rounded-3xl shadow-sm overflow-hidden border border-slate-100 relative min-h-[560px] flex flex-col">
             {isSubmitting && (
               <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-20 flex flex-col items-center justify-center gap-3">
@@ -555,12 +555,12 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
 
             {step === 1 && (
               <div className="flex-1 px-5 md:px-6 py-5 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="space-y-5 max-w-xl mx-auto w-full">
+                <div className="space-y-5 max-w-xl mx-auto w-full ml-2">
                   <div>
                     <Label htmlFor="email" className="font-semibold">
                       이메일
                     </Label>
-                    <div className="relative mt-2">
+                    <div className="relative mt-2 w-full max-w-md">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <Input
                         id="email"
@@ -581,7 +581,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                     <Label htmlFor="password" className="font-semibold">
                       비밀번호
                     </Label>
-                    <div className="relative mt-2">
+                    <div className="relative mt-2  w-full max-w-md">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <Input
                         id="password"
@@ -613,7 +613,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                     <Label htmlFor="confirmPassword" className="font-semibold">
                       비밀번호 확인
                     </Label>
-                    <div className="relative mt-2">
+                    <div className="relative mt-2 w-full max-w-md">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <Input
                         id="confirmPassword"
@@ -647,7 +647,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                     <Label htmlFor="nickname" className="font-semibold">
                       닉네임
                     </Label>
-                    <div className="relative mt-2">
+                    <div className="relative mt-2  w-full max-w-md">
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <Input
                         id="nickname"
