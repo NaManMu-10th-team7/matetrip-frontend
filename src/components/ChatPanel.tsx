@@ -1,5 +1,13 @@
 import { useState, useEffect, useRef, useCallback, memo } from 'react';
-import { Send, Video, ChevronUp, ChevronDown } from 'lucide-react';
+import {
+  Send,
+  Video,
+  ChevronUp,
+  ChevronDown,
+  PlusCircle,
+  MapPin,
+  Bot,
+} from 'lucide-react';
 import { Button } from './ui/button';
 import type { Poi } from '../hooks/usePoiSocket';
 import { Input } from './ui/input';
@@ -7,10 +15,10 @@ import { Badge } from './ui/badge';
 import { VideoChat } from './VideoChat';
 import { type ChatMessage } from '../hooks/useChatSocket';
 import type { AiPlace } from '../hooks/useChatSocket';
-import { useAuthStore } from '../store/authStore';
-import { RecommendedPlaceCard } from './RecommendedPlaceCard';
+import { useAuthStore } from '../store/authStore'; // RecommendedPlaceCard 임포트 제거
 import { cn } from './ui/utils';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { CategoryIcon } from './CategoryIcon'; // [신규] CategoryIcon 임포트
 // API_BASE_URL은 이제 authStore에서 avatar를 생성하므로 ChatPanel에서는 필요 없습니다.
 // import { API_BASE_URL } from '../api/client'; 
 
@@ -35,6 +43,202 @@ interface ChatPanelProps {
   activeMembers?: Member[];
 }
 
+// [신규] 채팅창 전용 AI 추천 장소 카드 컴포넌트
+function ChatRecommendedPlaceCard({
+  place,
+  onAddPoiToItinerary,
+  onCardClick,
+  workspaceId,
+  currentUserId,
+}: {
+  place: AiPlace;
+  onAddPoiToItinerary: (poi: Poi) => void;
+  onCardClick: (poi: Pick<Poi, 'latitude' | 'longitude'>) => void;
+  workspaceId: string;
+  currentUserId: string | undefined;
+}) {
+  const handleAddClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const poi: Poi = {
+      id: place.id,
+      placeId: place.id,
+      placeName: place.title,
+      latitude: place.latitude,
+      longitude: place.longitude,
+      address: place.address,
+      categoryName: place.category,
+      status: 'RECOMMENDED',
+      sequence: 0,
+      workspaceId,
+      createdBy: currentUserId || '',
+      isPersisted: false,
+    };
+    onAddPoiToItinerary(poi);
+  };
+
+  return (
+    <div
+      className="flex items-center gap-3 p-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 cursor-pointer transition-colors max-w-sm"
+      onClick={() => onCardClick(place)}
+    >
+      <img
+        src={place.imageUrl || 'https://via.placeholder.com/150'}
+        alt={place.title}
+        className="w-12 h-12 rounded-md object-cover flex-shrink-0"
+      />
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-sm truncate text-gray-800 mb-0.5">
+          {place.title}
+        </p>
+        <div className="flex items-center gap-1.5 text-xs text-gray-500">
+          <CategoryIcon category={place.category} className="w-3 h-3" />
+          <span className="truncate">{place.category}</span>
+        </div>
+        <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-1">
+          <MapPin className="w-3 h-3 flex-shrink-0" />
+          <p className="truncate">{place.address}</p>
+        </div>
+      </div>
+      <Button size="icon" variant="ghost" className="w-8 h-8" onClick={handleAddClick}>
+        <PlusCircle className="w-5 h-5 text-primary" />
+      </Button>
+    </div>
+  );
+}
+
+// [신규] 각 채팅 메시지를 렌더링하는 별도의 컴포넌트
+const ChatMessageItem = memo(function ChatMessageItem({
+  msg,
+  currentUserId,
+  activeMembers,
+  onAddPoiToItinerary,
+  onCardClick,
+  workspaceId,
+}: {
+  msg: ChatMessage;
+  currentUserId: string | undefined;
+  activeMembers: Member[];
+  onAddPoiToItinerary: (poi: Poi) => void;
+  onCardClick: (poi: Pick<Poi, 'latitude' | 'longitude'>) => void;
+  workspaceId: string;
+}) {
+  const [isCollapsed, setIsCollapsed] = useState(true);
+  const { user } = useAuthStore();
+
+  const isAi = msg.role === 'ai';
+  const isMe = currentUserId != null && msg.userId === currentUserId;
+  const isSystem = msg.username === 'System';
+  const isAiRecommendation =
+    isAi && msg.recommendedPlaces &&
+    msg.recommendedPlaces.length > 0;
+
+  let sender: Member | null = null;
+  if (!isMe && !isSystem) {
+    sender = activeMembers.find((m) => m.id === msg.userId) || null;
+  }
+
+  let avatarSrc = '';
+  let avatarAlt = '';
+  let showAvatar = false;
+
+  if (isAi) {
+    avatarSrc = '/ai-avatar.png'; // AI 전용 아바타 이미지 경로
+    avatarAlt = 'AI';
+    showAvatar = true;
+  } else if (isMe && user?.avatar) {
+    avatarSrc = user.avatar;
+    avatarAlt = user.profile?.nickname || '';
+    showAvatar = true;
+  } else if (sender?.avatar) {
+    avatarSrc = sender.avatar;
+    avatarAlt = sender.name || '';
+    showAvatar = true;
+  }
+
+  const shouldRenderAvatar = showAvatar && avatarSrc !== '';
+
+  const formatTimestamp = (timestamp: string) => {
+    const messageDate = new Date(timestamp);
+    const today = new Date();
+    const isSameDay =
+      messageDate.getDate() === today.getDate() &&
+      messageDate.getMonth() === today.getMonth() &&
+      messageDate.getFullYear() === today.getFullYear();
+    return isSameDay
+      ? messageDate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+      : `${messageDate.toLocaleDateString('ko-KR')} ${messageDate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}`;
+  };
+
+  return (
+    <div className="flex gap-3 items-start">
+      <div className="w-10 h-10 flex-shrink-0">
+        {isAi ? (
+          <Avatar className="w-10 h-10 border border-primary/20 bg-primary/10 text-primary">
+            <div className="flex h-full w-full items-center justify-center">
+              <Bot className="h-6 w-6" />
+            </div>
+          </Avatar>
+        ) : shouldRenderAvatar ? (
+          <Avatar className="w-10 h-10 border border-gray-300">
+            <AvatarImage src={avatarSrc} alt={avatarAlt} />
+            <AvatarFallback>{avatarAlt.charAt(0)}</AvatarFallback>
+          </Avatar>
+        ) : null}
+      </div>
+      <div
+        className={cn(
+          'flex flex-col items-start',
+          isAiRecommendation ? 'w-full' : 'max-w-[70%]'
+        )}
+      >
+        <div className="flex items-baseline gap-1 mb-1">
+          <span className="text-base font-semibold text-gray-800">{msg.username}</span>
+          <span className="text-sm text-gray-500">|</span>
+          <span className="text-xs text-gray-500">{formatTimestamp(msg.createdAt)}</span>
+        </div>
+        <div className={cn('rounded-lg px-4 py-2', isAiRecommendation ? 'w-full bg-transparent p-0' : isSystem ? 'bg-gray-100 text-gray-700 italic' : 'bg-gray-100 text-gray-900')}>
+          <p className="text-sm" style={{ wordBreak: 'break-word' }}>
+            {!isAiRecommendation && msg.message}
+          </p>
+          {isAiRecommendation && (
+            <div className="border border-primary rounded-lg bg-primary-10 overflow-hidden">
+              <div className="p-3 border-b border-gray-200">
+                <span className="font-semibold text-sm text-gray-800">
+                  {msg.message} ({msg.recommendedPlaces?.length || 0}개)
+                </span>
+              </div>
+              <div
+                className={`transition-all duration-300 ease-in-out overflow-hidden ${isCollapsed ? 'max-h-0' : 'max-h-[1000px]'}`}
+              >
+                <div className="p-3 grid grid-cols-1 gap-2">
+                  {msg.recommendedPlaces?.map((place, placeIndex) => (
+                    <ChatRecommendedPlaceCard
+                      key={placeIndex}
+                      place={place}
+                      onAddPoiToItinerary={onAddPoiToItinerary}
+                      onCardClick={onCardClick}
+                      workspaceId={workspaceId}
+                      currentUserId={currentUserId}
+                    />
+                  ))}
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                className="w-full rounded-t-none text-sm text-gray-600 hover:bg-primary/20"
+                onClick={() => setIsCollapsed((prev) => !prev)}
+              >
+                {isCollapsed ? <ChevronDown className="w-4 h-4 mr-2" /> : <ChevronUp className="w-4 h-4 mr-2" />}
+                {isCollapsed ? '펼치기' : '접기'}
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+});
+
 export const ChatPanel = memo(function ChatPanel({
   messages,
   sendMessage,
@@ -51,7 +255,6 @@ export const ChatPanel = memo(function ChatPanel({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuthStore();
   const currentUserId = user?.userId;
-  const [isAiCardCollapsed, setIsAiCardCollapsed] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -65,32 +268,6 @@ export const ChatPanel = memo(function ChatPanel({
     if (currentMessage.trim() && isChatConnected) {
       sendMessage(currentMessage);
       setCurrentMessage('');
-    }
-  };
-
-  const formatTimestamp = (timestamp: string) => {
-    const messageDate = new Date(timestamp);
-    const today = new Date();
-
-    const isSameDay =
-      messageDate.getDate() === today.getDate() &&
-      messageDate.getMonth() === today.getMonth() &&
-      messageDate.getFullYear() === today.getFullYear();
-
-    if (isSameDay) {
-      return messageDate.toLocaleTimeString('ko-KR', {
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    } else {
-      return messageDate.toLocaleDateString('ko-KR', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-      }) + ' ' + messageDate.toLocaleTimeString('ko-KR', {
-        hour: '2-digit',
-        minute: '2-digit',
-      });
     }
   };
 
@@ -201,117 +378,16 @@ export const ChatPanel = memo(function ChatPanel({
 
       <div className="flex-1 overflow-y-auto px-8 py-4 space-y-4">
         {messages.map((msg, index) => {
-          const isMe = currentUserId != null && msg.userId === currentUserId;
-          const isSystem = msg.username === 'System';
-          const isAiRecommendation =
-            msg.role === 'ai' &&
-            msg.recommendedPlaces &&
-            msg.recommendedPlaces.length > 0;
-
-          // Declare sender at the top of the scope
-          let sender: Member | null = null;
-          if (!isMe && !isSystem) {
-            sender = activeMembers.find((m) => m.id === msg.userId) || null;
-          }
-
-          // Determine avatar source and whether to show it
-          let avatarSrc = '';
-          let avatarAlt = '';
-          let showAvatar = false;
-
-          // [수정] user.avatar 사용
-          if (isMe && user?.avatar) { 
-            avatarSrc = user.avatar;
-            avatarAlt = user.profile?.nickname || ''; // user.profile.nickname 사용
-            showAvatar = true;
-          } else if (sender?.avatar) {
-            avatarSrc = sender.avatar;
-            avatarAlt = sender.name || '';
-            showAvatar = true;
-          }
-
-          // Only render Avatar if showAvatar is true AND avatarSrc is not empty
-          const shouldRenderAvatar = showAvatar && avatarSrc !== '';
-
           return (
-            <div
+            <ChatMessageItem
               key={msg.id || index}
-              // 모든 메시지를 왼쪽으로 정렬
-              className={`flex gap-3 justify-start`}
-            >
-              {shouldRenderAvatar && (
-                <img 
-                  src={avatarSrc} 
-                  alt={avatarAlt} 
-                  className="w-10 h-10 self-start rounded-full object-cover border border-gray-300" // 크기 w-10 h-10으로 변경
-                />
-              )}
-              {/* 중복 렌더링을 유발하던 Avatar 컴포넌트 블록 제거 */}
-              <div
-                className={cn(
-                  'flex flex-col',
-                  // 모든 메시지 내부 콘텐츠를 왼쪽으로 정렬
-                  'items-start',
-                  !isAiRecommendation && 'max-w-[70%]'
-                )}
-              >
-                {/* 모든 메시지 (사용자, AI, 시스템): 닉네임 | 날짜 시간 */}
-                <div className="flex items-baseline gap-1 mb-1">
-                  <span className="text-base font-semibold text-gray-800">
-                    {msg.username}
-                  </span>
-                  <span className="text-sm text-gray-500">|</span>
-                  <span className="text-xs text-gray-500">
-                    {formatTimestamp(msg.createdAt)}
-                  </span>
-                </div>
-
-                {/* 메시지 버블 */}
-                <div
-                  className={cn(
-                    'rounded-lg px-4 py-2',
-                    isAiRecommendation
-                      ? 'w-full bg-transparent p-0' // AI 추천 메시지
-                      : isSystem
-                        ? 'bg-gray-100 text-gray-700 italic' // 시스템 메시지
-                        : 'bg-gray-100 text-gray-900' // 모든 사용자 메시지 (나 포함)
-                  )}
-                >
-                  <p className="text-sm" style={{ wordBreak: 'break-word' }}>
-                    {msg.message}
-                  </p>
-                  {isAiRecommendation && (
-                    <div className="mt-2">
-                      {!isAiCardCollapsed && (
-                        <div className="grid grid-cols-1 gap-2">
-                          {msg.recommendedPlaces?.map(
-                            (place, placeIndex) => (
-                              <RecommendedPlaceCard
-                                key={placeIndex}
-                                place={place}
-                                onAddPoiToItinerary={onAddPoiToItinerary}
-                                onCardClick={onCardClick}
-                              />
-                            )
-                          )}
-                        </div>
-                      )}
-                      <div className="flex justify-end mt-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() =>
-                            setIsAiCardCollapsed((prev) => !prev)
-                          }
-                        >
-                          {isAiCardCollapsed ? '펼치기' : '접기'}
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+              msg={msg}
+              currentUserId={currentUserId}
+              activeMembers={activeMembers}
+              onAddPoiToItinerary={onAddPoiToItinerary}
+              onCardClick={onCardClick}
+              workspaceId={workspaceId}
+            />
           );
         })}
         <div ref={messagesEndRef} />

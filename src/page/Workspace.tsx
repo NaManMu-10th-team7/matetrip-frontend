@@ -91,7 +91,7 @@ export function Workspace({
   const [recommendedItinerary, setRecommendedItinerary] = useState<
     Record<string, Poi[]>
   >({});
-  const [isRecommendationLoading, setIsRecommendationLoading] = useState(true);
+  const [isRecommendationLoading, setIsRecommendationLoading] = useState(false);
   const [itineraryAiPlaces, setItineraryAiPlaces] = useState<AiPlace[]>([]);
   const [chatAiPlaces, setChatAiPlaces] = useState<AiPlace[]>([]);
   const [_initialBoundsSet, setInitialBoundsSet] = useState(false);
@@ -332,7 +332,7 @@ export function Workspace({
     setVisibleDayIds(new Set(planDayDtos.map((day) => day.id)));
 
     // AI 추천 일정을 생성합니다.
-    generateAiPlan();
+    // generateAiPlan();
   }, [planDayDtos, generateAiPlan]); // [수정] 의존성 배열에 generateAiPlan 추가
 
   // [추가] 날짜 가시성 토글 핸들러
@@ -931,7 +931,6 @@ export function Workspace({
               onRecommendedItineraryVisibilityChange={
                 handleRecommendedItineraryVisibilityChange
               }
-              onGenerateAiPlan={generateAiPlan}
               hoveredPoiId={hoveredPoiInfo?.poiId ?? null}
               messages={messages}
               sendMessage={handleSendMessage}
