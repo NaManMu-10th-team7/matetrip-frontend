@@ -108,21 +108,15 @@ function ChatRecommendedPlaceCard({
 
 // [신규] AI 응답 대기 중 애니메이션 컴포넌트
 function AiLoadingIndicator() {
-  const [dots, setDots] = useState('.');
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setDots((prev) => (prev.length < 3 ? `${prev}.` : '.'));
-    }, 500);
-    return () => clearInterval(interval);
-  }, []);
-
+  // 기존 useState와 useEffect를 제거하고 CSS 애니메이션으로 대체
   return (
-    <div className="flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-gray-600">
-      <p className="text-sm" style={{ minWidth: '20px' }}>
-        {dots}
-      </p>
-    </div>
+    <>
+      <div className="flex items-center gap-0.5 rounded-lg bg-gray-100 px-4 py-2 text-gray-600">
+        <span className="dot-animation dot-1 text-base">.</span>
+        <span className="dot-animation dot-2 text-base">.</span>
+        <span className="dot-animation dot-3 text-base">.</span>
+      </div>
+    </>
   );
 }
 
