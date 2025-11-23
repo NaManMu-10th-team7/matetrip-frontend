@@ -1,6 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Star, CheckCircle, ChevronRight } from 'lucide-react'; // [수정] CheckCircle 아이콘 임포트
+import {
+  MapPin,
+  Star,
+  CheckCircle,
+  ChevronRight,
+  PlusCircle,
+} from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { PlaceRecommendationSection } from '../components/PlaceRecommendationSection';
 import { InspirationCard } from '../components/InspirationCard';
@@ -15,6 +21,7 @@ import { MainPostCardSkeleton } from '../components/AIMatchingSkeletion';
 import { PoiDetailPanel } from '../components/ScheduleSidebar';
 import PageContainer from '../components/PageContainer';
 import { CategoryIcon } from '../components/CategoryIcon';
+import { ReviewablePlacesCarousel } from '../components/ReviewablePlacesCarousel';
 
 // --- Interfaces ---
 interface PopularPlaceResponse {
@@ -133,7 +140,7 @@ function ReviewablePlaceCard({
 }) {
   return (
     <div
-      className="group relative cursor-pointer overflow-hidden rounded-xl shadow-md transition-shadow hover:shadow-lg"
+      className="group cursor-pointer overflow-hidden rounded-xl shadow-md transition-shadow hover:shadow-lg flex-shrink-0 w-64 mr-4"
       onClick={onClick}
     >
       <img
@@ -141,16 +148,22 @@ function ReviewablePlaceCard({
         alt={place.title}
         className="h-40 w-full object-cover transition-transform duration-300 group-hover:scale-105"
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-      <div className="absolute bottom-0 left-0 p-3 w-full">
-        <h3 className="text-md font-bold text-white truncate">{place.title}</h3>
-        <div className="flex items-center gap-1 text-xs text-gray-200 mt-1">
-          <CategoryIcon category={place.category} className="w-3 h-3" />
-          <span>{place.category}</span>
-        </div>
-        <div className="flex items-center gap-1 text-xs text-gray-200 mt-1">
-          <MapPin className="w-3 h-3 flex-shrink-0" />
-          <p className="truncate">{place.address}</p>
+      <div className="p-4">
+        <h3 className="text-lg font-bold text-gray-800 truncate">
+          {place.title}
+        </h3>
+        <div className="flex flex-col gap-1.5 text-sm text-gray-600 mt-2">
+          <div className="flex items-center gap-1.5">
+            <CategoryIcon
+              category={place.category}
+              className="w-4 h-4 text-gray-400 flex-shrink-0"
+            />
+            <span>{place.category}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
+            <p className="truncate">{place.address}</p>
+          </div>
         </div>
       </div>
     </div>
@@ -320,6 +333,7 @@ function SuccessModal({
 
 // --- Main Component ---
 export function NewMainPage({
+  onCreatePost,
   onJoinWorkspace,
   onViewProfile,
   onEditPost,
@@ -644,7 +658,34 @@ export function NewMainPage({
   return (
     <div className="flex bg-white relative">
       <div className="flex-1 overflow-y-auto">
-        <PageContainer className="flex flex-col gap-y-8 md:gap-y-10 lg:gap-y-12">
+        {/* Section 0: CTA */}
+        {isLoggedIn && (
+          <section
+            className="relative bg-gray-800 bg-cover bg-center mb-8 md:mb-10 lg:mb-12"
+            style={{
+              backgroundImage: `url(https://source.unsplash.com/1600x900/?travel,destination)`,
+            }}
+          >
+            <div className="absolute inset-0 bg-black/50" />
+            <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+              <h2 className="text-3xl font-bold text-white">
+                {user.profile.nickname}님, 새로운 여행을 떠나보세요!
+              </h2>
+              <p className="mt-2 text-gray-200 max-w-2xl">
+                나와 꼭 맞는 동행자와 함께 잊지 못할 추억을 만들 수 있어요.
+                지금 바로 여행 계획을 시작해보세요.
+              </p>
+              <Button
+                onClick={onCreatePost}
+                className="mt-6 bg-white text-blue-600 hover:bg-gray-100 font-bold py-3 px-6 text-base flex items-center gap-2"
+              >
+                <PlusCircle className="w-5 h-5" />새 동행 만들기
+              </Button>
+            </div>
+          </section>
+        )}
+
+        <PageContainer className="flex flex-col gap-y-12 md:gap-y-16 lg:gap-y-20">
           {/* Section 1: AI 추천 동행 */}
           <section>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3">
@@ -799,15 +840,18 @@ export function NewMainPage({
                             ))}
                           </nav>
                         </div>
-                        <div className="grid grid-cols-5 gap-4 md:gap-6 pt-6">
-                          {activeDate &&
-                            placesByDate[activeDate]?.map((place) => (
-                              <ReviewablePlaceCard
-                                key={place.id}
-                                place={place}
-                                onClick={() => handleOpenReviewModal(place)}
-                              />
-                            ))}
+                        <div className="pt-6">
+                          {activeDate && placesByDate[activeDate] && (
+                            <ReviewablePlacesCarousel>
+                              {placesByDate[activeDate].map((place) => (
+                                <ReviewablePlaceCard
+                                  key={place.id}
+                                  place={place}
+                                  onClick={() => handleOpenReviewModal(place)}
+                                />
+                              ))}
+                            </ReviewablePlacesCarousel>
+                          )}
                         </div>
                       </div>
                     );
