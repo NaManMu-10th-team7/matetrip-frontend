@@ -416,7 +416,7 @@ export function NewMainPage({
       try {
         const response = await client.post<MatchCandidateDto[]>(
           '/profile/matching/search',
-          { limit: 5 }
+          { limit: 6 }
         );
         if (isMounted) setMatches(response.data ?? []);
       } catch (error) {
@@ -541,7 +541,7 @@ export function NewMainPage({
           style: string[];
         } => item !== null
       )
-      .slice(0, 5);
+      .slice(0, 6);
   }, [matches, posts]);
 
   useEffect(() => {
@@ -790,8 +790,8 @@ export function NewMainPage({
                   </Button>
                 </div>
               ) : isMatchesLoading || isPostsLoading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {Array.from({ length: 5 }).map((_, index) => (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start">
+                  {Array.from({ length: 6 }).map((_, index) => (
                     <MainPostCardSkeleton key={index} />
                   ))}
                 </div>
