@@ -667,7 +667,7 @@ export function NewMainPage({
           <section
             className="relative bg-gray-800 bg-cover bg-center"
             style={{
-              backgroundImage: `url(https://source.unsplash.com/1600x900/?travel,destination)`,
+              backgroundImage: `url(/cta-bg.jpg)`,
             }}
           >
             <div className="absolute inset-0 bg-black/50" />
@@ -681,7 +681,7 @@ export function NewMainPage({
               </p>
               <Button
                 onClick={onCreatePost}
-                className="mt-6 bg-white text-blue-600 hover:bg-gray-100 font-bold py-3 px-6 text-base flex items-center gap-2"
+                className="mt-6 bg-primary text-primary-foreground hover:bg-primary-strong font-bold py-5 px-10 text-lg flex items-center gap-2 transition-colors"
               >
                 <PlusCircle className="w-5 h-5" />새 동행 만들기
               </Button>
@@ -689,243 +689,253 @@ export function NewMainPage({
           </section>
         )}
 
-        <PageContainer className="flex flex-col gap-y-12 md:gap-y-16 lg:gap-y-20">
-          {/* Section 1: AI 추천 동행 */}
+        <div className="flex flex-col">
           <section>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-6 h-6 text-blue-600" />
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    {user?.profile.nickname}님을 위한 맞춤 여행 추천
-                  </h2>
-                </div>
-                <p className="text-xs md:text-sm text-gray-600 mt-1">
-                  나의 여행 성향을 분석해 MateTrip AI가 찾아낸 최고의 여행
-                  파트너예요.
-                </p>
-              </div>
-              <Button
-                onClick={handleAllViewMatching}
-                variant="ghost"
-                className="text-sm self-start sm:self-auto flex items-center text-gray-600 hover:text-gray-900"
-              >
-                전체보기
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </div>
-            {!isLoggedIn ? (
-              <div className="bg-gradient-to-r from-blue-50 to-pink-50 rounded-2xl p-6 border border-blue-100 text-center">
-                <h3 className="text-lg font-bold text-gray-900 mb-2">
-                  로그인이 필요합니다
-                </h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  당신에게 딱 맞는 동행을 AI가 추천해드려요
-                </p>
-                <Button
-                  onClick={() => navigate('/login')}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  로그인하기
-                </Button>
-              </div>
-            ) : isMatchesLoading || isPostsLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start">
-                {Array.from({ length: 5 }).map((_, index) => (
-                  <MainPostCardSkeleton key={index} />
-                ))}
-              </div>
-            ) : matchedPosts.length === 0 ? (
-              <div className="text-center text-gray-500 py-10">
-                추천할 동행이 없습니다.
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start">
-                {matchedPosts.map(({ post, score, tendency, style }, index) => (
-                  <GridMatchingCard
-                    key={post.id}
-                    post={post}
-                    matchingInfo={{
-                      score,
-                      tendency: tendency.join(', '),
-                      style: style.join(', '),
-                    }}
-                    rank={index + 1}
-                    writerProfileImageUrl={
-                      post.writer?.profile?.profileImageId
-                        ? (writerProfileImages[
-                            post.writer.profile.profileImageId
-                          ] ?? null)
-                        : null
-                    }
-                    writerNickname={post.writer?.profile?.nickname ?? null}
-                    onClick={() => handlePostClick(post.id)}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* Section: 리뷰 가능한 장소 (탭 UI 적용) */}
-          {isLoggedIn && (
-            <section>
+            <PageContainer className="py-12">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3">
                 <div>
                   <div className="flex items-center gap-2">
-                    <Star className="w-6 h-6 text-yellow-500" />
+                    <Sparkles className="w-6 h-6 text-primary" />
                     <h2 className="text-2xl font-bold text-gray-900">
-                      {user?.profile.nickname}님의 리뷰를 기다리는 장소
+                      {user?.profile.nickname}님을 위한 맞춤 여행 추천
                     </h2>
                   </div>
                   <p className="text-xs md:text-sm text-gray-600 mt-1">
-                    다녀오신 장소에 대한 리뷰를 남겨주세요!
+                    나의 여행 성향을 분석해 MateTrip AI가 찾아낸 최고의 여행
+                    파트너예요.
                   </p>
                 </div>
+                <Button
+                  onClick={handleAllViewMatching}
+                  variant="ghost"
+                  className="text-sm self-start sm:self-auto flex items-center text-gray-600 hover:text-gray-900"
+                >
+                  전체보기
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
               </div>
-              {isReviewablePlacesLoading ? (
-                <div className="space-y-4">
-                  <div className="h-8 w-1/3 bg-gray-200 rounded animate-pulse" />
-                  <div className="grid grid-cols-5 gap-4 md:gap-6">
-                    {Array.from({ length: 5 }).map((_, index) => (
-                      <div
-                        key={index}
-                        className="w-full h-40 bg-gray-200 rounded-xl animate-pulse"
-                      />
-                    ))}
-                  </div>
+              {!isLoggedIn ? (
+                <div className="bg-gradient-to-r from-blue-50 to-pink-50 rounded-2xl p-6 border border-blue-100 text-center">
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">
+                    로그인이 필요합니다
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    당신에게 딱 맞는 동행을 AI가 추천해드려요
+                  </p>
+                  <Button
+                    onClick={() => navigate('/login')}
+                    className="bg-primary hover:bg-primary-strong text-primary-foreground"
+                  >
+                    로그인하기
+                  </Button>
                 </div>
-              ) : reviewableTrips.length === 0 ? (
-                <div className="text-center text-gray-500 py-10 bg-gray-50 rounded-lg">
-                  리뷰를 작성할 장소가 없습니다.
+              ) : isMatchesLoading || isPostsLoading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start">
+                  {Array.from({ length: 5 }).map((_, index) => (
+                    <MainPostCardSkeleton key={index} />
+                  ))}
+                </div>
+              ) : matchedPosts.length === 0 ? (
+                <div className="text-center text-gray-500 py-10">
+                  추천할 동행이 없습니다.
                 </div>
               ) : (
-                <div className="flex flex-col gap-y-8">
-                  {reviewableTrips.map((trip) => {
-                    const placesByDate = trip.places.reduce(
-                      (acc, place) => {
-                        const date = place.planDate;
-                        if (!acc[date]) {
-                          acc[date] = [];
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start">
+                  {matchedPosts.map(
+                    ({ post, score, tendency, style }, index) => (
+                      <GridMatchingCard
+                        key={post.id}
+                        post={post}
+                        matchingInfo={{
+                          score,
+                          tendency: tendency.join(', '),
+                          style: style.join(', '),
+                        }}
+                        rank={index + 1}
+                        writerProfileImageUrl={
+                          post.writer?.profile?.profileImageId
+                            ? (writerProfileImages[
+                                post.writer.profile.profileImageId
+                              ] ?? null)
+                            : null
                         }
-                        acc[date].push(place);
-                        return acc;
-                      },
-                      {} as Record<string, ReviewablePlaceInfo[]>
-                    );
-
-                    const sortedDates = Object.keys(placesByDate).sort();
-                    const activeDate = activeReviewTabs[trip.post.id];
-
-                    return (
-                      <div key={trip.post.id}>
-                        <h3 className="text-lg font-semibold text-gray-800 mb-3">
-                          <span className="text-blue-600">
-                            "{trip.post.title}"
-                          </span>{' '}
-                          여행
-                        </h3>
-                        <div className="border-b border-gray-200">
-                          <nav
-                            className="-mb-px flex space-x-6"
-                            aria-label="Tabs"
-                          >
-                            {sortedDates.map((date) => (
-                              <button
-                                key={date}
-                                type="button"
-                                onClick={() =>
-                                  setActiveReviewTabs((prev) => ({
-                                    ...prev,
-                                    [trip.post.id]: date,
-                                  }))
-                                }
-                                className={`${
-                                  date === activeDate
-                                    ? 'border-blue-500 text-blue-600'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                                } whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm`}
-                              >
-                                {date}
-                              </button>
-                            ))}
-                          </nav>
-                        </div>
-                        <div className="pt-6">
-                          {activeDate && placesByDate[activeDate] && (
-                            <ReviewablePlacesCarousel>
-                              {placesByDate[activeDate].map((place) => (
-                                <ReviewablePlaceCard
-                                  key={place.id}
-                                  place={place}
-                                  onClick={() => handleOpenReviewModal(place)}
-                                />
-                              ))}
-                            </ReviewablePlacesCarousel>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
+                        writerNickname={post.writer?.profile?.nickname ?? null}
+                        onClick={() => handlePostClick(post.id)}
+                      />
+                    )
+                  )}
                 </div>
               )}
+            </PageContainer>
+          </section>
+
+          {isLoggedIn && (
+            <section className="bg-gray-50">
+              <PageContainer className="py-12">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Star className="w-6 h-6 text-secondary" />
+                      <h2 className="text-2xl font-bold text-gray-900">
+                        {user?.profile.nickname}님의 리뷰를 기다리는 장소
+                      </h2>
+                    </div>
+                    <p className="text-xs md:text-sm text-gray-600 mt-1">
+                      다녀오신 장소에 대한 리뷰를 남겨주세요!
+                    </p>
+                  </div>
+                </div>
+                {isReviewablePlacesLoading ? (
+                  <div className="space-y-4">
+                    <div className="h-8 w-1/3 bg-gray-200 rounded animate-pulse" />
+                    <div className="grid grid-cols-5 gap-4 md:gap-6">
+                      {Array.from({ length: 5 }).map((_, index) => (
+                        <div
+                          key={index}
+                          className="w-full h-40 bg-gray-200 rounded-xl animate-pulse"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : reviewableTrips.length === 0 ? (
+                  <div className="text-center text-gray-500 py-10 bg-gray-50 rounded-lg">
+                    리뷰를 작성할 장소가 없습니다.
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-y-8">
+                    {reviewableTrips.map((trip) => {
+                      const placesByDate = trip.places.reduce(
+                        (acc, place) => {
+                          const date = place.planDate;
+                          if (!acc[date]) {
+                            acc[date] = [];
+                          }
+                          acc[date].push(place);
+                          return acc;
+                        },
+                        {} as Record<string, ReviewablePlaceInfo[]>
+                      );
+
+                      const sortedDates = Object.keys(placesByDate).sort();
+                      const activeDate = activeReviewTabs[trip.post.id];
+
+                      return (
+                        <div key={trip.post.id}>
+                          <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                            <span className="text-primary">
+                              "{trip.post.title}"
+                            </span>{' '}
+                            여행
+                          </h3>
+                          <div className="border-b border-gray-200">
+                            <nav
+                              className="-mb-px flex space-x-6"
+                              aria-label="Tabs"
+                            >
+                              {sortedDates.map((date) => (
+                                <button
+                                  key={date}
+                                  type="button"
+                                  onClick={() =>
+                                    setActiveReviewTabs((prev) => ({
+                                      ...prev,
+                                      [trip.post.id]: date,
+                                    }))
+                                  }
+                                  className={`${
+                                    date === activeDate
+                                      ? 'border-primary text-primary'
+                                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                  } whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm`}
+                                >
+                                  {date}
+                                </button>
+                              ))}
+                            </nav>
+                          </div>
+                          <div className="pt-6">
+                            {activeDate && placesByDate[activeDate] && (
+                              <ReviewablePlacesCarousel>
+                                {placesByDate[activeDate].map((place) => (
+                                  <ReviewablePlaceCard
+                                    key={place.id}
+                                    place={place}
+                                    onClick={() =>
+                                      handleOpenReviewModal(place)
+                                    }
+                                  />
+                                ))}
+                              </ReviewablePlacesCarousel>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </PageContainer>
             </section>
           )}
 
-          {/* Section 2: 장소 추천 */}
-          <PlaceRecommendationSection onPlaceClick={handlePlaceClick} />
-
-          {/* Section 3: Inspiration */}
           <section>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <Flame className="w-6 h-6 text-red-500" />
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    Hot Place
-                  </h2>
-                </div>
-                <p className="text-xs md:text-sm text-gray-600 mt-1">
-                  MateTrip 유저들의 Pick!
-                </p>
-              </div>
-              <Button
-                onClick={handleAllViewInspiration}
-                variant="ghost"
-                className="text-sm self-start sm:self-auto flex items-center text-gray-600 hover:text-gray-900"
-              >
-                전체보기
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </div>
-            {isInspirationsLoading ? (
-              <div className="grid grid-cols-5 gap-4 md:gap-6">
-                {Array.from({ length: 5 }).map((_, index) => (
-                  <div
-                    key={index}
-                    className="w-full h-64 bg-gray-200 rounded-xl animate-pulse"
-                  />
-                ))}
-              </div>
-            ) : inspirations.length === 0 ? (
-              <div className="text-center text-gray-500 py-10">
-                추천할 장소가 없습니다.
-              </div>
-            ) : (
-              <ReviewablePlacesCarousel>
-                {inspirations.map((place) => (
-                  <RecommendedPlaceCard
-                    key={place.id}
-                    imageUrl={place.imageUrl}
-                    title={place.title}
-                    address={place.address}
-                    category={place.category}
-                    onClick={() => handleInspirationClick(place)}
-                  />
-                ))}
-              </ReviewablePlacesCarousel>
-            )}
+            <PageContainer>
+              <PlaceRecommendationSection onPlaceClick={handlePlaceClick} />
+            </PageContainer>
           </section>
-        </PageContainer>
+
+          <section className="bg-gray-50">
+            <PageContainer className="py-12">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Flame className="w-6 h-6 text-destructive" />
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      Hot Place
+                    </h2>
+                  </div>
+                  <p className="text-xs md:text-sm text-gray-600 mt-1">
+                    MateTrip 유저들의 Pick!
+                  </p>
+                </div>
+                <Button
+                  onClick={handleAllViewInspiration}
+                  variant="ghost"
+                  className="text-sm self-start sm:self-auto flex items-center text-gray-600 hover:text-gray-900"
+                >
+                  전체보기
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
+              {isInspirationsLoading ? (
+                <div className="grid grid-cols-5 gap-4 md:gap-6">
+                  {Array.from({ length: 5 }).map((_, index) => (
+                    <div
+                      key={index}
+                      className="w-full h-64 bg-gray-200 rounded-xl animate-pulse"
+                    />
+                  ))}
+                </div>
+              ) : inspirations.length === 0 ? (
+                <div className="text-center text-gray-500 py-10">
+                  추천할 장소가 없습니다.
+                </div>
+              ) : (
+                <ReviewablePlacesCarousel>
+                  {inspirations.map((place) => (
+                    <RecommendedPlaceCard
+                      key={place.id}
+                      imageUrl={place.imageUrl}
+                      title={place.title}
+                      address={place.address}
+                      category={place.category}
+                      onClick={() => handleInspirationClick(place)}
+                    />
+                  ))}
+                </ReviewablePlacesCarousel>
+              )}
+            </PageContainer>
+          </section>
+        </div>
       </div>
 
       {/* Panels & Overlays */}
