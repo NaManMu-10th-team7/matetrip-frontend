@@ -412,20 +412,20 @@ export function PostDetail({
   if (isLoggedIn) {
     if (isAuthor) {
       buttonConfig = {
-        text: '워크스페이스 입장',
+        text: '아지트 입장',
         disabled: false,
         className:
-          'w-full rounded-full border border-black bg-transparent text-black hover:bg-black hover:text-white px-6 py-6 text-lg',
+          'w-full rounded-full border border-primary bg-transparent text-primary hover:bg-primary hover:text-primary-foreground px-6 py-6 text-lg',
         icon: <DoorOpen className="w-5 h-5 mr-2" />, // 아이콘 추가
       };
     } else if (userParticipation) {
       switch (userParticipation.status) {
         case '승인':
           buttonConfig = {
-            text: '워크스페이스 입장',
+            text: '아지트 입장',
             disabled: false,
             className:
-              'w-full rounded-full border border-black bg-transparent text-black hover:bg-black hover:text-white px-6 py-6 text-lg',
+              'w-full rounded-full border border-primary bg-transparent text-primary hover:bg-primary hover:text-primary-foreground px-6 py-6 text-lg',
             icon: <DoorOpen className="w-5 h-5 mr-2" />, // 아이콘 추가
           };
           break;
@@ -461,7 +461,7 @@ export function PostDetail({
         text: '동행 신청하기',
         disabled: false,
         className:
-          'w-full rounded-full border border-black bg-transparent text-black hover:bg-black hover:text-white px-6 py-6 text-lg',
+          'w-full rounded-full border border-primary bg-transparent text-primary hover:bg-primary hover:text-primary-foreground px-6 py-6 text-lg',
         icon: null,
       };
     }
@@ -486,14 +486,14 @@ export function PostDetail({
         <ImageWithFallback
           src={remoteCoverImageUrl || 'https://via.placeholder.com/800x280'}
           alt={post.title}
-          className="w-full h-[320px] object-cover"
+          className="w-full h-[280px] object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
 
         {/* 상단 컨트롤 버튼 */}
-        <div className="absolute inset-0 flex flex-col justify-between p-6 text-white">
+        <div className="absolute inset-0 flex flex-col justify-end p-6 pb-12 text-white">
           {/* 상단 컨트롤 버튼 */}
-          <div className="flex justify-between items-start">
+          <div className="absolute top-6 left-6 right-6 flex justify-between items-start">
             <button
               onClick={() => onOpenChange(false)}
               className="flex items-center justify-center w-12 h-12 rounded-full bg-black/40 hover:bg-black/60 transition-colors backdrop-blur-sm"
@@ -521,20 +521,20 @@ export function PostDetail({
                     className="w-48 z-50 bg-white"
                   >
                     <DropdownMenuItem
-                      className="cursor-pointer"
+                      className="cursor-pointer focus:bg-primary focus:text-primary-foreground"
                       onClick={() => onEditPost(post)}
                     >
                       <Pencil className="w-5 h-5 mr-2" />
                       수정하기
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      className="cursor-pointer text-red-600 focus:text-red-600"
+                      className="cursor-pointer text-red-600 focus:bg-primary focus:text-primary-foreground"
                       onClick={() => setDeleteModalOpen(true)}
                     >
                       <Trash2 className="w-5 h-5 mr-2" />
                       삭제하기
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer">
+                    <DropdownMenuItem className="cursor-pointer focus:bg-primary focus:text-primary-foreground">
                       <Megaphone className="w-5 h-5 mr-2" />
                       모집 마감하기
                     </DropdownMenuItem>
@@ -545,7 +545,7 @@ export function PostDetail({
           </div>
 
           {/* 중앙 제목 및 하단 정보 그룹 */}
-          <div className="flex flex-col items-center gap-4">
+          <div className="flex flex-col items-center gap-6">
             {/* 중앙 제목 */}
             <div className="flex items-center justify-center">
               <h2 className="text-4xl font-bold text-center break-words line-clamp-2">
@@ -657,8 +657,8 @@ export function PostDetail({
                   onClick={() => setActiveTab('intro')}
                   className={`whitespace-nowrap border-b-2 py-2 px-1 text-base font-medium ${
                     activeTab === 'intro'
-                      ? 'border-black text-black font-bold'
-                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                      ? 'border-primary text-primary font-bold'
+                      : 'border-transparent text-gray-500 hover:text-gray-800'
                   }`}
                 >
                   여행 소개
@@ -667,8 +667,8 @@ export function PostDetail({
                   onClick={() => setActiveTab('participants')}
                   className={`whitespace-nowrap border-b-2 py-2 px-1 text-base font-medium ${
                     activeTab === 'participants'
-                      ? 'border-black text-black font-bold'
-                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                      ? 'border-primary text-primary font-bold'
+                      : 'border-transparent text-gray-500 hover:text-gray-800'
                   }`}
                 >
                   동행 목록
@@ -678,8 +678,8 @@ export function PostDetail({
                     onClick={() => setActiveTab('recommendations')}
                     className={`whitespace-nowrap border-b-2 py-2 px-1 text-base font-medium ${
                       activeTab === 'recommendations'
-                        ? 'border-black text-black font-bold'
-                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                        ? 'border-primary text-primary font-bold'
+                        : 'border-transparent text-gray-500 hover:text-gray-800'
                     }`}
                   >
                     AI 추천 동행
@@ -1046,10 +1046,10 @@ export function PostDetail({
                               </Button>
                               <Button
                                 size="sm"
-                                className={`w-full rounded-full ${
+                                className={`w-full rounded-full h-9 ${
                                   isInvited
                                     ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                                    : 'bg-indigo-500 text-white hover:bg-indigo-600 '
+                                    : 'bg-indigo-500 text-white hover:bg-indigo-600'
                                 }`}
                                 disabled={isInvited}
                                 onClick={() => {
@@ -1061,7 +1061,7 @@ export function PostDetail({
                                   );
                                 }}
                               >
-                                <UserPlus className="w-4 h-4 mr-2" />
+                                <UserPlus className="w-4 h-4 mr-1" />
                                 {isInvited ? '초대 완료' : '초대하기'}
                               </Button>
                             </div>
