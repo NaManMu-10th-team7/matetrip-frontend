@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Map as MapIcon,
   Tent,
   Heart,
   Camera,
@@ -213,7 +212,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
     password: '',
     confirmPassword: '',
     nickname: '',
-    gender: '',
+    gender: '남성', // Default to '남성'
     phone: '',
     mbti: '',
     travelStyles: new Set<TravelStyleType>(),
@@ -373,7 +372,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
       return;
     }
     if (step === 2 && formData.travelStyles.size !== 3) {
-      setStyleError('여행 스타일 3개를 선택해주세요.');
+      setStyleError('여행 스타일은 3개까지 선택할 수 있습니다.');
       setTimeout(() => setStyleError(''), 3000);
       return;
     }
@@ -514,7 +513,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
               <Button
                 variant="ghost"
                 onClick={handlePrevStep}
-                className="absolute top-8 left-6 text-slate-400 hover:text-slate-800 flex items-center gap-1 text-sm font-bold transition-colors z-10 h-auto p-0"
+                className="absolute top-4 left-6 text-slate-400 hover:text-primary flex items-center gap-1 text-sm font-bold transition-colors z-10 h-auto p-2"
               >
                 <ArrowLeft className="w-4 h-4" />
                 이전
@@ -524,10 +523,15 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
             {step < 4 && (
               <div className="px-5 md:px-6 pt-8 pb-3 bg-white flex flex-col items-center text-center relative">
                 <div className="flex items-center gap-2 mb-4">
-                  <div className="bg-linear-to-br bg-primary p-2.5 rounded-xl shadow-primary-soft text-white">
-                    <MapIcon className="w-7 h-7 text-white" />
-                  </div>
-                  <span className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                  <img
+                    src="/logo-without-title.png"
+                    alt="MateTrip Logo"
+                    className="w-14 h-14 shrink-0"
+                  />
+                  <span
+                    className="text-2xl text-gray-900 whitespace-nowrap"
+                    style={{ fontFamily: 'Princess Sofia, cursive' }}
+                  >
                     MateTrip
                   </span>
                 </div>
@@ -668,7 +672,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                     <Label className="font-semibold">성별</Label>
                     <div className="flex gap-4 mt-2">
                       <div className="flex items-center gap-2">
-                        <Input
+                        <input
                           id="male"
                           type="radio"
                           value="남성"
@@ -678,7 +682,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                           onChange={(e) =>
                             handleInputChange('gender', e.target.value)
                           }
-                          className="h-4 w-4 accent-primary"
+                          className="h-4 w-4 appearance-none border-2 border-gray-300 rounded-full checked:bg-primary checked:border-primary-strong focus:outline-none focus:ring-0 focus:ring-offset-0"
                           required
                         />
                         <Label
@@ -689,7 +693,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                         </Label>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Input
+                        <input
                           id="female"
                           type="radio"
                           value="여성"
@@ -698,7 +702,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                           onChange={(e) =>
                             handleInputChange('gender', e.target.value)
                           }
-                          className="h-4 w-4 accent-primary"
+                          className="h-4 w-4 appearance-none border-2 border-gray-300 rounded-full checked:bg-primary checked:border-primary-strong focus:outline-none focus:ring-0 focus:ring-offset-0"
                         />
                         <Label
                           htmlFor="female"
@@ -865,11 +869,11 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                                 variant="outline"
                                 onClick={() => toggleTravelTendency(label)}
                                 className={`
-                              relative group py-2 px-2 h-full w-full min-w-[120px] rounded-md text-sm font-medium transition-all duration-200 border text-center flex items-center justify-center gap-1.5 whitespace-nowrap
+                              relative group py-2 px-2 h-full w-full min-w-[120px] rounded-md text-sm font-medium transition-all duration-200 border select-none
                               ${
                                 isSelected
                                   ? 'bg-primary border-primary text-white shadow-primary-soft hover:bg-primary-strong hover:text-white active:bg-primary-strong'
-                                  : 'bg-white text-slate-600 border-slate-100 hover:border-primary hover:bg-primary-10 hover:text-slate-800'
+                                  : 'bg-white text-slate-600 border-slate-200 hover:border-primary hover:bg-primary-10 hover:text-slate-800'
                               }
                             `}
                               >
@@ -884,8 +888,8 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
 
                 <div className="w-full px-6 mt-1" />
 
-                <div className="px-5 md:px-6 pt-2">
-                  <div className="flex flex-col gap-1 mb-4">
+                <div className="px-5 md:px-6 pt-3">
+                  <div className="flex flex-col gap-1 mb-5">
                     <div className="flex items-center justify-start gap-2">
                       <div className="p-2 bg-primary-10 rounded-full">
                         <User className="w-5 h-5 text-primary" />
@@ -958,7 +962,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                         <span className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full border border-primary bg-primary-10 text-[10px] font-semibold text-primary shadow-[0_1px_3px_rgba(59,130,246,0.25)] hover:bg-primary-10 hover:border-primary transition-colors cursor-default">
                           i
                         </span>
-                        <span className="absolute left-full top-1/2 z-10 ml-2 -translate-y-1/2 block w-72 md:w-80 rounded-lg bg-white px-3 py-2 text-[11px] font-medium text-black text-left whitespace-normal wrap-break-word shadow-lg opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none transition-all duration-150 leading-snug">
+                        <span className="absolute left-full top-1/2 z-10 ml-2 -translate-y-1/2 block w-72 md:w-80 rounded-lg bg-white px-3 py-2 text-sm font-medium text-black text-left whitespace-normal wrap-break-word shadow-lg opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none transition-all duration-150 leading-normal">
                           키워드 유사도와 상세소개 유사도를 합산하여 프로필
                           유사도를 측정합니다.
                           <br />
