@@ -307,7 +307,9 @@ function SuccessModal({
         <h2 className="text-2xl font-bold mt-4 mb-2 text-gray-800">
           리뷰 등록 완료!
         </h2>
-        <p className="text-gray-600 mb-6">소중한 리뷰를 남겨주셔서 감사합니다.</p>
+        <p className="text-gray-600 mb-6">
+          소중한 리뷰를 남겨주셔서 감사합니다.
+        </p>
         <Button onClick={onClose} className="w-full">
           확인
         </Button>
@@ -509,8 +511,14 @@ export function NewMainPage({
         };
       })
       .filter(
-        (item): item is { post: Post; score: number; tendency: string[]; style: string[] } =>
-          item !== null
+        (
+          item
+        ): item is {
+          post: Post;
+          score: number;
+          tendency: string[];
+          style: string[];
+        } => item !== null
       )
       .slice(0, 5);
   }, [matches, posts]);
@@ -642,11 +650,11 @@ export function NewMainPage({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3">
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">
-                  {user?.profile.nickname}님의 성향에 맞을 수도 있는 동행의
-                  여행일정
+                  {user?.profile.nickname}님을 위한 맞춤 여행 추천
                 </h2>
                 <p className="text-xs md:text-sm text-gray-600 mt-1">
-                  MateTrip AI가 추천하는 최적의 여행 파트너
+                  나의 여행 성향을 분석해 MateTrip AI가 찾아낸 최고의 여행
+                  파트너예요.
                 </p>
               </div>
               <Button
