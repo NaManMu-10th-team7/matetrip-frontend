@@ -105,7 +105,7 @@ export function PlaceRecommendationSection({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <Lightbulb className="w-6 h-6 text-purple-500" />
+            <Lightbulb className="w-6 h-6 text-primary" />
             <h2 className="text-2xl md:text-xl font-bold text-gray-900">
               여기 갈래? 말래?
             </h2>
@@ -127,7 +127,7 @@ export function PlaceRecommendationSection({
             </p>
             <Button
               onClick={() => navigate('/login')}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="bg-primary hover:bg-primary-strong text-primary-foreground"
             >
               로그인하기
             </Button>

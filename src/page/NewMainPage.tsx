@@ -667,7 +667,7 @@ export function NewMainPage({
           <section
             className="relative bg-gray-800 bg-cover bg-center"
             style={{
-              backgroundImage: `url(https://source.unsplash.com/1600x900/?travel,destination)`,
+              backgroundImage: `url(/cta-bg.jpg)`,
             }}
           >
             <div className="absolute inset-0 bg-black/50" />
@@ -681,7 +681,7 @@ export function NewMainPage({
               </p>
               <Button
                 onClick={onCreatePost}
-                className="mt-6 bg-white text-blue-600 hover:bg-gray-100 font-bold py-3 px-6 text-base flex items-center gap-2"
+                className="mt-6 bg-primary text-primary-foreground hover:bg-primary-strong font-bold py-5 px-10 text-lg flex items-center gap-2 transition-colors"
               >
                 <PlusCircle className="w-5 h-5" />새 동행 만들기
               </Button>
@@ -695,7 +695,7 @@ export function NewMainPage({
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3">
                 <div>
                   <div className="flex items-center gap-2">
-                    <Sparkles className="w-6 h-6 text-blue-600" />
+                    <Sparkles className="w-6 h-6 text-primary" />
                     <h2 className="text-2xl font-bold text-gray-900">
                       {user?.profile.nickname}님을 위한 맞춤 여행 추천
                     </h2>
@@ -724,7 +724,7 @@ export function NewMainPage({
                   </p>
                   <Button
                     onClick={() => navigate('/login')}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    className="bg-primary hover:bg-primary-strong text-primary-foreground"
                   >
                     로그인하기
                   </Button>
@@ -775,7 +775,7 @@ export function NewMainPage({
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3">
                   <div>
                     <div className="flex items-center gap-2">
-                      <Star className="w-6 h-6 text-yellow-500" />
+                      <Star className="w-6 h-6 text-secondary" />
                       <h2 className="text-2xl font-bold text-gray-900">
                         {user?.profile.nickname}님의 리뷰를 기다리는 장소
                       </h2>
@@ -822,7 +822,7 @@ export function NewMainPage({
                       return (
                         <div key={trip.post.id}>
                           <h3 className="text-lg font-semibold text-gray-800 mb-3">
-                            <span className="text-blue-600">
+                            <span className="text-primary">
                               "{trip.post.title}"
                             </span>{' '}
                             여행
@@ -844,7 +844,7 @@ export function NewMainPage({
                                   }
                                   className={`${
                                     date === activeDate
-                                      ? 'border-blue-500 text-blue-600'
+                                      ? 'border-primary text-primary'
                                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                   } whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm`}
                                 >
@@ -888,7 +888,7 @@ export function NewMainPage({
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3">
                 <div>
                   <div className="flex items-center gap-2">
-                    <Flame className="w-6 h-6 text-red-500" />
+                    <Flame className="w-6 h-6 text-destructive" />
                     <h2 className="text-2xl font-bold text-gray-900">
                       Hot Place
                     </h2>

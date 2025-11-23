@@ -1,5 +1,4 @@
 import {
-  Map,
   FileText,
   Plane,
   LogIn,
@@ -84,9 +83,11 @@ export function Sidebar({
             onClick={() => navigate('/main')}
             className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
           >
-            <div className="w-8 h-8 bg-primary rounded-[10px] flex items-center justify-center shrink-0">
-              <Map className="w-5 h-5 text-primary-foreground" />
-            </div>
+            <img
+              src="/logo-without-title.png"
+              alt="MateTrip Logo"
+              className="w-14 h-14 shrink-0"
+            />
             {isExpanded && (
               <span
                 className="text-2xl text-gray-900 whitespace-nowrap"
@@ -109,7 +110,7 @@ export function Sidebar({
               } ${
                 isActive('/main')
                   ? 'bg-primary text-primary-foreground'
-                  : 'text-[#364153] hover:bg-primary-10'
+                  : 'text-[#364153] hover:bg-primary hover:text-primary-foreground'
               }`}
               title={!isExpanded ? 'AI 동행 찾기' : ''}
             >
@@ -129,7 +130,7 @@ export function Sidebar({
               } ${
                 isActive('/ai-matching')
                   ? 'bg-primary text-primary-foreground'
-                  : 'text-[#364153] hover:bg-primary-10'
+                  : 'text-[#364153] hover:bg-primary hover:text-primary-foreground'
               }`}
               title={!isExpanded ? 'All-Trip' : ''}
             >
@@ -149,7 +150,7 @@ export function Sidebar({
               } ${
                 isActive('/all-posts')
                   ? 'bg-primary text-primary-foreground'
-                  : 'text-[#364153] hover:bg-primary-10'
+                  : 'text-[#364153] hover:bg-primary hover:text-primary-foreground'
               }`}
               title={!isExpanded ? '모든 여행' : ''}
             >
@@ -170,7 +171,7 @@ export function Sidebar({
                 } ${
                   isActive('/save')
                     ? 'bg-primary text-primary-foreground'
-                    : 'text-[#364153] hover:bg-primary-10'
+                    : 'text-[#364153] hover:bg-primary hover:text-primary-foreground'
                 }`}
                 title={!isExpanded ? 'SAVE' : ''}
               >
@@ -191,7 +192,7 @@ export function Sidebar({
               } ${
                 isActive('/inspiration')
                   ? 'bg-primary text-primary-foreground'
-                  : 'text-[#364153] hover:bg-primary-10'
+                  : 'text-[#364153] hover:bg-primary hover:text-primary-foreground'
               }`}
               title={!isExpanded ? 'Inspiration' : ''}
             >
