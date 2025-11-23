@@ -204,7 +204,7 @@ export function NewMainPage({
     };
   }, [isAuthLoading, isLoggedIn, user?.userId]);
 
-  // Fetch inspiration places
+  // [수정] Fetch inspiration places with explicit typing
   useEffect(() => {
     if (isAuthLoading) return;
     const fetchInspirations = async () => {
@@ -220,7 +220,8 @@ export function NewMainPage({
               const detailResponse = await client.get(
                 `/places/${item.addplace_id}`
               );
-              return {
+              // Explicitly create an object of type Place to ensure type safety
+              const place: Place = {
                 id: item.addplace_id,
                 title: item.title,
                 address: item.address,
@@ -230,6 +231,7 @@ export function NewMainPage({
                 longitude: detailResponse.data.longitude,
                 category: detailResponse.data.category,
               };
+              return place;
             } catch (error) {
               console.error(
                 `Failed to fetch detail for ${item.addplace_id}:`,
@@ -249,7 +251,7 @@ export function NewMainPage({
     fetchInspirations();
   }, [isAuthLoading]);
 
-  // [수정] Fetch reviewable places and initialize tabs
+  // Fetch reviewable places and initialize tabs
   useEffect(() => {
     if (!isLoggedIn) {
       setIsReviewablePlacesLoading(false);
@@ -478,7 +480,7 @@ export function NewMainPage({
             )}
           </section>
 
-          {/* [수정] Section: 리뷰 가능한 장소 (탭 UI 적용) */}
+          {/* Section: 리뷰 가능한 장소 (탭 UI 적용) */}
           {isLoggedIn && (
             <section>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3">
