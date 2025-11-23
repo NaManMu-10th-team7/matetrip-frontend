@@ -6,6 +6,7 @@ import { useAuthStore } from '../store/authStore';
 import client from '../api/client';
 import { type PlaceDto } from '../types/place';
 import { ReviewablePlacesCarousel } from './ReviewablePlacesCarousel';
+import { Lightbulb } from 'lucide-react';
 
 interface PlaceRecommendationSectionProps {
   onPlaceClick: (placeId: string, place: PlaceDto) => void;
@@ -60,7 +61,7 @@ export function PlaceRecommendationSection({
           {
             params: {
               userId: user.userId,
-              limit: 10,
+              limit: 5,
             },
           }
         );
@@ -103,9 +104,12 @@ export function PlaceRecommendationSection({
     <section>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3">
         <div>
-          <h2 className="text-2xl md:text-xl font-bold text-gray-900">
-            여기 갈래? 말래?
-          </h2>
+          <div className="flex items-center gap-2">
+            <Lightbulb className="w-6 h-6 text-purple-500" />
+            <h2 className="text-2xl md:text-xl font-bold text-gray-900">
+              여기 갈래? 말래?
+            </h2>
+          </div>
           <p className="text-xs md:text-sm text-gray-600 mt-1">
             MateTrip AI가 추천하는 성향 기반 장소 추천
           </p>

@@ -6,10 +6,11 @@ import {
   CheckCircle,
   ChevronRight,
   PlusCircle,
+  Sparkles,
+  Flame,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { PlaceRecommendationSection } from '../components/PlaceRecommendationSection';
-import { InspirationCard } from '../components/InspirationCard';
 import { PostDetail } from './PostDetail';
 import { useAuthStore } from '../store/authStore';
 import client, { API_BASE_URL } from '../api/client';
@@ -22,6 +23,7 @@ import { PoiDetailPanel } from '../components/ScheduleSidebar';
 import PageContainer from '../components/PageContainer';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { ReviewablePlacesCarousel } from '../components/ReviewablePlacesCarousel';
+import { RecommendedPlaceCard } from '../components/RecommendedPlaceCard';
 
 // --- Interfaces ---
 interface PopularPlaceResponse {
@@ -140,28 +142,30 @@ function ReviewablePlaceCard({
 }) {
   return (
     <div
-      className="group cursor-pointer overflow-hidden rounded-xl border border-gray-200 shadow-sm transition-shadow hover:shadow-lg flex-shrink-0 w-64 mr-4"
+      className="group flex flex-col w-80 cursor-pointer overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:shadow-lg mr-4 flex-shrink-0"
       onClick={onClick}
     >
-      <img
-        src={place.image_url || 'https://via.placeholder.com/300x200'}
-        alt={place.title}
-        className="h-40 w-full object-cover transition-transform duration-300 group-hover:scale-105"
-      />
-      <div className="p-4">
-        <h3 className="text-lg font-bold text-gray-800 truncate">
+      <div className="relative h-48 bg-gray-300 overflow-hidden w-full">
+        <img
+          src={place.image_url || 'https://via.placeholder.com/300x200'}
+          alt={place.title}
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+        />
+      </div>
+      <div className="flex flex-col flex-1 p-4">
+        <h3 className="text-lg font-bold text-gray-800 leading-snug truncate">
           {place.title}
         </h3>
         <div className="flex flex-col gap-1.5 text-sm text-gray-600 mt-2">
           <div className="flex items-center gap-1.5">
             <CategoryIcon
               category={place.category}
-              className="w-4 h-4 text-gray-400 flex-shrink-0"
+              className="w-4 h-4 text-gray-400"
             />
             <span>{place.category}</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
+            <MapPin className="w-4 h-4 text-gray-400" />
             <p className="truncate">{place.address}</p>
           </div>
         </div>
@@ -690,9 +694,12 @@ export function NewMainPage({
           <section>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">
-                  {user?.profile.nickname}님을 위한 맞춤 여행 추천
-                </h2>
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-6 h-6 text-blue-600" />
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    {user?.profile.nickname}님을 위한 맞춤 여행 추천
+                  </h2>
+                </div>
                 <p className="text-xs md:text-sm text-gray-600 mt-1">
                   나의 여행 성향을 분석해 MateTrip AI가 찾아낸 최고의 여행
                   파트너예요.
@@ -764,9 +771,12 @@ export function NewMainPage({
             <section>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    {user?.profile.nickname}님의 리뷰를 기다리는 장소
-                  </h2>
+                  <div className="flex items-center gap-2">
+                    <Star className="w-6 h-6 text-yellow-500" />
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      {user?.profile.nickname}님의 리뷰를 기다리는 장소
+                    </h2>
+                  </div>
                   <p className="text-xs md:text-sm text-gray-600 mt-1">
                     다녀오신 장소에 대한 리뷰를 남겨주세요!
                   </p>
@@ -868,7 +878,12 @@ export function NewMainPage({
           <section>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Hot Place</h2>
+                <div className="flex items-center gap-2">
+                  <Flame className="w-6 h-6 text-red-500" />
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    Hot Place
+                  </h2>
+                </div>
                 <p className="text-xs md:text-sm text-gray-600 mt-1">
                   MateTrip 유저들의 Pick!
                 </p>
@@ -896,20 +911,18 @@ export function NewMainPage({
                 추천할 장소가 없습니다.
               </div>
             ) : (
-              <div className="grid grid-cols-5 gap-4 md:gap-6">
-                {inspirations.map((place, index) => (
-                  <InspirationCard
+              <ReviewablePlacesCarousel>
+                {inspirations.map((place) => (
+                  <RecommendedPlaceCard
                     key={place.id}
                     imageUrl={place.imageUrl}
                     title={place.title}
                     address={place.address}
                     category={place.category}
-                    summary={place.summary}
-                    rank={index + 1}
                     onClick={() => handleInspirationClick(place)}
                   />
                 ))}
-              </div>
+              </ReviewablePlacesCarousel>
             )}
           </section>
         </PageContainer>
