@@ -109,8 +109,8 @@ export const ChatPanel = memo(function ChatPanel({
 
   return (
     <div className="h-full flex flex-col bg-white">
-      <div className="bg-blue-900 text-white px-6 py-3 flex items-center justify-between">
-        <h3 className="font-semibold">채팅</h3>
+      <div className="bg-primary-80 px-4 py-2 flex items-center justify-between flex-shrink-0 h-16 text-primary-foreground relative rounded-lg shadow-md backdrop-blur-sm">
+        <h1 className="text-xl font-bold truncate">채팅</h1>
         <div className="flex items-center gap-3">
           {/* 접속 중인 멤버 아바타 */}
           {activeMembers.length > 0 && (
@@ -118,7 +118,7 @@ export const ChatPanel = memo(function ChatPanel({
               {activeMembers.map((member, index) => (
                 <Avatar
                   key={member.id}
-                  className="w-8 h-8 border-2 border-white"
+                  className="w-8 h-8 border-2 border-primary"
                   style={{
                     marginLeft: index > 0 ? '-8px' : '0',
                     zIndex: activeMembers.length - index,
@@ -131,8 +131,8 @@ export const ChatPanel = memo(function ChatPanel({
             </div>
           )}
           <Badge
-            variant={isChatConnected ? 'outline' : 'destructive'}
-            className="text-white text-sm flex items-center gap-2"
+            variant="outline"
+            className="text-primary-foreground text-sm flex items-center gap-2 border-primary-foreground/50 bg-transparent"
           >
             {isChatConnected ? (
               <>
@@ -143,14 +143,14 @@ export const ChatPanel = memo(function ChatPanel({
                 <span>연결됨</span>
               </>
             ) : (
-              '연결 끊김'
+              '연결 중...'
             )}
           </Badge>
           <div className="flex gap-1">
             <Button
               size="icon"
               variant={isVCCallActive ? 'secondary' : 'ghost'}
-              className="w-9 h-9 text-white hover:bg-blue-800"
+              className="w-9 h-9 hover:bg-primary-foreground/10"
               onClick={handleToggleVideoCall}
             >
               <Video className="w-5 h-5" />
@@ -332,11 +332,10 @@ export const ChatPanel = memo(function ChatPanel({
           />
           <Button
             onClick={handleSend}
-            className="gap-2 bg-blue-600 hover:bg-blue-700"
+            size="icon"
             disabled={!isChatConnected || !currentMessage.trim()}
           >
             <Send className="w-4 h-4" />
-            전송
           </Button>
         </div>
       </div>

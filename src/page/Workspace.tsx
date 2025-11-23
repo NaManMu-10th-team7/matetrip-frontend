@@ -908,9 +908,9 @@ export function Workspace({
           onFlush={flushPois}
         />
 
-        <div className="flex-1 flex relative overflow-hidden rounded-lg border shadow-sm">
+        <div className="flex-1 flex relative overflow-hidden rounded-lg border border-gray-200 shadow-sm">
           <div
-            className={`w-1/2 h-full transition-opacity duration-300 ${
+            className={`w-2/5 h-full transition-opacity duration-300 ${
               schedulePosition === 'docked'
                 ? 'opacity-0 pointer-events-none'
                 : 'opacity-100'
