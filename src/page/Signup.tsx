@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  Map,
+  Map as MapIcon,
   Tent,
   Heart,
   Camera,
@@ -32,6 +32,7 @@ import { Button } from '../components/ui/button';
 import { Label } from '../components/ui/label';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
+import { useRef } from 'react';
 
 interface CategoryItem {
   id: string;
@@ -45,6 +46,13 @@ interface SignupProps {
   onSignup: () => void;
   onLoginClick: () => void;
 }
+
+type Step1Field =
+  | 'email'
+  | 'password'
+  | 'confirmPassword'
+  | 'nickname'
+  | 'gender';
 
 // --- 데이터 정의 ---
 const CATEGORIZED_KEYWORDS: CategoryItem[] = [
@@ -193,6 +201,12 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
   const [styleError, setStyleError] = useState<string>('');
   const [descriptionError, setDescriptionError] = useState<string>('');
 
+  const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const confirmPasswordRef = useRef<HTMLInputElement>(null);
+  const nicknameRef = useRef<HTMLInputElement>(null);
+  const genderRef = useRef<HTMLInputElement>(null);
+
   // Form data
   const [formData, setFormData] = useState({
     email: '',
@@ -210,8 +224,42 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
 
   //const [isPhoneVerified, setIsPhoneVerified] = useState(false);
 
-  const handleInputChange = (field: string, value: any) => {
+  const step1Fields: Step1Field[] = [
+    'email',
+    'password',
+    'confirmPassword',
+    'nickname',
+    'gender',
+  ];
+  const step1Refs: Record<
+    Step1Field,
+    React.RefObject<HTMLInputElement | null>
+  > = {
+    email: emailRef,
+    password: passwordRef,
+    confirmPassword: confirmPasswordRef,
+    nickname: nicknameRef,
+    gender: genderRef,
+  };
+
+  const clearNativeError = (field: Step1Field) => {
+    const ref = step1Refs[field].current;
+    if (ref) {
+      ref.setCustomValidity('');
+    }
+  };
+
+  const handleInputChange = <K extends keyof typeof formData>(
+    field: K,
+    value: (typeof formData)[K]
+  ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    if (step1Fields.includes(field as Step1Field)) {
+      clearNativeError(field as Step1Field);
+      if (field === 'password') {
+        clearNativeError('confirmPassword');
+      }
+    }
   };
 
   const toggleTravelStyle = (style: TravelStyleType) => {
@@ -274,7 +322,56 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
     return true;
   };
 
+  const setNativeError = (field: Step1Field, message: string) => {
+    const ref = step1Refs[field].current;
+    if (!ref) return false;
+    ref.setCustomValidity(message);
+    ref.reportValidity();
+    return false;
+  };
+
+  const resetStep1Validity = () => {
+    step1Fields.forEach((field) => clearNativeError(field));
+  };
+
+  const validateStep1 = () => {
+    resetStep1Validity();
+
+    if (!formData.email.trim()) {
+      return setNativeError('email', '이메일을 입력해주세요.');
+    }
+    if (!formData.password) {
+      return setNativeError('password', '비밀번호를 입력해주세요.');
+    }
+    if (!formData.confirmPassword) {
+      return setNativeError('confirmPassword', '비밀번호 확인을 입력해주세요.');
+    }
+    if (
+      formData.password &&
+      formData.confirmPassword &&
+      formData.password !== formData.confirmPassword
+    ) {
+      return setNativeError('confirmPassword', '비밀번호가 일치하지 않습니다.');
+    }
+    if (!formData.nickname.trim()) {
+      return setNativeError('nickname', '닉네임을 입력해주세요.');
+    }
+    if (!formData.gender) {
+      const genderInput = step1Refs.gender.current;
+      if (genderInput) {
+        genderInput.setCustomValidity('성별을 선택해주세요.');
+        genderInput.reportValidity();
+      }
+      return false;
+    }
+
+    return true;
+  };
+
   const handleNextStep = () => {
+    if (step === 1 && !validateStep1()) {
+      return;
+    }
     if (step === 2 && formData.travelStyles.size !== 3) {
       setStyleError('여행 스타일 3개를 선택해주세요.');
       setTimeout(() => setStyleError(''), 3000);
@@ -293,7 +390,9 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
 
     if (isSubmitting) return;
 
-    if (formData.password !== formData.confirmPassword) {
+    const isStep1Valid = validateStep1();
+    if (!isStep1Valid) {
+      setStep(1);
       return;
     }
 
@@ -405,7 +504,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
           <div className="bg-white rounded-2xl md:rounded-3xl shadow-sm overflow-hidden border border-slate-100 relative min-h-[560px] flex flex-col">
             {isSubmitting && (
               <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-20 flex flex-col items-center justify-center gap-3">
-                <div className="w-10 h-10 border-4 border-[color:var(--primary-10)] border-t-[color:var(--primary)] rounded-full animate-spin" />
+                <div className="w-10 h-10 border-4 border-(--primary-10) border-t-primary rounded-full animate-spin" />
                 <div className="text-sm font-semibold text-slate-700">
                   추천 동행 매칭 중...
                 </div>
@@ -426,7 +525,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
               <div className="px-5 md:px-6 pt-8 pb-3 bg-white flex flex-col items-center text-center relative">
                 <div className="flex items-center gap-2 mb-4">
                   <div className="bg-linear-to-br bg-primary p-2.5 rounded-xl shadow-primary-soft text-white">
-                    <Map className="w-7 h-7 text-white" />
+                    <MapIcon className="w-7 h-7 text-white" />
                   </div>
                   <span className="text-2xl font-extrabold text-slate-900 tracking-tight">
                     MateTrip
@@ -468,6 +567,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                         type="email"
                         placeholder="example@email.com"
                         value={formData.email}
+                        ref={emailRef}
                         onChange={(e) =>
                           handleInputChange('email', e.target.value)
                         }
@@ -488,6 +588,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                         type={showPassword ? 'text' : 'password'}
                         placeholder="8자 이상 입력해주세요"
                         value={formData.password}
+                        ref={passwordRef}
                         onChange={(e) =>
                           handleInputChange('password', e.target.value)
                         }
@@ -519,6 +620,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                         type={showConfirmPassword ? 'text' : 'password'}
                         placeholder="비밀번호를 다시 입력해주세요"
                         value={formData.confirmPassword}
+                        ref={confirmPasswordRef}
                         onChange={(e) =>
                           handleInputChange('confirmPassword', e.target.value)
                         }
@@ -552,6 +654,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                         type="text"
                         placeholder="사용할 닉네임을 입력해주세요"
                         value={formData.nickname}
+                        ref={nicknameRef}
                         onChange={(e) =>
                           handleInputChange('nickname', e.target.value)
                         }
@@ -571,10 +674,12 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                           value="남성"
                           name="gender"
                           checked={formData.gender === '남성'}
+                          ref={genderRef}
                           onChange={(e) =>
                             handleInputChange('gender', e.target.value)
                           }
                           className="h-4 w-4 accent-[var(--primary)]"
+                          required
                         />
                         <Label
                           htmlFor="male"
