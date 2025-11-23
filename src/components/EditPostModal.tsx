@@ -172,7 +172,9 @@ export function EditPostModal({
       setRemoteImageUrl(null);
     } catch (error) {
       console.error('이미지 삭제 실패:', error);
-      setErrorMessage('이미지 삭제 중 오류가 발생했습니다. 다시 시도해 주세요.');
+      setErrorMessage(
+        '이미지 삭제 중 오류가 발생했습니다. 다시 시도해 주세요.'
+      );
     } finally {
       setIsImageDeleting(false);
     }
@@ -217,7 +219,9 @@ export function EditPostModal({
       if (axios.isAxiosError(error) && error.response?.status === 400) {
         setErrorMessage('게시물 작성에 실패하였습니다.');
       } else {
-        setErrorMessage('게시물 수정 중 오류가 발생했습니다. 다시 시도해 주세요.');
+        setErrorMessage(
+          '게시물 수정 중 오류가 발생했습니다. 다시 시도해 주세요.'
+        );
       }
     } finally {
       setIsSubmitting(false);
@@ -278,7 +282,7 @@ export function EditPostModal({
                     />
                     <Button
                       type="button"
-                      variant="outline"
+                      variant="default"
                       className="font-semibold"
                       onClick={handleImageUploadClick}
                       disabled={isSubmitting}

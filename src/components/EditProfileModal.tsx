@@ -4,11 +4,24 @@ import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
 import { ImageWithFallback } from './figma/ImageWithFallback';
-import { X, Upload, Trash2, Lock } from 'lucide-react';
+import {
+  X,
+  Upload,
+  Trash2,
+  Lock,
+  Map,
+  Tent,
+  Utensils,
+  Camera,
+  Heart,
+  Car,
+  MapPin,
+  Shapes,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Badge } from './ui/badge';
 import { TRAVEL_STYLE_TYPES } from '../constants/travelStyle';
-import { TRAVEL_TENDENCY_TYPE } from '../constants/travelTendencyType';
+//import { TRAVEL_TENDENCY_TYPE } from '../constants/travelTendencyType';
 //import type { UserProfile } from '../types/user';
 import { API_BASE_URL } from '../api/client';
 import type { UpdateProfileDto } from '../types/updateprofiledto';
@@ -36,6 +49,140 @@ interface EditProfileModalProps {
   } | null;
 }
 
+const TENDENCY_CATEGORIES: Array<{
+  id: string;
+  title: string;
+  icon: typeof Map;
+  items: TravelTendencyType[];
+}> = [
+  {
+    id: 'place',
+    title: '장소',
+    icon: MapPin,
+    items: [
+      '도시',
+      '시골',
+      '전통도시',
+      '휴양도시',
+      '항구도시',
+      '전통시장',
+      '야시장',
+      '바다',
+      '섬',
+      '산',
+      '계곡',
+      '호수',
+    ],
+  },
+  {
+    id: 'activity',
+    title: '활동',
+    icon: Tent,
+    items: [
+      '트레킹',
+      '등산',
+      '캠핑',
+      '자전거',
+      '서핑',
+      '스노클링',
+      '프리다이빙',
+      '낚시',
+      '스키',
+      '스노보드',
+      '골프',
+      '러닝',
+    ],
+  },
+  {
+    id: 'food',
+    title: '음식',
+    icon: Utensils,
+    items: [
+      '길거리음식',
+      '로컬레스토랑',
+      '맛집탐방',
+      '카페디저트',
+      '비건필요',
+      '돼지고기비선호',
+      '해산물비선호',
+      '매운맛선호',
+      '순한맛선호',
+      '해산물선호',
+      '육류선호',
+    ],
+  },
+  {
+    id: 'culture',
+    title: '문화',
+    icon: Camera,
+    items: [
+      '건축물탐방',
+      '야경감상',
+      '박물관',
+      '미술관',
+      '유적지탐방',
+      '공연뮤지컬',
+      '콘서트',
+      '스포츠관람',
+      '현지축제',
+      '놀이공원',
+      '아쿠아리움',
+      '동물원',
+    ],
+  },
+  {
+    id: 'stay',
+    title: '숙소',
+    icon: Heart,
+    items: [
+      '호텔',
+      '리조트',
+      '게스트하우스',
+      '모텔',
+      '펜션',
+      '에어비앤비',
+      '글램핑',
+      '풀빌라',
+    ],
+  },
+  {
+    id: 'transport',
+    title: '이동/방식',
+    icon: Car,
+    items: [
+      '렌터카',
+      '캠핑카',
+      '대중교통',
+      '기차여행',
+      '오토바이여행',
+      '배낭여행',
+      '호캉스',
+      '운전가능',
+    ],
+  },
+  {
+    id: 'etc',
+    title: '기타',
+    icon: Shapes,
+    items: [
+      '소수인원선호',
+      '조용한동행선호',
+      '수다떠는동행선호',
+      '조용한휴식',
+      '빡빡한일정',
+      '여유로운일정',
+      '숙소우선',
+      '음식우선',
+      '사진촬영',
+      '풍경촬영',
+      '비흡연',
+      '흡연',
+      '비음주',
+      '음주',
+    ],
+  },
+];
+
 export function EditProfileModal({
   open,
   onOpenChange,
@@ -52,6 +199,8 @@ export function EditProfileModal({
   const [selectedTravelTendencies, setSelectedTravelTendencies] = useState<
     TravelTendencyType[]
   >(user?.tendency || []);
+  const [styleError, setStyleError] = useState<string>('');
+  const [activeTendencyTab, setActiveTendencyTab] = useState<string>('place');
   const [currentProfileImageId, setCurrentProfileImageId] = useState<
     string | null
   >(user?.profileImageId ?? null);
@@ -152,10 +301,14 @@ export function EditProfileModal({
   const profileImageUrl =
     profileImagePreview ?? profileImageRemoteUrl ?? defaultAvatar ?? '';
 
-  if (!user) return null;
+  const currentTendencyTab = TENDENCY_CATEGORIES.find(
+    (tab) => tab.id === activeTendencyTab
+  );
+  const tendencyGridRows = currentTendencyTab
+    ? Math.ceil(currentTendencyTab.items.length / 2)
+    : 1;
 
-  // 사용 가능한 모든 여행 성향 태그
-  const allTendencyTags = Object.values(TRAVEL_TENDENCY_TYPE);
+  if (!user) return null;
 
   // 여행 스타일 태그
   const allStyleTags = Object.values(TRAVEL_STYLE_TYPES);
@@ -243,11 +396,22 @@ export function EditProfileModal({
   // };
 
   const handleToggleStyle = (style: TravelStyleType) => {
-    setSelectedTravelStyles((prev) =>
-      prev.includes(style)
-        ? prev.filter((item) => item !== style)
-        : [...prev, style]
-    );
+    setSelectedTravelStyles((prev) => {
+      if (prev.includes(style)) {
+        const next = prev.filter((item) => item !== style);
+        if (next.length < 3) {
+          setStyleError('여행 스타일을 3개 골라주세요.');
+        }
+        return next;
+      }
+      if (prev.length >= 3) {
+        setStyleError('여행 스타일을 3개까지 선택할 수 있습니다.');
+        return prev;
+      }
+      // 정상 추가 후 길이가 3개면 에러 해제
+      setStyleError('');
+      return [...prev, style];
+    });
   };
 
   const handleToggleTendency = (style: TravelTendencyType) => {
@@ -259,7 +423,11 @@ export function EditProfileModal({
   };
 
   const handleRemoveStyle = (style: TravelStyleType) => {
-    setSelectedTravelStyles(selectedTravelStyles.filter((s) => s !== style));
+    const next = selectedTravelStyles.filter((s) => s !== style);
+    if (next.length < 3) {
+      setStyleError('여행 스타일을 3개 골라주세요.');
+    }
+    setSelectedTravelStyles(next);
   };
 
   const handleRemoveTendency = (tendency: TravelTendencyType) => {
@@ -277,6 +445,10 @@ export function EditProfileModal({
   //👀 save API  호출
   const handleSaveProfile = async () => {
     if (!user || isSaving) return;
+    if (selectedTravelStyles.length !== 3) {
+      setStyleError('여행 스타일을 3개 골라주세요.');
+      return;
+    }
     setIsSaving(true);
     setSaveError(null);
     let nextProfileImageId = currentProfileImageId;
@@ -500,7 +672,7 @@ export function EditProfileModal({
                           size="default"
                           variant="default"
                           onClick={handleImageUpload}
-                          className="flex-1"
+                          className="flex-1 bg-primary hover:bg-primary-strong"
                           disabled={isSaving || isImageDeleting}
                         >
                           <Upload className="w-4 h-4 mr-2" />
@@ -577,7 +749,7 @@ export function EditProfileModal({
                       <Badge
                         key={style}
                         variant="secondary"
-                        className="bg-gray-900 text-white px-3 py-1.5 flex items-center gap-2 rounded-full"
+                        className="bg-primary text-white px-3 py-1.5 flex items-center gap-2 rounded-full"
                       >
                         #{style}
                         <button
@@ -596,6 +768,9 @@ export function EditProfileModal({
                   >
                     + 추가
                   </Button>
+                  {styleError && (
+                    <p className="text-sm text-red-500">{styleError}</p>
+                  )}
                 </div>
 
                 {/* 여행 성향 */}
@@ -606,7 +781,7 @@ export function EditProfileModal({
                       <Badge
                         key={tendency}
                         variant="secondary"
-                        className="bg-gray-900 text-white px-3 py-1.5 flex items-center gap-2 rounded-full"
+                        className="bg-primary text-white px-3 py-1.5 flex items-center gap-2 rounded-full"
                       >
                         #{tendency}
                         <button
@@ -634,7 +809,7 @@ export function EditProfileModal({
                   )}
                   <Button
                     onClick={handleSaveProfile}
-                    className="w-full"
+                    className="w-full bg-primary hover:bg-primary-strong"
                     disabled={isSaving}
                   >
                     {isSaving ? '저장 중...' : '변경사항 저장'}
@@ -693,30 +868,105 @@ export function EditProfileModal({
 
       {/* 여행 성향 태그 추가 모달 */}
       <Dialog open={isTendencyModalOpen} onOpenChange={setIsTendencyModalOpen}>
-        <DialogContent className="max-w-7xl" aria-describedby={undefined}>
+        <DialogContent
+          className="max-w-4xl w-full"
+          aria-describedby={undefined}
+        >
           <DialogTitle className="text-gray-900 mb-4">
             여행 성향 태그 선택
           </DialogTitle>
-          <div className="grid grid-cols-8 gap-3">
-            {allTendencyTags.map((tag) => {
-              const isSelected = selectedTravelTendencies.includes(tag);
-              return (
-                <button
-                  type="button"
-                  key={tag}
-                  onClick={() =>
-                    handleToggleTendency(tag as TravelTendencyType)
-                  }
-                  className={`px-2 py-2 rounded-lg text-sm transition-colors ${
-                    isSelected
-                      ? 'bg-gray-900 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
+          <div className="flex flex-col md:flex-row gap-3 md:gap-4">
+            <div className="w-full md:w-48 max-w-[180px] shrink-0 bg-slate-100/50 md:rounded-l-2xl">
+              <div className="flex flex-row md:flex-col overflow-x-auto md:overflow-visible scrollbar-hide p-2 md:p-2.5 gap-2">
+                {TENDENCY_CATEGORIES.map((tab) => {
+                  const isActive = activeTendencyTab === tab.id;
+                  const count = tab.items.filter((k) =>
+                    selectedTravelTendencies.includes(k)
+                  ).length;
+                  const Icon = tab.icon;
+
+                  return (
+                    <Button
+                      key={tab.id}
+                      variant="ghost"
+                      onClick={() => setActiveTendencyTab(tab.id)}
+                      className={`
+                        justify-start h-auto flex items-center gap-2 px-3 py-2 text-sm font-medium transition-all relative text-left md:rounded-l-2xl w-full
+                        ${
+                          isActive
+                            ? 'bg-white text-primary shadow-md shadow-slate-100 z-10'
+                            : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'
+                        }
+                      `}
+                    >
+                      <div
+                        className={`p-1 rounded-2xl transition-colors ${isActive ? 'bg-primary-10 text-primary' : 'bg-transparent text-slate-400'}`}
+                      >
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <span className="whitespace-nowrap">{tab.title}</span>
+                      {count > 0 && (
+                        <span
+                          className={`ml-auto w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold ${isActive ? 'bg-primary text-white' : 'bg-slate-200 text-slate-500'}`}
+                        >
+                          {count}
+                        </span>
+                      )}
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex-1 min-w-0 py-4 md:py-5 pr-3 pl-0 md:pl-1 bg-white md:rounded-l-2xl">
+              <div className="mb-4 text-left">
+                {currentTendencyTab && (
+                  <h3 className="text-lg font-bold text-gray-900">
+                    {currentTendencyTab.title}
+                  </h3>
+                )}
+                <p className="text-sm text-gray-500 mt-1">
+                  마음에 드는 키워드를 모두 골라주세요.
+                </p>
+              </div>
+
+              <div
+                className="animate-in fade-in slide-in-from-right-4 duration-300 h-[260px]"
+                key={activeTendencyTab}
+              >
+                <div
+                  className="grid grid-cols-2 gap-2.5 h-full"
+                  style={{
+                    gridTemplateRows: `repeat(${tendencyGridRows}, minmax(0, 1fr))`,
+                  }}
                 >
-                  #{tag}
-                </button>
-              );
-            })}
+                  {currentTendencyTab &&
+                    currentTendencyTab.items.map((label) => {
+                      const isSelected =
+                        selectedTravelTendencies.includes(label);
+                      return (
+                        <Button
+                          key={label}
+                          variant="outline"
+                          onClick={() =>
+                            handleToggleTendency(label as TravelTendencyType)
+                          }
+                          className={`
+                            relative group py-2 px-2 h-full w-full min-w-[120px] rounded-md text-sm font-medium transition-all duration-200 border text-center flex items-center justify-center gap-1.5 whitespace-nowrap
+                            ${
+                              isSelected
+                                ? 'bg-primary border-primary text-white shadow-primary-soft hover:bg-primary-strong hover:text-white active:bg-primary-strong'
+                                : 'bg-white text-slate-600 border-slate-100 hover:border-primary hover:bg-primary-10 hover:text-slate-800'
+                            }
+                          `}
+                        >
+                          {label}
+                        </Button>
+                      );
+                    })}
+                </div>
+              </div>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -737,7 +987,7 @@ export function EditProfileModal({
                   onClick={() => handleToggleStyle(tag as TravelStyleType)}
                   className={`px-4 py-2 rounded-lg text-sm transition-colors ${
                     isSelected
-                      ? 'bg-gray-900 text-white'
+                      ? 'bg-primary text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
