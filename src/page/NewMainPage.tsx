@@ -661,7 +661,7 @@ export function NewMainPage({
         {/* Section 0: CTA */}
         {isLoggedIn && (
           <section
-            className="relative bg-gray-800 bg-cover bg-center mb-8 md:mb-10 lg:mb-12"
+            className="relative bg-gray-800 bg-cover bg-center"
             style={{
               backgroundImage: `url(https://source.unsplash.com/1600x900/?travel,destination)`,
             }}
