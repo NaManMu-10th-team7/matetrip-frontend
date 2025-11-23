@@ -24,6 +24,7 @@ import { CATEGORY_INFO, type PlaceDto } from '../types/place.ts'; // useWorkspac
 import { AddToItineraryModal } from '../components/AddToItineraryModal.tsx';
 import { PdfDocument } from '../components/PdfDocument.tsx'; // [신규] 모달 컴포넌트 임포트 (생성 필요)
 import { AIRecommendationLoadingModal } from '../components/AIRecommendationLoadingModal.tsx';
+import { PdfGeneratingLoadingModal } from '../components/PdfGeneratingLoadingModal'; // [신규] PDF 로딩 모달 임포트
 import { toast } from 'sonner';
 import { ScheduleSidebar } from '../components/ScheduleSidebar.tsx';
 import { OptimizationModal } from '../components/OptimizationModal.tsx';
@@ -1044,6 +1045,7 @@ export function Workspace({
         </div>
       )}
       <AIRecommendationLoadingModal isOpen={isRecommendationLoading} />
+      <PdfGeneratingLoadingModal isOpen={isGeneratingPdf} /> {/* [신규] PDF 로딩 모달 추가 */}
       <OptimizationModal
         isOpen={isOptimizationModalOpen}
         onClose={handleCloseModal}
