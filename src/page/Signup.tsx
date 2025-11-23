@@ -555,12 +555,12 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
 
             {step === 1 && (
               <div className="flex-1 px-5 md:px-6 py-5 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="space-y-5 max-w-xl mx-auto w-full ml-2">
+                <div className="space-y-5 max-w-xl mx-auto w-full px-6">
                   <div>
                     <Label htmlFor="email" className="font-semibold">
                       이메일
                     </Label>
-                    <div className="relative mt-2 w-full max-w-md">
+                    <div className="relative mt-2">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <Input
                         id="email"
@@ -581,7 +581,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                     <Label htmlFor="password" className="font-semibold">
                       비밀번호
                     </Label>
-                    <div className="relative mt-2  w-full max-w-md">
+                    <div className="relative mt-2">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <Input
                         id="password"
@@ -613,7 +613,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                     <Label htmlFor="confirmPassword" className="font-semibold">
                       비밀번호 확인
                     </Label>
-                    <div className="relative mt-2 w-full max-w-md">
+                    <div className="relative mt-2 w-full ">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <Input
                         id="confirmPassword"
@@ -647,7 +647,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                     <Label htmlFor="nickname" className="font-semibold">
                       닉네임
                     </Label>
-                    <div className="relative mt-2  w-full max-w-md">
+                    <div className="relative mt-2">
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <Input
                         id="nickname"
