@@ -15,6 +15,7 @@ import {
   UserCheck,
   UserPlus,
   DoorOpen, // DoorOpen 아이콘 추가
+  AlertTriangle,
 } from 'lucide-react';
 import React from 'react'; // Import React to use React.ReactNode
 import { Button } from '../components/ui/button';
@@ -117,7 +118,6 @@ export function PostDetail({
     try {
       const postResponse = await client.get<Post>(`/posts/${postId}`);
       const fetchedPost = postResponse.data;
-      console.log('PostDetail fetched post', fetchedPost);
       setPost(fetchedPost);
       if (fetchedPost.imageId) {
         try {
@@ -126,7 +126,7 @@ export function PostDetail({
           );
           setRemoteCoverImageUrl(payload.data.url);
         } catch (imageErr) {
-          console.error('Post detail cover image load failed:', imageErr);
+          // console.error('Post detail cover image load failed:', imageErr);
           setRemoteCoverImageUrl(null);
         }
       } else {
@@ -143,7 +143,7 @@ export function PostDetail({
       );
     } catch (err) {
       setError(err as Error);
-      console.error('Failed to fetch post details:', err);
+      // console.error('Failed to fetch post details:', err);
     } finally {
       setIsLoading(false);
     }
@@ -171,7 +171,7 @@ export function PostDetail({
           setWriterProfileImageUrl(data.url);
         }
       } catch (err) {
-        console.error('PostDetail writer image load failed:', err);
+        // console.error('PostDetail writer image load failed:', err);
         if (!cancelled) {
           setWriterProfileImageUrl(null);
         }
@@ -206,7 +206,7 @@ export function PostDetail({
               );
               return { imageId, url: data.url };
             } catch (err) {
-              console.error('PostDetail participant image load failed:', err);
+              // console.error('PostDetail participant image load failed:', err);
               return { imageId, url: null };
             }
           })
@@ -220,7 +220,7 @@ export function PostDetail({
         }
         setParticipantProfileUrls(nextMap);
       } catch (err) {
-        console.error('PostDetail participant image batch load failed:', err);
+        // console.error('PostDetail participant image batch load failed:', err);
       }
     })();
 
@@ -263,10 +263,7 @@ export function PostDetail({
                 );
                 imageUrl = data.url;
               } catch (err) {
-                console.error(
-                  `PostDetail recommended user image load failed for ${profileImageId}:`,
-                  err
-                );
+                // console.error(`PostDetail recommended user image load failed for ${profileImageId}:`, err);
                 imageUrl = null;
               }
             }
@@ -297,10 +294,7 @@ export function PostDetail({
 
         setRecommendedUserProfiles(nextMap);
       } catch (err) {
-        console.error(
-          'PostDetail recommended user images batch load failed:',
-          err
-        );
+        // console.error('PostDetail recommended user images batch load failed:', err);
       }
     })();
 
@@ -321,7 +315,7 @@ export function PostDetail({
       await client.post(`/posts/${postId}/participations`);
       await fetchPostDetail();
     } catch (err) {
-      console.error('Failed to apply for post:', err);
+      // console.error('Failed to apply for post:', err);
       toast.warning('동행 신청 중 오류가 발생했습니다.');
     }
   };
@@ -333,7 +327,7 @@ export function PostDetail({
       });
       await fetchPostDetail();
     } catch (err) {
-      console.error('Failed to accept request:', err);
+      // console.error('Failed to accept request:', err);
       toast.warning('요청 수락 중 오류가 발생했습니다.');
     }
   };
@@ -345,7 +339,7 @@ export function PostDetail({
       });
       await fetchPostDetail();
     } catch (err) {
-      console.error('Failed to reject request:', err);
+      // console.error('Failed to reject request:', err);
       toast.warning('요청 거절 중 오류가 발생했습니다.');
     }
   };
@@ -358,7 +352,7 @@ export function PostDetail({
       );
       await fetchPostDetail();
     } catch (err) {
-      console.error('Failed to cancel application:', err);
+      // console.error('Failed to cancel application:', err);
       toast.warning('신청 취소 중 오류가 발생했습니다.');
     } finally {
       setCancelModalOpen(false);
@@ -372,7 +366,7 @@ export function PostDetail({
       setDeleteModalOpen(false);
       setShowDeleteSuccessAlert(true); // 삭제 성공 알림 표시
     } catch (err) {
-      console.error('Failed to delete post:', err);
+      // console.error('Failed to delete post:', err);
       toast.warning('게시글 삭제 중 오류가 발생했습니다.');
       setDeleteModalOpen(false);
     }
@@ -474,31 +468,13 @@ export function PostDetail({
   }
 
   const handleButtonClick = () => {
-    console.log('🔵 [PostDetail] Bottom button clicked.', {
-      isLoggedIn,
-      buttonConfig,
-      isAuthor,
-      userParticipationStatus: userParticipation?.status,
-      postId: post?.id,
-      postTitle: post?.title,
-      onJoinWorkspaceType: typeof onJoinWorkspace,
-    });
-
     if (!isLoggedIn || buttonConfig.disabled) {
-      console.log('⚠️ Button disabled or not logged in');
       return;
     }
 
     if ((isAuthor || userParticipation?.status === '승인') && post) {
-      console.log('🔵 [PostDetail] Calling onJoinWorkspace...', {
-        postId: post.id,
-        postTitle: post.title,
-      });
-      console.log('🟢 [PostDetail] About to call onJoinWorkspace');
       onJoinWorkspace(post.id, post.title);
-      console.log('🟢 [PostDetail] onJoinWorkspace called successfully');
     } else if (!userParticipation && !isFull) {
-      console.log('🔵 [PostDetail] Calling handleApply...');
       handleApply();
     }
   };
@@ -540,7 +516,10 @@ export function PostDetail({
                       <MoreVertical className="w-7 h-7" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48 z-50 bg-white">
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-48 z-50 bg-white"
+                  >
                     <DropdownMenuItem
                       className="cursor-pointer"
                       onClick={() => onEditPost(post)}
@@ -616,8 +595,8 @@ export function PostDetail({
       <div className="flex-1 overflow-y-auto custom-scrollbar bg-white">
         <div className="p-8">
           <div className="mb-6">
-            <div className="grid grid-cols-1 gap-4">
-              <div className="p-4 rounded-xl border shadow-md">
+            <div className="grid grid-cols-1 gap-4 ">
+              <div className="p-4 rounded-xl border border-gray-200 shadow-sm">
                 <div className="flex items-start gap-4">
                   <ImageWithFallback
                     src={
@@ -634,37 +613,22 @@ export function PostDetail({
                       </p>
                       <Button
                         size="sm"
-                        variant="outline"
-                        className="flex-shrink-0 rounded-full"
+                        className="flex-shrink-0 rounded-full text-xs h-8"
                         onClick={() => {
-                          console.log(
-                            '🔵 [PostDetail] View writer profile clicked.',
-                            {
-                              writerId: post.writer?.id,
-                              hasWriter: !!post.writer,
-                              onViewProfileType: typeof onViewProfile,
-                            }
-                          );
                           if (post.writer?.id) {
-                            console.log(
-                              '🟢 [PostDetail] About to call onViewProfile with:',
-                              post.writer.id
-                            );
                             onViewProfile(post.writer.id);
-                            console.log(
-                              '🟢 [PostDetail] onViewProfile called successfully'
-                            );
                           } else {
-                            console.warn('⚠️ Writer ID is missing!');
+                            // console.warn('⚠️ Writer ID is missing!');
                           }
                         }}
                       >
                         프로필 보기
                       </Button>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-                      <Thermometer className="w-5 h-5" /> {/* 크기 조정 */}
-                      <span>
+                    <div className="flex items-center text-sm text-gray-600 mb-2">
+                      <Thermometer className="w-5 h-5 text-primary" />{' '}
+                      {/* 크기 조정 */}
+                      <span className="text-primary">
                         {formatMannerTemperature(post.writer?.profile)}
                       </span>
                     </div>
@@ -687,7 +651,7 @@ export function PostDetail({
           </div>
 
           <div className="w-full mt-4">
-            <div className="border-b">
+            <div className="border-b border-gray-200">
               <nav className="-mb-px flex space-x-6" aria-label="Tabs">
                 <button
                   onClick={() => setActiveTab('intro')}
@@ -726,7 +690,7 @@ export function PostDetail({
 
             <div className="mt-6">
               {activeTab === 'intro' && (
-                <div className="rounded-xl border p-6">
+                <div className="rounded-xl border border-gray-200 p-6">
                   <h3 className="flex items-center text-gray-900 text-lg font-bold mb-4">
                     <FileText className="w-6 h-6 mr-2" />
                     여행 소개
@@ -752,8 +716,11 @@ export function PostDetail({
                             (m) => m.userId === p.requester.id
                           );
                           return (
-                            <div key={p.id} className="rounded-xl border">
-                              <div className="flex items-center gap-3 p-3">
+                            <div
+                              key={p.id}
+                              className="rounded-xl border border-gray-200"
+                            >
+                              <div className="flex items-start gap-3 p-3">
                                 <ImageWithFallback
                                   src={
                                     (p.requester.profile.profileImageId
@@ -768,31 +735,25 @@ export function PostDetail({
                                 />
                                 <div className="flex-1 min-w-0">
                                   <div className="flex justify-between items-start">
-                                    <div>
-                                      <span className="text-gray-900 font-semibold">
-                                        {p.requester.profile.nickname}
-                                      </span>
-                                      {isAuthor && matchInfo && (
-                                        <p className="text-sm text-gray-600">
-                                          매칭률:{' '}
-                                          {Math.round(matchInfo.score * 100)}%
-                                        </p>
-                                      )}
-                                    </div>
-                                    <div className="flex items-center gap-1 text-sm text-gray-600 flex-shrink-0 ml-2">
-                                      {
-                                        <>
-                                          <Thermometer className="w-5 h-5" />
-                                          <span>
-                                            {formatMannerTemperature(
-                                              p.requester.profile
-                                            )}
-                                          </span>
-                                        </>
-                                      }
-                                    </div>
+                                    <span className="text-gray-900 font-semibold">
+                                      {p.requester.profile.nickname}
+                                    </span>
+                                    {isAuthor && matchInfo && (
+                                      <p className="text-sm text-gray-600">
+                                        매칭률:{' '}
+                                        {Math.round(matchInfo.score * 100)}%
+                                      </p>
+                                    )}
                                   </div>
-                                  <div className="flex justify-between items-end mt-2">
+                                  <div className="flex items-center text-sm text-gray-600 mt-1">
+                                    <Thermometer className="w-5 h-5 text-primary" />
+                                    <span className="text-primary">
+                                      {formatMannerTemperature(
+                                        p.requester.profile
+                                      )}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between items-end mt-1">
                                     <div className="flex flex-wrap gap-1">
                                       {p.requester.profile.travelStyles
                                         ?.slice(0, 3)
@@ -808,21 +769,12 @@ export function PostDetail({
                                     </div>
                                     <Button
                                       size="sm"
-                                      variant="outline"
-                                      className="text-xs h-7 rounded-full"
+                                      className="text-xs h-8 rounded-full"
                                       onClick={() => {
-                                        console.log(
-                                          '🔵 [PostDetail] View approved participant profile clicked.',
-                                          {
-                                            requesterId: p.requester.id,
-                                          }
-                                        );
                                         if (p.requester.id) {
                                           onViewProfile(p.requester.id);
                                         } else {
-                                          console.warn(
-                                            '⚠️ Requester ID is missing!'
-                                          );
+                                          // console.warn('⚠️ Requester ID is missing!');
                                         }
                                       }}
                                     >
@@ -843,7 +795,7 @@ export function PostDetail({
                                       <Badge
                                         key={keyword}
                                         variant="secondary"
-                                        className="rounded-full px-2 py-0.5 text-xs bg-blue-50 text-blue-700 border border-blue-200"
+                                        className="rounded-full px-2 py-0.5 text-xs bg-gray-100 text-gray-800 border border-gray-200"
                                       >
                                         {translateKeyword(keyword)}
                                       </Badge>
@@ -855,7 +807,7 @@ export function PostDetail({
                           );
                         })
                       ) : (
-                        <p className="text-gray-500 text-sm p-4 rounded-xl border text-center">
+                        <p className="text-gray-500 text-sm p-4 rounded-xl border border-gray-200 text-center">
                           아직 확정된 동행이 없습니다.
                         </p>
                       )}
@@ -874,8 +826,11 @@ export function PostDetail({
                             (m) => m.userId === request.requester.id
                           );
                           return (
-                            <div key={request.id} className="rounded-xl border">
-                              <div className="flex items-center gap-3 p-3">
+                            <div
+                              key={request.id}
+                              className="rounded-xl border border-gray-200"
+                            >
+                              <div className="flex items-start gap-3 p-3">
                                 <ImageWithFallback
                                   src={
                                     (request.requester.profile.profileImageId
@@ -891,31 +846,25 @@ export function PostDetail({
                                 />
                                 <div className="flex-1 min-w-0">
                                   <div className="flex justify-between items-start">
-                                    <div>
-                                      <span className="text-gray-900 font-semibold">
-                                        {request.requester.profile.nickname}
-                                      </span>
-                                      {isAuthor && matchInfo && (
-                                        <p className="text-sm text-gray-600">
-                                          매칭률:{' '}
-                                          {Math.round(matchInfo.score * 100)}%
-                                        </p>
-                                      )}
-                                    </div>
-                                    <div className="flex items-center gap-1 text-sm text-gray-600 flex-shrink-0 ml-2">
-                                      {
-                                        <>
-                                          <Thermometer className="w-5 h-5" />
-                                          <span>
-                                            {formatMannerTemperature(
-                                              request.requester.profile
-                                            )}
-                                          </span>
-                                        </>
-                                      }
-                                    </div>
+                                    <span className="text-gray-900 font-semibold">
+                                      {request.requester.profile.nickname}
+                                    </span>
+                                    {isAuthor && matchInfo && (
+                                      <p className="text-sm text-gray-600">
+                                        매칭률:{' '}
+                                        {Math.round(matchInfo.score * 100)}%
+                                      </p>
+                                    )}
                                   </div>
-                                  <div className="flex justify-between items-end mt-2">
+                                  <div className="flex items-center text-sm text-gray-600 mt-1">
+                                    <Thermometer className="w-5 h-5 text-primary" />
+                                    <span className="text-primary">
+                                      {formatMannerTemperature(
+                                        request.requester.profile
+                                      )}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between items-end mt-1">
                                     <div className="flex flex-wrap gap-1">
                                       {request.requester.profile.travelStyles
                                         ?.slice(0, 3)
@@ -931,21 +880,12 @@ export function PostDetail({
                                     </div>
                                     <Button
                                       size="sm"
-                                      variant="outline"
-                                      className="text-xs h-7 rounded-full"
+                                      className="text-xs h-8 rounded-full"
                                       onClick={() => {
-                                        console.log(
-                                          '🔵 [PostDetail] View pending participant profile clicked.',
-                                          {
-                                            requesterId: request.requester.id,
-                                          }
-                                        );
                                         if (request.requester.id) {
                                           onViewProfile(request.requester.id);
                                         } else {
-                                          console.warn(
-                                            '⚠️ Requester ID is missing!'
-                                          );
+                                          // console.warn('⚠️ Requester ID is missing!');
                                         }
                                       }}
                                     >
@@ -966,7 +906,7 @@ export function PostDetail({
                                       <Badge
                                         key={keyword}
                                         variant="secondary"
-                                        className="rounded-full px-2 py-0.5 text-xs bg-blue-50 text-blue-700 border border-blue-200"
+                                        className="rounded-full px-2 py-0.5 text-xs bg-gray-100 text-gray-800 border border-gray-200"
                                       >
                                         {translateKeyword(keyword)}
                                       </Badge>
@@ -1004,7 +944,7 @@ export function PostDetail({
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    className="w-full text-sm text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300 rounded-full"
+                                    className="w-full text-sm text-red-600 border-red-600 bg-transparent hover:bg-red-600 hover:text-white rounded-full"
                                     onClick={() => setCancelModalOpen(true)}
                                   >
                                     <X className="w-5 h-5 mr-1" />
@@ -1016,7 +956,7 @@ export function PostDetail({
                           );
                         })
                       ) : (
-                        <p className="text-gray-500 text-sm p-4 rounded-xl border text-center">
+                        <p className="text-gray-500 text-sm p-4 rounded-xl border border-gray-200 text-center">
                           대기중인 동행이 없습니다.
                         </p>
                       )}
@@ -1027,7 +967,7 @@ export function PostDetail({
 
               {activeTab === 'recommendations' &&
                 (isAuthor && post.matchResult && post.matchResult.length > 0 ? (
-                  <div className="rounded-xl border p-6">
+                  <div className="rounded-xl border border-gray-200 p-6">
                     <h3 className="text-gray-900 text-lg font-bold mb-4 flex items-center gap-2">
                       <UserPlus className="w-6 h-6 mr-2" />
                       AI 추천 동행 (상위 {Math.min(post.matchResult.length, 3)}
@@ -1045,7 +985,7 @@ export function PostDetail({
                         return (
                           <div
                             key={candidate.userId}
-                            className="rounded-xl border bg-white overflow-hidden flex flex-col"
+                            className="rounded-xl border border-gray-200 bg-white overflow-hidden flex flex-col"
                           >
                             <div className="p-4 flex-1">
                               <div className="flex items-start gap-4">
@@ -1093,15 +1033,12 @@ export function PostDetail({
                             <div className="p-4 pt-0 space-y-2">
                               <Button
                                 size="sm"
-                                variant="outline"
-                                className="w-full rounded-full"
+                                className="w-full rounded-full h-9"
                                 onClick={() => {
                                   if (candidate.userId) {
                                     onViewProfile(candidate.userId);
                                   } else {
-                                    console.warn(
-                                      '⚠️ Candidate userId is missing!'
-                                    );
+                                    // console.warn('⚠️ Candidate userId is missing!');
                                   }
                                 }}
                               >
@@ -1116,11 +1053,12 @@ export function PostDetail({
                                 }`}
                                 disabled={isInvited}
                                 onClick={() => {
-                                  console.log(
-                                    `Inviting user: ${candidate.userId}`
+                                  toast.info(
+                                    `${recommendedProfile?.nickname || '사용자'}님을 초대했습니다.`
                                   );
-                                  toast.info(`${recommendedProfile?.nickname || '사용자'}님을 초대했습니다.`);
-                                  setInvitedUserIds((prev) => new Set(prev).add(candidate.userId));
+                                  setInvitedUserIds((prev) =>
+                                    new Set(prev).add(candidate.userId)
+                                  );
                                 }}
                               >
                                 <UserPlus className="w-4 h-4 mr-2" />
@@ -1133,7 +1071,7 @@ export function PostDetail({
                     </div>
                   </div>
                 ) : (
-                  <div className="text-gray-500 text-sm p-4 rounded-xl border text-center">
+                  <div className="text-gray-500 text-sm p-4 rounded-xl border border-gray-200 text-center">
                     AI 추천 동행 정보가 없습니다.
                   </div>
                 ))}
@@ -1156,18 +1094,31 @@ export function PostDetail({
 
       {/* 각종 모달 */}
       <AlertDialog open={cancelModalOpen} onOpenChange={setCancelModalOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>동행 신청 취소</AlertDialogTitle>
-            <AlertDialogDescription>
-              정말로 동행 신청을 취소하시겠습니까?
-              <br />이 작업은 되돌릴 수 없습니다.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>아니오</AlertDialogCancel>
+        <AlertDialogContent className="w-full max-w-md bg-white rounded-2xl shadow-xl p-0 focus-visible:ring-0 focus-visible:ring-offset-0 border-0">
+          <div className="p-6 pb-8">
+            <AlertDialogHeader className="text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 mb-4">
+                <AlertTriangle className="h-6 w-6 text-red-600" />
+              </div>
+              <AlertDialogTitle className="text-xl font-bold text-gray-900">
+                동행 신청을 취소하시겠어요?
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-gray-500 mt-2">
+                정말로 동행 신청을 취소하시겠습니까?
+                <br />이 작업은 되돌릴 수 없습니다.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+          </div>
+          <AlertDialogFooter className="grid grid-cols-2 gap-0 rounded-b-2xl overflow-hidden">
+            <AlertDialogCancel className="w-full bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 border-r border-gray-200 h-14 focus-visible:ring-0 rounded-none">
+              아니오
+            </AlertDialogCancel>
             <AlertDialogAction asChild>
-              <Button variant="destructive" onClick={handleCancelApplication}>
+              <Button
+                variant="destructive"
+                onClick={handleCancelApplication}
+                className="w-full h-14 focus-visible:ring-0 rounded-none border-0"
+              >
                 예, 취소합니다
               </Button>
             </AlertDialogAction>
@@ -1176,18 +1127,31 @@ export function PostDetail({
       </AlertDialog>
 
       <AlertDialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>게시글 삭제</AlertDialogTitle>
-            <AlertDialogDescription>
-              정말로 이 게시글을 삭제하시겠습니까?
-              <br />이 작업은 되돌릴 수 없습니다.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>아니오</AlertDialogCancel>
+        <AlertDialogContent className="w-full max-w-md bg-white rounded-2xl shadow-xl p-0 focus-visible:ring-0 focus-visible:ring-offset-0 border-0">
+          <div className="p-6 pb-8">
+            <AlertDialogHeader className="text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 mb-4">
+                <AlertTriangle className="h-6 w-6 text-red-600" />
+              </div>
+              <AlertDialogTitle className="text-xl font-bold text-gray-900">
+                게시글을 삭제하시겠어요?
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-gray-500 mt-2">
+                정말로 이 게시글을 삭제하시겠습니까?
+                <br />이 작업은 되돌릴 수 없습니다.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+          </div>
+          <AlertDialogFooter className="grid grid-cols-2 gap-0 rounded-b-2xl overflow-hidden">
+            <AlertDialogCancel className="w-full bg-gray-100 text-gray-700 hover:bg-gray-200 border-0 border-r border-gray-200 h-14 focus-visible:ring-0 rounded-none">
+              아니오
+            </AlertDialogCancel>
             <AlertDialogAction asChild>
-              <Button variant="destructive" onClick={handleDeletePost}>
+              <Button
+                variant="destructive"
+                onClick={handleDeletePost}
+                className="w-full h-14 focus-visible:ring-0 rounded-none border-0"
+              >
                 예, 삭제합니다
               </Button>
             </AlertDialogAction>
@@ -1199,7 +1163,7 @@ export function PostDetail({
         open={showDeleteSuccessAlert}
         onOpenChange={setShowDeleteSuccessAlert}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="border-0">
           <AlertDialogHeader>
             <AlertDialogTitle>삭제 완료</AlertDialogTitle>
             <AlertDialogDescription>
