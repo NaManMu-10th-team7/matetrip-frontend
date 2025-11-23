@@ -464,16 +464,39 @@ export function Workspace({
 
   // [FIX] useMemo를 useEffect로 변경하여 Rules of Hooks 위반 해결
   useEffect(() => {
-    if (lastMessage && lastMessage.userId && activeMembersForHeader) {
+    console.log('Workspace useEffect: lastMessage changed', lastMessage);
+    if (lastMessage && activeMembersForHeader) {
       const sender = activeMembersForHeader.find(
         (member) => member.id === lastMessage.userId
       );
 
-      setLatestChatMessage({
-        userId: lastMessage.userId,
-        message: lastMessage.message,
-        avatar: sender?.avatar,
-      });
+      console.log('Workspace useEffect: lastMessage.role:', lastMessage.role, 'lastMessage.isLoading:', lastMessage.isLoading);
+
+      // 1. 현재 사용자가 보낸 '@AI' 메시지는 툴팁으로 표시하지 않음
+      // 2. AI 메시지이고 isLoading 상태인 경우 툴팁을 표시하지 않음
+      if (
+        (lastMessage.role === 'user' && lastMessage.message.startsWith('@AI')) ||
+        (lastMessage.role === 'ai' && lastMessage.isLoading)
+      ) {
+        setLatestChatMessage(null); // 해당 메시지는 툴팁으로 표시하지 않음
+        console.log('Workspace useEffect: Setting latestChatMessage to null (User @AI message or AI loading)');
+      } else if (lastMessage.userId) { // 다른 유저 메시지 또는 AI 최종 응답
+        const messageToSet = {
+          userId: lastMessage.userId,
+          message: lastMessage.message,
+          avatar: sender?.avatar,
+        };
+        setLatestChatMessage(messageToSet);
+        console.log('Workspace useEffect: Setting latestChatMessage to', messageToSet);
+      } else {
+        // userId가 없는 시스템 메시지 등은 툴팁으로 표시하지 않음
+        setLatestChatMessage(null);
+        console.log('Workspace useEffect: Setting latestChatMessage to null (no userId)');
+      }
+    } else {
+      // 메시지가 없거나 유저 정보가 없으면 툴팁을 숨김
+      setLatestChatMessage(null);
+      console.log('Workspace useEffect: Setting latestChatMessage to null (no message or user info)');
     }
   }, [lastMessage, activeMembersForHeader]);
 
