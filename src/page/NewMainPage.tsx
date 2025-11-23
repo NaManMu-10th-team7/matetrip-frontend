@@ -5,7 +5,7 @@ import {
   Star,
   CheckCircle,
   ChevronRight,
-  PlusCircle,
+  Plus, // PlusCircle 대신 Plus 아이콘으로 변경
   Sparkles,
   Flame,
 } from 'lucide-react';
@@ -740,9 +740,9 @@ export function NewMainPage({
               </p>
               <Button
                 onClick={onCreatePost}
-                className="mt-6 bg-primary text-primary-foreground hover:bg-primary-strong font-bold py-5 px-10 text-lg flex items-center gap-2 transition-colors"
+                className="mt-6 bg-primary text-primary-foreground hover:bg-primary-strong font-bold py-5 px-12 text-lg flex items-center gap-2 transition-colors w-fit"
               >
-                <PlusCircle className="w-5 h-5" />새 동행 만들기
+                <Plus className="w-5 h-5" />새로운 여행
               </Button>
             </div>
           </section>
@@ -857,7 +857,7 @@ export function NewMainPage({
                     </div>
                   </div>
                 ) : reviewableTrips.length === 0 ? (
-                  <div className="text-center text-gray-500 py-10 bg-gray-50 rounded-lg">
+                  <div className="text-center text-gray-500 py-10">
                     리뷰를 작성할 장소가 없습니다.
                   </div>
                 ) : (
@@ -996,6 +996,7 @@ export function NewMainPage({
                       }}
                       onAddPoiToItinerary={handleAddPoiToItinerary}
                       onCardClick={(_poiLatLon) => handleInspirationClick(place)}
+                      showAddButton={false} // '일정에 추가' 버튼을 숨깁니다.
                     />
                   ))}
                 </ReviewablePlacesCarousel>

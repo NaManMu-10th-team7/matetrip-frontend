@@ -4,7 +4,7 @@ import {
   LogIn,
   Heart,
   Sparkles,
-  PlusSquare, // 아이콘 추가
+  Plus, // PlusCircle 대신 Plus 아이콘으로 변경
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
@@ -263,12 +263,12 @@ export function Sidebar({
                 className={`w-full h-12 rounded-[10px] bg-primary text-primary-foreground hover:bg-primary-strong transition-colors flex items-center justify-center gap-3 ${
                   isExpanded ? 'px-4' : ''
                 }`}
-                title={!isExpanded ? '동행 모집' : ''}
+                title={!isExpanded ? '새로운 여행' : ''}
               >
-                <PlusSquare className="w-6 h-6 shrink-0" />
+                <Plus className="w-6 h-6 shrink-0" /> {/* PlusCircle 대신 Plus로 변경 */}
                 {isExpanded && (
                   <span className="font-semibold text-base whitespace-nowrap">
-                    동행 모집
+                    새로운 여행
                   </span>
                 )}
               </Button>

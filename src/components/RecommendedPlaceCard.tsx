@@ -7,12 +7,14 @@ interface RecommendedPlaceCardProps {
   place: AiPlace;
   onAddPoiToItinerary: (poi: Poi) => void;
   onCardClick: (poi: Pick<Poi, "longitude" | "latitude">) => void;
+  showAddButton?: boolean; // '일정에 추가' 버튼 표시 여부 prop 추가
 }
 
 export function RecommendedPlaceCard({
   place,
   onAddPoiToItinerary,
   onCardClick,
+  showAddButton = true, // 기본값은 true로 설정
 }: RecommendedPlaceCardProps) {
   const {
     imageUrl,
@@ -83,9 +85,11 @@ export function RecommendedPlaceCard({
             </div>
           </div>
         )}
-        <button onClick={handleAddClick} className="mt-3 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
-          일정에 추가
-        </button>
+        {showAddButton && ( // showAddButton이 true일 때만 버튼 렌더링
+          <button onClick={handleAddClick} className="mt-3 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
+            일정에 추가
+          </button>
+        )}
       </div>
     </div>
   );

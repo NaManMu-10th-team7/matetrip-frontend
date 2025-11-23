@@ -177,6 +177,7 @@ export function PlaceRecommendationSection({
                 // We already have `place.id` and the full `place` object from the map loop.
                 handlePlaceClick(place.id, place);
               }}
+              showAddButton={false} // '일정에 추가' 버튼을 숨깁니다.
             />
           ))}
         </ReviewablePlacesCarousel>
