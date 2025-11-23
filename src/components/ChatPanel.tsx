@@ -183,6 +183,24 @@ const ChatMessageItem = memo(function ChatMessageItem({
       : `${messageDate.toLocaleDateString('ko-KR')} ${messageDate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}`;
   };
 
+  const renderMessageContent = () => {
+    if (msg.role === 'user' && msg.message.startsWith('@AI')) {
+      const aiPrefix = '@AI';
+      const restOfMessage = msg.message.substring(aiPrefix.length);
+      return (
+        <p className="text-base" style={{ wordBreak: 'break-word' }}> {/* text-sm -> text-base 변경 */}
+          <span className="text-primary font-bold">{aiPrefix}</span>
+          {restOfMessage}
+        </p>
+      );
+    }
+    return (
+      <p className="text-base" style={{ wordBreak: 'break-word' }}> {/* text-sm -> text-base 변경 */}
+        {!isAiRecommendation && msg.message}
+      </p>
+    );
+  };
+
   return (
     <div className="flex gap-3 items-start">
       <div className="w-10 h-10 flex-shrink-0">
@@ -214,9 +232,7 @@ const ChatMessageItem = memo(function ChatMessageItem({
           {msg.isLoading ? (
             <AiLoadingIndicator />
           ) : (
-            <p className="text-sm" style={{ wordBreak: 'break-word' }}>
-            {!isAiRecommendation && msg.message}
-          </p>
+            renderMessageContent()
           )}
           {isAiRecommendation && (
             <div className="border border-primary rounded-lg bg-primary-10 overflow-hidden">
