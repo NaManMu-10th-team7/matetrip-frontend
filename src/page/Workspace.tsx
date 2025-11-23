@@ -285,7 +285,7 @@ export function Workspace({
               id: p.id,
               title: p.title,
               summary: p.summary, // [수정] summary 속성 추가
-              image_url: p.image_url, // [수정] image_url 속성 추가
+              imageUrl: p.image_url, // [수정] image_url 속성 추가
               latitude: p.latitude,
               longitude: p.longitude,
               category: p.category,

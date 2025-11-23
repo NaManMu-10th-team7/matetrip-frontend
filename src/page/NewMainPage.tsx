@@ -24,6 +24,8 @@ import PageContainer from '../components/PageContainer';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { ReviewablePlacesCarousel } from '../components/ReviewablePlacesCarousel';
 import { RecommendedPlaceCard } from '../components/RecommendedPlaceCard';
+import type { AiPlace } from '../hooks/useChatSocket'; // AiPlace 임포트
+import type { Poi } from '../hooks/usePoiSocket'; // Poi 임포트
 
 // --- Interfaces ---
 interface PopularPlaceResponse {
@@ -659,6 +661,12 @@ export function NewMainPage({
     }
   };
 
+  // Placeholder for onAddPoiToItinerary, as this section doesn't directly add to itinerary
+  const handleAddPoiToItinerary = (poi: Poi) => {
+    console.log('POI added to itinerary (from NewMainPage Hot Place):', poi);
+    // Implement actual logic if needed
+  };
+
   return (
     <div className="flex bg-white relative">
       <div className="flex-1 overflow-y-auto">
@@ -924,11 +932,19 @@ export function NewMainPage({
                   {inspirations.map((place) => (
                     <RecommendedPlaceCard
                       key={place.id}
-                      imageUrl={place.imageUrl}
-                      title={place.title}
-                      address={place.address}
-                      category={place.category}
-                      onClick={() => handleInspirationClick(place)}
+                      place={{
+                        id: place.id,
+                        title: place.title,
+                        address: place.address,
+                        summary: place.summary,
+                        imageUrl: place.imageUrl,
+                        longitude: place.longitude,
+                        latitude: place.latitude,
+                        category: place.category as AiPlace['category'],
+                        recommendationReason: undefined, // Hot Place doesn't have this
+                      }}
+                      onAddPoiToItinerary={handleAddPoiToItinerary}
+                      onCardClick={(_poiLatLon) => handleInspirationClick(place)}
                     />
                   ))}
                 </ReviewablePlacesCarousel>

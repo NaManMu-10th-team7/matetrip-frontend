@@ -9,11 +9,12 @@ export type AiPlace = {
   id: string;
   title: string;
   address: string;
-  summary: string;
-  image_url: string;
+  summary?: string; // summary는 선택적일 수 있으므로 ? 추가
+  imageUrl?: string; // image_url 대신 imageUrl 사용 (프론트엔드 컨벤션에 맞춤)
   longitude: number;
   latitude: number;
   category: string;
+  recommendationReason?: string; // recommendationReason 추가
 };
 const ChatEvent = {
   JOIN: 'join',
@@ -141,7 +142,11 @@ export function useChatSocket(workspaceId: string) {
               tool.tool_name === 'recommend_popular_places_in_region') &&
             Array.isArray(tool.tool_output)
           ) {
-            newMessage.recommendedPlaces = tool.tool_output as AiPlace[];
+            // image_url을 imageUrl로 매핑
+            newMessage.recommendedPlaces = tool.tool_output.map((place: any) => ({
+              ...place,
+              imageUrl: place.image_url, // image_url을 imageUrl로 매핑
+            })) as AiPlace[];
           }
           // [추가] message가 비어있고 tool_output이 문자열이면, tool_output을 message로 사용
           else if (!newMessage.message && typeof tool.tool_output === 'string') {

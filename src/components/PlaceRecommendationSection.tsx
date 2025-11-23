@@ -7,6 +7,8 @@ import client from '../api/client';
 import { type PlaceDto } from '../types/place';
 import { ReviewablePlacesCarousel } from './ReviewablePlacesCarousel';
 import { Lightbulb } from 'lucide-react';
+import type { AiPlace } from '../hooks/useChatSocket'; // Import type AiPlace
+import type { Poi } from '../hooks/usePoiSocket'; // Import type Poi
 
 interface PlaceRecommendationSectionProps {
   onPlaceClick: (placeId: string, place: PlaceDto) => void;
@@ -100,6 +102,12 @@ export function PlaceRecommendationSection({
     onPlaceClick(placeId, place);
   };
 
+  // Placeholder for onAddPoiToItinerary, as this section doesn't directly add to itinerary
+  const handleAddPoiToItinerary = (poi: Poi) => {
+    console.log('POI added to itinerary (from PlaceRecommendationSection):', poi);
+    // Implement actual logic if needed
+  };
+
   return (
     <section>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3">
@@ -151,12 +159,24 @@ export function PlaceRecommendationSection({
           {places.map((place) => (
             <RecommendedPlaceCard
               key={place.id}
-              imageUrl={place.image_url}
-              title={place.title}
-              address={place.address}
-              category={place.category}
-              recommendationReason={place.recommendationReason?.message}
-              onClick={() => handlePlaceClick(place.id, place)}
+              place={{
+                id: place.id,
+                title: place.title,
+                address: place.address,
+                summary: place.summary,
+                imageUrl: place.image_url, // Map image_url to imageUrl
+                longitude: place.longitude,
+                latitude: place.latitude,
+                category: place.category as AiPlace['category'], // Cast to AiPlace's category type
+                recommendationReason: place.recommendationReason?.message, // Map message
+              }}
+              onAddPoiToItinerary={handleAddPoiToItinerary}
+              onCardClick={(_poiLatLon) => { // poiLatLon을 _poiLatLon으로 변경
+                // When RecommendedPlaceCard is clicked, it calls this with lat/lng.
+                // We need to call the parent's onPlaceClick which expects placeId and full PlaceDto.
+                // We already have `place.id` and the full `place` object from the map loop.
+                handlePlaceClick(place.id, place);
+              }}
             />
           ))}
         </ReviewablePlacesCarousel>
