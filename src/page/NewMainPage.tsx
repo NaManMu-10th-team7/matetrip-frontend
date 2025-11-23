@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { MapPin } from 'lucide-react'; // [신규] MapPin 아이콘 임포트
 import { Button } from '../components/ui/button';
 import { PlaceRecommendationSection } from '../components/PlaceRecommendationSection';
 import { InspirationCard } from '../components/InspirationCard';
@@ -13,6 +14,7 @@ import { GridMatchingCard } from '../components/GridMatchingCard';
 import { MainPostCardSkeleton } from '../components/AIMatchingSkeletion';
 import { PoiDetailPanel } from '../components/ScheduleSidebar';
 import PageContainer from '../components/PageContainer';
+import { CategoryIcon } from '../components/CategoryIcon';
 
 interface PopularPlaceResponse {
   addplace_id: string;
@@ -61,7 +63,7 @@ interface ReviewableTrip {
 
 interface NewMainPageProps {
   onCreatePost: () => void;
-  onJoinWorkspace: (postId: string, workspaceName: string) => void;
+  onJoinWorkspace: (postId: string, workspaceName:string) => void;
   onViewProfile: (userId: string) => void;
   onEditPost: (post: Post) => void;
   onDeleteSuccess?: () => void;
@@ -85,6 +87,7 @@ const normalizeTextList = (values?: unknown): string[] => {
     .filter((text) => text.length > 0);
 };
 
+// [수정] ReviewablePlaceCard에 주소 표시 추가
 function ReviewablePlaceCard({
   place,
   onClick,
@@ -103,12 +106,16 @@ function ReviewablePlaceCard({
         className="h-40 w-full object-cover transition-transform duration-300 group-hover:scale-105"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-      <div className="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
-        {place.category}
-      </div>
-      <div className="absolute bottom-0 left-0 p-4 w-full">
+      <div className="absolute bottom-0 left-0 p-3 w-full">
         <h3 className="text-md font-bold text-white truncate">{place.title}</h3>
-        <p className="text-xs text-gray-200 truncate">{place.address}</p>
+        <div className="flex items-center gap-1 text-xs text-gray-200 mt-1">
+          <CategoryIcon category={place.category} className="w-3 h-3" />
+          <span>{place.category}</span>
+        </div>
+        <div className="flex items-center gap-1 text-xs text-gray-200 mt-1">
+          <MapPin className="w-3 h-3 flex-shrink-0" />
+          <p className="truncate">{place.address}</p>
+        </div>
       </div>
     </div>
   );
@@ -137,7 +144,6 @@ export function NewMainPage({
   const [isReviewablePlacesLoading, setIsReviewablePlacesLoading] =
     useState(true);
 
-  // [신규] 활성 탭 상태
   const [activeReviewTabs, setActiveReviewTabs] = useState<
     Record<string, string>
   >({});
@@ -204,7 +210,7 @@ export function NewMainPage({
     };
   }, [isAuthLoading, isLoggedIn, user?.userId]);
 
-  // [수정] Fetch inspiration places with explicit typing
+  // Fetch inspiration places
   useEffect(() => {
     if (isAuthLoading) return;
     const fetchInspirations = async () => {
@@ -220,7 +226,6 @@ export function NewMainPage({
               const detailResponse = await client.get(
                 `/places/${item.addplace_id}`
               );
-              // Explicitly create an object of type Place to ensure type safety
               const place: Place = {
                 id: item.addplace_id,
                 title: item.title,
@@ -266,7 +271,6 @@ export function NewMainPage({
         const trips = response.data ?? [];
         setReviewableTrips(trips);
 
-        // Initialize active tabs
         if (trips.length > 0) {
           const initialTabs: Record<string, string> = {};
           trips.forEach((trip) => {
