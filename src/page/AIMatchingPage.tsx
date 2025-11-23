@@ -532,8 +532,7 @@ export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
                 </Button>
               </div>
               {searchResults.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-22">
-                  {' '}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-14 items-start">
                   {/* 그리드 클래스 수정 */}
                   {searchResults.map((result, index) => (
                     <GridMatchingCard
@@ -584,7 +583,7 @@ export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
               추천할 동행이 없습니다.
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-14 mt-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-14 mt-8 items-start">
               {recommendedPosts.map((post, index) => (
                 <GridMatchingCard
                   key={post.id}
