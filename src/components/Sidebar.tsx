@@ -73,7 +73,7 @@ export function Sidebar({
     <div className="relative flex shrink-0">
       <div
         className={`bg-white border-r border-gray-200 h-screen flex flex-col shrink-0 transition-all duration-300 ${
-          isExpanded ? 'w-[180px]' : 'w-[64px]'
+          isExpanded ? 'w-[260px]' : 'w-[80px]'
         }`}
       >
         {/* Logo Section */}
@@ -84,8 +84,8 @@ export function Sidebar({
             onClick={() => navigate('/main')}
             className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
           >
-            <div className="w-8 h-8 bg-[#101828] rounded-[10px] flex items-center justify-center shrink-0">
-              <Map className="w-5 h-5 text-white" />
+            <div className="w-8 h-8 bg-primary rounded-[10px] flex items-center justify-center shrink-0">
+              <Map className="w-5 h-5 text-primary-foreground" />
             </div>
             {isExpanded && (
               <span
@@ -101,24 +101,6 @@ export function Sidebar({
         {/* Navigation Menu */}
         <nav className="flex-1 px-2 py-4 flex flex-col">
           <div className="flex flex-col gap-1">
-            {/* AI Chat */}
-            {/* <button
-            onClick={handleAIChatClick}
-            className={`flex items-center gap-3 h-12 rounded-[10px] transition-colors ${
-              isExpanded ? 'px-4' : 'justify-center'
-            } ${
-              isActive('/ai-chat')
-                ? 'bg-[#101828] text-white'
-                : 'text-[#364153] hover:bg-gray-100'
-            }`}
-            title={!isExpanded ? 'AI Chat' : ''}
-          >
-            <MessageSquare className="w-5 h-5 shrink-0" />
-            {isExpanded && <span className="font-normal text-base whitespace-nowrap">AI Chat</span>}
-          </button> */}
-
-            {/* 여행 모두보기 */}
-
             {/* Main */}
             <button
               onClick={() => navigate('/main')}
@@ -126,8 +108,8 @@ export function Sidebar({
                 isExpanded ? 'px-4' : 'justify-center'
               } ${
                 isActive('/main')
-                  ? 'bg-[#101828] text-white'
-                  : 'text-[#364153] hover:bg-gray-100'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-[#364153] hover:bg-primary-10'
               }`}
               title={!isExpanded ? 'AI 동행 찾기' : ''}
             >
@@ -146,8 +128,8 @@ export function Sidebar({
                 isExpanded ? 'px-4' : 'justify-center'
               } ${
                 isActive('/ai-matching')
-                  ? 'bg-[#101828] text-white'
-                  : 'text-[#364153] hover:bg-gray-100'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-[#364153] hover:bg-primary-10'
               }`}
               title={!isExpanded ? 'All-Trip' : ''}
             >
@@ -166,8 +148,8 @@ export function Sidebar({
                 isExpanded ? 'px-4' : 'justify-center'
               } ${
                 isActive('/all-posts')
-                  ? 'bg-[#101828] text-white'
-                  : 'text-[#364153] hover:bg-gray-100'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-[#364153] hover:bg-primary-10'
               }`}
               title={!isExpanded ? '모든 여행' : ''}
             >
@@ -187,8 +169,8 @@ export function Sidebar({
                   isExpanded ? 'px-4' : 'justify-center'
                 } ${
                   isActive('/save')
-                    ? 'bg-[#101828] text-white'
-                    : 'text-[#364153] hover:bg-gray-100'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-[#364153] hover:bg-primary-10'
                 }`}
                 title={!isExpanded ? 'SAVE' : ''}
               >
@@ -208,8 +190,8 @@ export function Sidebar({
                 isExpanded ? 'px-4' : 'justify-center'
               } ${
                 isActive('/inspiration')
-                  ? 'bg-[#101828] text-white'
-                  : 'text-[#364153] hover:bg-gray-100'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-[#364153] hover:bg-primary-10'
               }`}
               title={!isExpanded ? 'Inspiration' : ''}
             >
@@ -230,7 +212,7 @@ export function Sidebar({
             <div className="px-2 mt-4">
               <Button
                 onClick={onCreatePost}
-                className={`w-full h-12 rounded-[10px] bg-[#356AFF] text-white hover:bg-[#2c5ae9] transition-colors flex items-center justify-center gap-3 ${
+                className={`w-full h-12 rounded-[10px] bg-primary text-primary-foreground hover:bg-primary-strong transition-colors flex items-center justify-center gap-3 ${
                   isExpanded ? 'px-4' : ''
                 }`}
                 title={!isExpanded ? '동행 모집' : ''}
@@ -288,7 +270,7 @@ export function Sidebar({
           ) : (
             <Button
               onClick={onLoginClick}
-              className={`w-full gap-2 bg-[#101828] hover:bg-[#1f2937] transition-all duration-300 ${
+              className={`w-full gap-2 bg-primary text-primary-foreground hover:bg-primary-strong transition-all duration-300 ${
                 !isExpanded ? 'px-2' : ''
               }`}
               title={!isExpanded ? '로그인' : ''}

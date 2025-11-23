@@ -215,7 +215,7 @@
   }
 
   .hover\:bg-primary-strong:hover {
-    background-color: var(--primary-strong) !important;
+    background-color: var(--primary-strong);
   }
 
   .active\:bg-primary-strong:active {
