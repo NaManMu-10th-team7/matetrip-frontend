@@ -484,7 +484,9 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
       );
 
       const userAvatarUrl = currentUserMemberInfo?.profile.profileImageId
-        ? `${API_BASE_URL}/binary-content/${currentUserMemberInfo.profile.profileImageId}/presigned-url`
+        ? currentUserMemberInfo.profile.profileImageId.startsWith('http') // 이미 완전한 URL인지 확인
+          ? currentUserMemberInfo.profile.profileImageId // 이미 URL이면 그대로 사용
+          : `${API_BASE_URL}/binary-content/${currentUserMemberInfo.profile.profileImageId}/presigned-url` // ID이면 URL 생성
         : `https://ui-avatars.com/api/?name=${
             currentUserMemberInfo?.profile.nickname || 'User'
           }&background=random`;

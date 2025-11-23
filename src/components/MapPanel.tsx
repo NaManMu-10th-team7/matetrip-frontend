@@ -459,7 +459,6 @@ const PlaceMarker = memo(
         `
             : ''
         }
-        ${iconSvg}
         ${
           isMarkedOnly
             ? `
@@ -1742,8 +1741,8 @@ export function MapPanel({
                   src={cursorData.userAvatar}
                   alt={cursorData.userName}
                   style={{
-                    width: '24px',
-                    height: '24px',
+                    width: '32px',
+                    height: '32px',
                     borderRadius: '50%',
                     border: '1px solid white',
                     boxShadow: '0 1px 3px rgba(0,0,0,0.3)',

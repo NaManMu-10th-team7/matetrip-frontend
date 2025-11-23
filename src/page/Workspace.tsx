@@ -279,7 +279,7 @@ export function Workspace({
               placeName: p.title,
               categoryName: p.category,
               status: 'RECOMMENDED' as any,
-              planDayId: virtualPlanDayId,
+              planDayId: virtualPlanDayId, // 오타 수정: virtualPlanPlanDayId -> virtualPlanDayId
             };
             allRecommendedPois.push({
               id: p.id,
@@ -488,6 +488,7 @@ export function Workspace({
         };
         setLatestChatMessage(messageToSet);
         console.log('Workspace useEffect: Setting latestChatMessage to', messageToSet);
+        console.log('Workspace useEffect: Avatar URL for latestChatMessage:', messageToSet.avatar);
       } else {
         // userId가 없는 시스템 메시지 등은 툴팁으로 표시하지 않음
         setLatestChatMessage(null);
