@@ -140,7 +140,7 @@ function ReviewablePlaceCard({
 }) {
   return (
     <div
-      className="group cursor-pointer overflow-hidden rounded-xl shadow-md transition-shadow hover:shadow-lg flex-shrink-0 w-64 mr-4"
+      className="group cursor-pointer overflow-hidden rounded-xl border border-gray-200 shadow-sm transition-shadow hover:shadow-lg flex-shrink-0 w-64 mr-4"
       onClick={onClick}
     >
       <img
