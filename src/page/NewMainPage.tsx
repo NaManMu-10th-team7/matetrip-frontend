@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin } from 'lucide-react'; // [신규] MapPin 아이콘 임포트
+import { MapPin, Star } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { PlaceRecommendationSection } from '../components/PlaceRecommendationSection';
 import { InspirationCard } from '../components/InspirationCard';
@@ -16,6 +16,7 @@ import { PoiDetailPanel } from '../components/ScheduleSidebar';
 import PageContainer from '../components/PageContainer';
 import { CategoryIcon } from '../components/CategoryIcon';
 
+// --- Interfaces ---
 interface PopularPlaceResponse {
   addplace_id: string;
   title: string;
@@ -63,12 +64,13 @@ interface ReviewableTrip {
 
 interface NewMainPageProps {
   onCreatePost: () => void;
-  onJoinWorkspace: (postId: string, workspaceName:string) => void;
+  onJoinWorkspace: (postId: string, workspaceName: string) => void;
   onViewProfile: (userId: string) => void;
   onEditPost: (post: Post) => void;
   onDeleteSuccess?: () => void;
 }
 
+// --- Helper Functions ---
 const normalizeTextList = (values?: unknown): string[] => {
   if (!values) return [];
   const arrayValues = Array.isArray(values) ? values : [values];
@@ -87,7 +89,7 @@ const normalizeTextList = (values?: unknown): string[] => {
     .filter((text) => text.length > 0);
 };
 
-// [수정] ReviewablePlaceCard에 주소 표시 추가
+// --- Sub-components ---
 function ReviewablePlaceCard({
   place,
   onClick,
@@ -121,6 +123,119 @@ function ReviewablePlaceCard({
   );
 }
 
+// [수정] 리뷰 모달 스타일 개선
+function ReviewModal({
+  isOpen,
+  onClose,
+  place,
+  onSubmit,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  place: ReviewablePlaceInfo;
+  onSubmit: (review: {
+    placeId: string;
+    rating: number;
+    content: string;
+  }) => void;
+}) {
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [content, setContent] = useState('');
+
+  if (!isOpen) return null;
+
+  const handleSubmit = () => {
+    if (rating === 0) {
+      alert('별점을 선택해주세요.');
+      return;
+    }
+    if (!content.trim()) {
+      alert('리뷰 내용을 입력해주세요.');
+      return;
+    }
+    onSubmit({ placeId: place.id, rating, content });
+  };
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/60 z-50 flex justify-center items-center"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header with background image */}
+        <div
+          className="relative h-32 bg-cover bg-center p-6 flex flex-col justify-end"
+          style={{ backgroundImage: `url(${place.image_url})` }}
+        >
+          <div className="absolute inset-0 bg-black/50" />
+          <div className="relative z-10">
+            <h2 className="text-2xl font-bold text-white">리뷰 작성하기</h2>
+            <p className="text-gray-200">
+              <span className="font-semibold">{place.title}</span>에서의 경험은
+              어떠셨나요?
+            </p>
+          </div>
+        </div>
+
+        {/* Content Area */}
+        <div className="p-6">
+          <div className="mb-5">
+            <label className="block text-lg font-bold text-gray-800 mb-2">
+              별점
+            </label>
+            <div className="flex items-center">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star
+                  key={star}
+                  className="w-9 h-9 cursor-pointer"
+                  fill={
+                    star <= (hoverRating || rating) ? '#FFC107' : 'transparent'
+                  }
+                  stroke={
+                    star <= (hoverRating || rating) ? '#FFC107' : '#A0A0A0'
+                  }
+                  onMouseEnter={() => setHoverRating(star)}
+                  onMouseLeave={() => setHoverRating(0)}
+                  onClick={() => setRating(star)}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="mb-6">
+            <label
+              htmlFor="review-content"
+              className="block text-lg font-bold text-gray-800 mb-2"
+            >
+              한 줄 리뷰
+            </label>
+            <input
+              type="text"
+              id="review-content"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="예: 정말 좋은 경험이었어요!"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base"
+            />
+          </div>
+
+          <div className="flex justify-end space-x-3 mt-8">
+            <Button variant="ghost" onClick={onClose}>
+              취소
+            </Button>
+            <Button onClick={handleSubmit}>제출하기</Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- Main Component ---
 export function NewMainPage({
   onJoinWorkspace,
   onViewProfile,
@@ -157,12 +272,15 @@ export function NewMainPage({
   const [selectedPostIdForPanel, setSelectedPostIdForPanel] = useState<
     string | null
   >(null);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [selectedPlaceForReview, setSelectedPlaceForReview] =
+    useState<ReviewablePlaceInfo | null>(null);
 
   const [writerProfileImages, setWriterProfileImages] = useState<
     Record<string, string | null>
   >({});
 
-  // Fetch all posts
+  // --- Data Fetching Effects ---
   useEffect(() => {
     if (isAuthLoading) return;
     const fetchPosts = async () => {
@@ -183,7 +301,6 @@ export function NewMainPage({
     fetchPosts();
   }, [isAuthLoading]);
 
-  // Fetch matching data (로그인 필요)
   useEffect(() => {
     if (isAuthLoading || !isLoggedIn || !user?.userId) {
       setIsMatchesLoading(false);
@@ -210,7 +327,6 @@ export function NewMainPage({
     };
   }, [isAuthLoading, isLoggedIn, user?.userId]);
 
-  // Fetch inspiration places
   useEffect(() => {
     if (isAuthLoading) return;
     const fetchInspirations = async () => {
@@ -256,43 +372,44 @@ export function NewMainPage({
     fetchInspirations();
   }, [isAuthLoading]);
 
-  // Fetch reviewable places and initialize tabs
-  useEffect(() => {
+  const fetchReviewablePlaces = async () => {
     if (!isLoggedIn) {
       setIsReviewablePlacesLoading(false);
       return;
     }
-    const fetchReviewablePlaces = async () => {
-      setIsReviewablePlacesLoading(true);
-      try {
-        const response = await client.get<ReviewableTrip[]>(
-          '/place-user-reviews/reviewable'
-        );
-        const trips = response.data ?? [];
-        setReviewableTrips(trips);
+    setIsReviewablePlacesLoading(true);
+    try {
+      const response = await client.get<ReviewableTrip[]>(
+        '/place-user-reviews/reviewable'
+      );
+      const trips = response.data ?? [];
+      setReviewableTrips(trips);
 
-        if (trips.length > 0) {
-          const initialTabs: Record<string, string> = {};
-          trips.forEach((trip) => {
-            if (trip.places.length > 0) {
-              const firstDate = trip.places.reduce((earliest, current) => {
-                return earliest < current.planDate ? earliest : current.planDate;
-              }, trip.places[0].planDate);
-              initialTabs[trip.post.id] = firstDate;
-            }
-          });
-          setActiveReviewTabs(initialTabs);
-        }
-      } catch (error) {
-        console.error('Failed to fetch reviewable places:', error);
-        setReviewableTrips([]);
-      } finally {
-        setIsReviewablePlacesLoading(false);
+      if (trips.length > 0) {
+        const initialTabs: Record<string, string> = {};
+        trips.forEach((trip) => {
+          if (trip.places.length > 0) {
+            const firstDate = trip.places.reduce((earliest, current) => {
+              return earliest < current.planDate ? earliest : current.planDate;
+            }, trip.places[0].planDate);
+            initialTabs[trip.post.id] = firstDate;
+          }
+        });
+        setActiveReviewTabs(initialTabs);
       }
-    };
+    } catch (error) {
+      console.error('Failed to fetch reviewable places:', error);
+      setReviewableTrips([]);
+    } finally {
+      setIsReviewablePlacesLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchReviewablePlaces();
   }, [isLoggedIn]);
 
+  // --- Memoized Calculations ---
   const matchedPosts = useMemo(() => {
     return matches
       .map((match) => {
@@ -310,14 +427,8 @@ export function NewMainPage({
         };
       })
       .filter(
-        (
-          item
-        ): item is {
-          post: Post;
-          score: number;
-          tendency: string[];
-          style: string[];
-        } => item !== null
+        (item): item is { post: Post; score: number; tendency: string[]; style: string[] } =>
+          item !== null
       )
       .slice(0, 5);
   }, [matches, posts]);
@@ -363,6 +474,7 @@ export function NewMainPage({
     else setWriterProfileImages({});
   }, [matchedPosts]);
 
+  // --- Handlers ---
   const handleOpenPlaceDetailPanel = (placeId: string) => {
     setSelectedPlaceIdForPanel(placeId);
     requestAnimationFrame(() => setShowPlaceDetailPanel(true));
@@ -406,6 +518,36 @@ export function NewMainPage({
 
   const handleAllViewInspiration = () => {
     navigate('/inspiration');
+  };
+
+  const handleOpenReviewModal = (place: ReviewablePlaceInfo) => {
+    setSelectedPlaceForReview(place);
+    setIsReviewModalOpen(true);
+  };
+
+  const handleCloseReviewModal = () => {
+    setIsReviewModalOpen(false);
+    setSelectedPlaceForReview(null);
+  };
+
+  const handleSubmitReview = async ({
+    placeId,
+    rating,
+    content,
+  }: {
+    placeId: string;
+    rating: number;
+    content: string;
+  }) => {
+    try {
+      await client.post(`/places/${placeId}/reviews`, { rating, content });
+      alert('리뷰가 성공적으로 등록되었습니다.');
+      handleCloseReviewModal();
+      fetchReviewablePlaces();
+    } catch (error) {
+      console.error('Failed to submit review:', error);
+      alert('리뷰 등록에 실패했습니다.');
+    }
   };
 
   return (
@@ -540,7 +682,10 @@ export function NewMainPage({
                           여행
                         </h3>
                         <div className="border-b border-gray-200">
-                          <nav className="-mb-px flex space-x-6" aria-label="Tabs">
+                          <nav
+                            className="-mb-px flex space-x-6"
+                            aria-label="Tabs"
+                          >
                             {sortedDates.map((date) => (
                               <button
                                 key={date}
@@ -568,7 +713,7 @@ export function NewMainPage({
                               <ReviewablePlaceCard
                                 key={place.id}
                                 place={place}
-                                onClick={() => handlePlaceClick(place.id)}
+                                onClick={() => handleOpenReviewModal(place)}
                               />
                             ))}
                         </div>
@@ -633,7 +778,7 @@ export function NewMainPage({
         </PageContainer>
       </div>
 
-      {/* Panels & Overlay */}
+      {/* Panels & Overlays */}
       <div
         className={`fixed inset-0 z-20 bg-black/50 transition-opacity duration-300 ${
           showPlaceDetailPanel || showPostDetailPanel
@@ -675,6 +820,16 @@ export function NewMainPage({
           />
         )}
       </div>
+
+      {/* 리뷰 모달 렌더링 */}
+      {isReviewModalOpen && selectedPlaceForReview && (
+        <ReviewModal
+          isOpen={isReviewModalOpen}
+          onClose={handleCloseReviewModal}
+          place={selectedPlaceForReview}
+          onSubmit={handleSubmitReview}
+        />
+      )}
     </div>
   );
 }
