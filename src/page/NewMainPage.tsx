@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Star } from 'lucide-react';
+import { MapPin, Star, CheckCircle } from 'lucide-react'; // [수정] CheckCircle 아이콘 임포트
 import { Button } from '../components/ui/button';
 import { PlaceRecommendationSection } from '../components/PlaceRecommendationSection';
 import { InspirationCard } from '../components/InspirationCard';
@@ -70,7 +70,7 @@ interface NewMainPageProps {
   onDeleteSuccess?: () => void;
 }
 
-// [수정] 카테고리별 리뷰 예시 데이터
+// --- Constants ---
 const CATEGORY_REVIEW_EXAMPLES: Record<string, string[]> = {
   음식: [
     '음식이 정말 맛있어요! 😋',
@@ -282,6 +282,40 @@ function ReviewModal({
   );
 }
 
+// [신규] 성공 모달 컴포넌트
+function SuccessModal({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) {
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/60 z-50 flex justify-center items-center"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-lg shadow-xl w-full max-w-sm p-8 text-center"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100">
+          <CheckCircle className="h-10 w-10 text-green-600" />
+        </div>
+        <h2 className="text-2xl font-bold mt-4 mb-2 text-gray-800">
+          리뷰 등록 완료!
+        </h2>
+        <p className="text-gray-600 mb-6">소중한 리뷰를 남겨주셔서 감사합니다.</p>
+        <Button onClick={onClose} className="w-full">
+          확인
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 // --- Main Component ---
 export function NewMainPage({
   onJoinWorkspace,
@@ -322,6 +356,7 @@ export function NewMainPage({
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [selectedPlaceForReview, setSelectedPlaceForReview] =
     useState<ReviewablePlaceInfo | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false); // [신규]
 
   const [writerProfileImages, setWriterProfileImages] = useState<
     Record<string, string | null>
@@ -577,7 +612,7 @@ export function NewMainPage({
     setSelectedPlaceForReview(null);
   };
 
-  // [수정] API 호출 로직 변경
+  // [수정] 성공 모달을 띄우도록 핸들러 수정
   const handleSubmitReview = async ({
     placeId,
     rating,
@@ -589,8 +624,8 @@ export function NewMainPage({
   }) => {
     try {
       await client.post('/place-user-reviews', { placeId, rating, content });
-      alert('리뷰가 성공적으로 등록되었습니다.');
       handleCloseReviewModal();
+      setShowSuccessModal(true); // 성공 모달 띄우기
       fetchReviewablePlaces();
     } catch (error) {
       console.error('Failed to submit review:', error);
@@ -878,6 +913,12 @@ export function NewMainPage({
           onSubmit={handleSubmitReview}
         />
       )}
+
+      {/* [신규] 성공 모달 렌더링 */}
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+      />
     </div>
   );
 }
