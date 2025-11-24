@@ -268,9 +268,7 @@ export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
 
     matches.forEach((candidate) => {
       const writer = buildWriterFromCandidate(candidate);
-      const tendencyList = normalizeTextList(
-        candidate.overlappingTendencies
-      );
+      const tendencyList = normalizeTextList(candidate.overlappingTendencies);
       const styleList = normalizeTextList(candidate.overlappingTravelStyles);
 
       (candidate.recruitingPosts ?? []).forEach((matchPost) => {
@@ -295,7 +293,7 @@ export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
                 ? toPercent(candidate.vectorScore)
                 : undefined,
             tendency: tendencyList.join(', '), // string[]를 string으로 변환
-            style: styleList.join(', '),       // string[]를 string으로 변환
+            style: styleList.join(', '), // string[]를 string으로 변환
           },
         });
       });
@@ -305,13 +303,10 @@ export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
       recommendedPosts: entries.map((entry) => entry.post),
       matchingInfoByPostId: entries.reduce<
         Record<string, MatchingInfo> // MatchingInfo 타입으로 변경
-      >(
-        (acc, entry) => {
-          acc[entry.post.id] = entry.info;
-          return acc;
-        },
-        {}
-      ),
+      >((acc, entry) => {
+        acc[entry.post.id] = entry.info;
+        return acc;
+      }, {}),
     };
   }, [matches]);
 
@@ -445,7 +440,7 @@ export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
         {/* Header Section */}
         <div className="mb-8">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-7 h-7 text-blue-600" />
+            <Sparkles className="w-7 h-7 text-primary" />
             <h1 className="text-2xl font-bold text-gray-900">
               MateTrip AI가 추천하는 최적의 여행 파트너
             </h1>

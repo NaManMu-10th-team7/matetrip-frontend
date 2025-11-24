@@ -7,6 +7,7 @@ import {
   Plus, // PlusCircle 대신 Plus 아이콘으로 변경
   ChevronLeft,
   ChevronRight,
+  Flame,
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { useAuthStore } from '../store/authStore';
@@ -84,7 +85,9 @@ export function Sidebar({
         {/* Logo Skeleton */}
         <div className="border-b border-gray-200 py-6 h-[81px] flex items-center justify-center">
           <div className="w-14 h-14 bg-gray-200 rounded-full"></div>
-          {isExpanded && <div className="h-6 w-24 bg-gray-200 rounded ml-2"></div>}
+          {isExpanded && (
+            <div className="h-6 w-24 bg-gray-200 rounded ml-2"></div>
+          )}
         </div>
 
         {/* Navigation Menu Skeleton */}
@@ -108,9 +111,7 @@ export function Sidebar({
         </div>
 
         {/* Toggle Button Skeleton (기존 버튼과 동일한 위치에 회색 블록으로 표시) */}
-        <div
-          className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-5 h-20 bg-gray-200 rounded-lg"
-        ></div>
+        <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-5 h-20 bg-gray-200 rounded-lg"></div>
       </div>
     );
   }
@@ -243,7 +244,7 @@ export function Sidebar({
               }`}
               title={!isExpanded ? 'Inspiration' : ''}
             >
-              <Sparkles className="w-5 h-5 shrink-0" />
+              <Flame className="w-5 h-5 shrink-0" />
               {isExpanded && (
                 <span className="font-normal text-base whitespace-nowrap">
                   Hot Place
