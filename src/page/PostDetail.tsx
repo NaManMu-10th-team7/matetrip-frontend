@@ -412,7 +412,7 @@ export function PostDetail({
   if (isLoggedIn) {
     if (isAuthor) {
       buttonConfig = {
-        text: '아지트 입장',
+        text: '여행 일정 만들기',
         disabled: false,
         className:
           'w-full rounded-full border border-primary bg-transparent text-primary hover:bg-primary hover:text-primary-foreground px-6 py-6 text-lg',
@@ -422,7 +422,7 @@ export function PostDetail({
       switch (userParticipation.status) {
         case '승인':
           buttonConfig = {
-            text: '아지트 입장',
+            text: '여행 일정 만들기',
             disabled: false,
             className:
               'w-full rounded-full border border-primary bg-transparent text-primary hover:bg-primary hover:text-primary-foreground px-6 py-6 text-lg',
