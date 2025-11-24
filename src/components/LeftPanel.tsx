@@ -179,8 +179,8 @@ interface LeftPanelProps {
   visibleDayIds: Set<string>;
   onDayVisibilityChange: (dayId: string, isVisible: boolean) => void;
   onRecommendedItineraryVisibilityChange: () => void;
-  hoveredPoiId: string | null;
-  onGenerateAiPlan: () => void;
+  hoveredPoiId: string | null; // onGenerateAiPlan을 선택적으로 변경
+  onGenerateAiPlan?: () => void;
   messages: ChatMessage[];
   sendMessage: (message: string) => void;
   isChatConnected: boolean;
@@ -428,11 +428,11 @@ export function LeftPanel({
 
   const renderAiRecommendationContent = () => (
     <>
-      <div className="p-4 border-b">
+      <div className="p-4 border-b">{onGenerateAiPlan &&
         <Button className="w-full" onClick={onGenerateAiPlan} variant="default">
           <RefreshCw className="w-4 h-4 mr-2" />
           다시 추천받기
-        </Button>
+        </Button>}
       </div>
       <div className="flex-1">
         <div className="flex items-center justify-between p-4 border-b">

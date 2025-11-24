@@ -6,13 +6,15 @@ import type { Poi } from '../hooks/usePoiSocket'; // Poi 타입 임포트
 interface RecommendedPlaceCardProps {
   place: AiPlace;
   onAddPoiToItinerary: (poi: Poi) => void;
-  onCardClick: (poi: Pick<Poi, "longitude" | "latitude">) => void;
+  onCardClick: (poi: Pick<Poi, 'longitude' | 'latitude'>) => void;
+  showAddButton?: boolean; // '일정에 추가' 버튼 표시 여부 prop 추가
 }
 
 export function RecommendedPlaceCard({
   place,
   onAddPoiToItinerary,
   onCardClick,
+  showAddButton = true, // 기본값은 true로 설정
 }: RecommendedPlaceCardProps) {
   const {
     imageUrl,
@@ -66,7 +68,10 @@ export function RecommendedPlaceCard({
         <div className="flex flex-col gap-1.5 text-sm text-gray-600 mt-2">
           {category && (
             <div className="flex items-center gap-1.5">
-              <CategoryIcon category={category} className="w-4 h-4 text-gray-400" />
+              <CategoryIcon
+                category={category}
+                className="w-4 h-4 text-gray-400"
+              />
               <span>{category}</span>
             </div>
           )}
@@ -77,15 +82,22 @@ export function RecommendedPlaceCard({
         </div>
         {recommendationReason && (
           <div className="mt-3 pt-3 border-t border-gray-100">
-            <div className="flex items-start gap-2 text-sm text-purple-700 h-10 overflow-hidden">
+            <div className="flex items-start gap-2 text-sm text-primary h-10 overflow-hidden">
               <Lightbulb className="w-4 h-4 flex-shrink-0 mt-0.5" />
-              <p className="leading-relaxed break-keep">{recommendationReason}</p>
+              <p className="leading-relaxed break-keep">
+                {recommendationReason}
+              </p>
             </div>
           </div>
         )}
-        <button onClick={handleAddClick} className="mt-3 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
-          일정에 추가
-        </button>
+        {showAddButton && ( // showAddButton이 true일 때만 버튼 렌더링
+          <button
+            onClick={handleAddClick}
+            className="mt-3 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+          >
+            일정에 추가
+          </button>
+        )}
       </div>
     </div>
   );

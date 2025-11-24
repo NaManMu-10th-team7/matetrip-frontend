@@ -6,7 +6,7 @@ import {
   DoorOpen,
   FileDown,
   Loader2,
-  ListOrdered,
+  ListOrdered, // ListOrdered 아이콘 다시 임포트
   Save,
 } from 'lucide-react';
 import { Button } from './ui/button';
@@ -36,7 +36,7 @@ interface PlanRoomHeaderProps {
   activeMembers?: ActiveMember[];
   onExportPdf?: () => void;
   isGeneratingPdf?: boolean;
-  onToggleScheduleSidebar: () => void;
+  onToggleScheduleSidebar: () => void; // onToggleScheduleSidebar prop 다시 추가
   onFlush: () => void;
 }
 
@@ -52,7 +52,7 @@ export function PlanRoomHeader({
   activeMembers = [],
   onExportPdf,
   isGeneratingPdf = false,
-  onToggleScheduleSidebar,
+  onToggleScheduleSidebar, // onToggleScheduleSidebar prop 다시 추가
   onFlush,
 }: PlanRoomHeaderProps) {
   const [isReviewModalOpen, setReviewModalOpen] = useState(false);
@@ -84,21 +84,21 @@ export function PlanRoomHeader({
   };
 
   return (
-    <div className="border-b border-gray-700 bg-gray-800 px-4 py-2 flex items-center justify-between flex-shrink-0 h-16 text-white relative rounded-lg">
+    <div className="bg-primary px-4 py-2 flex items-center justify-between flex-shrink-0 h-16 text-primary-foreground relative rounded-lg shadow-md">
       {/* 왼쪽 영역: 뒤로가기 버튼, 제목 */}
       <div className="flex items-center gap-3 flex-1 min-w-0">
         <button
           onClick={onBack}
-          className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+          className="p-2 hover:bg-primary-foreground/10 rounded-lg transition-colors"
         >
-          <ArrowLeft className="w-5 h-5 text-gray-300" />
+          <ArrowLeft className="w-5 h-5" />
         </button>
-        <h1 className="text-white text-xl font-bold truncate">{title}</h1>
+        <h1 className="text-xl font-bold truncate">{title}</h1>
       </div>
 
       {/* 중앙 영역: 날짜 정보와 참여인원 */}
-      <div className="flex-grow flex justify-center items-center gap-2 text-gray-400 px-4 text-sm">
-        <Calendar className="w-4 h-4 text-gray-400" />
+      <div className="flex-grow flex justify-center items-center gap-2 text-primary-foreground/80 px-4 text-base">
+        <Calendar className="w-5 h-5" />
         <span>
           {startDate} ~ {endDate} ({totalDays}일)
         </span>
@@ -108,26 +108,26 @@ export function PlanRoomHeader({
       <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
         <Button
           variant="outline"
-          className="h-9 px-3 gap-2 bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white"
+          className="h-10 px-4 gap-2 bg-transparent border-primary-foreground/50 hover:bg-primary-foreground/10 text-primary-foreground"
           onClick={handleFlush}
           disabled={isFlushing}
         >
           {isFlushing ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <Loader2 className="w-5 h-5 animate-spin" />
           ) : (
-            <Save className="w-4 h-4" />
+            <Save className="w-5 h-5" />
           )}
-          <span className="text-sm font-medium">
+          <span className="text-base font-medium">
             {isFlushing ? '저장 중...' : '저장'}
           </span>
         </Button>
-        <Button
+        <Button // '여행 일정' 버튼 복구
           variant="outline"
-          className="h-9 px-3 gap-2 bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white"
+          className="h-10 px-4 gap-2 bg-transparent border-primary-foreground/50 hover:bg-primary-foreground/10 text-primary-foreground"
           onClick={onToggleScheduleSidebar}
         >
-          <ListOrdered className="w-4 h-4" />
-          <span className="text-sm font-medium">여행 일정</span>
+          <ListOrdered className="w-5 h-5" />
+          <span className="text-base font-medium">여행 일정</span>
         </Button>
 
         {/* 메뉴 버튼 */}
@@ -136,19 +136,19 @@ export function PlanRoomHeader({
             <Button
               variant="ghost"
               size="icon"
-              className="w-9 h-9 text-white hover:bg-slate-700"
+              className="w-9 h-9 hover:bg-primary-foreground/10"
             >
               <MoreVertical className="w-5 h-5" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="end"
-            className="w-56 bg-white text-gray-900"
+            className="w-56"
           >
             <DropdownMenuItem
               onClick={onExportPdf}
               disabled={isGeneratingPdf}
-              className="border-b border-gray-100 hover:bg-gray-100 focus:bg-gray-100 py-3 px-4 text-base"
+              className="py-3 px-4 text-base"
             >
               {isGeneratingPdf ? (
                 <>
@@ -166,7 +166,7 @@ export function PlanRoomHeader({
             {isOwner && (
               <DropdownMenuItem
                 onClick={() => setReviewModalOpen(true)}
-                className="border-b border-gray-100 hover:bg-gray-100 focus:bg-gray-100 py-3 px-4 text-base"
+                className="py-3 px-4 text-base"
               >
                 <CheckCircle className="w-6 h-6 mr-3" />
                 <span>여행 완료하기</span>
@@ -174,7 +174,7 @@ export function PlanRoomHeader({
             )}
             <DropdownMenuItem
               onClick={onExit}
-              className="text-red-600 hover:bg-red-50 focus:bg-red-50 focus:text-red-600 py-3 px-4 text-base"
+              className="text-red-400 focus:bg-red-900/50 focus:text-red-400 py-3 px-4 text-base"
             >
               <DoorOpen className="w-6 h-6 mr-3" />
               <span>이 여행에서 나가기</span>

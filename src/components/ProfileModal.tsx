@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -76,7 +76,7 @@ function ProfileModalSkeleton({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-4xl min-w-[900px] h-[80vh] p-0 overflow-hidden flex flex-col border-0"
+        className="max-w-4xl min-w-[900px] h-[80vh] p-0 overflow-hidden flex flex-col border-0 gap-0"
         aria-describedby={undefined}
       >
         <DialogHeader className="flex flex-row items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-10 text-left">
@@ -157,6 +157,8 @@ export function ProfileModal({
   const [isBioExpanded, setIsBioExpanded] = useState(false);
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const [error, setError] = useState<unknown>(null);
+  const [isBioClamped, setIsBioClamped] = useState(false);
+  const bioRef = useRef<HTMLDivElement>(null);
 
   const isCurrentUser = loggedInUser?.userId === userId;
 
@@ -276,6 +278,17 @@ export function ProfileModal({
     }
   }, [open, userId, fetchProfileData]);
 
+  useEffect(() => {
+    const checkBioClamping = () => {
+      if (bioRef.current) {
+        setIsBioClamped(
+          bioRef.current.scrollHeight > bioRef.current.clientHeight
+        );
+      }
+    };
+    checkBioClamping();
+  }, [profile?.description, isBioExpanded]);
+
   const handleEditProfile = () => {
     setIsEditProfileModalOpen(true);
   };
@@ -329,7 +342,7 @@ export function ProfileModal({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
-          className="max-w-4xl min-w-[900px] h-[80vh] p-0 overflow-hidden flex flex-col border-0"
+          className="max-w-4xl min-w-[900px] h-[80vh] p-0 overflow-hidden flex flex-col border-0 gap-0"
           aria-describedby={undefined}
         >
           <DialogHeader className="flex flex-row items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-10 text-left">
@@ -367,7 +380,7 @@ export function ProfileModal({
                         {profile.travelStyles?.map((style) => (
                           <Badge
                             key={style}
-                            className="bg-primary text-gray-100 hover:bg-primary-strong"
+                            className="rounded-full bg-gray-100 text-gray-800"
                           >
                             {translateKeyword(style)}
                           </Badge>
@@ -406,9 +419,9 @@ export function ProfileModal({
                 <div className="grid grid-cols-3 gap-4 mt-6">
                   <div className="bg-gray-100 rounded-lg p-4 text-center">
                     <p className="text-gray-600 text-sm mb-1">매너온도</p>
-                    <div className="flex items-center justify-center gap-1 text-blue-600 font-semibold">
-                      <Thermometer className="w-4 h-4" />
-                      <p>
+                    <div className="flex items-center justify-center gap-1 text-primary font-semibold">
+                      <Thermometer className="w-4 h-4 text-primary" />
+                      <p className="text-primary">
                         {mannerTemperature != null
                           ? `${mannerTemperature.toFixed(1)}°C`
                           : '정보 없음'}
@@ -443,8 +456,8 @@ export function ProfileModal({
                     key={tab.key}
                     className={`flex-1 py-3 text-center transition-colors text-sm font-medium ${
                       activeTab === tab.key
-                        ? 'border-b-2 border-gray-900 text-gray-900'
-                        : 'text-gray-500 hover:text-gray-700'
+                        ? 'border-b-2 border-primary text-primary font-bold'
+                        : 'text-gray-500 hover:text-gray-800'
                     }`}
                     onClick={() => setActiveTab(tab.key)}
                   >
@@ -470,6 +483,7 @@ export function ProfileModal({
                         상세 소개
                       </h4>
                       <div
+                        ref={bioRef}
                         className={`text-gray-700 leading-relaxed whitespace-pre-wrap ${
                           !isBioExpanded && 'line-clamp-3'
                         }`}
@@ -477,9 +491,7 @@ export function ProfileModal({
                         {profile.description ||
                           '아직 상세 소개가 작성되지 않았습니다.'}
                       </div>
-                      {(profile.description?.split('\n').length > 3 ||
-                        (profile.description &&
-                          profile.description.length > 150)) && (
+                      {isBioClamped && (
                         <button
                           onClick={() => setIsBioExpanded(!isBioExpanded)}
                           className="w-full mt-3 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center justify-center gap-1"
@@ -502,7 +514,7 @@ export function ProfileModal({
                           {profile.tendency.map((tendency) => (
                             <Badge
                               key={tendency}
-                              className="bg-primary text-gray-100 hover:bg-primary-strong"
+                              className="rounded-full bg-gray-100 text-gray-800"
                             >
                               {translateKeyword(tendency)}
                             </Badge>

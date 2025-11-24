@@ -5,7 +5,7 @@ import {
   Star,
   CheckCircle,
   ChevronRight,
-  PlusCircle,
+  Plus,
   Sparkles,
   Flame,
 } from 'lucide-react';
@@ -147,7 +147,7 @@ function ReviewablePlaceCard({
       className="group flex flex-col w-80 cursor-pointer overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:shadow-lg mr-4 flex-shrink-0"
       onClick={onClick}
     >
-      <div className="relative h-48 bg-gray-300 overflow-hidden w-full">
+      <div className="relative h-48 bg-cover bg-center overflow-hidden w-full">
         <img
           src={place.image_url || 'https://via.placeholder.com/300x200'}
           alt={place.title}
@@ -386,7 +386,7 @@ export function NewMainPage({
 
   // --- Data Fetching Effects ---
   useEffect(() => {
-    if (isAuthLoading) return;
+    if (isAuthLoading) return; // 인증 로딩 중에는 데이터 페칭을 하지 않음
     const fetchPosts = async () => {
       setIsPostsLoading(true);
       try {
@@ -416,7 +416,7 @@ export function NewMainPage({
       try {
         const response = await client.post<MatchCandidateDto[]>(
           '/profile/matching/search',
-          { limit: 5 }
+          { limit: 6 }
         );
         if (isMounted) setMatches(response.data ?? []);
       } catch (error) {
@@ -432,7 +432,7 @@ export function NewMainPage({
   }, [isAuthLoading, isLoggedIn, user?.userId]);
 
   useEffect(() => {
-    if (isAuthLoading) return;
+    if (isAuthLoading) return; // 인증 로딩 중에는 데이터 페칭을 하지 않음
     const fetchInspirations = async () => {
       setIsInspirationsLoading(true);
       try {
@@ -510,8 +510,9 @@ export function NewMainPage({
   };
 
   useEffect(() => {
+    if (isAuthLoading) return; // 인증 로딩 중에는 데이터 페칭을 하지 않음
     fetchReviewablePlaces();
-  }, [isLoggedIn]);
+  }, [isLoggedIn, isAuthLoading]);
 
   // --- Memoized Calculations ---
   const matchedPosts = useMemo(() => {
@@ -540,7 +541,7 @@ export function NewMainPage({
           style: string[];
         } => item !== null
       )
-      .slice(0, 5);
+      .slice(0, 6);
   }, [matches, posts]);
 
   useEffect(() => {
@@ -667,6 +668,56 @@ export function NewMainPage({
     // Implement actual logic if needed
   };
 
+  // 인증 로딩 중일 때 스켈레톤 UI를 보여줍니다.
+  if (isAuthLoading) {
+    return (
+      <div className="flex flex-col min-h-screen bg-white p-4 sm:p-6 lg:p-8 animate-pulse">
+        {/* CTA/로그인 섹션 스켈레톤 */}
+        <div className="h-48 bg-gray-200 rounded-lg mb-8"></div>
+
+        {/* 맞춤 여행 추천 섹션 스켈레톤 */}
+        <div className="mb-8">
+          <div className="h-8 w-1/3 bg-gray-200 rounded mb-4"></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="h-64 bg-gray-200 rounded-xl"></div>
+            ))}
+          </div>
+        </div>
+
+        {/* 리뷰를 기다리는 장소 섹션 스켈레톤 */}
+        <div className="mb-8">
+          <div className="h-8 w-1/2 bg-gray-200 rounded mb-4"></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-48 bg-gray-200 rounded-xl"></div>
+            ))}
+          </div>
+        </div>
+
+        {/* Place Recommendation Section 스켈레톤 */}
+        <div className="mb-8">
+          <div className="h-8 w-1/3 bg-gray-200 rounded mb-4"></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-64 bg-gray-200 rounded-xl"></div>
+            ))}
+          </div>
+        </div>
+
+        {/* Hot Place 섹션 스켈레톤 */}
+        <div className="mb-8">
+          <div className="h-8 w-1/4 bg-gray-200 rounded mb-4"></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-64 bg-gray-200 rounded-xl"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex bg-white relative">
       <div className="flex-1 overflow-y-auto">
@@ -684,14 +735,15 @@ export function NewMainPage({
                 {user.profile.nickname}님, 새로운 여행을 떠나보세요!
               </h2>
               <p className="mt-2 text-gray-200 max-w-2xl">
-                나와 꼭 맞는 동행자와 함께 잊지 못할 추억을 만들 수 있어요.
-                지금 바로 여행 계획을 시작해보세요.
+                나와 꼭 맞는 동행자와 함께 잊지 못할 추억을 만들 수 있어요. 지금
+                바로 여행 계획을 시작해보세요.
               </p>
               <Button
                 onClick={onCreatePost}
-                className="mt-6 bg-primary text-primary-foreground hover:bg-primary-strong font-bold py-5 px-10 text-lg flex items-center gap-2 transition-colors"
+                className="mt-6 bg-primary text-primary-foreground hover:bg-primary-strong font-bold py-5 px-12 text-lg flex items-center gap-2 transition-colors w-fit"
               >
-                <PlusCircle className="w-5 h-5" />새 동행 만들기
+                <Plus className="w-5 h-5" />
+                새로운 여행
               </Button>
             </div>
           </section>
@@ -716,7 +768,7 @@ export function NewMainPage({
                 <Button
                   onClick={handleAllViewMatching}
                   variant="ghost"
-                  className="text-sm self-start sm:self-auto flex items-center text-gray-600 hover:text-gray-900"
+                  className="text-sm self-start sm:self-auto flex items-center text-gray-600 hover:bg-primary hover:text-primary-foreground"
                 >
                   전체보기
                   <ChevronRight className="w-4 h-4 ml-1" />
@@ -738,8 +790,8 @@ export function NewMainPage({
                   </Button>
                 </div>
               ) : isMatchesLoading || isPostsLoading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start">
-                  {Array.from({ length: 5 }).map((_, index) => (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 items-start">
+                  {Array.from({ length: 3 }).map((_, index) => (
                     <MainPostCardSkeleton key={index} />
                   ))}
                 </div>
@@ -748,7 +800,7 @@ export function NewMainPage({
                   추천할 동행이 없습니다.
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 items-start">
                   {matchedPosts.map(
                     ({ post, score, tendency, style }, index) => (
                       <GridMatchingCard
@@ -806,7 +858,7 @@ export function NewMainPage({
                     </div>
                   </div>
                 ) : reviewableTrips.length === 0 ? (
-                  <div className="text-center text-gray-500 py-10 bg-gray-50 rounded-lg">
+                  <div className="text-center text-gray-500 py-10">
                     리뷰를 작성할 장소가 없습니다.
                   </div>
                 ) : (
@@ -868,9 +920,7 @@ export function NewMainPage({
                                   <ReviewablePlaceCard
                                     key={place.id}
                                     place={place}
-                                    onClick={() =>
-                                      handleOpenReviewModal(place)
-                                    }
+                                    onClick={() => handleOpenReviewModal(place)}
                                   />
                                 ))}
                               </ReviewablePlacesCarousel>
@@ -908,7 +958,7 @@ export function NewMainPage({
                 <Button
                   onClick={handleAllViewInspiration}
                   variant="ghost"
-                  className="text-sm self-start sm:self-auto flex items-center text-gray-600 hover:text-gray-900"
+                  className="text-sm self-start sm:self-auto flex items-center text-gray-600 hover:bg-primary hover:text-primary-foreground"
                 >
                   전체보기
                   <ChevronRight className="w-4 h-4 ml-1" />
@@ -942,9 +992,12 @@ export function NewMainPage({
                         latitude: place.latitude,
                         category: place.category as AiPlace['category'],
                         recommendationReason: undefined, // Hot Place doesn't have this
-                      }}
+                      }} // recommendationReasonStyle="text-primary"
                       onAddPoiToItinerary={handleAddPoiToItinerary}
-                      onCardClick={(_poiLatLon) => handleInspirationClick(place)}
+                      onCardClick={(_poiLatLon) =>
+                        handleInspirationClick(place)
+                      }
+                      showAddButton={false} // '일정에 추가' 버튼을 숨깁니다.
                     />
                   ))}
                 </ReviewablePlacesCarousel>
