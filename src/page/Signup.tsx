@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Map as MapIcon,
   Tent,
   Heart,
   Camera,
@@ -33,6 +32,7 @@ import { Label } from '../components/ui/label';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { useRef } from 'react';
+import { useAuthStore } from '../store/authStore'; // useAuthStore 임포트 추가
 
 interface CategoryItem {
   id: string;
@@ -213,7 +213,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
     password: '',
     confirmPassword: '',
     nickname: '',
-    gender: '',
+    gender: '남성', // Default to '남성'
     phone: '',
     mbti: '',
     travelStyles: new Set<TravelStyleType>(),
@@ -221,6 +221,9 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
     intro: '',
     description: '',
   });
+
+  // useAuthStore에서 isAuthLoading 상태를 가져옵니다.
+  const { isAuthLoading } = useAuthStore();
 
   //const [isPhoneVerified, setIsPhoneVerified] = useState(false);
 
@@ -267,14 +270,19 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
       const newSet = new Set(prev.travelStyles);
       if (newSet.has(style)) {
         newSet.delete(style);
-        setStyleError('');
+        if (newSet.size === 0) {
+          setStyleError('여행 스타일을 최소 1개 선택해주세요.');
+        } else {
+          setStyleError('');
+        }
       } else {
         if (newSet.size >= 3) {
-          setStyleError('여행 스타일은 3개까지 선택할 수 있습니다.');
+          setStyleError('여행 스타일은 3개 이하로 선택해주세요.');
           setTimeout(() => setStyleError(''), 3000);
           return prev;
         }
         newSet.add(style);
+        setStyleError('');
       }
       return { ...prev, travelStyles: newSet };
     });
@@ -372,10 +380,16 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
     if (step === 1 && !validateStep1()) {
       return;
     }
-    if (step === 2 && formData.travelStyles.size !== 3) {
-      setStyleError('여행 스타일 3개를 선택해주세요.');
-      setTimeout(() => setStyleError(''), 3000);
-      return;
+    if (step === 2) {
+      if (formData.travelStyles.size === 0) {
+        setStyleError('여행 스타일을 최소 1개 선택해주세요.');
+        return;
+      }
+      if (formData.travelStyles.size > 3) {
+        setStyleError('여행 스타일은 3개 이하로 선택해주세요.');
+        setTimeout(() => setStyleError(''), 3000);
+        return;
+      }
     }
     setStyleError('');
     setStep((prev) => Math.min(prev + 1, 3));
@@ -503,6 +517,60 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
     ? Math.ceil(currentTabInfo.items.length / 2)
     : 1;
 
+  // 인증 로딩 중일 때 스켈레톤 UI를 보여줍니다.
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col font-sans animate-pulse">
+        <div className="flex-1 flex justify-center items-center py-8 px-4 sm:px-6 lg:px-8">
+          <div className="w-full max-w-xl md:max-w-lg">
+            <div className="bg-white rounded-2xl md:rounded-3xl shadow-sm overflow-hidden border border-slate-100 relative min-h-[560px] flex flex-col p-8">
+              {/* Logo Skeleton */}
+              <div className="flex items-center justify-center gap-2 mb-8">
+                <div className="w-14 h-14 bg-gray-200 rounded-full"></div>
+                <div className="h-8 w-32 bg-gray-200 rounded"></div>
+              </div>
+
+              {/* Step Indicator Skeleton */}
+              <div className="w-full max-w-xs mx-auto flex items-center justify-center gap-3 mb-8">
+                <div className="h-6 w-16 bg-gray-200 rounded"></div>
+                <div className="flex-1 h-2 bg-gray-200 rounded-full"></div>
+              </div>
+
+              {/* Form Fields Skeleton */}
+              <div className="space-y-5 max-w-xl mx-auto w-full px-6">
+                <div className="h-6 w-20 bg-gray-200 rounded mb-2"></div>
+                <div className="h-10 bg-gray-200 rounded-md"></div>
+
+                <div className="h-6 w-24 bg-gray-200 rounded mb-2"></div>
+                <div className="h-10 bg-gray-200 rounded-md"></div>
+
+                <div className="h-6 w-28 bg-gray-200 rounded mb-2"></div>
+                <div className="h-10 bg-gray-200 rounded-md"></div>
+
+                <div className="h-6 w-16 bg-gray-200 rounded mb-2"></div>
+                <div className="h-10 bg-gray-200 rounded-md"></div>
+
+                <div className="h-6 w-12 bg-gray-200 rounded mb-2"></div>
+                <div className="flex gap-4 mt-2">
+                  <div className="h-8 w-20 bg-gray-200 rounded-full"></div>
+                  <div className="h-8 w-20 bg-gray-200 rounded-full"></div>
+                </div>
+              </div>
+
+              {/* Button Skeleton */}
+              <div className="mt-8 px-6">
+                <div className="h-12 w-full bg-gray-200 rounded-lg"></div>
+              </div>
+            </div>
+            <div className="mt-4 mb-4 text-center text-sm text-gray-200">
+              <div className="h-4 w-48 mx-auto bg-gray-200 rounded"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
       <div className="flex-1 flex justify-center items-center py-8 px-4 sm:px-6 lg:px-8">
@@ -520,7 +588,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
               <Button
                 variant="ghost"
                 onClick={handlePrevStep}
-                className="absolute top-8 left-6 text-slate-400 hover:text-slate-800 flex items-center gap-1 text-sm font-bold transition-colors z-10 h-auto p-0"
+                className="absolute top-4 left-6 text-slate-400 hover:text-primary flex items-center gap-1 text-sm font-bold transition-colors z-10 h-auto p-2"
               >
                 <ArrowLeft className="w-4 h-4" />
                 이전
@@ -530,10 +598,15 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
             {step < 4 && (
               <div className="px-5 md:px-6 pt-8 pb-3 bg-white flex flex-col items-center text-center relative">
                 <div className="flex items-center gap-2 mb-4">
-                  <div className="bg-linear-to-br bg-primary p-2.5 rounded-xl shadow-primary-soft text-white">
-                    <MapIcon className="w-7 h-7 text-white" />
-                  </div>
-                  <span className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                  <img
+                    src="/logo-without-title.png"
+                    alt="MateTrip Logo"
+                    className="w-14 h-14 shrink-0"
+                  />
+                  <span
+                    className="text-2xl text-gray-900 whitespace-nowrap"
+                    style={{ fontFamily: 'Princess Sofia, cursive' }}
+                  >
                     MateTrip
                   </span>
                 </div>
@@ -674,7 +747,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                     <Label className="font-semibold">성별</Label>
                     <div className="flex gap-4 mt-2">
                       <div className="flex items-center gap-2">
-                        <Input
+                        <input
                           id="male"
                           type="radio"
                           value="남성"
@@ -684,7 +757,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                           onChange={(e) =>
                             handleInputChange('gender', e.target.value)
                           }
-                          className="h-4 w-4 accent-primary"
+                          className="h-4 w-4 appearance-none border-2 border-gray-300 rounded-full checked:bg-primary checked:border-primary-strong focus:outline-none focus:ring-0 focus:ring-offset-0"
                           required
                         />
                         <Label
@@ -695,7 +768,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                         </Label>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Input
+                        <input
                           id="female"
                           type="radio"
                           value="여성"
@@ -704,7 +777,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                           onChange={(e) =>
                             handleInputChange('gender', e.target.value)
                           }
-                          className="h-4 w-4 accent-primary"
+                          className="h-4 w-4 appearance-none border-2 border-gray-300 rounded-full checked:bg-primary checked:border-primary-strong focus:outline-none focus:ring-0 focus:ring-offset-0"
                         />
                         <Label
                           htmlFor="female"
@@ -739,12 +812,12 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                       <h2 className="text-lg font-extrabold text-slate-900 text-left flex items-center gap-2">
                         여행 스타일
                         <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary-10 text-primary ">
-                          3개 선택 필수
+                          3개 선택 가능
                         </span>
                       </h2>
                     </div>
                     <p className="text-sm text-slate-500 py-1">
-                      나를 가장 잘 표현하는 키워드를 3가지 골라주세요
+                      나를 가장 잘 표현하는 키워드를 3개 이하로 골라주세요
                     </p>
                   </div>
 
@@ -871,11 +944,11 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                                 variant="outline"
                                 onClick={() => toggleTravelTendency(label)}
                                 className={`
-                              relative group py-2 px-2 h-full w-full min-w-[120px] rounded-md text-sm font-medium transition-all duration-200 border text-center flex items-center justify-center gap-1.5 whitespace-nowrap
+                              relative group py-2 px-2 h-full w-full min-w-[120px] rounded-md text-sm font-medium transition-all duration-200 border select-none
                               ${
                                 isSelected
                                   ? 'bg-primary border-primary text-white shadow-primary-soft hover:bg-primary-strong hover:text-white active:bg-primary-strong'
-                                  : 'bg-white text-slate-600 border-slate-100 hover:border-primary hover:bg-primary-10 hover:text-slate-800'
+                                  : 'bg-white text-slate-600 border-slate-200 hover:border-primary hover:bg-primary-10 hover:text-slate-800'
                               }
                             `}
                               >
@@ -890,8 +963,8 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
 
                 <div className="w-full px-6 mt-1" />
 
-                <div className="px-5 md:px-6 pt-2">
-                  <div className="flex flex-col gap-1 mb-4">
+                <div className="px-5 md:px-6 pt-3">
+                  <div className="flex flex-col gap-1 mb-5">
                     <div className="flex items-center justify-start gap-2">
                       <div className="p-2 bg-primary-10 rounded-full">
                         <User className="w-5 h-5 text-primary" />
@@ -964,7 +1037,7 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                         <span className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full border border-primary bg-primary-10 text-[10px] font-semibold text-primary shadow-[0_1px_3px_rgba(59,130,246,0.25)] hover:bg-primary-10 hover:border-primary transition-colors cursor-default">
                           i
                         </span>
-                        <span className="absolute left-full top-1/2 z-10 ml-2 -translate-y-1/2 block w-72 md:w-80 rounded-lg bg-white px-3 py-2 text-[11px] font-medium text-black text-left whitespace-normal wrap-break-word shadow-lg opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none transition-all duration-150 leading-snug">
+                        <span className="absolute left-full top-1/2 z-10 ml-2 -translate-y-1/2 block w-72 md:w-80 rounded-lg bg-white px-3 py-2 text-sm font-medium text-black text-left whitespace-normal wrap-break-word shadow-lg opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none transition-all duration-150 leading-normal">
                           키워드 유사도와 상세소개 유사도를 합산하여 프로필
                           유사도를 측정합니다.
                           <br />

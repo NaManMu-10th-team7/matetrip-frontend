@@ -1,76 +1,103 @@
-import { MapPin, PlusCircle } from 'lucide-react';
-import { type AiPlace } from '../hooks/useChatSocket';
-import { Button } from './ui/button';
-import { type Poi } from '../hooks/usePoiSocket';
+import { MapPin, Lightbulb } from 'lucide-react';
+import { CategoryIcon } from './CategoryIcon';
+import type { AiPlace } from '../hooks/useChatSocket';
+import type { Poi } from '../hooks/usePoiSocket'; // Poi 타입 임포트
 
 interface RecommendedPlaceCardProps {
   place: AiPlace;
   onAddPoiToItinerary: (poi: Poi) => void;
-  onCardClick: (poi: Pick<Poi, 'latitude' | 'longitude'>) => void;
+  onCardClick: (poi: Pick<Poi, 'longitude' | 'latitude'>) => void;
+  showAddButton?: boolean; // '일정에 추가' 버튼 표시 여부 prop 추가
 }
 
 export function RecommendedPlaceCard({
   place,
   onAddPoiToItinerary,
   onCardClick,
+  showAddButton = true, // 기본값은 true로 설정
 }: RecommendedPlaceCardProps) {
-  const handleAddClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // 이벤트 전파를 막습니다.
-    // AiPlace를 Poi 타입과 유사하게 변환하여 전달
-    const poiForModal: Poi = {
-      id: place.id,
-      placeId: place.id, // 추가 : placeId 필수로 변경되서
-      placeName: place.title,
-      address: place.address,
-      latitude: place.latitude,
-      longitude: place.longitude,
-      categoryName: place.category,
-      status: 'RECOMMENDED',
-      // 나머지 Poi 필드는 Workspace의 모달 핸들러에서 처리하므로 필수값만 전달
-      workspaceId: '',
-      createdBy: '',
-      sequence: 0,
-      isPersisted: false,
-    };
-    onAddPoiToItinerary(poiForModal);
-  };
+  const {
+    imageUrl,
+    title,
+    category,
+    address,
+    recommendationReason,
+    latitude,
+    longitude,
+    id,
+  } = place;
 
   const handleCardClick = () => {
-    onCardClick({ latitude: place.latitude, longitude: place.longitude });
+    onCardClick({ latitude, longitude });
+  };
+
+  const handleAddClick = () => {
+    onAddPoiToItinerary({
+      id,
+      placeName: title,
+      latitude,
+      longitude,
+      address,
+      categoryName: category, // 'category' 대신 'categoryName' 사용
+      // 필요한 다른 Poi 속성들을 여기에 추가
+      workspaceId: '', // 임시 값, 실제 사용 시 적절한 값으로 대체 필요
+      createdBy: '', // 임시 값, 실제 사용 시 적절한 값으로 대체 필요
+      placeId: id, // AiPlace의 id를 placeId로 사용
+      status: 'RECOMMENDED', // 기본 상태
+      sequence: 0, // 기본 순서
+      isPersisted: false, // 기본 값
+    });
   };
 
   return (
     <div
-      className="bg-white rounded-lg border border-gray-200 p-3 flex gap-3 text-gray-900 shadow-sm cursor-pointer hover:shadow-md hover:border-gray-300 transition-all"
+      className="group flex flex-col w-80 cursor-pointer overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:shadow-lg mr-4 flex-shrink-0"
       onClick={handleCardClick}
     >
-      {place.image_url && (
+      <div className="relative h-48 bg-gray-300 overflow-hidden w-full">
         <img
-          src={place.image_url}
-          alt={place.title}
-          className="w-20 h-20 rounded-md object-cover flex-shrink-0"
+          src={imageUrl || 'https://via.placeholder.com/300x200'}
+          alt={title}
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
-      )}
-      <div className="flex-1 flex flex-col justify-between min-w-0">
-        <div>
-          <p className="font-semibold truncate text-sm">{place.title}</p>
-          <p className="text-gray-500 text-xs mt-1">{place.category}</p>
-          <div className="flex items-start gap-1 text-xs text-gray-500 mt-1">
-            <MapPin className="w-3 h-3 mt-0.5 flex-shrink-0" />
-            <p className="truncate">{place.address}</p>
+      </div>
+      <div className="flex flex-col flex-1 p-4">
+        <h3 className="text-lg font-bold text-gray-800 leading-snug truncate">
+          {title}
+        </h3>
+        <div className="flex flex-col gap-1.5 text-sm text-gray-600 mt-2">
+          {category && (
+            <div className="flex items-center gap-1.5">
+              <CategoryIcon
+                category={category}
+                className="w-4 h-4 text-gray-400"
+              />
+              <span>{category}</span>
+            </div>
+          )}
+          <div className="flex items-center gap-1.5">
+            <MapPin className="w-4 h-4 text-gray-400" />
+            <span className="truncate">{address}</span>
           </div>
         </div>
-        <div className="flex justify-end mt-2">
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-7 gap-1.5 text-blue-600 hover:text-blue-700"
+        {recommendationReason && (
+          <div className="mt-3 pt-3 border-t border-gray-100">
+            <div className="flex items-start gap-2 text-sm text-primary h-10 overflow-hidden">
+              <Lightbulb className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <p className="leading-relaxed break-keep">
+                {recommendationReason}
+              </p>
+            </div>
+          </div>
+        )}
+        {showAddButton && ( // showAddButton이 true일 때만 버튼 렌더링
+          <button
             onClick={handleAddClick}
+            className="mt-3 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
           >
-            <PlusCircle className="w-4 h-4" />
-            <span className="text-xs">일정에 추가</span>
-          </Button>
-        </div>
+            일정에 추가
+          </button>
+        )}
       </div>
     </div>
   );

@@ -24,6 +24,7 @@ import { CATEGORY_INFO, type PlaceDto } from '../types/place.ts'; // useWorkspac
 import { AddToItineraryModal } from '../components/AddToItineraryModal.tsx';
 import { PdfDocument } from '../components/PdfDocument.tsx'; // [신규] 모달 컴포넌트 임포트 (생성 필요)
 import { AIRecommendationLoadingModal } from '../components/AIRecommendationLoadingModal.tsx';
+import { PdfGeneratingLoadingModal } from '../components/PdfGeneratingLoadingModal'; // [신규] PDF 로딩 모달 임포트
 import { toast } from 'sonner';
 import { ScheduleSidebar } from '../components/ScheduleSidebar.tsx';
 import { OptimizationModal } from '../components/OptimizationModal.tsx';
@@ -91,7 +92,7 @@ export function Workspace({
   const [recommendedItinerary, setRecommendedItinerary] = useState<
     Record<string, Poi[]>
   >({});
-  const [isRecommendationLoading, setIsRecommendationLoading] = useState(true);
+  const [isRecommendationLoading, setIsRecommendationLoading] = useState(false);
   const [itineraryAiPlaces, setItineraryAiPlaces] = useState<AiPlace[]>([]);
   const [chatAiPlaces, setChatAiPlaces] = useState<AiPlace[]>([]);
   const [_initialBoundsSet, setInitialBoundsSet] = useState(false);
@@ -279,13 +280,13 @@ export function Workspace({
               placeName: p.title,
               categoryName: p.category,
               status: 'RECOMMENDED' as any,
-              planDayId: virtualPlanDayId,
+              planDayId: virtualPlanDayId, // 오타 수정: virtualPlanPlanDayId -> virtualPlanDayId
             };
             allRecommendedPois.push({
               id: p.id,
               title: p.title,
               summary: p.summary, // [수정] summary 속성 추가
-              image_url: p.image_url, // [수정] image_url 속성 추가
+              imageUrl: p.image_url, // [수정] image_url 속성 추가
               latitude: p.latitude,
               longitude: p.longitude,
               category: p.category,
@@ -315,7 +316,8 @@ export function Workspace({
     // [수정] postLocation이 있으면 좌표로 변환하여 지도 초기 위치 설정
     if (postLocation) {
       const geocoder = new window.kakao.maps.services.Geocoder();
-      geocoder.addressSearch(postLocation, (result: any, status: any) => { // result, status에 any 타입 명시
+      geocoder.addressSearch(postLocation, (result: any, status: any) => {
+        // result, status에 any 타입 명시
         if (status === window.kakao.maps.services.Status.OK && result[0]) {
           setInitialMapCenter({
             lat: Number(result[0].y),
@@ -332,7 +334,7 @@ export function Workspace({
     setVisibleDayIds(new Set(planDayDtos.map((day) => day.id)));
 
     // AI 추천 일정을 생성합니다.
-    generateAiPlan();
+    // generateAiPlan();
   }, [planDayDtos, generateAiPlan]); // [수정] 의존성 배열에 generateAiPlan 추가
 
   // [추가] 날짜 가시성 토글 핸들러
@@ -406,24 +408,38 @@ export function Workspace({
   // [수정] 모달에서 날짜를 선택하고 '확인'을 눌렀을 때 실행되는 함수
   const handleConfirmAdd = useCallback(
     (targetDayId: string) => {
-      console.log('[Workspace] [handleConfirmAdd] Called with targetDayId:', targetDayId);
+      console.log(
+        '[Workspace] [handleConfirmAdd] Called with targetDayId:',
+        targetDayId
+      );
       console.log('[Workspace] [handleConfirmAdd] Current poiToAdd:', poiToAdd);
 
       if (!poiToAdd) {
-        console.warn('[Workspace] [handleConfirmAdd] poiToAdd is null, cannot add to itinerary.');
+        console.warn(
+          '[Workspace] [handleConfirmAdd] poiToAdd is null, cannot add to itinerary.'
+        );
         return;
       }
 
       // addRecommendedPoisToDay 함수를 사용하여 POI를 추가하고 결과를 받음
-      console.log('[Workspace] [handleConfirmAdd] Calling addRecommendedPoisToDay with:', targetDayId, [poiToAdd]);
+      console.log(
+        '[Workspace] [handleConfirmAdd] Calling addRecommendedPoisToDay with:',
+        targetDayId,
+        [poiToAdd]
+      );
       const result = addRecommendedPoisToDay(targetDayId, [poiToAdd]);
 
       // 결과에 따라 사용자에게 알림
       if (!result.success && result.message) {
         toast.warning(result.message);
-        console.warn('[Workspace] [handleConfirmAdd] addRecommendedPoisToDay failed:', result.message);
+        console.warn(
+          '[Workspace] [handleConfirmAdd] addRecommendedPoisToDay failed:',
+          result.message
+        );
       } else if (result.success) {
-        console.log('[Workspace] [handleConfirmAdd] addRecommendedPoisToDay succeeded.');
+        console.log(
+          '[Workspace] [handleConfirmAdd] addRecommendedPoisToDay succeeded.'
+        );
       }
 
       // 모달 닫기
@@ -442,7 +458,7 @@ export function Workspace({
       }, 310); // transition 시간보다 약간 길게 설정
       return () => clearTimeout(timer);
     }
-  }, [isLeftPanelOpen, schedulePosition]);
+  }, [isLeftPanelOpen, schedulePosition]); // schedulePosition 추가
   // PlanRoomHeader에 전달할 activeMembers 데이터 형식으로 변환
   const activeMembersForHeader = useMemo(() => {
     return members.map((member) => ({
@@ -464,16 +480,59 @@ export function Workspace({
 
   // [FIX] useMemo를 useEffect로 변경하여 Rules of Hooks 위반 해결
   useEffect(() => {
-    if (lastMessage && lastMessage.userId && activeMembersForHeader) {
+    console.log('Workspace useEffect: lastMessage changed', lastMessage);
+    if (lastMessage && activeMembersForHeader) {
       const sender = activeMembersForHeader.find(
         (member) => member.id === lastMessage.userId
       );
 
-      setLatestChatMessage({
-        userId: lastMessage.userId,
-        message: lastMessage.message,
-        avatar: sender?.avatar,
-      });
+      console.log(
+        'Workspace useEffect: lastMessage.role:',
+        lastMessage.role,
+        'lastMessage.isLoading:',
+        lastMessage.isLoading
+      );
+
+      // 1. 현재 사용자가 보낸 '@AI' 메시지는 툴팁으로 표시하지 않음
+      // 2. AI 메시지이고 isLoading 상태인 경우 툴팁을 표시하지 않음
+      if (
+        (lastMessage.role === 'user' &&
+          lastMessage.message.startsWith('@AI')) ||
+        (lastMessage.role === 'ai' && lastMessage.isLoading)
+      ) {
+        setLatestChatMessage(null); // 해당 메시지는 툴팁으로 표시하지 않음
+        console.log(
+          'Workspace useEffect: Setting latestChatMessage to null (User @AI message or AI loading)'
+        );
+      } else if (lastMessage.userId) {
+        // 다른 유저 메시지 또는 AI 최종 응답
+        const messageToSet = {
+          userId: lastMessage.userId,
+          message: lastMessage.message,
+          avatar: sender?.avatar,
+        };
+        setLatestChatMessage(messageToSet);
+        console.log(
+          'Workspace useEffect: Setting latestChatMessage to',
+          messageToSet
+        );
+        console.log(
+          'Workspace useEffect: Avatar URL for latestChatMessage:',
+          messageToSet.avatar
+        );
+      } else {
+        // userId가 없는 시스템 메시지 등은 툴팁으로 표시하지 않음
+        setLatestChatMessage(null);
+        console.log(
+          'Workspace useEffect: Setting latestChatMessage to null (no userId)'
+        );
+      }
+    } else {
+      // 메시지가 없거나 유저 정보가 없으면 툴팁을 숨김
+      setLatestChatMessage(null);
+      console.log(
+        'Workspace useEffect: Setting latestChatMessage to null (no message or user info)'
+      );
     }
   }, [lastMessage, activeMembersForHeader]);
 
@@ -875,8 +934,16 @@ export function Workspace({
     setSchedulePosition((prev) => (prev === 'hidden' ? 'overlay' : 'hidden'));
   };
 
+  const handleDockScheduleSidebar = () => {
+    setSchedulePosition('docked');
+  };
+
+  const handleUndockScheduleSidebar = () => {
+    setSchedulePosition('overlay');
+  };
+
   const dayLayerForModal = optimizingDayId
-    ? dayLayers.find((l) => l.id === optimizingDayId) ?? null
+    ? (dayLayers.find((l) => l.id === optimizingDayId) ?? null)
     : null;
   const optimizedPois = optimizingDayId ? itinerary[optimizingDayId] : [];
   const optimizedSegments = optimizingDayId
@@ -908,9 +975,9 @@ export function Workspace({
           onFlush={flushPois}
         />
 
-        <div className="flex-1 flex relative overflow-hidden rounded-lg border shadow-sm">
+        <div className="flex-1 flex relative overflow-hidden rounded-lg">
           <div
-            className={`w-1/2 h-full transition-opacity duration-300 ${
+            className={`w-2/5 h-full transition-opacity duration-300 ${
               schedulePosition === 'docked'
                 ? 'opacity-0 pointer-events-none'
                 : 'opacity-100'
@@ -931,7 +998,6 @@ export function Workspace({
               onRecommendedItineraryVisibilityChange={
                 handleRecommendedItineraryVisibilityChange
               }
-              onGenerateAiPlan={generateAiPlan}
               hoveredPoiId={hoveredPoiInfo?.poiId ?? null}
               messages={messages}
               sendMessage={handleSendMessage}
@@ -958,10 +1024,9 @@ export function Workspace({
               mapRef={mapRef}
               setSelectedPlace={setSelectedPlace}
               onRouteInfoUpdate={handleRouteInfoUpdate}
-              hoveredPoiInfo={hoveredPoiInfo}
+              onRouteOptimized={handleRouteOptimized}
               optimizingDayId={optimizingDayId}
               onOptimizationComplete={handleOptimizationComplete}
-              onRouteOptimized={handleRouteOptimized}
               latestChatMessage={latestChatMessage}
               cursors={cursors}
               moveCursor={moveCursor}
@@ -973,15 +1038,15 @@ export function Workspace({
               itineraryAiPlaces={itineraryAiPlaces}
               chatAiPlaces={chatAiPlaces}
               isProgrammaticMove={isProgrammaticMove}
-              schedulePosition={schedulePosition}
+              hoveredPoiInfo={hoveredPoiInfo}
             />
           </div>
 
           <ScheduleSidebar
             position={schedulePosition}
             onClose={() => setSchedulePosition('hidden')}
-            onDock={() => setSchedulePosition('docked')}
-            onUndock={() => setSchedulePosition('overlay')}
+            onDock={handleDockScheduleSidebar}
+            onUndock={handleUndockScheduleSidebar}
             itinerary={itinerary}
             dayLayers={dayLayers}
             markedPois={markedPois}
@@ -1021,6 +1086,8 @@ export function Workspace({
         </div>
       )}
       <AIRecommendationLoadingModal isOpen={isRecommendationLoading} />
+      <PdfGeneratingLoadingModal isOpen={isGeneratingPdf} />{' '}
+      {/* [신규] PDF 로딩 모달 추가 */}
       <OptimizationModal
         isOpen={isOptimizationModalOpen}
         onClose={handleCloseModal}

@@ -230,13 +230,16 @@ export function EditPostModal({
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl w-full p-0 rounded-2xl [&>button]:hidden">
+      <DialogContent
+        className="max-w-none w-full p-0 rounded-2xl [&>button]:hidden !bg-white !border-gray-300 border-none"
+        style={{ maxWidth: '70vw' }}
+      >
         <form
           id="edit-post-form"
           onSubmit={handleSubmit}
           className="h-full max-h-[90vh] grid grid-rows-[auto_1fr_auto]"
         >
-          <DialogHeader className="p-6 border-b flex-shrink-0 flex flex-row justify-between items-center">
+          <DialogHeader className="p-6 border-b border-gray-300 flex-shrink-0 flex flex-row justify-between items-center">
             <DialogTitle className="text-2xl font-bold text-gray-900">
               게시물 수정
             </DialogTitle>
@@ -343,7 +346,7 @@ export function EditPostModal({
                       }))
                     }
                     className="mt-3 min-h-40 text-base"
-                    required
+                      required
                   />
                 </div>
               </div>
@@ -464,7 +467,7 @@ export function EditPostModal({
                         }
                         className={`cursor-pointer transition-all duration-200 text-base font-semibold px-4 py-2 rounded-full ${
                           selectedKeywords.includes(keyword.value)
-                            ? 'bg-black text-white hover:bg-gray-800'
+                            ? 'bg-primary text-primary-foreground hover:bg-primary-strong'
                             : 'text-gray-600 border-gray-300 hover:bg-gray-100 hover:border-gray-400'
                         }`}
                         onClick={() => toggleKeyword(keyword.value)}
@@ -478,7 +481,7 @@ export function EditPostModal({
             </div>
           </div>
 
-          <DialogFooter className="p-6 border-t bg-gray-50 flex-shrink-0">
+          <DialogFooter className="p-6 border-t border-gray-300 bg-white flex-shrink-0">
             <div className="w-full">
               {errorMessage && (
                 <div className="px-2 pb-2 text-sm font-medium text-red-600 text-right">
@@ -490,7 +493,7 @@ export function EditPostModal({
                   <Button
                     type="button"
                     variant="outline"
-                    className="flex-1 font-bold text-lg py-6"
+                    className="flex-1 font-bold text-lg py-6 bg-gray-200 hover:bg-gray-300 border-gray-300"
                     disabled={isSubmitting}
                   >
                     취소
@@ -499,7 +502,7 @@ export function EditPostModal({
                 <Button
                   type="submit"
                   form="edit-post-form"
-                  className="flex-1 bg-black hover:bg-gray-800 text-white font-bold text-lg py-6"
+                  className="flex-1 bg-primary hover:bg-primary-strong text-primary-foreground font-bold text-lg py-6"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? '수정 중...' : '수정 완료'}

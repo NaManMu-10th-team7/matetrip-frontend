@@ -205,7 +205,7 @@ function WorkspaceWrapper() {
   const planDayDtos = location.state?.planDayDtos || [];
 
   const handleEndTrip = () => {
-    navigate('/');
+    navigate('/save'); // 이 부분을 '/'에서 '/save'로 변경합니다.
   };
 
   return (
@@ -345,7 +345,17 @@ export default function App() {
     <div className="h-screen bg-gray-50">
       {' '}
       {/* h-screen 유지 */}
-      <Toaster richColors position="top-right" />
+      <Toaster
+        richColors
+        position="top-right"
+        toastOptions={{
+          style: {
+            padding: '1.5rem', // 20px
+            fontSize: '1rem', // 18px, 원하는 크기로 조절
+            minHeight: '60px',
+          },
+        }}
+      />
       {isLoggedIn && <NotificationListener />}
       <Routes location={background || location}>
         {/* Routes without Header */}
@@ -379,8 +389,7 @@ export default function App() {
             path="/main"
             element={
               <NewMainPageWrapper
-                onCreatePost={() => setShowCreatePost(true)}
-                onJoinWorkspace={(postId, workspaceName) => {
+                onCreatePost={() => setShowCreatePost(true)} onJoinWorkspace={(postId, workspaceName) => {
                   const createAndNavigate = async () => {
                     try {
                       const response =
@@ -388,8 +397,7 @@ export default function App() {
                           '/workspace',
                           { postId, workspaceName }
                         );
-                      const { planDayDtos, workspaceResDto } = response.data;
-                      const { id, workspaceName: resWorkspaceName } =
+                      const { planDayDtos, workspaceResDto } = response.data; const { id, workspaceName: resWorkspaceName } =
                         workspaceResDto;
                       navigate(`/workspace/${id}`, {
                         state: {
@@ -432,8 +440,7 @@ export default function App() {
             element={
               <AllPostsPageWrapper
                 // onViewPost={handleViewPost} // onViewPost prop 제거
-                fetchTrigger={fetchTrigger}
-                onJoinWorkspace={(postId, workspaceName) => {
+                fetchTrigger={fetchTrigger} onJoinWorkspace={(postId, workspaceName) => {
                   const createAndNavigate = async () => {
                     try {
                       const response =
@@ -441,8 +448,7 @@ export default function App() {
                           '/workspace',
                           { postId, workspaceName }
                         );
-                      const { planDayDtos, workspaceResDto } = response.data;
-                      const { id, workspaceName: resWorkspaceName } =
+                      const { planDayDtos, workspaceResDto } = response.data; const { id, workspaceName: resWorkspaceName } =
                         workspaceResDto;
                       navigate(`/workspace/${id}`, {
                         state: {
@@ -477,9 +483,7 @@ export default function App() {
             element={
               <MyTripsPage
                 // onViewPost={handleViewPost} // onViewPost prop 제거
-                isLoggedIn={isLoggedIn}
-                fetchTrigger={fetchTrigger}
-                onJoinWorkspace={(postId, workspaceName) => {
+                isLoggedIn={isLoggedIn} fetchTrigger={fetchTrigger} onJoinWorkspace={(postId, workspaceName) => {
                   const createAndNavigate = async () => {
                     try {
                       const response =
@@ -487,8 +491,7 @@ export default function App() {
                           '/workspace',
                           { postId, workspaceName }
                         );
-                      const { planDayDtos, workspaceResDto } = response.data;
-                      const { id, workspaceName: resWorkspaceName } =
+                      const { planDayDtos, workspaceResDto } = response.data; const { id, workspaceName: resWorkspaceName } =
                         workspaceResDto;
                       navigate(`/workspace/${id}`, {
                         state: {
@@ -527,8 +530,7 @@ export default function App() {
                           '/workspace',
                           { postId, workspaceName }
                         );
-                      const { planDayDtos, workspaceResDto } = response.data;
-                      const { id, workspaceName: resWorkspaceName } =
+                      const { planDayDtos, workspaceResDto } = response.data; const { id, workspaceName: resWorkspaceName } =
                         workspaceResDto;
                       navigate(`/workspace/${id}`, {
                         state: {
