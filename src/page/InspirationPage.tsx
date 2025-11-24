@@ -226,7 +226,7 @@ export function InspirationPage({ onViewAccommodation }: InspirationPageProps) {
         {/* Places Section */}
         <section className="mb-12">
           <div className="flex items-center gap-2 mb-6">
-            <Compass className="w-5 h-5 text-blue-600" />
+            <Compass className="w-5 h-5 text-primary" />
             <h2 className="text-2xl font-bold text-gray-900">
               {isLoading && !isLoadingMore ? (
                 <div className="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>

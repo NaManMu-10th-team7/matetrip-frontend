@@ -1,4 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useLayoutEffect,
+} from 'react';
 import {
   Dialog,
   DialogContent,
@@ -273,24 +279,77 @@ export function ProfileModal({
         setProfileImageUrl(null);
         setTravelHistory([]);
         setReviews([]);
+        setIsBioExpanded(false);
+        setIsBioClamped(false);
       }, 300);
       return () => clearTimeout(timer);
     }
   }, [open, userId, fetchProfileData]);
 
+  // 텍스트 길이 기반으로 1차 판정(렌더 전에 버튼이 사라지는 것 방지)
   useEffect(() => {
-    const checkBioClamping = () => {
-      if (bioRef.current) {
-        // Calculate line height dynamically
-        const lineHeight = parseFloat(getComputedStyle(bioRef.current).lineHeight);
-        // Check if scrollHeight is greater than 2 lines of content
-        setIsBioClamped(
-          bioRef.current.scrollHeight > lineHeight * 2
-        );
-      }
+    const text = (profile?.description ?? '').trim();
+    if (!text) {
+      setIsBioClamped(false);
+      return;
+    }
+    const approxLines = text
+      .split('\n')
+      .reduce((sum, line) => sum + Math.max(1, Math.ceil(line.length / 40)), 0);
+    setIsBioClamped(approxLines > 2);
+  }, [profile?.id, profile?.description]);
+
+  useLayoutEffect(() => {
+    const el = bioRef.current;
+    if (!el) return;
+
+    const measureClampingNeeded = () => {
+      // line-clamp가 적용된 상태에서는 scrollHeight가 줄어서 정확히 측정되지 않으므로
+      // 잠깐 line-clamp를 해제한 뒤 실제 높이를 잽니다.
+      const prevClamp = el.style.webkitLineClamp;
+      const prevDisplay = el.style.display;
+      const prevOverflow = el.style.overflow;
+      const prevBoxOrient = el.style.webkitBoxOrient;
+
+      el.style.webkitLineClamp = 'unset';
+      el.style.display = 'block';
+      el.style.overflow = 'visible';
+      el.style.webkitBoxOrient = 'unset';
+
+      const styles = getComputedStyle(el);
+      const parsedLineHeight = parseFloat(styles.lineHeight);
+      const parsedFontSize = parseFloat(styles.fontSize);
+      const lineHeight =
+        Number.isFinite(parsedLineHeight) && parsedLineHeight > 0
+          ? parsedLineHeight
+          : Number.isFinite(parsedFontSize) && parsedFontSize > 0
+            ? parsedFontSize * 1.4
+            : 24;
+
+      const fullHeight = el.scrollHeight;
+      const needsClampFromHeight = fullHeight - lineHeight * 2 > 1;
+
+      // DOM 기반 측정 결과를 추가로 반영(줄 수 추정 기반이 false더라도 실제 높이면 clamp)
+      setIsBioClamped((prev) => prev || needsClampFromHeight);
+
+      el.style.webkitLineClamp = prevClamp;
+      el.style.display = prevDisplay;
+      el.style.overflow = prevOverflow;
+      el.style.webkitBoxOrient = prevBoxOrient;
     };
-    checkBioClamping();
-  }, [profile?.description, isBioExpanded]);
+
+    // 렌더 직후와 리사이즈 시 모두 측정
+    const rafId = requestAnimationFrame(measureClampingNeeded);
+    const resizeObserver =
+      typeof ResizeObserver !== 'undefined'
+        ? new ResizeObserver(measureClampingNeeded)
+        : null;
+    resizeObserver?.observe(el);
+    return () => {
+      cancelAnimationFrame(rafId);
+      resizeObserver?.disconnect();
+    };
+  }, [profile?.id, profile?.description, open]);
 
   const handleEditProfile = () => {
     setIsEditProfileModalOpen(true);
@@ -487,9 +546,17 @@ export function ProfileModal({
                       </h4>
                       <div
                         ref={bioRef}
-                        className={`text-gray-700 leading-relaxed whitespace-pre-wrap ${
-                          !isBioExpanded && 'line-clamp-2'
-                        }`}
+                        className="text-gray-700 leading-relaxed whitespace-pre-wrap"
+                        style={
+                          isBioClamped && !isBioExpanded
+                            ? {
+                                display: '-webkit-box',
+                                WebkitLineClamp: '2',
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                              }
+                            : undefined
+                        }
                       >
                         {profile.description ||
                           '아직 상세 소개가 작성되지 않았습니다.'}

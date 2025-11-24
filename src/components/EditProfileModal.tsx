@@ -394,23 +394,34 @@ export function EditProfileModal({
   //     setSelectedTravelStyles([...selectedTravelStyles, style]);
   //   }
   // };
+  const validateStyleCount = (count: number) => {
+    if (count === 0) {
+      setStyleError('여행 스타일을 최소 1개 선택해주세요.');
+    } else if (count > 3) {
+      setStyleError('여행 스타일을 3개 이하로 선택해주세요');
+    } else {
+      setStyleError('');
+    }
+  };
 
   const handleToggleStyle = (style: TravelStyleType) => {
     setSelectedTravelStyles((prev) => {
+      // 이미 선택된 항목이면 제거(토글)
       if (prev.includes(style)) {
         const next = prev.filter((item) => item !== style);
-        if (next.length < 3) {
-          setStyleError('여행 스타일을 3개 골라주세요.');
-        }
+        validateStyleCount(next.length);
         return next;
       }
+
+      // 새로 선택 시 3개 초과를 막는다
       if (prev.length >= 3) {
-        setStyleError('여행 스타일을 3개까지 선택할 수 있습니다.');
+        setStyleError('여행 스타일을 3개 이하로 선택해주세요');
         return prev;
       }
-      // 정상 추가 후 길이가 3개면 에러 해제
-      setStyleError('');
-      return [...prev, style];
+
+      const next = [...prev, style];
+      validateStyleCount(next.length);
+      return next;
     });
   };
 
@@ -424,9 +435,7 @@ export function EditProfileModal({
 
   const handleRemoveStyle = (style: TravelStyleType) => {
     const next = selectedTravelStyles.filter((s) => s !== style);
-    if (next.length < 3) {
-      setStyleError('여행 스타일을 3개 골라주세요.');
-    }
+    validateStyleCount(next.length);
     setSelectedTravelStyles(next);
   };
 
@@ -445,8 +454,12 @@ export function EditProfileModal({
   //👀 save API  호출
   const handleSaveProfile = async () => {
     if (!user || isSaving) return;
-    if (selectedTravelStyles.length !== 3) {
-      setStyleError('여행 스타일을 3개 골라주세요.');
+    if (selectedTravelStyles.length === 0) {
+      setStyleError('여행 스타일을 최소 1개 선택해주세요.');
+      return;
+    }
+    if (selectedTravelStyles.length > 3) {
+      setStyleError('여행 스타일을 3개 이하로 선택해주세요.');
       return;
     }
     setIsSaving(true);
@@ -700,7 +713,7 @@ export function EditProfileModal({
                       value={nickname}
                       onChange={(e) => setNickname(e.target.value)}
                       placeholder="닉네임을 입력하세요"
-                      className="flex-1"
+                      className="flex-1 bg-white"
                     />
                     <Button
                       size="default"
@@ -716,6 +729,7 @@ export function EditProfileModal({
                 <div className="space-y-3">
                   <Label className="text-base font-bold">한 줄 소개</Label>
                   <Input
+                    className="bg-white"
                     value={shortBio}
                     onChange={(e) => setShortBio(e.target.value)}
                     placeholder="한 줄로 자신을 소개해주세요"
@@ -734,10 +748,10 @@ export function EditProfileModal({
                     onChange={(e) => setDetailedBio(e.target.value)}
                     placeholder="자세한 소개를 작성해주세요"
                     rows={6}
-                    maxLength={500}
+                    maxLength={1000}
                   />
                   <p className="text-gray-500 text-xs text-right">
-                    {detailedBio.length}/500
+                    {detailedBio.length}/1000
                   </p>
                 </div>
 

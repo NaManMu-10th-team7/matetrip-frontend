@@ -51,41 +51,35 @@ export function AllPostsPage({
     string | null
   >(null);
 
-  const fetchPosts = useCallback(
-    async (params?: SearchParams) => {
-      setIsLoading(true);
-      // 빈 값은 쿼리에서 제거
-      const filteredParams = params
-        ? Object.entries(params).reduce(
-            (acc, [key, value]) => {
-              if (value) acc[key as keyof SearchParams] = value;
-              return acc;
-            },
-            {} as SearchParams
-          )
-        : {};
-      const query = new URLSearchParams(
-        filteredParams as Record<string, string>
-      ).toString();
+  const fetchPosts = useCallback(async (params?: SearchParams) => {
+    setIsLoading(true);
+    // 빈 값은 쿼리에서 제거
+    const filteredParams = params
+      ? Object.entries(params).reduce((acc, [key, value]) => {
+          if (value) acc[key as keyof SearchParams] = value;
+          return acc;
+        }, {} as SearchParams)
+      : {};
+    const query = new URLSearchParams(
+      filteredParams as Record<string, string>
+    ).toString();
 
-      const endpoint = query ? `/posts/search?${query}` : '/posts';
+    const endpoint = query ? `/posts/search?${query}` : '/posts';
 
-      try {
-        const response = await client.get<Post[]>(endpoint);
-        const sortedPosts = response.data.sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-        setPosts(sortedPosts);
-        console.log('동행 글 목록', sortedPosts);
-      } catch (error) {
-        console.error('Failed to fetch posts:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    []
-  );
+    try {
+      const response = await client.get<Post[]>(endpoint);
+      const sortedPosts = response.data.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      setPosts(sortedPosts);
+      console.log('동행 글 목록', sortedPosts);
+    } catch (error) {
+      console.error('Failed to fetch posts:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (isAuthLoading) {
@@ -110,7 +104,10 @@ export function AllPostsPage({
   // 필터 외부 클릭 시 닫기
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
+      if (
+        filterRef.current &&
+        !filterRef.current.contains(event.target as Node)
+      ) {
         setIsFilterOpen(false);
       }
     };
@@ -144,7 +141,9 @@ export function AllPostsPage({
   };
 
   // 활성화된 필터 개수
-  const activeFilterCount = [startDate, endDate, location].filter(Boolean).length;
+  const activeFilterCount = [startDate, endDate, location].filter(
+    Boolean
+  ).length;
 
   // PostDetail Panel 열기 핸들러
   const handleOpenPostDetailPanel = (postId: string) => {
@@ -203,7 +202,9 @@ export function AllPostsPage({
               {isFilterOpen && (
                 <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-4">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">필터</h3>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      필터
+                    </h3>
                     <button
                       onClick={() => setIsFilterOpen(false)}
                       className="text-gray-400 hover:text-gray-600"
@@ -277,7 +278,7 @@ export function AllPostsPage({
         {/* Posts Section */}
         <section className="mb-12">
           <div className="flex items-center gap-2 mb-6">
-            <ClipboardList className="w-5 h-5 text-blue-600" />
+            <ClipboardList className="w-5 h-5 text-primary" />
             <h2 className="text-2xl font-bold text-gray-900">
               {isLoading ? (
                 <div className="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>
@@ -330,12 +331,18 @@ export function AllPostsPage({
               postId={selectedPostIdForPanel}
               onOpenChange={handleClosePostDetailPanel}
               onJoinWorkspace={(postId, workspaceName) => {
-                console.log('🔵 [AllPostsPage] PostDetail onJoinWorkspace called', { postId, workspaceName });
+                console.log(
+                  '🔵 [AllPostsPage] PostDetail onJoinWorkspace called',
+                  { postId, workspaceName }
+                );
                 onJoinWorkspace(postId, workspaceName);
                 handleClosePostDetailPanel();
               }}
               onViewProfile={(userId) => {
-                console.log('🔵 [AllPostsPage] PostDetail onViewProfile called', { userId });
+                console.log(
+                  '🔵 [AllPostsPage] PostDetail onViewProfile called',
+                  { userId }
+                );
                 // 프로필 모달 열기: PostDetail 패널은 유지
                 onViewProfile(userId);
               }}
