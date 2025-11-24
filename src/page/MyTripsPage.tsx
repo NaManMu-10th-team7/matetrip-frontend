@@ -117,7 +117,7 @@ export function MyTripsPage({
         {/* User's Participating Trips Section */}
         <section className="mb-12">
           <div className="flex items-center gap-2 mb-6">
-            <ClipboardList className="w-5 h-5 text-blue-600" />
+            <ClipboardList className="w-5 h-5 text-primary" />
             <h2 className="text-2xl font-bold text-gray-900">
               {isLoading ? (
                 <div className="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>
@@ -195,12 +195,18 @@ export function MyTripsPage({
               postId={selectedPostIdForPanel}
               onOpenChange={handleClosePostDetailPanel}
               onJoinWorkspace={(postId, workspaceName) => {
-                console.log('🔵 [MyTripsPage] PostDetail onJoinWorkspace called', { postId, workspaceName });
+                console.log(
+                  '🔵 [MyTripsPage] PostDetail onJoinWorkspace called',
+                  { postId, workspaceName }
+                );
                 onJoinWorkspace(postId, workspaceName);
                 handleClosePostDetailPanel();
               }}
               onViewProfile={(userId) => {
-                console.log('🔵 [MyTripsPage] PostDetail onViewProfile called', { userId });
+                console.log(
+                  '🔵 [MyTripsPage] PostDetail onViewProfile called',
+                  { userId }
+                );
                 // 프로필 모달 열기: PostDetail 패널은 유지
                 onViewProfile(userId);
               }}
