@@ -270,14 +270,19 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
       const newSet = new Set(prev.travelStyles);
       if (newSet.has(style)) {
         newSet.delete(style);
-        setStyleError('');
+        if (newSet.size === 0) {
+          setStyleError('여행 스타일을 최소 1개 선택해주세요.');
+        } else {
+          setStyleError('');
+        }
       } else {
         if (newSet.size >= 3) {
-          setStyleError('여행 스타일은 3개까지 선택할 수 있습니다.');
+          setStyleError('여행 스타일은 3개 이하로 선택해주세요.');
           setTimeout(() => setStyleError(''), 3000);
           return prev;
         }
         newSet.add(style);
+        setStyleError('');
       }
       return { ...prev, travelStyles: newSet };
     });
@@ -375,10 +380,16 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
     if (step === 1 && !validateStep1()) {
       return;
     }
-    if (step === 2 && formData.travelStyles.size !== 3) {
-      setStyleError('여행 스타일은 3개까지 선택할 수 있습니다.');
-      setTimeout(() => setStyleError(''), 3000);
-      return;
+    if (step === 2) {
+      if (formData.travelStyles.size === 0) {
+        setStyleError('여행 스타일을 최소 1개 선택해주세요.');
+        return;
+      }
+      if (formData.travelStyles.size > 3) {
+        setStyleError('여행 스타일은 3개 이하로 선택해주세요.');
+        setTimeout(() => setStyleError(''), 3000);
+        return;
+      }
     }
     setStyleError('');
     setStep((prev) => Math.min(prev + 1, 3));
@@ -795,12 +806,12 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
                       <h2 className="text-lg font-extrabold text-slate-900 text-left flex items-center gap-2">
                         여행 스타일
                         <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary-10 text-primary ">
-                          3개 선택 필수
+                          3개 선택 가능
                         </span>
                       </h2>
                     </div>
                     <p className="text-sm text-slate-500 py-1">
-                      나를 가장 잘 표현하는 키워드를 3가지 골라주세요
+                      나를 가장 잘 표현하는 키워드를 3개 이하로 골라주세요
                     </p>
                   </div>
 
