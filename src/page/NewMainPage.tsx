@@ -796,8 +796,24 @@ export function NewMainPage({
                   ))}
                 </div>
               ) : matchedPosts.length === 0 ? (
-                <div className="text-center text-gray-500 py-10">
-                  추천할 동행이 없습니다.
+                <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200 text-center flex flex-col items-center justify-center min-h-[200px]">
+                  <Sparkles className="w-12 h-12 text-gray-400 mb-4" />
+                  <h3 className="text-lg font-bold text-gray-800 mb-2">
+                    아직 추천할 동행이 없어요.
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    프로필을 자세히 작성하거나 새로운 여행 계획을 세워보세요!
+                  </p>
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={() => navigate('/profile')}
+                      variant="outline"
+                      className="text-primary border-primary hover:bg-primary hover:text-primary-foreground"
+                    >
+                      프로필 수정하기
+                    </Button>
+                    <Button onClick={onCreatePost}>새로운 여행 만들기</Button>
+                  </div>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 items-start">
@@ -858,8 +874,24 @@ export function NewMainPage({
                     </div>
                   </div>
                 ) : reviewableTrips.length === 0 ? (
-                  <div className="text-center text-gray-500 py-10">
-                    리뷰를 작성할 장소가 없습니다.
+                  <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200 text-center flex flex-col items-center justify-center min-h-[200px]">
+                    <Star className="w-12 h-12 text-gray-400 mb-4" />
+                    <h3 className="text-lg font-bold text-gray-800 mb-2">
+                      아직 리뷰할 장소가 없어요.
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      새로운 여행을 떠나거나, 지난 여행을 확인해보세요!
+                    </p>
+                    <div className="flex gap-3">
+                      <Button onClick={onCreatePost}>새로운 여행 만들기</Button>
+                      <Button
+                        onClick={() => navigate('/my-trips')}
+                        variant="outline"
+                        className="text-primary border-primary hover:bg-primary hover:text-primary-foreground"
+                      >
+                        내 여행 확인하기
+                      </Button>
+                    </div>
                   </div>
                 ) : (
                   <div className="flex flex-col gap-y-8">
