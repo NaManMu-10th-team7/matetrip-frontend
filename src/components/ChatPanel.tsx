@@ -284,7 +284,7 @@ export const ChatPanel = memo(function ChatPanel({
 }: ChatPanelProps) {
   const [isVCCallActive, setIsVCCallActive] = useState(false);
   const [hasVCCallBeenInitiated, setHasVCCallBeenInitiated] = useState(false);
-  const [isVCPanelExpanded, setIsVCPanelExpanded] = useState(true);
+  // const [isVCPanelExpanded, setIsVCPanelExpanded] = useState(true); // 제거
   const [currentMessage, setCurrentMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuthStore();
@@ -370,34 +370,34 @@ export const ChatPanel = memo(function ChatPanel({
         </div>
       </div>
 
-      {hasVCCallBeenInitiated && (
+      {isVCCallActive && ( // hasVCCallBeenInitiated 조건 제거
         <div
           className={cn(
-            'bg-gray-50 border-b transition-all duration-300',
-            !isVCCallActive && 'invisible h-0 p-0 border-none'
+            'bg-gray-50 border-b transition-all duration-300'
+            // !isVCCallActive && 'invisible h-0 p-0 border-none' // isVCPanelExpanded 관련 조건 제거
           )}
         >
           <div className="p-3">
-            <div className="flex justify-between items-center mb-3">
+            {/* <div className="flex justify-between items-center mb-3"> // isVCPanelExpanded 관련 UI 제거
               <h4 className="text-sm font-semibold">화상 통화</h4>
               <Button
                 size="sm"
                 variant="ghost"
                 className="h-7 gap-1 text-gray-600 hover:bg-gray-200"
-                onClick={() => setIsVCPanelExpanded(!isVCPanelExpanded)}
+                onClick={() => setIsVCPanelExpanded((prev) => !prev)}
               >
                 {isVCPanelExpanded ? '접기' : '펼치기'}
                 {isVCPanelExpanded ? (
-                  <ChevronUp className="w-4 h-4" />
+                  <ChevronDown className="w-4 h-4 mr-2" />
                 ) : (
-                  <ChevronDown className="w-4 h-4" />
+                  <ChevronUp className="w-4 h-4 mr-2" />
                 )}
               </Button>
-            </div>
+            </div> */}
             <div
               className={cn(
-                'transition-[height]',
-                !isVCPanelExpanded && 'h-0 overflow-hidden'
+                'transition-[height]'
+                // !isVCPanelExpanded && 'h-0 overflow-hidden' // isVCPanelExpanded 관련 조건 제거
               )}
             >
               <VideoChat

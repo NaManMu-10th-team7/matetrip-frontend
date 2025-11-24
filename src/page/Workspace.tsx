@@ -84,9 +84,9 @@ export function Workspace({
   onEndTrip,
 }: WorkspaceProps) {
   const [isLeftPanelOpen, _setIsLeftPanelOpen] = useState(true);
-  const [schedulePosition, setSchedulePosition] = useState<
-    'hidden' | 'overlay' | 'docked'
-  >('hidden');
+  // const [schedulePosition, setSchedulePosition] = useState< // 제거
+  //   'hidden' | 'overlay' | 'docked'
+  // >('hidden');
 
   // [신규] AI 추천 일정 관련 상태
   const [recommendedItinerary, setRecommendedItinerary] = useState<
@@ -316,7 +316,8 @@ export function Workspace({
     // [수정] postLocation이 있으면 좌표로 변환하여 지도 초기 위치 설정
     if (postLocation) {
       const geocoder = new window.kakao.maps.services.Geocoder();
-      geocoder.addressSearch(postLocation, (result: any, status: any) => { // result, status에 any 타입 명시
+      geocoder.addressSearch(postLocation, (result: any, status: any) => {
+        // result, status에 any 타입 명시
         if (status === window.kakao.maps.services.Status.OK && result[0]) {
           setInitialMapCenter({
             lat: Number(result[0].y),
@@ -407,24 +408,38 @@ export function Workspace({
   // [수정] 모달에서 날짜를 선택하고 '확인'을 눌렀을 때 실행되는 함수
   const handleConfirmAdd = useCallback(
     (targetDayId: string) => {
-      console.log('[Workspace] [handleConfirmAdd] Called with targetDayId:', targetDayId);
+      console.log(
+        '[Workspace] [handleConfirmAdd] Called with targetDayId:',
+        targetDayId
+      );
       console.log('[Workspace] [handleConfirmAdd] Current poiToAdd:', poiToAdd);
 
       if (!poiToAdd) {
-        console.warn('[Workspace] [handleConfirmAdd] poiToAdd is null, cannot add to itinerary.');
+        console.warn(
+          '[Workspace] [handleConfirmAdd] poiToAdd is null, cannot add to itinerary.'
+        );
         return;
       }
 
       // addRecommendedPoisToDay 함수를 사용하여 POI를 추가하고 결과를 받음
-      console.log('[Workspace] [handleConfirmAdd] Calling addRecommendedPoisToDay with:', targetDayId, [poiToAdd]);
+      console.log(
+        '[Workspace] [handleConfirmAdd] Calling addRecommendedPoisToDay with:',
+        targetDayId,
+        [poiToAdd]
+      );
       const result = addRecommendedPoisToDay(targetDayId, [poiToAdd]);
 
       // 결과에 따라 사용자에게 알림
       if (!result.success && result.message) {
         toast.warning(result.message);
-        console.warn('[Workspace] [handleConfirmAdd] addRecommendedPoisToDay failed:', result.message);
+        console.warn(
+          '[Workspace] [handleConfirmAdd] addRecommendedPoisToDay failed:',
+          result.message
+        );
       } else if (result.success) {
-        console.log('[Workspace] [handleConfirmAdd] addRecommendedPoisToDay succeeded.');
+        console.log(
+          '[Workspace] [handleConfirmAdd] addRecommendedPoisToDay succeeded.'
+        );
       }
 
       // 모달 닫기
@@ -443,7 +458,7 @@ export function Workspace({
       }, 310); // transition 시간보다 약간 길게 설정
       return () => clearTimeout(timer);
     }
-  }, [isLeftPanelOpen, schedulePosition]);
+  }, [isLeftPanelOpen]); // schedulePosition 제거
   // PlanRoomHeader에 전달할 activeMembers 데이터 형식으로 변환
   const activeMembersForHeader = useMemo(() => {
     return members.map((member) => ({
@@ -471,34 +486,53 @@ export function Workspace({
         (member) => member.id === lastMessage.userId
       );
 
-      console.log('Workspace useEffect: lastMessage.role:', lastMessage.role, 'lastMessage.isLoading:', lastMessage.isLoading);
+      console.log(
+        'Workspace useEffect: lastMessage.role:',
+        lastMessage.role,
+        'lastMessage.isLoading:',
+        lastMessage.isLoading
+      );
 
       // 1. 현재 사용자가 보낸 '@AI' 메시지는 툴팁으로 표시하지 않음
       // 2. AI 메시지이고 isLoading 상태인 경우 툴팁을 표시하지 않음
       if (
-        (lastMessage.role === 'user' && lastMessage.message.startsWith('@AI')) ||
+        (lastMessage.role === 'user' &&
+          lastMessage.message.startsWith('@AI')) ||
         (lastMessage.role === 'ai' && lastMessage.isLoading)
       ) {
         setLatestChatMessage(null); // 해당 메시지는 툴팁으로 표시하지 않음
-        console.log('Workspace useEffect: Setting latestChatMessage to null (User @AI message or AI loading)');
-      } else if (lastMessage.userId) { // 다른 유저 메시지 또는 AI 최종 응답
+        console.log(
+          'Workspace useEffect: Setting latestChatMessage to null (User @AI message or AI loading)'
+        );
+      } else if (lastMessage.userId) {
+        // 다른 유저 메시지 또는 AI 최종 응답
         const messageToSet = {
           userId: lastMessage.userId,
           message: lastMessage.message,
           avatar: sender?.avatar,
         };
         setLatestChatMessage(messageToSet);
-        console.log('Workspace useEffect: Setting latestChatMessage to', messageToSet);
-        console.log('Workspace useEffect: Avatar URL for latestChatMessage:', messageToSet.avatar);
+        console.log(
+          'Workspace useEffect: Setting latestChatMessage to',
+          messageToSet
+        );
+        console.log(
+          'Workspace useEffect: Avatar URL for latestChatMessage:',
+          messageToSet.avatar
+        );
       } else {
         // userId가 없는 시스템 메시지 등은 툴팁으로 표시하지 않음
         setLatestChatMessage(null);
-        console.log('Workspace useEffect: Setting latestChatMessage to null (no userId)');
+        console.log(
+          'Workspace useEffect: Setting latestChatMessage to null (no userId)'
+        );
       }
     } else {
       // 메시지가 없거나 유저 정보가 없으면 툴팁을 숨김
       setLatestChatMessage(null);
-      console.log('Workspace useEffect: Setting latestChatMessage to null (no message or user info)');
+      console.log(
+        'Workspace useEffect: Setting latestChatMessage to null (no message or user info)'
+      );
     }
   }, [lastMessage, activeMembersForHeader]);
 
@@ -896,12 +930,12 @@ export function Workspace({
     return Array.from(combinedPlaces.values());
   }, [pois, placeCache, recommendedItinerary]);
 
-  const handleToggleScheduleOverlay = () => {
-    setSchedulePosition((prev) => (prev === 'hidden' ? 'overlay' : 'hidden'));
-  };
+  // const handleToggleScheduleOverlay = () => { // 제거
+  //   setSchedulePosition((prev) => (prev === 'hidden' ? 'overlay' : 'hidden'));
+  // };
 
   const dayLayerForModal = optimizingDayId
-    ? dayLayers.find((l) => l.id === optimizingDayId) ?? null
+    ? (dayLayers.find((l) => l.id === optimizingDayId) ?? null)
     : null;
   const optimizedPois = optimizingDayId ? itinerary[optimizingDayId] : [];
   const optimizedSegments = optimizingDayId
@@ -929,16 +963,16 @@ export function Workspace({
           onExportPdf={handleExportToPdf}
           isGeneratingPdf={isGeneratingPdf}
           activeMembers={activeMembersForHeader}
-          onToggleScheduleSidebar={handleToggleScheduleOverlay}
           onFlush={flushPois}
         />
 
         <div className="flex-1 flex relative overflow-hidden rounded-lg border border-gray-200 shadow-sm">
           <div
             className={`w-2/5 h-full transition-opacity duration-300 ${
-              schedulePosition === 'docked'
-                ? 'opacity-0 pointer-events-none'
-                : 'opacity-100'
+              // schedulePosition === 'docked' // 제거
+              //   ? 'opacity-0 pointer-events-none'
+              //   : 'opacity-100'
+              'opacity-100' // 항상 보이도록
             }`}
           >
             <LeftPanel
@@ -997,15 +1031,15 @@ export function Workspace({
               itineraryAiPlaces={itineraryAiPlaces}
               chatAiPlaces={chatAiPlaces}
               isProgrammaticMove={isProgrammaticMove}
-              schedulePosition={schedulePosition}
+              // schedulePosition={schedulePosition} // 제거
             />
           </div>
 
           <ScheduleSidebar
-            position={schedulePosition}
-            onClose={() => setSchedulePosition('hidden')}
-            onDock={() => setSchedulePosition('docked')}
-            onUndock={() => setSchedulePosition('overlay')}
+            position={'hidden'} // schedulePosition 제거로 인해 임시로 'hidden' 설정
+            onClose={() => {}} // schedulePosition 제거로 인해 임시로 빈 함수 설정
+            onDock={() => {}} // schedulePosition 제거로 인해 임시로 빈 함수 설정
+            onUndock={() => {}} // schedulePosition 제거로 인해 임시로 빈 함수 설정
             itinerary={itinerary}
             dayLayers={dayLayers}
             markedPois={markedPois}
@@ -1045,7 +1079,8 @@ export function Workspace({
         </div>
       )}
       <AIRecommendationLoadingModal isOpen={isRecommendationLoading} />
-      <PdfGeneratingLoadingModal isOpen={isGeneratingPdf} /> {/* [신규] PDF 로딩 모달 추가 */}
+      <PdfGeneratingLoadingModal isOpen={isGeneratingPdf} />{' '}
+      {/* [신규] PDF 로딩 모달 추가 */}
       <OptimizationModal
         isOpen={isOptimizationModalOpen}
         onClose={handleCloseModal}
