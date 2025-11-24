@@ -205,7 +205,7 @@ function WorkspaceWrapper() {
   const planDayDtos = location.state?.planDayDtos || [];
 
   const handleEndTrip = () => {
-    navigate('/');
+    navigate('/save'); // 이 부분을 '/'에서 '/save'로 변경합니다.
   };
 
   return (
