@@ -281,8 +281,11 @@ export function ProfileModal({
   useEffect(() => {
     const checkBioClamping = () => {
       if (bioRef.current) {
+        // Calculate line height dynamically
+        const lineHeight = parseFloat(getComputedStyle(bioRef.current).lineHeight);
+        // Check if scrollHeight is greater than 2 lines of content
         setIsBioClamped(
-          bioRef.current.scrollHeight > bioRef.current.clientHeight
+          bioRef.current.scrollHeight > lineHeight * 2
         );
       }
     };
@@ -485,7 +488,7 @@ export function ProfileModal({
                       <div
                         ref={bioRef}
                         className={`text-gray-700 leading-relaxed whitespace-pre-wrap ${
-                          !isBioExpanded && 'line-clamp-3'
+                          !isBioExpanded && 'line-clamp-2'
                         }`}
                       >
                         {profile.description ||
