@@ -131,22 +131,15 @@ const getCircleMarkerWithIconSvg = (
   fillColor: string,
   strokeColor: string,
   strokeWidth: string,
-  iconSvg: string,
+  iconContent: string,
   opacity: number = 1
 ) => {
-  const iconContent = iconSvg.match(/<g.*?>(.*)<\/g>/s)?.[1] || iconSvg;
-
-  const finalIconContent = iconContent.replace(
-    '<circle cx="16" cy="16" r="6" fill="white"/>',
-    '<circle cx="0" cy="0" r="5" fill="white"/>'
-  );
-
   const svg = `
     <svg width="44" height="48" viewBox="0 -6 48 52" xmlns="http://www.w3.org/2000/svg">
       <g opacity="${opacity}">
         <circle cx="22" cy="22" r="10" fill="${fillColor}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
-        <g transform="translate(22, 22) scale(0.6)">
-          ${finalIconContent}
+        <g transform="translate(22, 22) scale(0.8)">
+          ${iconContent}
         </g>
       </g>
     </svg>
@@ -350,80 +343,68 @@ const PlaceMarker = memo(
       const strokeColor = '#000000';
       const strokeWidth = '0.5';
 
-      let iconSvg = '';
+      let iconSvgContent = '';
 
       switch (categoryCode) {
         case '레포츠':
-          iconSvg = `
-          <g transform="translate(20, 18)">
+          iconSvgContent = `
             <circle cx="-4" cy="4" r="3" stroke="white" stroke-width="1.5" fill="none"/>
             <circle cx="4" cy="4" r="3" stroke="white" stroke-width="1.5" fill="none"/>
             <path d="M-4,4 L0,-2 L4,4 M0,-2 L0,1"
                   stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
             <path d="M-1,-2 L1,-2"
                   stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-          </g>
-        `;
+          `;
           break;
 
         case '추천코스':
-          iconSvg = `
-          <g transform="translate(20, 18)">
+          iconSvgContent = `
             <path d="M0,-6 L1.5,-2 L6,-2 L2.5,1 L4,6 L0,3 L-4,6 L-2.5,1 L-6,-2 L-1.5,-2 Z"
                   fill="white" stroke="white" stroke-width="1"/>
-          </g>
-        `;
+          `;
           break;
 
         case '인문(문화/예술/역사)':
-          iconSvg = `
-          <g transform="translate(20, 18)">
+          iconSvgContent = `
             <path d="M-7,-4 L0,-7 L7,-4 Z" fill="white" stroke="white" stroke-width="1"/>
             <rect x="-6" y="-3" width="2" height="8" fill="white"/>
             <rect x="-1" y="-3" width="2" height="8" fill="white"/>
             <rect x="4" y="-3" width="2" height="8" fill="white"/>
             <rect x="-7" y="5" width="14" height="1" fill="white"/>
-          </g>
-        `;
+          `;
           break;
 
         case '자연':
-          iconSvg = `
-          <g transform="translate(20, 18)">
+          iconSvgContent = `
             <circle cx="0" cy="-3" r="4" fill="white"/>
             <circle cx="-3" cy="-1" r="3" fill="white"/>
             <circle cx="3" cy="-1" r="3" fill="white"/>
             <rect x="-1" y="1" width="2" height="5" fill="white"/>
-          </g>
-        `;
+          `;
           break;
 
         case '숙박':
-          iconSvg = `
-            <g transform="translate(20, 18)">
+          iconSvgContent = `
               <rect x="-8" y="-5" width="2.5" height="7" fill="white" rx="0.5"/>
               <rect x="-5.5" y="-0.5" width="12" height="4" fill="white" rx="0.5"/>
               <rect x="-4.5" y="-3" width="4" height="2.5" fill="white" rx="0.5"/>
               <rect x="-5.5" y="3.5" width="2" height="3.5" fill="white"/>
               <rect x="4.5" y="3.5" width="2" height="3.5" fill="white"/>
-            </g>
           `;
           break;
 
         case '음식':
-          iconSvg = `
-            <g transform="translate(20, 18)">
+          iconSvgContent = `
               <path d="M-5.5,-7 L-5.5,-1 M-7,-7 L-7,-2 C-7,-1 -6,-1 -5.5,-1 M-4,-7 L-4,-2 C-4,-1 -5,-1 -5.5,-1 M-5.5,-1 L-5.5,7"
                     stroke="white" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
               <path d="M3.5,-7 L3.5,7 M3.5,-7 L6,-6 L6,-4 L3.5,-2.5"
                     stroke="white" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-            </g>
           `;
           break;
 
         default:
-          iconSvg = `
-              <circle cx="16" cy="16" r="6" fill="white"/>
+          iconSvgContent = `
+              <circle cx="0" cy="0" r="6" fill="white"/>
             `;
       }
 
@@ -432,7 +413,7 @@ const PlaceMarker = memo(
           color,
           strokeColor,
           strokeWidth,
-          iconSvg
+          iconSvgContent
         );
       }
       const isMarkedOnly = markedPoi && markedPoi.status === 'MARKED';
@@ -445,12 +426,15 @@ const PlaceMarker = memo(
       const svg = `
       <svg width="44" height="48" viewBox="0 -6 48 52" xmlns="http://www.w3.org/2000/svg">
         <path d="M20 0C11 0 4 8 4 18c0 12 16 28 16 28s16-16 16-28C36 8 29 0 20 0z"
-              fill="#5194F7" 
+              fill="${color}" 
               stroke="${strokeColor}" stroke-width="${strokeWidth}"/>
+        <g transform="translate(20, 18) scale(0.8)">
+          ${iconSvgContent}
+        </g>
         ${
           badgeInfo
             ? `
-          <g transform="translate(34, 4)">
+          <g transform="translate(38, 0)">
             <circle cx="0" cy="0" r="10" fill="${badgeInfo.color}" stroke="white" stroke-width="2"/>
             <text x="0" y="0" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white" text-anchor="middle" alignment-baseline="central">
               ${badgeInfo.label}
