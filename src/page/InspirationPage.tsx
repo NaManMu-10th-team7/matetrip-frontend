@@ -6,15 +6,17 @@ import { useAuthStore } from '../store/authStore';
 import client from '../api/client';
 import PageContainer from '../components/PageContainer';
 
-// 백엔드 응답 타입 (GetPopularPlacesResDto)
-interface PopularPlaceResponse {
-  addplace_id: string;
+// 백엔드 응답 타입 (GetPlacesResDto)
+interface GetPlacesResDto {
+  id: string;
+  category: string;
   title: string;
   address: string;
-  image_url?: string;
   summary?: string;
-  latitude: number;
+  image_url?: string;
   longitude: number;
+  latitude: number;
+  popularityScore?: number;
 }
 
 // 프론트엔드 내부 타입
@@ -51,11 +53,11 @@ export function InspirationPage({ onViewAccommodation }: InspirationPageProps) {
 
   // 백엔드 응답을 프론트엔드 타입으로 변환
   const transformResponse = (
-    data: PopularPlaceResponse[],
+    data: GetPlacesResDto[],
     startIndex: number
   ): Place[] => {
     return data.map((item, index) => ({
-      id: item.addplace_id,
+      id: item.id,
       title: item.title,
       address: item.address,
       imageUrl: item.image_url,
@@ -79,13 +81,13 @@ export function InspirationPage({ onViewAccommodation }: InspirationPageProps) {
       }
 
       const currentPage = isNewSearch ? 1 : page + 1;
-      const endpoint = query ? '/places/search' : '/places/popular';
+      const endpoint = query ? '/places/search/detail' : '/places/popular';
       const params = query
-        ? { query, page: currentPage, limit: ITEMS_PER_PAGE }
+        ? { word: query, page: currentPage, limit: ITEMS_PER_PAGE }
         : { page: currentPage, limit: ITEMS_PER_PAGE };
 
       try {
-        const response = await client.get<PopularPlaceResponse[]>(endpoint, {
+        const response = await client.get<GetPlacesResDto[]>(endpoint, {
           params,
         });
 

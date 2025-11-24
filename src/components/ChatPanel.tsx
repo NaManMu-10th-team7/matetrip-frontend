@@ -20,7 +20,7 @@ import { cn } from './ui/utils';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { CategoryIcon } from './CategoryIcon'; // [신규] CategoryIcon 임포트
 // API_BASE_URL은 이제 authStore에서 avatar를 생성하므로 ChatPanel에서는 필요 없습니다.
-// import { API_BASE_URL } from '../api/client'; 
+// import { API_BASE_URL } from '../api/client';
 
 interface Member {
   id: string;
@@ -99,7 +99,12 @@ function ChatRecommendedPlaceCard({
           <p className="truncate">{place.address}</p>
         </div>
       </div>
-      <Button size="icon" variant="ghost" className="w-8 h-8" onClick={handleAddClick}>
+      <Button
+        size="icon"
+        variant="ghost"
+        className="w-8 h-8"
+        onClick={handleAddClick}
+      >
         <PlusCircle className="w-5 h-5 text-primary" />
       </Button>
     </div>
@@ -143,8 +148,7 @@ const ChatMessageItem = memo(function ChatMessageItem({
   const isMe = currentUserId != null && msg.userId === currentUserId;
   const isSystem = msg.username === 'System';
   const isAiRecommendation =
-    isAi && msg.recommendedPlaces &&
-    msg.recommendedPlaces.length > 0;
+    isAi && msg.recommendedPlaces && msg.recommendedPlaces.length > 0;
 
   let sender: Member | null = null;
   if (!isMe && !isSystem) {
@@ -179,7 +183,10 @@ const ChatMessageItem = memo(function ChatMessageItem({
       messageDate.getMonth() === today.getMonth() &&
       messageDate.getFullYear() === today.getFullYear();
     return isSameDay
-      ? messageDate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+      ? messageDate.toLocaleTimeString('ko-KR', {
+          hour: '2-digit',
+          minute: '2-digit',
+        })
       : `${messageDate.toLocaleDateString('ko-KR')} ${messageDate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}`;
   };
 
@@ -188,14 +195,18 @@ const ChatMessageItem = memo(function ChatMessageItem({
       const aiPrefix = '@AI';
       const restOfMessage = msg.message.substring(aiPrefix.length);
       return (
-        <p className="text-base" style={{ wordBreak: 'break-word' }}> {/* text-sm -> text-base 변경 */}
+        <p className="text-base" style={{ wordBreak: 'break-word' }}>
+          {' '}
+          {/* text-sm -> text-base 변경 */}
           <span className="text-primary font-bold">{aiPrefix}</span>
           {restOfMessage}
         </p>
       );
     }
     return (
-      <p className="text-base" style={{ wordBreak: 'break-word' }}> {/* text-sm -> text-base 변경 */}
+      <p className="text-base" style={{ wordBreak: 'break-word' }}>
+        {' '}
+        {/* text-sm -> text-base 변경 */}
         {!isAiRecommendation && msg.message}
       </p>
     );
@@ -224,16 +235,25 @@ const ChatMessageItem = memo(function ChatMessageItem({
         )}
       >
         <div className="flex items-baseline gap-1 mb-1">
-          <span className="text-base font-semibold text-gray-800">{msg.username}</span>
+          <span className="text-base font-semibold text-gray-800">
+            {msg.username}
+          </span>
           <span className="text-sm text-gray-500">|</span>
-          <span className="text-xs text-gray-500">{formatTimestamp(msg.createdAt)}</span>
+          <span className="text-xs text-gray-500">
+            {formatTimestamp(msg.createdAt)}
+          </span>
         </div>
-        <div className={cn('rounded-lg px-4 py-2', isAiRecommendation ? 'w-full bg-transparent p-0' : isSystem ? 'bg-gray-100 text-gray-700 italic' : 'bg-gray-100 text-gray-900')}>
-          {msg.isLoading ? (
-            <AiLoadingIndicator />
-          ) : (
-            renderMessageContent()
+        <div
+          className={cn(
+            'rounded-lg px-4 py-2',
+            isAiRecommendation
+              ? 'w-full bg-transparent p-0'
+              : isSystem
+                ? 'bg-gray-100 text-gray-700 italic'
+                : 'bg-gray-100 text-gray-900'
           )}
+        >
+          {msg.isLoading ? <AiLoadingIndicator /> : renderMessageContent()}
           {isAiRecommendation && (
             <div className="border border-primary rounded-lg bg-primary-10 overflow-hidden">
               <div className="p-3 border-b border-gray-200">
@@ -262,7 +282,11 @@ const ChatMessageItem = memo(function ChatMessageItem({
                 className="w-full rounded-t-none text-sm text-gray-600 hover:bg-primary/20"
                 onClick={() => setIsCollapsed((prev) => !prev)}
               >
-                {isCollapsed ? <ChevronDown className="w-4 h-4 mr-2" /> : <ChevronUp className="w-4 h-4 mr-2" />}
+                {isCollapsed ? (
+                  <ChevronDown className="w-4 h-4 mr-2" />
+                ) : (
+                  <ChevronUp className="w-4 h-4 mr-2" />
+                )}
                 {isCollapsed ? '펼치기' : '접기'}
               </Button>
             </div>
@@ -320,7 +344,7 @@ export const ChatPanel = memo(function ChatPanel({
 
   return (
     <div className="h-full flex flex-col bg-white">
-      <div className="bg-primary-80 px-4 py-2 flex items-center justify-between flex-shrink-0 h-16 text-primary-foreground relative rounded-lg shadow-md backdrop-blur-sm">
+      <div className=" px-4 py-2 flex items-center justify-between flex-shrink-0 h-16 text-primary relative backdrop-blur-sm">
         <h1 className="text-xl font-bold truncate">채팅</h1>
         <div className="flex items-center gap-3">
           {/* 접속 중인 멤버 아바타 */}
@@ -343,7 +367,7 @@ export const ChatPanel = memo(function ChatPanel({
           )}
           <Badge
             variant="outline"
-            className="text-primary-foreground text-sm flex items-center gap-2 border-primary-foreground/50 bg-transparent"
+            className="text-primary text-sm flex items-center gap-2 border-primary bg-transparent"
           >
             {isChatConnected ? (
               <>
@@ -364,7 +388,7 @@ export const ChatPanel = memo(function ChatPanel({
               className="w-9 h-9 hover:bg-primary-foreground/10"
               onClick={handleToggleVideoCall}
             >
-              <Video className="w-5 h-5" />
+              <Video className="w-5 h-5 text-primary" />
             </Button>
           </div>
         </div>

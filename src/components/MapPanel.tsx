@@ -966,7 +966,7 @@ export function MapPanel({
 
             console.log(
               `[DEBUG] Kakao Mobility API Request URL for day ${dayLayer.id}: https://apis-navi.kakaomobility.com/v1/directions?${queryParams.toString()}`
-);
+            );
 
             const response = await fetch(
               `https://apis-navi.kakaomobility.com/v1/directions?${queryParams.toString()}`,
@@ -1525,16 +1525,12 @@ export function MapPanel({
           >
             <Star
               size={18}
-              className={
-                showFamousPlaces ? 'text-yellow-400 fill-current' : ''
-              }
+              className={showFamousPlaces ? 'text-yellow-400 fill-current' : ''}
             />
           </button>
           <div className="border-l border-gray-300 h-6" />
           <button
-            onClick={() =>
-              setIsCategoryFilterVisible(!isCategoryFilterVisible)
-            }
+            onClick={() => setIsCategoryFilterVisible(!isCategoryFilterVisible)}
             className="p-1.5 text-gray-600 bg-white rounded-full shadow-md hover:bg-gray-100 flex-shrink-0"
           >
             {isCategoryFilterVisible ? (
@@ -1571,29 +1567,25 @@ export function MapPanel({
                   전체
                 </button>
 
-                {Object.entries(CATEGORY_INFO).map(
-                  ([key, { name, color }]) => (
-                    <button
-                      key={key}
-                      onClick={() => handleCategoryToggle(key)}
-                      className="whitespace-nowrap px-3 py-1.5 text-xs font-semibold rounded-full shadow-md transition-all duration-200 flex justify-center items-center gap-1.5"
-                      style={{
-                        backgroundColor: visibleCategories.has(key)
-                          ? NEW_CATEGORY_COLORS[key] || color
-                          : 'white',
-                        color: visibleCategories.has(key)
-                          ? 'white'
-                          : '#4B5563',
-                      }}
-                    >
-                      <CategoryIcon
-                        category={key as CategoryCode}
-                        className="w-4 h-4"
-                      />
-                      {name}
-                    </button>
-                  )
-                )}
+                {Object.entries(CATEGORY_INFO).map(([key, { name, color }]) => (
+                  <button
+                    key={key}
+                    onClick={() => handleCategoryToggle(key)}
+                    className="whitespace-nowrap px-3 py-1.5 text-xs font-semibold rounded-full shadow-md transition-all duration-200 flex justify-center items-center gap-1.5"
+                    style={{
+                      backgroundColor: visibleCategories.has(key)
+                        ? NEW_CATEGORY_COLORS[key] || color
+                        : 'white',
+                      color: visibleCategories.has(key) ? 'white' : '#4B5563',
+                    }}
+                  >
+                    <CategoryIcon
+                      category={key as CategoryCode}
+                      className="w-4 h-4"
+                    />
+                    {name}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
