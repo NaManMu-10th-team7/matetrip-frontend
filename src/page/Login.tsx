@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Lock, Eye, EyeOff, Map } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react'; // MapIcon 제거
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -80,12 +80,17 @@ export function Login({ onLogin, onSignupClick }: LoginProps) {
         {/* Header Logo */}
         <div className="flex flex-col items-center justify-center mb-6">
           <div className="flex items-center gap-2 mb-2">
-            <div className="bg-linear-to-br bg-primary p-2.5 rounded-xl shadow-primary-soft text-white">
-              <Map className="w-7 h-7 text-white" />
-            </div>
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+            <img
+              src="/logo-without-title.png"
+              alt="MateTrip Logo"
+              className="w-14 h-14 shrink-0"
+            />
+            <span
+              className="text-2xl text-gray-900 whitespace-nowrap"
+              style={{ fontFamily: 'Princess Sofia, cursive' }}
+            >
               MateTrip
-            </h1>
+            </span>
           </div>
         </div>
 

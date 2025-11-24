@@ -140,7 +140,7 @@ function PoiItem({
         <Button
           variant="outline"
           size="sm"
-          className="h-7 text-xs rounded-full hover:bg-transparent hover:border-2 hover:border-black"
+          className="h-7 text-xs rounded-full border-gray-200 hover:bg-transparent hover:border-2 hover:border-black"
           onClick={(e) => {
             e.stopPropagation();
             onShowDetail(poi.placeId);
@@ -182,7 +182,10 @@ function MarkerStorage({
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
-    <div ref={setNodeRef} className="px-6 py-4 border rounded-lg bg-slate-50">
+    <div
+      ref={setNodeRef}
+      className="px-6 py-4 border border-gray-200 rounded-lg bg-slate-50"
+    >
       <div className="flex justify-between items-center mb-2">
         <div className="flex items-center gap-2">
           <MapPin className="w-5 h-5 text-gray-600" />
@@ -273,7 +276,7 @@ function DayItineraryItem({
   }`;
 
   return (
-    <div className="border px-6 py-4 rounded-lg bg-slate-50">
+    <div className="border border-gray-200 px-6 py-4 rounded-lg bg-slate-50">
       <div
         ref={setNodeRef}
         className="flex items-center justify-between gap-2 "
@@ -300,7 +303,7 @@ function DayItineraryItem({
           {pois.length >= 2 && (
             <Button
               variant="outline"
-              className="text-sm rounded-full hover:bg-transparent hover:border-2 hover:border-black"
+              className="text-sm rounded-full border-gray-200 hover:bg-transparent hover:border-2 hover:border-black"
               onClick={() => onOptimizeRoute(layer.id)}
             >
               경로 최적화
@@ -516,7 +519,7 @@ export function PoiDetailPanel({
           <div className="pt-8">
             <h2 className="text-lg font-bold leading-5 mb-4">
               MateTrip이 추천하는{' '}
-              <span className="text-indigo-600">{placeDetail.title}</span> 주변
+              <span className="text-gray-600">{placeDetail.title}</span> 주변
               장소
             </h2>
             <div className="grid grid-cols-2 gap-x-4 gap-y-10">
@@ -689,7 +692,7 @@ export function ScheduleSidebar({
       case 'docked':
         return 'left-0';
       case 'overlay':
-        return 'left-1/2';
+        return 'left-2/5';
       case 'hidden':
       default:
         return 'left-full';
@@ -698,10 +701,12 @@ export function ScheduleSidebar({
 
   return (
     <div
-      className={`absolute top-0 h-full w-1/2 bg-white border-l border-gray-200 shadow-lg transition-all duration-300 ease-in-out z-20 rounded-lg overflow-hidden ${getPositionClasses()}`}
+      className={`absolute top-0 h-full w-3/5 bg-white border-l border-gray-200 shadow-lg transition-all duration-300 ease-in-out z-20 rounded-lg overflow-hidden ${getPositionClasses()}`}
     >
       <div className="flex flex-col h-full">
-        <div className="flex items-center justify-between px-10 py-4 border-b">
+        <div
+          className="flex items-center justify-between px-10 py-4 border-b border-gray-200"
+        >
           <div className="flex items-center gap-2">
             {position === 'overlay' ? (
               <Button variant="ghost" size="icon" onClick={onDock}>
