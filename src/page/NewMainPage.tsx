@@ -678,8 +678,8 @@ export function NewMainPage({
         {/* 맞춤 여행 추천 섹션 스켈레톤 */}
         <div className="mb-8">
           <div className="h-8 w-1/3 bg-gray-200 rounded mb-4"></div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {Array.from({ length: 4 }).map((_, i) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+            {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="h-64 bg-gray-200 rounded-xl"></div>
             ))}
           </div>
@@ -790,8 +790,8 @@ export function NewMainPage({
                   </Button>
                 </div>
               ) : isMatchesLoading || isPostsLoading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start">
-                  {Array.from({ length: 6 }).map((_, index) => (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 items-start">
+                  {Array.from({ length: 3 }).map((_, index) => (
                     <MainPostCardSkeleton key={index} />
                   ))}
                 </div>
@@ -800,7 +800,7 @@ export function NewMainPage({
                   추천할 동행이 없습니다.
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 items-start">
                   {matchedPosts.map(
                     ({ post, score, tendency, style }, index) => (
                       <GridMatchingCard
