@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { MapPin, Calendar, Users } from 'lucide-react';
 import { Badge } from './ui/badge';
@@ -15,10 +15,7 @@ interface WorkspaceCardProps {
   buttonText?: string;
 }
 
-export function WorkspaceCard({
-  post,
-  onClick,
-}: WorkspaceCardProps) {
+export function WorkspaceCard({ post, onClick }: WorkspaceCardProps) {
   const {
     title,
     location,
@@ -204,9 +201,7 @@ export function WorkspaceCard({
       {/* 콘텐츠 */}
       <div className="flex flex-col flex-1 p-4">
         {/* 제목 */}
-        <h3
-          className="text-lg font-bold text-gray-800 leading-snug truncate mb-2"
-        >
+        <h3 className="text-lg font-bold text-gray-800 leading-snug truncate mb-2">
           {title}
         </h3>
 
