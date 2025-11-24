@@ -6,6 +6,7 @@ import {
   DoorOpen,
   FileDown,
   Loader2,
+  ListOrdered, // ListOrdered 아이콘 다시 임포트
   Save,
 } from 'lucide-react';
 import { Button } from './ui/button';
@@ -35,6 +36,7 @@ interface PlanRoomHeaderProps {
   activeMembers?: ActiveMember[];
   onExportPdf?: () => void;
   isGeneratingPdf?: boolean;
+  onToggleScheduleSidebar: () => void; // onToggleScheduleSidebar prop 다시 추가
   onFlush: () => void;
 }
 
@@ -50,6 +52,7 @@ export function PlanRoomHeader({
   activeMembers = [],
   onExportPdf,
   isGeneratingPdf = false,
+  onToggleScheduleSidebar, // onToggleScheduleSidebar prop 다시 추가
   onFlush,
 }: PlanRoomHeaderProps) {
   const [isReviewModalOpen, setReviewModalOpen] = useState(false);
@@ -118,14 +121,14 @@ export function PlanRoomHeader({
             {isFlushing ? '저장 중...' : '저장'}
           </span>
         </Button>
-        {/* <Button // 제거
+        <Button // '여행 일정' 버튼 복구
           variant="outline"
           className="h-10 px-4 gap-2 bg-transparent border-primary-foreground/50 hover:bg-primary-foreground/10 text-primary-foreground"
           onClick={onToggleScheduleSidebar}
         >
           <ListOrdered className="w-5 h-5" />
           <span className="text-base font-medium">여행 일정</span>
-        </Button> */}
+        </Button>
 
         {/* 메뉴 버튼 */}
         <DropdownMenu>
@@ -138,7 +141,10 @@ export function PlanRoomHeader({
               <MoreVertical className="w-5 h-5" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuContent
+            align="end"
+            className="w-56"
+          >
             <DropdownMenuItem
               onClick={onExportPdf}
               disabled={isGeneratingPdf}

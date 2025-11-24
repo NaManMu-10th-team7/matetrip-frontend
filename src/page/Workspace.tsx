@@ -84,9 +84,9 @@ export function Workspace({
   onEndTrip,
 }: WorkspaceProps) {
   const [isLeftPanelOpen, _setIsLeftPanelOpen] = useState(true);
-  // const [schedulePosition, setSchedulePosition] = useState< // 제거
-  //   'hidden' | 'overlay' | 'docked'
-  // >('hidden');
+  const [schedulePosition, setSchedulePosition] = useState<
+    'hidden' | 'overlay' | 'docked'
+  >('hidden');
 
   // [신규] AI 추천 일정 관련 상태
   const [recommendedItinerary, setRecommendedItinerary] = useState<
@@ -458,7 +458,7 @@ export function Workspace({
       }, 310); // transition 시간보다 약간 길게 설정
       return () => clearTimeout(timer);
     }
-  }, [isLeftPanelOpen]); // schedulePosition 제거
+  }, [isLeftPanelOpen, schedulePosition]); // schedulePosition 추가
   // PlanRoomHeader에 전달할 activeMembers 데이터 형식으로 변환
   const activeMembersForHeader = useMemo(() => {
     return members.map((member) => ({
@@ -930,9 +930,17 @@ export function Workspace({
     return Array.from(combinedPlaces.values());
   }, [pois, placeCache, recommendedItinerary]);
 
-  // const handleToggleScheduleOverlay = () => { // 제거
-  //   setSchedulePosition((prev) => (prev === 'hidden' ? 'overlay' : 'hidden'));
-  // };
+  const handleToggleScheduleOverlay = () => {
+    setSchedulePosition((prev) => (prev === 'hidden' ? 'overlay' : 'hidden'));
+  };
+
+  const handleDockScheduleSidebar = () => {
+    setSchedulePosition('docked');
+  };
+
+  const handleUndockScheduleSidebar = () => {
+    setSchedulePosition('overlay');
+  };
 
   const dayLayerForModal = optimizingDayId
     ? (dayLayers.find((l) => l.id === optimizingDayId) ?? null)
@@ -963,16 +971,16 @@ export function Workspace({
           onExportPdf={handleExportToPdf}
           isGeneratingPdf={isGeneratingPdf}
           activeMembers={activeMembersForHeader}
+          onToggleScheduleSidebar={handleToggleScheduleOverlay}
           onFlush={flushPois}
         />
 
         <div className="flex-1 flex relative overflow-hidden rounded-lg border border-gray-200 shadow-sm">
           <div
             className={`w-2/5 h-full transition-opacity duration-300 ${
-              // schedulePosition === 'docked' // 제거
-              //   ? 'opacity-0 pointer-events-none'
-              //   : 'opacity-100'
-              'opacity-100' // 항상 보이도록
+              schedulePosition === 'docked'
+                ? 'opacity-0 pointer-events-none'
+                : 'opacity-100'
             }`}
           >
             <LeftPanel
@@ -1016,10 +1024,9 @@ export function Workspace({
               mapRef={mapRef}
               setSelectedPlace={setSelectedPlace}
               onRouteInfoUpdate={handleRouteInfoUpdate}
-              hoveredPoiInfo={hoveredPoiInfo}
+              onRouteOptimized={handleRouteOptimized}
               optimizingDayId={optimizingDayId}
               onOptimizationComplete={handleOptimizationComplete}
-              onRouteOptimized={handleRouteOptimized}
               latestChatMessage={latestChatMessage}
               cursors={cursors}
               moveCursor={moveCursor}
@@ -1031,15 +1038,15 @@ export function Workspace({
               itineraryAiPlaces={itineraryAiPlaces}
               chatAiPlaces={chatAiPlaces}
               isProgrammaticMove={isProgrammaticMove}
-              // schedulePosition={schedulePosition} // 제거
+              hoveredPoiInfo={hoveredPoiInfo}
             />
           </div>
 
           <ScheduleSidebar
-            position={'hidden'} // schedulePosition 제거로 인해 임시로 'hidden' 설정
-            onClose={() => {}} // schedulePosition 제거로 인해 임시로 빈 함수 설정
-            onDock={() => {}} // schedulePosition 제거로 인해 임시로 빈 함수 설정
-            onUndock={() => {}} // schedulePosition 제거로 인해 임시로 빈 함수 설정
+            position={schedulePosition}
+            onClose={() => setSchedulePosition('hidden')}
+            onDock={handleDockScheduleSidebar}
+            onUndock={handleUndockScheduleSidebar}
             itinerary={itinerary}
             dayLayers={dayLayers}
             markedPois={markedPois}
