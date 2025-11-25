@@ -210,7 +210,7 @@ export const PdfDocument = React.forwardRef<HTMLDivElement, PdfDocumentProps>(
 
                           {/* Segment Info Spacer */}
                           {segment && (
-                            <div className="h-16 flex items-center">
+                            <div className="h-24 flex items-center">
                               <div className="flex items-center text-base text-gray-500">
                                 <Clock className="w-4 h-4 mr-2" />
                                 <span className="mr-5">{`${Math.ceil(
