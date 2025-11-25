@@ -455,6 +455,7 @@ export function Workspace({
         address: string;
         category: string;
         imageUrl?: string;
+        summary?: string;
         latitude: number;
         longitude: number;
       }
@@ -475,6 +476,7 @@ export function Workspace({
         address: poi.address || placeInfo?.address,
         imageUrl: poi.imageUrl || placeInfo?.imageUrl,
         categoryName: poi.categoryName || placeInfo?.category,
+        summary: (poi as any).summary || placeInfo?.summary,
       };
     };
 

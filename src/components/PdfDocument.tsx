@@ -166,10 +166,22 @@ export const PdfDocument = React.forwardRef<HTMLDivElement, PdfDocumentProps>(
                         </div>
                         <div className="min-w-0">
                           <p className="font-bold text-lg">{poi.placeName}</p>
+                          {poi.categoryName && (
+                            <p className="text-base text-gray-500 mt-1">
+                              {poi.categoryName}
+                            </p>
+                          )}
                           {poi.address && (
                             <p className="text-base text-gray-600 mt-2">
                               {poi.address}
                             </p>
+                          )}
+                          {(poi as any).summary && (
+                            <blockquote className="mt-2 pl-4 border-l-4 border-gray-300">
+                              <p className="text-sm text-gray-700 italic">
+                                {(poi as any).summary}
+                              </p>
+                            </blockquote>
                           )}
                         </div>
                       </li>
