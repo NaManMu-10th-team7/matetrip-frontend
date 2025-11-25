@@ -3,11 +3,11 @@ import { Map, MapMarker } from 'react-kakao-maps-sdk';
 import { Clock, Car } from 'lucide-react';
 import type { Poi } from '../hooks/usePoiSocket';
 import type { DayLayer, RouteSegment } from '../types/map';
+import { CategoryIcon } from './CategoryIcon';
 
 interface PdfDocumentProps {
   workspaceName: string;
   itinerary: Record<string, Poi[]>;
-  // DayLayer 타입에 planDate가 없으므로, 직접 타입을 확장하여 사용합니다.
   dayLayers: (DayLayer & {
     planDate: string;
   })[];
@@ -147,11 +147,30 @@ export const PdfDocument = React.forwardRef<HTMLDivElement, PdfDocumentProps>(
                         >
                           {index + 1}
                         </span>
-                        <div>
+                        <div className="flex-shrink-0 mr-4">
+                          {poi.imageUrl ? (
+                            <img
+                              src={poi.imageUrl}
+                              alt={poi.placeName}
+                              className="w-16 h-16 object-cover rounded-md"
+                              crossOrigin="anonymous"
+                            />
+                          ) : (
+                            <div className="w-16 h-16 rounded-md bg-gray-200 flex items-center justify-center">
+                              <CategoryIcon
+                                category={poi.categoryName}
+                                className="w-8 h-8 text-gray-500"
+                              />
+                            </div>
+                          )}
+                        </div>
+                        <div className="min-w-0">
                           <p className="font-bold text-sm">{poi.placeName}</p>
-                          <p className="text-xs text-gray-600">
-                            {poi.address}
-                          </p>
+                          {poi.address && (
+                            <p className="text-xs text-gray-600 mt-0.5">
+                              {poi.address}
+                            </p>
+                          )}
                         </div>
                       </li>
                       {index < poisForDay.length - 1 &&

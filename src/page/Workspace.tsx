@@ -444,18 +444,55 @@ export function Workspace({
     }
   }, [lastMessage, activeMembersForHeader]);
 
+  const placeCache = usePlaceStore((state) => state.placesById);
+
   const { markedPois, itinerary } = useMemo(() => {
+    const allPlaces = new Map<
+      string,
+      {
+        id: string;
+        title: string;
+        address: string;
+        category: string;
+        imageUrl?: string;
+        latitude: number;
+        longitude: number;
+      }
+    >();
+
+    itineraryAiPlaces.forEach((p) => allPlaces.set(p.id, p));
+    chatAiPlaces.forEach((p) => allPlaces.set(p.id, p));
+    placeCache.forEach((p: any) => {
+      if (!allPlaces.has(p.id)) {
+        allPlaces.set(p.id, { ...p, imageUrl: p.image_url });
+      }
+    });
+
+    const enrichPoi = (poi: Poi): Poi => {
+      const placeInfo = allPlaces.get(poi.placeId);
+      return {
+        ...poi,
+        address: poi.address || placeInfo?.address,
+        imageUrl: poi.imageUrl || placeInfo?.imageUrl,
+        categoryName: poi.categoryName || placeInfo?.category,
+      };
+    };
+
     const marked = pois
       .filter((p) => p.status === 'MARKED')
-      .sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0));
+      .sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0))
+      .map(enrichPoi);
+
     const itineraryData: Record<string, Poi[]> = {};
     dayLayers.forEach((layer) => {
       itineraryData[layer.id] = pois
         .filter((p) => p.planDayId === layer.id && p.status === 'SCHEDULED')
-        .sort((a, b) => a.sequence - b.sequence);
+        .sort((a, b) => a.sequence - b.sequence)
+        .map(enrichPoi);
     });
+
     return { markedPois: marked, itinerary: itineraryData };
-  }, [pois, dayLayers]);
+  }, [pois, dayLayers, placeCache, itineraryAiPlaces, chatAiPlaces]);
 
   const startDate = planDayDtos.length > 0 ? planDayDtos[0].planDate : '';
   const endDate =
@@ -510,7 +547,8 @@ export function Workspace({
           (img) =>
             img.src &&
             (img.src.includes('daumcdn.net') ||
-              img.src.includes('kakaocdn.net'))
+              img.src.includes('kakaocdn.net') ||
+              img.src.includes('visitkorea.or.kr'))
         );
 
         const promises = crossOriginImages.map((img) => {
@@ -741,8 +779,6 @@ export function Workspace({
     },
     [itinerary, reorderPois]
   );
-
-  const placeCache = usePlaceStore((state) => state.placesById);
 
   const placesToRender = useMemo(() => {
     const combinedPlaces = new Map<string, PlaceDto>();
