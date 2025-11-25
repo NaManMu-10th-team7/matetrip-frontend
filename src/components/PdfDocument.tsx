@@ -137,81 +137,96 @@ export const PdfDocument = React.forwardRef<HTMLDivElement, PdfDocumentProps>(
               <PdfInteractiveMap pois={poisForDay} />
 
               <div style={{ width: '90%', margin: '0 auto' }}>
-                <ul className="space-y-6">
-                  {poisForDay.map((poi, index) => (
-                    <React.Fragment key={poi.id}>
-                      <li className="flex items-start">
-                        <span
-                          className="flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-full text-white text-base mr-4 mt-0.5"
-                          style={{ backgroundColor: day.color }}
-                        >
-                          {index + 1}
-                        </span>
-                        <div className="flex-shrink-0 mr-6">
-                          {poi.imageUrl ? (
-                            <img
-                              src={poi.imageUrl}
-                              alt={poi.placeName}
-                              className="w-40 h-32 object-cover rounded-md"
-                              crossOrigin="anonymous"
-                            />
-                          ) : (
-                            <div className="w-40 h-32 rounded-md bg-gray-200 flex items-center justify-center">
-                              <CategoryIcon
-                                category={poi.categoryName}
-                                className="w-12 h-12 text-gray-500"
-                              />
+                <ul className="space-y-0">
+                  {poisForDay.map((poi, index) => {
+                    const isLast = index === poisForDay.length - 1;
+                    const segment = !isLast
+                      ? segmentsForDay.find(
+                          (s) =>
+                            s.fromPoiId === poi.id &&
+                            s.toPoiId === poisForDay[index + 1].id
+                        )
+                      : null;
+
+                    return (
+                      <li key={poi.id} className="flex relative">
+                        {/* Timeline Column */}
+                        <div className="flex flex-col items-center mr-4">
+                          <div
+                            className="relative z-10 flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-full text-white text-base mt-0.5"
+                            style={{ backgroundColor: day.color }}
+                          >
+                            {index + 1}
+                          </div>
+                          {!isLast && (
+                            <div className="w-0.5 flex-grow bg-gray-300" />
+                          )}
+                        </div>
+
+                        {/* Content Column */}
+                        <div className="w-full">
+                          {/* Place Info */}
+                          <div className="flex items-start">
+                            <div className="flex-shrink-0 mr-6">
+                              {poi.imageUrl ? (
+                                <img
+                                  src={poi.imageUrl}
+                                  alt={poi.placeName}
+                                  className="w-40 h-32 object-cover rounded-md"
+                                  crossOrigin="anonymous"
+                                />
+                              ) : (
+                                <div className="w-40 h-32 rounded-md bg-gray-200 flex items-center justify-center">
+                                  <CategoryIcon
+                                    category={poi.categoryName}
+                                    className="w-12 h-12 text-gray-500"
+                                  />
+                                </div>
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-bold text-lg">
+                                {poi.placeName}
+                              </p>
+                              {poi.categoryName && (
+                                <p className="text-base text-gray-500 mt-1">
+                                  {poi.categoryName}
+                                </p>
+                              )}
+                              {poi.address && (
+                                <p className="text-base text-gray-600 mt-2">
+                                  {poi.address}
+                                </p>
+                              )}
+                              {(poi as any).summary && (
+                                <blockquote className="mt-2 pl-4 border-l-4 border-gray-300">
+                                  <p className="text-sm text-gray-700 italic">
+                                    {(poi as any).summary}
+                                  </p>
+                                </blockquote>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Segment Info Spacer */}
+                          {segment && (
+                            <div className="h-16 flex items-center">
+                              <div className="flex items-center text-base text-gray-500">
+                                <Clock className="w-4 h-4 mr-2" />
+                                <span className="mr-5">{`${Math.ceil(
+                                  segment.duration / 60
+                                )}분`}</span>
+                                <Car className="w-4 h-4 mr-2" />
+                                <span>{`${(segment.distance / 1000).toFixed(
+                                  1
+                                )}km`}</span>
+                              </div>
                             </div>
                           )}
                         </div>
-                        <div className="min-w-0">
-                          <p className="font-bold text-lg">{poi.placeName}</p>
-                          {poi.categoryName && (
-                            <p className="text-base text-gray-500 mt-1">
-                              {poi.categoryName}
-                            </p>
-                          )}
-                          {poi.address && (
-                            <p className="text-base text-gray-600 mt-2">
-                              {poi.address}
-                            </p>
-                          )}
-                          {(poi as any).summary && (
-                            <blockquote className="mt-2 pl-4 border-l-4 border-gray-300">
-                              <p className="text-sm text-gray-700 italic">
-                                {(poi as any).summary}
-                              </p>
-                            </blockquote>
-                          )}
-                        </div>
                       </li>
-                      {index < poisForDay.length - 1 &&
-                        (() => {
-                          const nextPoi = poisForDay[index + 1];
-                          const segment = segmentsForDay.find(
-                            (s) =>
-                              s.fromPoiId === poi.id && s.toPoiId === nextPoi.id
-                          );
-                          if (!segment) return null;
-
-                          const totalMinutes = Math.ceil(
-                            segment.duration / 60
-                          );
-                          const totalKilometers = (
-                            segment.distance / 1000
-                          ).toFixed(1);
-
-                          return (
-                            <li className="flex items-center pl-16 text-base text-gray-500">
-                              <Clock className="w-4 h-4 mr-2" />
-                              <span className="mr-5">{`${totalMinutes}분`}</span>
-                              <Car className="w-4 h-4 mr-2" />
-                              <span>{`${totalKilometers}km`}</span>
-                            </li>
-                          );
-                        })()}
-                    </React.Fragment>
-                  ))}
+                    );
+                  })}
                 </ul>
               </div>
             </div>
