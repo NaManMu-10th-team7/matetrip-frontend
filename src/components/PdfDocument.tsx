@@ -137,37 +137,37 @@ export const PdfDocument = React.forwardRef<HTMLDivElement, PdfDocumentProps>(
               <PdfInteractiveMap pois={poisForDay} />
 
               <div style={{ width: '90%', margin: '0 auto' }}>
-                <ul className="space-y-2">
+                <ul className="space-y-6">
                   {poisForDay.map((poi, index) => (
                     <React.Fragment key={poi.id}>
                       <li className="flex items-start">
                         <span
-                          className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full text-white text-xs mr-3 mt-0.5"
+                          className="flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-full text-white text-base mr-4 mt-0.5"
                           style={{ backgroundColor: day.color }}
                         >
                           {index + 1}
                         </span>
-                        <div className="flex-shrink-0 mr-4">
+                        <div className="flex-shrink-0 mr-6">
                           {poi.imageUrl ? (
                             <img
                               src={poi.imageUrl}
                               alt={poi.placeName}
-                              className="w-16 h-16 object-cover rounded-md"
+                              className="w-40 h-32 object-cover rounded-md"
                               crossOrigin="anonymous"
                             />
                           ) : (
-                            <div className="w-16 h-16 rounded-md bg-gray-200 flex items-center justify-center">
+                            <div className="w-40 h-32 rounded-md bg-gray-200 flex items-center justify-center">
                               <CategoryIcon
                                 category={poi.categoryName}
-                                className="w-8 h-8 text-gray-500"
+                                className="w-12 h-12 text-gray-500"
                               />
                             </div>
                           )}
                         </div>
                         <div className="min-w-0">
-                          <p className="font-bold text-sm">{poi.placeName}</p>
+                          <p className="font-bold text-lg">{poi.placeName}</p>
                           {poi.address && (
-                            <p className="text-xs text-gray-600 mt-0.5">
+                            <p className="text-base text-gray-600 mt-2">
                               {poi.address}
                             </p>
                           )}
@@ -190,10 +190,10 @@ export const PdfDocument = React.forwardRef<HTMLDivElement, PdfDocumentProps>(
                           ).toFixed(1);
 
                           return (
-                            <li className="flex items-center pl-8 text-xs text-gray-500">
-                              <Clock className="w-2.5 h-2.5 mr-1" />
-                              <span className="mr-3">{`${totalMinutes}분`}</span>
-                              <Car className="w-2.5 h-2.5 mr-1" />
+                            <li className="flex items-center pl-16 text-base text-gray-500">
+                              <Clock className="w-4 h-4 mr-2" />
+                              <span className="mr-5">{`${totalMinutes}분`}</span>
+                              <Car className="w-4 h-4 mr-2" />
                               <span>{`${totalKilometers}km`}</span>
                             </li>
                           );
