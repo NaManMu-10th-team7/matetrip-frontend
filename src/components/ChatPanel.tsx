@@ -84,24 +84,24 @@ function ChatRecommendedPlaceCard({
 
   return (
     <div
-      className="flex items-center gap-3 p-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 cursor-pointer transition-colors max-w-sm"
+      className="flex items-center gap-4 p-3 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 cursor-pointer transition-colors w-full"
       onClick={() => onCardClick(place)}
     >
       <img
         src={place.imageUrl || 'https://via.placeholder.com/150'}
         alt={place.title}
-        className="w-12 h-12 rounded-md object-cover flex-shrink-0"
+        className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
       />
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-sm truncate text-gray-800 mb-0.5">
+        <p className="font-semibold text-lg truncate text-gray-800 mb-1">
           {place.title}
         </p>
-        <div className="flex items-center gap-1.5 text-xs text-gray-500">
-          <CategoryIcon category={place.category} className="w-3 h-3" />
+        <div className="flex items-center gap-1.5 text-sm text-gray-500">
+          <CategoryIcon category={place.category} className="w-5 h-5" />
           <span className="truncate">{place.category}</span>
         </div>
-        <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-1">
-          <MapPin className="w-3 h-3 flex-shrink-0" />
+        <div className="flex items-center gap-1.5 text-sm text-gray-500 mt-1">
+          <MapPin className="w-5 h-5 flex-shrink-0" />
           <p className="truncate">{place.address}</p>
         </div>
       </div>
@@ -109,20 +109,20 @@ function ChatRecommendedPlaceCard({
         <Button
           size="icon"
           variant="ghost"
-          className="w-8 h-8"
+          className="w-12 h-12"
           onClick={handleShowDetailsClick}
           aria-label="상세보기"
         >
-          <FileText className="w-5 h-5 text-gray-600" />
+          <FileText className="size-6 text-gray-600" />
         </Button>
         <Button
           size="icon"
           variant="ghost"
-          className="w-8 h-8"
+          className="w-12 h-12"
           onClick={handleAddClick}
           aria-label="일정에 추가"
         >
-          <PlusCircle className="w-5 h-5 text-primary" />
+          <PlusCircle className="size-6 text-primary" />
         </Button>
       </div>
     </div>
@@ -275,7 +275,7 @@ const ChatMessageItem = memo(function ChatMessageItem({
                 </span>
               </div>
               <div
-                className={`transition-all duration-300 ease-in-out overflow-hidden ${isCollapsed ? 'max-h-0' : 'max-h-[1000px]'}`}
+                className={`transition-all duration-300 ease-in-out ${isCollapsed ? 'max-h-0 overflow-hidden' : 'max-h-[480px] overflow-y-auto'}`}
               >
                 <div className="p-3 grid grid-cols-1 gap-2">
                   {msg.recommendedPlaces?.map((place, placeIndex) => (
