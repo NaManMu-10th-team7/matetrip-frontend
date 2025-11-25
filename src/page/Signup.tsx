@@ -471,10 +471,16 @@ export function Signup({ onSignup, onLoginClick }: SignupProps) {
       }
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
-        // const apiError = error.response.data as ApiErrorResponse;
-        // setErrorMessage(apiError.message || '회원가입에 실패했습니다.');
-      } else {
-        // setErrorMessage('알 수 없는 오류가 발생했습니다.');
+        const apiMessage = (
+          error.response.data as { message?: string | string[] }
+        )?.message;
+        const message = Array.isArray(apiMessage) ? apiMessage[0] : apiMessage;
+
+        // Nova LLM가 상세소개가 부적절하다 판단 시 400으로 내려오는 에러 메시지를 그대로 노출
+        if (error.response.status === 400 && message?.includes('상세소개')) {
+          setDescriptionError(message);
+          setStep(3);
+        }
       }
       console.error('Signup error:', error);
     } finally {
