@@ -212,14 +212,14 @@ const ChatMessageItem = memo(function ChatMessageItem({
       const aiPrefix = '@AI';
       const restOfMessage = msg.message.substring(aiPrefix.length);
       return (
-        <p className="text-base" style={{ wordBreak: 'break-word' }}>
+        <p className="text-2xl" style={{ wordBreak: 'break-word' }}>
           <span className="text-primary font-bold">{aiPrefix}</span>
           {restOfMessage}
         </p>
       );
     }
     return (
-      <p className="text-base" style={{ wordBreak: 'break-word' }}>
+      <p className="text-2xl" style={{ wordBreak: 'break-word' }}>
         {!isAiRecommendation && msg.message}
       </p>
     );
@@ -244,15 +244,15 @@ const ChatMessageItem = memo(function ChatMessageItem({
       <div
         className={cn(
           'flex flex-col items-start',
-          isAiRecommendation ? 'w-full' : 'max-w-[70%]'
+          isAiRecommendation ? 'w-full' : 'max-w-[85%]'
         )}
       >
         <div className="flex items-baseline gap-1 mb-1">
-          <span className="text-base font-semibold text-gray-800">
+          <span className="text-2xl font-semibold text-gray-800">
             {msg.username}
           </span>
-          <span className="text-sm text-gray-500">|</span>
-          <span className="text-xs text-gray-500">
+          <span className="text-xl text-gray-500">|</span>
+          <span className="text-lg text-gray-500">
             {formatTimestamp(msg.createdAt)}
           </span>
         </div>
@@ -358,17 +358,17 @@ export const ChatPanel = memo(function ChatPanel({
 
   return (
     <div className="h-full flex flex-col bg-white">
-      <div className=" px-4 py-2 flex items-center justify-between flex-shrink-0 h-16 text-primary relative backdrop-blur-sm">
-        <h1 className="text-xl font-bold truncate">채팅</h1>
-        <div className="flex items-center gap-3">
+      <div className=" px-4 py-2 flex items-center justify-between flex-shrink-0 h-24 text-primary relative backdrop-blur-sm">
+        <h1 className="text-3xl font-bold truncate">채팅</h1>
+        <div className="flex items-center gap-5">
           {activeMembers.length > 0 && (
             <div className="flex items-center">
               {activeMembers.map((member, index) => (
                 <Avatar
                   key={member.id}
-                  className="w-8 h-8 border-2 border-primary"
+                  className="w-12 h-12 border-[3px] border-primary"
                   style={{
-                    marginLeft: index > 0 ? '-8px' : '0',
+                    marginLeft: index > 0 ? '-12px' : '0',
                     zIndex: activeMembers.length - index,
                   }}
                 >
@@ -380,13 +380,13 @@ export const ChatPanel = memo(function ChatPanel({
           )}
           <Badge
             variant="outline"
-            className="text-primary text-sm flex items-center gap-2 border-primary bg-transparent"
+            className="text-primary text-xl flex items-center gap-3 border-primary bg-transparent"
           >
             {isChatConnected ? (
               <>
-                <span className="relative flex h-2 w-2">
+                <span className="relative flex h-3 w-3">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
                 </span>
                 <span>연결됨</span>
               </>
@@ -396,12 +396,12 @@ export const ChatPanel = memo(function ChatPanel({
           </Badge>
           <div className="flex gap-1">
             <Button
-              size="icon"
+              size="xl-icon"
               variant={isVCCallActive ? 'secondary' : 'ghost'}
-              className="w-9 h-9 hover:bg-primary-foreground/10"
+              className="hover:bg-primary-foreground/10"
               onClick={handleToggleVideoCall}
             >
-              <Video className="w-5 h-5 text-primary" />
+              <Video className="size-7 text-primary" />
             </Button>
           </div>
         </div>

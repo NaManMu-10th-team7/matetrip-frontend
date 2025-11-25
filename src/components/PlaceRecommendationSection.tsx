@@ -114,11 +114,11 @@ export function PlaceRecommendationSection({
         <div>
           <div className="flex items-center gap-2">
             <Lightbulb className="w-6 h-6 text-primary" />
-            <h2 className="text-2xl md:text-xl font-bold text-gray-900">
+            <h2 className="text-3xl md:text-2xl font-bold text-gray-900">
               여기 갈래? 말래?
             </h2>
           </div>
-          <p className="text-xs md:text-sm text-gray-600 mt-1">
+          <p className="text-sm md:text-base text-gray-600 mt-1">
             MateTrip AI가 추천하는 성향 기반 장소 추천
           </p>
         </div>
