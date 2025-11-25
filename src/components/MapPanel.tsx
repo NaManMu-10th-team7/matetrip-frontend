@@ -1550,7 +1550,7 @@ export function MapPanel({
                 <div className="border-l border-gray-300 h-6" />
                 <button
                   onClick={handleToggleAllCategories}
-                  className="whitespace-nowrap px-3 py-1.5 text-xs font-semibold rounded-full shadow-md transition-all duration-200 flex justify-center items-center gap-1.5"
+                  className="whitespace-nowrap px-3 py-1.5 text-lg font-semibold rounded-full shadow-md transition-all duration-200 flex justify-center items-center gap-1.5"
                   style={{
                     backgroundColor:
                       visibleCategories.size ===
@@ -1571,7 +1571,7 @@ export function MapPanel({
                   <button
                     key={key}
                     onClick={() => handleCategoryToggle(key)}
-                    className="whitespace-nowrap px-3 py-1.5 text-xs font-semibold rounded-full shadow-md transition-all duration-200 flex justify-center items-center gap-1.5"
+                    className="whitespace-nowrap px-3 py-1.5 text-lg font-semibold rounded-full shadow-md transition-all duration-200 flex justify-center items-center gap-1.5"
                     style={{
                       backgroundColor: visibleCategories.has(key)
                         ? NEW_CATEGORY_COLORS[key] || color
@@ -1757,23 +1757,24 @@ export function MapPanel({
                       gap: '8px',
                     }}
                   >
-                    <div
-                      style={{
-                        background: 'rgba(0, 0, 0, 0.75)',
-                        color: 'white',
-                        padding: '8px 12px',
-                        borderRadius: '8px',
-                        fontSize: '13px',
-                        whiteSpace: 'nowrap',
-                        maxWidth: '200px',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
-                      }}
-                    >
-                      {chatBubbles[userId]}
-                    </div>
-                  </div>
+                                                                                                                                  <div
+                                                                                                                                    style={{
+                                                                                                                                      background: 'rgba(0, 0, 0, 0.75)',
+                                                                                                                                      color: 'white',
+                                                                                                                                      padding: '8px 12px',
+                                                                                                                                      borderRadius: '8px',
+                                                                                                                                      fontSize: '1.5rem',
+                                                                                                                                      lineHeight: '2rem',
+                                                                                                                                      whiteSpace: 'normal',
+                                                                                                                                      wordBreak: 'break-word',
+                                                                                                                                      maxWidth: '400px',
+                                                                                                                                      overflow: 'hidden',
+                                                                                                                                      textOverflow: 'ellipsis',
+                                                                                                                                      boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+                                                                                                                                    }}
+                                                                                                                                  >
+                                                                                                                                    {chatBubbles[userId]}
+                                                                                                                                  </div>                  </div>
                 )}
               </div>
             </CustomOverlayMap>

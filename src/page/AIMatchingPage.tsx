@@ -441,7 +441,7 @@ export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
         <div className="mb-8">
           <div className="flex items-center gap-2">
             <Sparkles className="w-7 h-7 text-primary" />
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-gray-900">
               MateTrip AI가 추천하는 최적의 여행 파트너
             </h1>
           </div>
@@ -455,10 +455,10 @@ export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
                   <MapPin className="w-6 h-6 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-1">
+                  <h3 className="text-xl font-bold text-gray-900 mb-1">
                     AI 맞춤 추천을 받아보세요
                   </h3>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-base text-gray-600">
                     로그인하면 당신에게 딱 맞는 동행을 AI가 추천해드려요
                   </p>
                 </div>
@@ -507,12 +507,11 @@ export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
             <div className="mt-8">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                 <div>
-                  <h1 className="text-gray-900 mb-2">맞춤 동행 검색 결과</h1>
+                  <h1 className="text-3xl text-gray-900 mb-2">맞춤 동행 검색 결과</h1>
                   {keywordsText && (
-                    <p className="text-gray-600">
-                      "{keywordsText}" 검색 결과 {searchResults.length}개
-                    </p>
-                  )}
+                                      <p className="text-lg text-gray-600">
+                                        "{keywordsText}" 검색 결과 {searchResults.length}개
+                                      </p>                  )}
                 </div>
                 {/* 검색 초기화 버튼 (검색 결과가 있을 때 항상 표시) */}
                 <Button
@@ -522,6 +521,7 @@ export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
                     setSearchResults(null);
                     setSearchQueryInfo(null);
                   }}
+                  className="text-lg"
                 >
                   전체 목록 보기 {/* 버튼 텍스트 변경 */}
                 </Button>
@@ -556,10 +556,10 @@ export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <SearchIcon className="w-8 h-8 text-gray-400" />
                   </div>
-                  <h3 className="text-gray-900 mb-2">
+                  <h3 className="text-lg text-gray-900 mb-2">
                     표시할 추천 결과가 없습니다
                   </h3>
-                  <p className="text-gray-600 mb-6">
+                  <p className="text-base text-gray-600 mb-6">
                     검색 조건을 다시 입력하거나 다른 키워드로 시도해보세요.
                   </p>
                   {/* 검색 결과가 없을 때의 초기화 버튼은 제거 */}

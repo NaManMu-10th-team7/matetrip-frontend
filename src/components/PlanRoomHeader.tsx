@@ -84,50 +84,50 @@ export function PlanRoomHeader({
   };
 
   return (
-    <div className="bg-primary px-4 py-2 flex items-center justify-between flex-shrink-0 h-16 text-primary-foreground relative rounded-lg shadow-md">
+    <div className="bg-primary px-4 py-2 flex items-center justify-between flex-shrink-0 h-24 text-primary-foreground relative rounded-lg shadow-md">
       {/* 왼쪽 영역: 뒤로가기 버튼, 제목 */}
-      <div className="flex items-center gap-3 flex-1 min-w-0">
+      <div className="flex items-center gap-4 flex-1 min-w-0">
         <button
           onClick={onBack}
           className="p-2 hover:bg-primary-foreground/10 rounded-lg transition-colors"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="size-8" />
         </button>
-        <h1 className="text-xl font-bold truncate">{title}</h1>
+        <h1 className="text-3xl font-bold truncate">{title}</h1>
       </div>
 
       {/* 중앙 영역: 날짜 정보와 참여인원 */}
-      <div className="flex-grow flex justify-center items-center gap-2 text-primary-foreground/80 px-4 text-base">
-        <Calendar className="w-5 h-5" />
+      <div className="flex-grow flex justify-center items-center gap-3 text-primary-foreground/80 px-4 text-2xl">
+        <Calendar className="size-8" />
         <span>
           {startDate} ~ {endDate} ({totalDays}일)
         </span>
       </div>
 
       {/* 오른쪽 영역: 메뉴 버튼 */}
-      <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
+      <div className="flex items-center gap-3 flex-1 justify-end min-w-0">
         <Button
           variant="outline"
-          className="h-10 px-4 gap-2 bg-transparent border-primary-foreground/50 hover:bg-primary-foreground/10 text-primary-foreground"
+          className="h-14 px-4 gap-3 bg-transparent border-primary-foreground/50 hover:bg-primary-foreground/10 text-primary-foreground"
           onClick={handleFlush}
           disabled={isFlushing}
         >
           {isFlushing ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
+            <Loader2 className="size-8 animate-spin" />
           ) : (
-            <Save className="w-5 h-5" />
+            <Save className="size-8" />
           )}
-          <span className="text-base font-medium">
+          <span className="text-2xl font-medium">
             {isFlushing ? '저장 중...' : '저장'}
           </span>
         </Button>
         <Button // '여행 일정' 버튼 복구
           variant="outline"
-          className="h-10 px-4 gap-2 bg-transparent border-primary-foreground/50 hover:bg-primary-foreground/10 text-primary-foreground"
+          className="h-14 px-4 gap-3 bg-transparent border-primary-foreground/50 hover:bg-primary-foreground/10 text-primary-foreground"
           onClick={onToggleScheduleSidebar}
         >
-          <ListOrdered className="w-5 h-5" />
-          <span className="text-base font-medium">여행 일정</span>
+          <ListOrdered className="size-8" />
+          <span className="text-2xl font-medium">여행 일정</span>
         </Button>
 
         {/* 메뉴 버튼 */}
@@ -135,10 +135,10 @@ export function PlanRoomHeader({
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              size="icon"
-              className="w-9 h-9 hover:bg-primary-foreground/10"
+              size="xl-icon"
+              className="hover:bg-primary-foreground/10"
             >
-              <MoreVertical className="w-5 h-5" />
+              <MoreVertical className="size-8" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent

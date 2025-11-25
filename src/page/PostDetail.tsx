@@ -405,7 +405,7 @@ export function PostDetail({
     text: '로그인 후 신청 가능',
     disabled: true,
     className:
-      'w-full rounded-full border border-gray-300 bg-gray-100 text-gray-400 px-6 py-6 text-lg',
+      'w-full rounded-full border border-gray-300 bg-gray-100 text-gray-400 px-6 py-6 text-xl',
     icon: null,
   };
 
@@ -415,7 +415,7 @@ export function PostDetail({
         text: '여행 일정 만들기',
         disabled: false,
         className:
-          'w-full rounded-full border border-primary bg-transparent text-primary hover:bg-primary hover:text-primary-foreground px-6 py-6 text-lg',
+          'w-full rounded-full border border-primary bg-transparent text-primary hover:bg-primary hover:text-primary-foreground px-6 py-6 text-xl',
         icon: <DoorOpen className="w-5 h-5 mr-2" />, // 아이콘 추가
       };
     } else if (userParticipation) {
@@ -425,7 +425,7 @@ export function PostDetail({
             text: '여행 일정 만들기',
             disabled: false,
             className:
-              'w-full rounded-full border border-primary bg-transparent text-primary hover:bg-primary hover:text-primary-foreground px-6 py-6 text-lg',
+              'w-full rounded-full border border-primary bg-transparent text-primary hover:bg-primary hover:text-primary-foreground px-6 py-6 text-xl',
             icon: <DoorOpen className="w-5 h-5 mr-2" />, // 아이콘 추가
           };
           break;
@@ -434,7 +434,7 @@ export function PostDetail({
             text: '이미 신청한 동행입니다',
             disabled: true,
             className:
-              'w-full rounded-full border border-gray-300 bg-gray-100 text-gray-400 px-6 py-6 text-lg',
+              'w-full rounded-full border border-gray-300 bg-gray-100 text-gray-400 px-6 py-6 text-xl',
             icon: null,
           };
           break;
@@ -443,7 +443,7 @@ export function PostDetail({
             text: '거절된 동행입니다',
             disabled: true,
             className:
-              'w-full rounded-full border border-gray-300 bg-gray-100 text-gray-400 px-6 py-6 text-lg',
+              'w-full rounded-full border border-gray-300 bg-gray-100 text-gray-400 px-6 py-6 text-xl',
             icon: null,
           };
           break;
@@ -453,7 +453,7 @@ export function PostDetail({
         text: '모집이 마감되었습니다',
         disabled: true,
         className:
-          'w-full rounded-full border border-gray-300 bg-gray-100 text-gray-400 px-6 py-6 text-lg',
+          'w-full rounded-full border border-gray-300 bg-gray-100 text-gray-400 px-6 py-6 text-xl',
         icon: null,
       };
     } else {
@@ -461,7 +461,7 @@ export function PostDetail({
         text: '동행 신청하기',
         disabled: false,
         className:
-          'w-full rounded-full border border-primary bg-transparent text-primary hover:bg-primary hover:text-primary-foreground px-6 py-6 text-lg',
+          'w-full rounded-full border border-primary bg-transparent text-primary hover:bg-primary hover:text-primary-foreground px-6 py-6 text-xl',
         icon: null,
       };
     }
@@ -502,7 +502,7 @@ export function PostDetail({
               <ChevronLeft className="w-7 h-7" />
             </button>
             <div className="flex flex-col items-end gap-2">
-              <Badge className="bg-white/90 text-black flex-shrink-0 backdrop-blur-sm text-base">
+              <Badge className="bg-white/90 text-black flex-shrink-0 backdrop-blur-sm text-lg">
                 {post.status}
               </Badge>
               {isAuthor && (
@@ -521,20 +521,20 @@ export function PostDetail({
                     className="w-48 z-50 bg-white"
                   >
                     <DropdownMenuItem
-                      className="cursor-pointer focus:bg-primary focus:text-primary-foreground"
+                      className="cursor-pointer focus:bg-primary focus:text-primary-foreground text-base"
                       onClick={() => onEditPost(post)}
                     >
                       <Pencil className="w-5 h-5 mr-2" />
                       수정하기
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      className="cursor-pointer text-red-600 focus:bg-primary focus:text-primary-foreground"
+                      className="cursor-pointer text-red-600 focus:bg-primary focus:text-primary-foreground text-base"
                       onClick={() => setDeleteModalOpen(true)}
                     >
                       <Trash2 className="w-5 h-5 mr-2" />
                       삭제하기
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer focus:bg-primary focus:text-primary-foreground">
+                    <DropdownMenuItem className="cursor-pointer focus:bg-primary focus:text-primary-foreground text-lg">
                       <Megaphone className="w-5 h-5 mr-2" />
                       모집 마감하기
                     </DropdownMenuItem>
@@ -548,14 +548,14 @@ export function PostDetail({
           <div className="flex flex-col items-center gap-6">
             {/* 중앙 제목 */}
             <div className="flex items-center justify-center">
-              <h2 className="text-4xl font-bold text-center break-words line-clamp-2">
+              <h2 className="text-5xl font-bold text-center break-words line-clamp-2">
                 {post.title}
               </h2>
             </div>
 
             {/* 하단 여행 정보 */}
             <div className="flex flex-col items-center gap-3 pb-2">
-              <div className="flex justify-center items-center gap-8 text-base">
+              <div className="flex justify-center items-center gap-8 text-lg">
                 <div className="flex items-center gap-2">
                   <MapPin className="w-6 h-6" />
                   <span>{post.location}</span>
@@ -579,7 +579,7 @@ export function PostDetail({
                     <Badge
                       key={index}
                       variant="outline"
-                      className="rounded-full px-3 py-1 text-white border-white/50 bg-white/10 backdrop-blur-sm text-sm"
+                      className="rounded-full px-3 py-1 text-white border-white/50 bg-white/10 backdrop-blur-sm text-base"
                     >
                       {translateKeyword(keyword)}
                     </Badge>
@@ -608,12 +608,12 @@ export function PostDetail({
                   />
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
-                      <p className="text-gray-900 font-semibold">
+                      <p className="text-gray-900 font-semibold text-lg">
                         {post.writer?.profile?.nickname}
                       </p>
                       <Button
                         size="sm"
-                        className="flex-shrink-0 rounded-full text-xs h-8"
+                        className="flex-shrink-0 rounded-full text-sm h-8"
                         onClick={() => {
                           if (post.writer?.id) {
                             onViewProfile(post.writer.id);
@@ -625,7 +625,7 @@ export function PostDetail({
                         프로필 보기
                       </Button>
                     </div>
-                    <div className="flex items-center text-sm text-gray-600 mb-2">
+                    <div className="flex items-center text-base text-gray-600 mb-2">
                       <Thermometer className="w-5 h-5 text-primary" />{' '}
                       {/* 크기 조정 */}
                       <span className="text-primary">
@@ -638,7 +638,7 @@ export function PostDetail({
                         <Badge
                           key={style}
                           variant="secondary"
-                          className="rounded-full px-3 py-1 text-black bg-gray-100" // 색상 변경 및 스타일 통일
+                          className="rounded-full px-3 py-1 text-sm text-black bg-gray-100" // 색상 변경 및 스타일 통일
                         >
                           {translateKeyword(style)}
                         </Badge>
@@ -655,7 +655,7 @@ export function PostDetail({
               <nav className="-mb-px flex space-x-6" aria-label="Tabs">
                 <button
                   onClick={() => setActiveTab('intro')}
-                  className={`whitespace-nowrap border-b-2 py-2 px-1 text-base font-medium ${
+                  className={`whitespace-nowrap border-b-2 py-2 px-1 text-lg font-medium ${
                     activeTab === 'intro'
                       ? 'border-primary text-primary font-bold'
                       : 'border-transparent text-gray-500 hover:text-gray-800'
@@ -665,7 +665,7 @@ export function PostDetail({
                 </button>
                 <button
                   onClick={() => setActiveTab('participants')}
-                  className={`whitespace-nowrap border-b-2 py-2 px-1 text-base font-medium ${
+                  className={`whitespace-nowrap border-b-2 py-2 px-1 text-lg font-medium ${
                     activeTab === 'participants'
                       ? 'border-primary text-primary font-bold'
                       : 'border-transparent text-gray-500 hover:text-gray-800'
@@ -676,7 +676,7 @@ export function PostDetail({
                 {isAuthor && (
                   <button
                     onClick={() => setActiveTab('recommendations')}
-                    className={`whitespace-nowrap border-b-2 py-2 px-1 text-base font-medium ${
+                    className={`whitespace-nowrap border-b-2 py-2 px-1 text-lg font-medium ${
                       activeTab === 'recommendations'
                         ? 'border-primary text-primary font-bold'
                         : 'border-transparent text-gray-500 hover:text-gray-800'
@@ -691,11 +691,11 @@ export function PostDetail({
             <div className="mt-6">
               {activeTab === 'intro' && (
                 <div className="rounded-xl border border-gray-200 p-6">
-                  <h3 className="flex items-center text-gray-900 text-lg font-bold mb-4">
+                  <h3 className="flex items-center text-gray-900 text-xl font-bold mb-4">
                     <FileText className="w-6 h-6 mr-2" />
                     여행 소개
                   </h3>
-                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap text-lg">
                     {post.content ||
                       '함께 즐거운 여행을 만들어갈 동행을 찾고 있습니다. 여행을 사랑하시는 분들의 많은 관심 부탁드립니다!'}
                   </p>
@@ -705,7 +705,7 @@ export function PostDetail({
               {activeTab === 'participants' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div>
-                    <h3 className="flex items-center text-gray-900 text-lg font-bold mb-4">
+                    <h3 className="flex items-center text-gray-900 text-xl font-bold mb-4">
                       <UserCheck className="w-6 h-6 mr-2" />
                       확정된 동행 ({approvedParticipants.length}명)
                     </h3>
@@ -735,17 +735,17 @@ export function PostDetail({
                                 />
                                 <div className="flex-1 min-w-0">
                                   <div className="flex justify-between items-start">
-                                    <span className="text-gray-900 font-semibold">
+                                    <span className="text-gray-900 font-semibold text-lg">
                                       {p.requester.profile.nickname}
                                     </span>
                                     {isAuthor && matchInfo && (
-                                      <p className="text-sm text-gray-600">
+                                      <p className="text-base text-gray-600">
                                         매칭률:{' '}
                                         {Math.round(matchInfo.score * 100)}%
                                       </p>
                                     )}
                                   </div>
-                                  <div className="flex items-center text-sm text-gray-600 mt-1">
+                                  <div className="flex items-center text-base text-gray-600 mt-1">
                                     <Thermometer className="w-5 h-5 text-primary" />
                                     <span className="text-primary">
                                       {formatMannerTemperature(
@@ -761,7 +761,7 @@ export function PostDetail({
                                           <Badge
                                             key={style}
                                             variant="secondary"
-                                            className="rounded-full px-2 py-0.5 text-xs bg-gray-100"
+                                            className="rounded-full px-2 py-0.5 text-sm bg-gray-100"
                                           >
                                             {translateKeyword(style)}
                                           </Badge>
@@ -769,7 +769,7 @@ export function PostDetail({
                                     </div>
                                     <Button
                                       size="sm"
-                                      className="text-xs h-8 rounded-full"
+                                      className="text-sm h-8 rounded-full"
                                       onClick={() => {
                                         if (p.requester.id) {
                                           onViewProfile(p.requester.id);
@@ -815,7 +815,7 @@ export function PostDetail({
                   </div>
 
                   <div>
-                    <h3 className="flex items-center text-gray-900 text-lg font-bold mb-4">
+                    <h3 className="flex items-center text-gray-900 text-xl font-bold mb-4">
                       <UserPlus className="w-6 h-6 mr-2" />
                       대기중인 동행 ({pendingRequests.length}명)
                     </h3>

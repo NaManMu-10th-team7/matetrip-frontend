@@ -138,7 +138,7 @@ export function Sidebar({
             />
             {isExpanded && (
               <span
-                className="text-2xl text-gray-900 whitespace-nowrap"
+                className="text-3xl text-gray-900 whitespace-nowrap"
                 style={{ fontFamily: 'Princess Sofia, cursive' }}
               >
                 MateTrip
@@ -164,7 +164,7 @@ export function Sidebar({
             >
               <Plane className="w-5 h-5 shrink-0" />
               {isExpanded && (
-                <span className="font-normal text-base whitespace-nowrap">
+                <span className="font-normal text-lg whitespace-nowrap">
                   Main
                 </span>
               )}
@@ -184,7 +184,7 @@ export function Sidebar({
             >
               <Sparkles className="w-5 h-5 shrink-0" />
               {isExpanded && (
-                <span className="font-normal text-base whitespace-nowrap">
+                <span className="font-normal text-lg whitespace-nowrap">
                   메이트 매칭
                 </span>
               )}
@@ -204,7 +204,7 @@ export function Sidebar({
             >
               <FileText className="w-5 h-5 shrink-0" />
               {isExpanded && (
-                <span className="font-normal text-base whitespace-nowrap">
+                <span className="font-normal text-lg whitespace-nowrap">
                   모든 여행
                 </span>
               )}
@@ -225,7 +225,7 @@ export function Sidebar({
               >
                 <Heart className="w-5 h-5 shrink-0" />
                 {isExpanded && (
-                  <span className="font-normal text-base whitespace-nowrap">
+                  <span className="font-normal text-lg whitespace-nowrap">
                     나의 여행
                   </span>
                 )}
@@ -246,7 +246,7 @@ export function Sidebar({
             >
               <Flame className="w-5 h-5 shrink-0" />
               {isExpanded && (
-                <span className="font-normal text-base whitespace-nowrap">
+                <span className="font-normal text-lg whitespace-nowrap">
                   Hot Place
                 </span>
               )}
@@ -261,14 +261,14 @@ export function Sidebar({
             <div className="px-2 mt-4">
               <Button
                 onClick={onCreatePost}
-                className={`w-full h-12 rounded-[10px] bg-primary text-primary-foreground hover:bg-primary-strong transition-colors flex items-center justify-center gap-3 ${
+                className={`w-full h-14 rounded-[10px] bg-primary text-primary-foreground hover:bg-primary-strong transition-colors flex items-center justify-center gap-3 ${
                   isExpanded ? 'px-4' : ''
                 }`}
                 title={!isExpanded ? '새로운 여행' : ''}
               >
                 <Plus className="w-6 h-6 shrink-0" />
                 {isExpanded && (
-                  <span className="font-semibold text-base whitespace-nowrap">
+                  <span className="font-semibold text-lg whitespace-nowrap">
                     새로운 여행
                   </span>
                 )}
@@ -306,7 +306,7 @@ export function Sidebar({
                 </div>
                 {isExpanded && (
                   <div className="flex-1 text-left overflow-hidden transition-all duration-300">
-                    <p className="text-sm font-normal text-gray-900 truncate">
+                    <p className="text-lg font-normal text-gray-900 truncate">
                       {user?.profile.nickname}
                     </p>
                   </div>
@@ -325,7 +325,7 @@ export function Sidebar({
               title={!isExpanded ? '로그인' : ''}
             >
               <LogIn className="w-4 h-4" />
-              {isExpanded && '로그인'}
+              {isExpanded && <span className="text-base">로그인</span>}
             </Button>
           )}
         </div>

@@ -731,16 +731,16 @@ export function NewMainPage({
           >
             <div className="absolute inset-0 bg-black/50" />
             <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-              <h2 className="text-3xl font-bold text-white">
+              <h2 className="text-4xl font-bold text-white">
                 {user.profile.nickname}님, 새로운 여행을 떠나보세요!
               </h2>
-              <p className="mt-2 text-gray-200 max-w-2xl">
+              <p className="mt-2 text-gray-200 max-w-2xl text-lg">
                 나와 꼭 맞는 동행자와 함께 잊지 못할 추억을 만들 수 있어요. 지금
                 바로 여행 계획을 시작해보세요.
               </p>
               <Button
                 onClick={onCreatePost}
-                className="mt-6 bg-primary text-primary-foreground hover:bg-primary-strong font-bold py-5 px-12 text-lg flex items-center gap-2 transition-colors w-fit"
+                className="mt-6 bg-primary text-primary-foreground hover:bg-primary-strong font-bold py-6 px-14 text-xl flex items-center gap-2 transition-colors w-fit"
               >
                 <Plus className="w-5 h-5" />
                 새로운 여행
@@ -756,11 +756,11 @@ export function NewMainPage({
                 <div>
                   <div className="flex items-center gap-2">
                     <Sparkles className="w-6 h-6 text-primary" />
-                    <h2 className="text-2xl font-bold text-gray-900">
+                    <h2 className="text-3xl font-bold text-gray-900">
                       {user?.profile.nickname}님을 위한 맞춤 여행 추천
                     </h2>
                   </div>
-                  <p className="text-xs md:text-sm text-gray-600 mt-1">
+                  <p className="text-sm md:text-base text-gray-600 mt-1">
                     나의 여행 성향을 분석해 MateTrip AI가 찾아낸 최고의 여행
                     파트너예요.
                   </p>
@@ -768,7 +768,7 @@ export function NewMainPage({
                 <Button
                   onClick={handleAllViewMatching}
                   variant="ghost"
-                  className="text-sm self-start sm:self-auto flex items-center text-gray-600 hover:bg-primary hover:text-primary-foreground"
+                  className="text-base self-start sm:self-auto flex items-center text-gray-600 hover:bg-primary hover:text-primary-foreground"
                 >
                   전체보기
                   <ChevronRight className="w-4 h-4 ml-1" />
@@ -852,11 +852,11 @@ export function NewMainPage({
                   <div>
                     <div className="flex items-center gap-2">
                       <Star className="w-6 h-6 text-secondary" />
-                      <h2 className="text-2xl font-bold text-gray-900">
+                      <h2 className="text-3xl font-bold text-gray-900">
                         {user?.profile.nickname}님의 리뷰를 기다리는 장소
                       </h2>
                     </div>
-                    <p className="text-xs md:text-sm text-gray-600 mt-1">
+                    <p className="text-sm md:text-base text-gray-600 mt-1">
                       다녀오신 장소에 대한 리뷰를 남겨주세요!
                     </p>
                   </div>
@@ -979,18 +979,18 @@ export function NewMainPage({
                 <div>
                   <div className="flex items-center gap-2">
                     <Flame className="w-6 h-6 text-destructive" />
-                    <h2 className="text-2xl font-bold text-gray-900">
+                    <h2 className="text-3xl font-bold text-gray-900">
                       Hot Place
                     </h2>
                   </div>
-                  <p className="text-xs md:text-sm text-gray-600 mt-1">
+                  <p className="text-sm md:text-base text-gray-600 mt-1">
                     MateTrip 유저들의 Pick!
                   </p>
                 </div>
                 <Button
                   onClick={handleAllViewInspiration}
                   variant="ghost"
-                  className="text-sm self-start sm:self-auto flex items-center text-gray-600 hover:bg-primary hover:text-primary-foreground"
+                  className="text-base self-start sm:self-auto flex items-center text-gray-600 hover:bg-primary hover:text-primary-foreground"
                 >
                   전체보기
                   <ChevronRight className="w-4 h-4 ml-1" />

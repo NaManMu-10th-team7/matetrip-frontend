@@ -134,11 +134,11 @@ export function GridMatchingCard({
       <div className="flex flex-col flex-1 gap-4 w-full p-4">
         {/* 상단 정보 (제목, 기본 정보) */}
         <div className="flex flex-col gap-3">
-          <h3 className="text-lg font-bold text-gray-800 leading-snug -mt-1 truncate">
+          <h3 className="text-xl font-bold text-gray-800 leading-snug -mt-1 truncate">
             {title}
           </h3>
 
-          <div className="flex flex-col gap-1.5 text-sm text-gray-600">
+          <div className="flex flex-col gap-1.5 text-base text-gray-600">
             <div className="flex items-center gap-1.5">
               <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
               <span className="truncate">{location}</span>
@@ -174,14 +174,14 @@ export function GridMatchingCard({
                   <User className="w-5 h-5 text-gray-500" />
                 )}
               </div>
-              <p className="text-sm font-semibold text-gray-700 truncate">
+              <p className="text-base font-semibold text-gray-700 truncate">
                 {writerNickname ?? writer?.profile?.nickname ?? '익명'}
               </p>
             </div>
             <div className="flex items-center gap-2">
               <div className="flex items-baseline gap-1.5">
-                <p className="text-base font-semibold text-gray-500">매칭률</p>
-                <p className="text-2xl font-bold text-primary">
+                <p className="text-lg font-semibold text-gray-500">매칭률</p>
+                <p className="text-3xl font-bold text-primary">
                   {safeScore}%
                 </p>
               </div>
@@ -210,7 +210,7 @@ export function GridMatchingCard({
             <div className="flex flex-col gap-3 w-full pt-2 animate-in fade-in-50 duration-300">
               {style && style.length > 0 && (
                 <div className="flex flex-col items-start gap-1.5">
-                  <p className="text-gray-500 text-xs font-bold">
+                  <p className="text-gray-500 text-sm font-bold">
                     여행 스타일
                   </p>
                   <div className="flex flex-wrap gap-1.5 justify-start">
@@ -218,7 +218,7 @@ export function GridMatchingCard({
                       <Badge
                         key={idx}
                         variant="outline"
-                        className="border-blue-200 bg-blue-50 text-blue-700 text-xs px-2 py-0.5 font-medium"
+                        className="border-blue-200 bg-blue-50 text-blue-700 text-sm px-2 py-0.5 font-medium"
                       >
                         <Tag className="w-3 h-3 mr-1" />
                         {s}
@@ -235,7 +235,7 @@ export function GridMatchingCard({
                       <Badge
                         key={idx}
                         variant="outline"
-                        className="border-purple-200 bg-purple-50 text-purple-700 text-xs px-2 py-0.5 font-medium"
+                        className="border-purple-200 bg-purple-50 text-purple-700 text-sm px-2 py-0.5 font-medium"
                       >
                         <Sparkles className="w-3 h-3 mr-1" />
                         {t}
@@ -251,7 +251,7 @@ export function GridMatchingCard({
                   </p>
                   <Badge
                     variant="outline"
-                    className="border-green-200 bg-green-50 text-green-700 text-xs px-2 py-0.5 font-medium"
+                    className="border-green-200 bg-green-50 text-green-700 text-sm px-2 py-0.5 font-medium"
                   >
                     <UserCheck className="w-3 h-3 mr-1" />
                     {safeVectorScore}%

@@ -84,45 +84,45 @@ function ChatRecommendedPlaceCard({
 
   return (
     <div
-      className="flex items-center gap-3 p-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 cursor-pointer transition-colors max-w-sm"
+      className="flex items-center gap-5 px-4 py-3 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 cursor-pointer transition-colors w-full"
       onClick={() => onCardClick(place)}
     >
       <img
         src={place.imageUrl || 'https://via.placeholder.com/150'}
         alt={place.title}
-        className="w-12 h-12 rounded-md object-cover flex-shrink-0"
+        className="w-24 h-24 rounded-lg object-cover flex-shrink-0"
       />
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-sm truncate text-gray-800 mb-0.5">
+        <p className="font-semibold text-xl truncate text-gray-800 mb-1.5">
           {place.title}
         </p>
-        <div className="flex items-center gap-1.5 text-xs text-gray-500">
-          <CategoryIcon category={place.category} className="w-3 h-3" />
+        <div className="flex items-center gap-2 text-base text-gray-500">
+          <CategoryIcon category={place.category} className="w-6 h-6" />
           <span className="truncate">{place.category}</span>
         </div>
-        <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-1">
-          <MapPin className="w-3 h-3 flex-shrink-0" />
+        <div className="flex items-center gap-2 text-base text-gray-500 mt-1.5">
+          <MapPin className="w-6 h-6 flex-shrink-0" />
           <p className="truncate">{place.address}</p>
         </div>
       </div>
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1.5">
         <Button
           size="icon"
           variant="ghost"
-          className="w-8 h-8"
+          className="w-14 h-14"
           onClick={handleShowDetailsClick}
           aria-label="상세보기"
         >
-          <FileText className="w-5 h-5 text-gray-600" />
+          <FileText className="size-8 text-gray-600" />
         </Button>
         <Button
           size="icon"
           variant="ghost"
-          className="w-8 h-8"
+          className="w-14 h-14"
           onClick={handleAddClick}
           aria-label="일정에 추가"
         >
-          <PlusCircle className="w-5 h-5 text-primary" />
+          <PlusCircle className="size-8 text-primary" />
         </Button>
       </div>
     </div>
@@ -212,14 +212,14 @@ const ChatMessageItem = memo(function ChatMessageItem({
       const aiPrefix = '@AI';
       const restOfMessage = msg.message.substring(aiPrefix.length);
       return (
-        <p className="text-base" style={{ wordBreak: 'break-word' }}>
+        <p className="text-2xl" style={{ wordBreak: 'break-word' }}>
           <span className="text-primary font-bold">{aiPrefix}</span>
           {restOfMessage}
         </p>
       );
     }
     return (
-      <p className="text-base" style={{ wordBreak: 'break-word' }}>
+      <p className="text-2xl" style={{ wordBreak: 'break-word' }}>
         {!isAiRecommendation && msg.message}
       </p>
     );
@@ -244,15 +244,15 @@ const ChatMessageItem = memo(function ChatMessageItem({
       <div
         className={cn(
           'flex flex-col items-start',
-          isAiRecommendation ? 'w-full' : 'max-w-[70%]'
+          isAiRecommendation ? 'w-full' : 'max-w-[85%]'
         )}
       >
         <div className="flex items-baseline gap-1 mb-1">
-          <span className="text-base font-semibold text-gray-800">
+          <span className="text-2xl font-semibold text-gray-800">
             {msg.username}
           </span>
-          <span className="text-sm text-gray-500">|</span>
-          <span className="text-xs text-gray-500">
+          <span className="text-xl text-gray-500">|</span>
+          <span className="text-lg text-gray-500">
             {formatTimestamp(msg.createdAt)}
           </span>
         </div>
@@ -270,12 +270,12 @@ const ChatMessageItem = memo(function ChatMessageItem({
           {isAiRecommendation && (
             <div className="border border-primary rounded-lg bg-primary-10 overflow-hidden">
               <div className="p-3 border-b border-gray-200">
-                <span className="font-semibold text-sm text-gray-800">
+                <span className="font-semibold text-xl text-gray-800">
                   {msg.message} ({msg.recommendedPlaces?.length || 0}개)
                 </span>
               </div>
               <div
-                className={`transition-all duration-300 ease-in-out overflow-hidden ${isCollapsed ? 'max-h-0' : 'max-h-[1000px]'}`}
+                className={`transition-all duration-300 ease-in-out ${isCollapsed ? 'max-h-0 overflow-hidden' : 'max-h-[480px] overflow-y-auto'}`}
               >
                 <div className="p-3 grid grid-cols-1 gap-2">
                   {msg.recommendedPlaces?.map((place, placeIndex) => (
@@ -358,17 +358,17 @@ export const ChatPanel = memo(function ChatPanel({
 
   return (
     <div className="h-full flex flex-col bg-white">
-      <div className=" px-4 py-2 flex items-center justify-between flex-shrink-0 h-16 text-primary relative backdrop-blur-sm">
-        <h1 className="text-xl font-bold truncate">채팅</h1>
-        <div className="flex items-center gap-3">
+      <div className=" px-4 py-2 flex items-center justify-between flex-shrink-0 h-24 text-primary relative backdrop-blur-sm">
+        <h1 className="text-3xl font-bold truncate">채팅</h1>
+        <div className="flex items-center gap-5">
           {activeMembers.length > 0 && (
             <div className="flex items-center">
               {activeMembers.map((member, index) => (
                 <Avatar
                   key={member.id}
-                  className="w-8 h-8 border-2 border-primary"
+                  className="w-12 h-12 border-[3px] border-primary"
                   style={{
-                    marginLeft: index > 0 ? '-8px' : '0',
+                    marginLeft: index > 0 ? '-12px' : '0',
                     zIndex: activeMembers.length - index,
                   }}
                 >
@@ -380,13 +380,13 @@ export const ChatPanel = memo(function ChatPanel({
           )}
           <Badge
             variant="outline"
-            className="text-primary text-sm flex items-center gap-2 border-primary bg-transparent"
+            className="text-primary text-xl flex items-center gap-3 border-primary bg-transparent"
           >
             {isChatConnected ? (
               <>
-                <span className="relative flex h-2 w-2">
+                <span className="relative flex h-3 w-3">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
                 </span>
                 <span>연결됨</span>
               </>
@@ -396,12 +396,12 @@ export const ChatPanel = memo(function ChatPanel({
           </Badge>
           <div className="flex gap-1">
             <Button
-              size="icon"
+              size="xl-icon"
               variant={isVCCallActive ? 'secondary' : 'ghost'}
-              className="w-9 h-9 hover:bg-primary-foreground/10"
+              className="hover:bg-primary-foreground/10"
               onClick={handleToggleVideoCall}
             >
-              <Video className="w-5 h-5 text-primary" />
+              <Video className="size-7 text-primary" />
             </Button>
           </div>
         </div>
