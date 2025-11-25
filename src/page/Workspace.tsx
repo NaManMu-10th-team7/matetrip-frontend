@@ -473,10 +473,10 @@ export function Workspace({
       const placeInfo = allPlaces.get(poi.placeId);
       return {
         ...poi,
-        address: poi.address || placeInfo?.address,
+        address: poi.address || placeInfo?.address || '',
         imageUrl: poi.imageUrl || placeInfo?.imageUrl,
         categoryName: poi.categoryName || placeInfo?.category,
-        summary: (poi as any).summary || placeInfo?.summary,
+        summary: poi.summary || placeInfo?.summary,
       };
     };
 

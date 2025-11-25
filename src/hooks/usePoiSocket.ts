@@ -41,6 +41,8 @@ export type Poi = {
   longitude: number;
   address: string;
   placeName?: string;
+  imageUrl?: string;
+  summary?: string;
   planDayId?: string;
   categoryName?: string;
   status: 'MARKED' | 'UNMARKED' | 'SCHEDULED' | 'RECOMMENDED';
@@ -56,6 +58,8 @@ export type CreatePoiDto = {
   latitude: number;
   address: string;
   placeName?: string;
+  imageUrl?: string;
+  summary?: string;
   planDayId?: string;
   categoryName?: string;
 };
@@ -653,6 +657,8 @@ export function usePoiSocket(workspaceId: string, members: WorkspaceMember[]) {
           longitude: poi.longitude,
           address: poi.address,
           placeName: poi.placeName,
+          imageUrl: poi.imageUrl,
+          summary: poi.summary,
           categoryName: poi.categoryName,
           planDayId: planDayId,
         };
