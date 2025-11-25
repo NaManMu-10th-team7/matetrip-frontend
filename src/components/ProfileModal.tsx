@@ -442,7 +442,7 @@ export function ProfileModal({
                         {profile.travelStyles?.map((style) => (
                           <Badge
                             key={style}
-                            className="rounded-full bg-gray-100 text-gray-800"
+                            className="rounded-full bg-gray-100 text-gray-800 text-base"
                           >
                             {translateKeyword(style)}
                           </Badge>
@@ -584,7 +584,7 @@ export function ProfileModal({
                           {profile.tendency.map((tendency) => (
                             <Badge
                               key={tendency}
-                              className="rounded-full bg-gray-100 text-gray-800"
+                              className="rounded-full bg-gray-100 text-gray-800 text-base"
                             >
                               {translateKeyword(tendency)}
                             </Badge>
