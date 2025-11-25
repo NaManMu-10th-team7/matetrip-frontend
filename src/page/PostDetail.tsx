@@ -405,7 +405,7 @@ export function PostDetail({
     text: '로그인 후 신청 가능',
     disabled: true,
     className:
-      'w-full rounded-full border border-gray-300 bg-gray-100 text-gray-400 px-6 py-6 text-lg',
+      'w-full rounded-full border border-gray-300 bg-gray-100 text-gray-400 px-6 py-6 text-xl',
     icon: null,
   };
 
@@ -415,7 +415,7 @@ export function PostDetail({
         text: '여행 일정 만들기',
         disabled: false,
         className:
-          'w-full rounded-full border border-primary bg-transparent text-primary hover:bg-primary hover:text-primary-foreground px-6 py-6 text-lg',
+          'w-full rounded-full border border-primary bg-transparent text-primary hover:bg-primary hover:text-primary-foreground px-6 py-6 text-xl',
         icon: <DoorOpen className="w-5 h-5 mr-2" />, // 아이콘 추가
       };
     } else if (userParticipation) {
@@ -425,7 +425,7 @@ export function PostDetail({
             text: '여행 일정 만들기',
             disabled: false,
             className:
-              'w-full rounded-full border border-primary bg-transparent text-primary hover:bg-primary hover:text-primary-foreground px-6 py-6 text-lg',
+              'w-full rounded-full border border-primary bg-transparent text-primary hover:bg-primary hover:text-primary-foreground px-6 py-6 text-xl',
             icon: <DoorOpen className="w-5 h-5 mr-2" />, // 아이콘 추가
           };
           break;
@@ -434,7 +434,7 @@ export function PostDetail({
             text: '이미 신청한 동행입니다',
             disabled: true,
             className:
-              'w-full rounded-full border border-gray-300 bg-gray-100 text-gray-400 px-6 py-6 text-lg',
+              'w-full rounded-full border border-gray-300 bg-gray-100 text-gray-400 px-6 py-6 text-xl',
             icon: null,
           };
           break;
@@ -443,7 +443,7 @@ export function PostDetail({
             text: '거절된 동행입니다',
             disabled: true,
             className:
-              'w-full rounded-full border border-gray-300 bg-gray-100 text-gray-400 px-6 py-6 text-lg',
+              'w-full rounded-full border border-gray-300 bg-gray-100 text-gray-400 px-6 py-6 text-xl',
             icon: null,
           };
           break;
@@ -453,7 +453,7 @@ export function PostDetail({
         text: '모집이 마감되었습니다',
         disabled: true,
         className:
-          'w-full rounded-full border border-gray-300 bg-gray-100 text-gray-400 px-6 py-6 text-lg',
+          'w-full rounded-full border border-gray-300 bg-gray-100 text-gray-400 px-6 py-6 text-xl',
         icon: null,
       };
     } else {
@@ -461,7 +461,7 @@ export function PostDetail({
         text: '동행 신청하기',
         disabled: false,
         className:
-          'w-full rounded-full border border-primary bg-transparent text-primary hover:bg-primary hover:text-primary-foreground px-6 py-6 text-lg',
+          'w-full rounded-full border border-primary bg-transparent text-primary hover:bg-primary hover:text-primary-foreground px-6 py-6 text-xl',
         icon: null,
       };
     }
@@ -502,7 +502,7 @@ export function PostDetail({
               <ChevronLeft className="w-7 h-7" />
             </button>
             <div className="flex flex-col items-end gap-2">
-              <Badge className="bg-white/90 text-black flex-shrink-0 backdrop-blur-sm text-base">
+              <Badge className="bg-white/90 text-black flex-shrink-0 backdrop-blur-sm text-lg">
                 {post.status}
               </Badge>
               {isAuthor && (
@@ -521,20 +521,20 @@ export function PostDetail({
                     className="w-48 z-50 bg-white"
                   >
                     <DropdownMenuItem
-                      className="cursor-pointer focus:bg-primary focus:text-primary-foreground"
+                      className="cursor-pointer focus:bg-primary focus:text-primary-foreground text-base"
                       onClick={() => onEditPost(post)}
                     >
                       <Pencil className="w-5 h-5 mr-2" />
                       수정하기
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      className="cursor-pointer text-red-600 focus:bg-primary focus:text-primary-foreground"
+                      className="cursor-pointer text-red-600 focus:bg-primary focus:text-primary-foreground text-base"
                       onClick={() => setDeleteModalOpen(true)}
                     >
                       <Trash2 className="w-5 h-5 mr-2" />
                       삭제하기
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer focus:bg-primary focus:text-primary-foreground">
+                    <DropdownMenuItem className="cursor-pointer focus:bg-primary focus:text-primary-foreground text-lg">
                       <Megaphone className="w-5 h-5 mr-2" />
                       모집 마감하기
                     </DropdownMenuItem>
@@ -548,14 +548,14 @@ export function PostDetail({
           <div className="flex flex-col items-center gap-6">
             {/* 중앙 제목 */}
             <div className="flex items-center justify-center">
-              <h2 className="text-4xl font-bold text-center break-words line-clamp-2">
+              <h2 className="text-5xl font-bold text-center break-words line-clamp-2">
                 {post.title}
               </h2>
             </div>
 
             {/* 하단 여행 정보 */}
             <div className="flex flex-col items-center gap-3 pb-2">
-              <div className="flex justify-center items-center gap-8 text-base">
+              <div className="flex justify-center items-center gap-8 text-lg">
                 <div className="flex items-center gap-2">
                   <MapPin className="w-6 h-6" />
                   <span>{post.location}</span>
@@ -579,7 +579,7 @@ export function PostDetail({
                     <Badge
                       key={index}
                       variant="outline"
-                      className="rounded-full px-3 py-1 text-white border-white/50 bg-white/10 backdrop-blur-sm text-sm"
+                      className="rounded-full px-3 py-1 text-white border-white/50 bg-white/10 backdrop-blur-sm text-base"
                     >
                       {translateKeyword(keyword)}
                     </Badge>

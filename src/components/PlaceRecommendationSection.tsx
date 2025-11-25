@@ -127,10 +127,10 @@ export function PlaceRecommendationSection({
       {!isLoggedIn ? (
         <div className="bg-gradient-to-r from-blue-50 to-pink-50 rounded-2xl p-4 md:p-6 border border-blue-100">
           <div className="text-center">
-            <h3 className="text-base md:text-lg font-bold text-gray-900 mb-2">
+            <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">
               로그인이 필요합니다
             </h3>
-            <p className="text-xs md:text-sm text-gray-600 mb-4">
+            <p className="text-sm md:text-base text-gray-600 mb-4">
               당신의 취향에 맞는 장소를 추천받으려면 로그인하세요
             </p>
             <Button
