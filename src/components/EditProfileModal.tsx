@@ -395,9 +395,10 @@ export function EditProfileModal({
   //   }
   // };
   const validateStyleCount = (count: number) => {
-    if (count === 0) {
-      setStyleError('여행 스타일을 최소 1개 선택해주세요.');
-    } else if (count > 3) {
+    // if (count === 0) {
+    //   setStyleError('여행 스타일을 최소 1개 선택해주세요.');
+    // }
+    if (count > 3) {
       setStyleError('여행 스타일을 3개 이하로 선택해주세요');
     } else {
       setStyleError('');
@@ -451,13 +452,37 @@ export function EditProfileModal({
   //   }
   // };
 
+  const parseErrorMessage = async (
+    response: Response
+  ): Promise<string | null> => {
+    // JSON이면 message 필드 우선, 아니면 텍스트로 반환
+    try {
+      const data = await response.clone().json();
+      const apiMessage = (data as { message?: string | string[] }).message;
+      if (Array.isArray(apiMessage) && apiMessage.length > 0) {
+        return apiMessage[0];
+      }
+      if (typeof apiMessage === 'string') {
+        return apiMessage;
+      }
+    } catch (error) {
+      console.error('프로필 오류 응답 파싱 실패:', error);
+    }
+    try {
+      const fallback = await response.text();
+      return fallback || null;
+    } catch {
+      return null;
+    }
+  };
+
   //👀 save API  호출
   const handleSaveProfile = async () => {
     if (!user || isSaving) return;
-    if (selectedTravelStyles.length === 0) {
-      setStyleError('여행 스타일을 최소 1개 선택해주세요.');
-      return;
-    }
+    // if (selectedTravelStyles.length === 0) {
+    //   setStyleError('여행 스타일을 최소 1개 선택해주세요.');
+    //   return;
+    // }
     if (selectedTravelStyles.length > 3) {
       setStyleError('여행 스타일을 3개 이하로 선택해주세요.');
       return;
@@ -523,27 +548,13 @@ export function EditProfileModal({
       });
 
       if (!response.ok) {
-        const detail = await response.text();
+        const detail = await parseErrorMessage(response);
+        // Nova가 상세소개를 거부해 400을 주는 경우 그대로 보여준다
+        if (response.status === 400 && detail?.includes('상세소개')) {
+          throw new Error(detail);
+        }
         throw new Error(detail || '프로필 업데이트에 실패했습니다.');
       }
-
-      // //📌상세소개가 호출 변경되는 경우에는 임베딩 진행
-      // if (descriptionChanged || stylesChanged || tendenciesChanged) {
-      //   try {
-      //     await fetch(`${API_BASE_URL}/profile/embedding`, {
-      //       method: 'POST',
-      //       headers: { 'Content-Type': 'application/json' },
-      //       credentials: 'include',
-      //       body: JSON.stringify({
-      //         description: detailedBio,
-      //         travelStyles: selectedTravelStyles,
-      //         tendency: selectedTravelTendencies,
-      //       }),
-      //     });
-      //   } catch (error) {
-      //     console.error('프로필 임베딩 갱신 실패:', error);
-      //   }
-      // }
 
       //변경되면 호출(새로고침)
       useAuthStore.setState((state) => {

@@ -3,11 +3,11 @@ import { Map, MapMarker } from 'react-kakao-maps-sdk';
 import { Clock, Car } from 'lucide-react';
 import type { Poi } from '../hooks/usePoiSocket';
 import type { DayLayer, RouteSegment } from '../types/map';
+import { CategoryIcon } from './CategoryIcon';
 
 interface PdfDocumentProps {
   workspaceName: string;
   itinerary: Record<string, Poi[]>;
-  // DayLayer 타입에 planDate가 없으므로, 직접 타입을 확장하여 사용합니다.
   dayLayers: (DayLayer & {
     planDate: string;
   })[];
@@ -137,50 +137,96 @@ export const PdfDocument = React.forwardRef<HTMLDivElement, PdfDocumentProps>(
               <PdfInteractiveMap pois={poisForDay} />
 
               <div style={{ width: '90%', margin: '0 auto' }}>
-                <ul className="space-y-2">
-                  {poisForDay.map((poi, index) => (
-                    <React.Fragment key={poi.id}>
-                      <li className="flex items-start">
-                        <span
-                          className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full text-white text-xs mr-3 mt-0.5"
-                          style={{ backgroundColor: day.color }}
-                        >
-                          {index + 1}
-                        </span>
-                        <div>
-                          <p className="font-bold text-sm">{poi.placeName}</p>
-                          <p className="text-xs text-gray-600">
-                            {poi.address}
-                          </p>
+                <ul className="space-y-0">
+                  {poisForDay.map((poi, index) => {
+                    const isLast = index === poisForDay.length - 1;
+                    const segment = !isLast
+                      ? segmentsForDay.find(
+                          (s) =>
+                            s.fromPoiId === poi.id &&
+                            s.toPoiId === poisForDay[index + 1].id
+                        )
+                      : null;
+
+                    return (
+                      <li key={poi.id} className="flex relative">
+                        {/* Timeline Column */}
+                        <div className="flex flex-col items-center mr-4">
+                          <div
+                            className="relative z-10 flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-full text-white text-base mt-0.5"
+                            style={{ backgroundColor: day.color }}
+                          >
+                            {index + 1}
+                          </div>
+                          {!isLast && (
+                            <div className="w-0.5 flex-grow bg-gray-300" />
+                          )}
+                        </div>
+
+                        {/* Content Column */}
+                        <div className="w-full">
+                          {/* Place Info */}
+                          <div className="flex items-start">
+                            <div className="flex-shrink-0 mr-6">
+                              {poi.imageUrl ? (
+                                <img
+                                  src={poi.imageUrl}
+                                  alt={poi.placeName}
+                                  className="w-40 h-32 object-cover rounded-md"
+                                  crossOrigin="anonymous"
+                                />
+                              ) : (
+                                <div className="w-40 h-32 rounded-md bg-gray-200 flex items-center justify-center">
+                                  <CategoryIcon
+                                    category={poi.categoryName}
+                                    className="w-12 h-12 text-gray-500"
+                                  />
+                                </div>
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-bold text-lg">
+                                {poi.placeName}
+                              </p>
+                              {poi.categoryName && (
+                                <p className="text-base text-gray-500 mt-1">
+                                  {poi.categoryName}
+                                </p>
+                              )}
+                              {poi.address && (
+                                <p className="text-base text-gray-600 mt-2">
+                                  {poi.address}
+                                </p>
+                              )}
+                              {(poi as any).summary && (
+                                <blockquote className="mt-2 pl-4 border-l-4 border-gray-300">
+                                  <p className="text-sm text-gray-700 italic">
+                                    {(poi as any).summary}
+                                  </p>
+                                </blockquote>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Segment Info Spacer */}
+                          {segment && (
+                            <div className="h-24 flex items-center">
+                              <div className="flex items-center text-base text-gray-500">
+                                <Clock className="w-4 h-4 mr-2" />
+                                <span className="mr-5">{`${Math.ceil(
+                                  segment.duration / 60
+                                )}분`}</span>
+                                <Car className="w-4 h-4 mr-2" />
+                                <span>{`${(segment.distance / 1000).toFixed(
+                                  1
+                                )}km`}</span>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </li>
-                      {index < poisForDay.length - 1 &&
-                        (() => {
-                          const nextPoi = poisForDay[index + 1];
-                          const segment = segmentsForDay.find(
-                            (s) =>
-                              s.fromPoiId === poi.id && s.toPoiId === nextPoi.id
-                          );
-                          if (!segment) return null;
-
-                          const totalMinutes = Math.ceil(
-                            segment.duration / 60
-                          );
-                          const totalKilometers = (
-                            segment.distance / 1000
-                          ).toFixed(1);
-
-                          return (
-                            <li className="flex items-center pl-8 text-xs text-gray-500">
-                              <Clock className="w-2.5 h-2.5 mr-1" />
-                              <span className="mr-3">{`${totalMinutes}분`}</span>
-                              <Car className="w-2.5 h-2.5 mr-1" />
-                              <span>{`${totalKilometers}km`}</span>
-                            </li>
-                          );
-                        })()}
-                    </React.Fragment>
-                  ))}
+                    );
+                  })}
                 </ul>
               </div>
             </div>
