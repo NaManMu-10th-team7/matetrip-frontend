@@ -1,3 +1,5 @@
+// types/chat.ts
+
 export interface ToolCallData {
   tool_name: string;
   tool_output: any; // 실제 데이터 (지도 좌표 등)
