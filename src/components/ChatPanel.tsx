@@ -9,6 +9,8 @@ import {
   Bot,
   FileText, // 상세보기 아이콘
 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Button } from './ui/button';
 import type { Poi } from '../hooks/usePoiSocket';
 import { Input } from './ui/input';
@@ -218,9 +220,40 @@ const ChatMessageItem = memo(function ChatMessageItem({
         </p>
       );
     }
+
+    if (msg.role === 'ai') {
+      return (
+        <div className="prose prose-sm max-w-none text-gray-900">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              h1: ({ children }) => <h1 className="text-2xl font-bold mt-4 mb-2">{children}</h1>,
+              h2: ({ children }) => <h2 className="text-xl font-bold mt-3 mb-2">{children}</h2>,
+              h3: ({ children }) => <h3 className="text-lg font-bold mt-2 mb-1">{children}</h3>,
+              p: ({ children }) => <p className="text-base leading-relaxed mb-2">{children}</p>,
+              ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
+              ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
+              li: ({ children }) => <li className="text-base">{children}</li>,
+              strong: ({ children }) => <strong className="font-bold">{children}</strong>,
+              em: ({ children }) => <em className="italic">{children}</em>,
+              code: ({ children }) => <code className="bg-gray-200 px-1 py-0.5 rounded text-sm font-mono">{children}</code>,
+              blockquote: ({ children }) => (
+                <blockquote className="border-l-4 border-gray-300 pl-4 italic text-gray-600 my-2">
+                  {children}
+                </blockquote>
+              ),
+              hr: () => <hr className="my-3 border-gray-300" />,
+            }}
+          >
+            {msg.message}
+          </ReactMarkdown>
+        </div>
+      );
+    }
+
     return (
-      <p className="text-2xl" style={{ wordBreak: 'break-word' }}>
-        {!isAiRecommendation && msg.message}
+      <p className="text-base" style={{ wordBreak: 'break-word' }}>
+        {msg.message}
       </p>
     );
   };
@@ -259,53 +292,51 @@ const ChatMessageItem = memo(function ChatMessageItem({
         <div
           className={cn(
             'rounded-lg px-4 py-2',
-            isAiRecommendation
-              ? 'w-full bg-transparent p-0'
-              : isSystem
-                ? 'bg-gray-100 text-gray-700 italic'
-                : 'bg-gray-100 text-gray-900'
+            isSystem
+              ? 'bg-gray-100 text-gray-700 italic'
+              : 'bg-gray-100 text-gray-900'
           )}
         >
           {msg.isLoading ? <AiLoadingIndicator /> : renderMessageContent()}
-          {isAiRecommendation && (
-            <div className="border border-primary rounded-lg bg-primary-10 overflow-hidden">
-              <div className="p-3 border-b border-gray-200">
-                <span className="font-semibold text-xl text-gray-800">
-                  {msg.message} ({msg.recommendedPlaces?.length || 0}개)
-                </span>
-              </div>
-              <div
-                className={`transition-all duration-300 ease-in-out ${isCollapsed ? 'max-h-0 overflow-hidden' : 'max-h-[480px] overflow-y-auto'}`}
-              >
-                <div className="p-3 grid grid-cols-1 gap-2">
-                  {msg.recommendedPlaces?.map((place, placeIndex) => (
-                    <ChatRecommendedPlaceCard
-                      key={placeIndex}
-                      place={place}
-                      onAddPoiToItinerary={onAddPoiToItinerary}
-                      onCardClick={onCardClick}
-                      onShowDetails={onShowDetails} // 상세보기 핸들러 전달
-                      workspaceId={workspaceId}
-                      currentUserId={currentUserId}
-                    />
-                  ))}
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                className="w-full rounded-t-none text-sm text-gray-600 hover:bg-primary/20"
-                onClick={() => setIsCollapsed((prev) => !prev)}
-              >
-                {isCollapsed ? (
-                  <ChevronDown className="w-4 h-4 mr-2" />
-                ) : (
-                  <ChevronUp className="w-4 h-4 mr-2" />
-                )}
-                {isCollapsed ? '펼치기' : '접기'}
-              </Button>
-            </div>
-          )}
         </div>
+        {isAiRecommendation && (
+          <div className="w-full border border-primary rounded-lg bg-primary-10 overflow-hidden mt-2">
+            <div className="p-3 border-b border-gray-200">
+              <span className="font-semibold text-xl text-gray-800">
+                추천 장소 ({msg.recommendedPlaces?.length || 0}개)
+              </span>
+            </div>
+            <div
+              className={`transition-all duration-300 ease-in-out ${isCollapsed ? 'max-h-0 overflow-hidden' : 'max-h-[480px] overflow-y-auto'}`}
+            >
+              <div className="p-3 grid grid-cols-1 gap-2">
+                {msg.recommendedPlaces?.map((place, placeIndex) => (
+                  <ChatRecommendedPlaceCard
+                    key={placeIndex}
+                    place={place}
+                    onAddPoiToItinerary={onAddPoiToItinerary}
+                    onCardClick={onCardClick}
+                    onShowDetails={onShowDetails} // 상세보기 핸들러 전달
+                    workspaceId={workspaceId}
+                    currentUserId={currentUserId}
+                  />
+                ))}
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              className="w-full rounded-t-none text-sm text-gray-600 hover:bg-primary/20"
+              onClick={() => setIsCollapsed((prev) => !prev)}
+            >
+              {isCollapsed ? (
+                <ChevronDown className="w-4 h-4 mr-2" />
+              ) : (
+                <ChevronUp className="w-4 h-4 mr-2" />
+              )}
+              {isCollapsed ? '펼치기' : '접기'}
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
