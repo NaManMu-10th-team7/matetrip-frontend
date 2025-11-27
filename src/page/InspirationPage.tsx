@@ -28,7 +28,6 @@ interface Place {
   summary?: string;
   latitude: number;
   longitude: number;
-  badgeText?: string;
 }
 
 interface InspirationPageProps {
@@ -52,11 +51,8 @@ export function InspirationPage({ onViewAccommodation }: InspirationPageProps) {
   const ITEMS_PER_PAGE = 20;
 
   // 백엔드 응답을 프론트엔드 타입으로 변환
-  const transformResponse = (
-    data: any[],
-    startIndex: number
-  ): Place[] => {
-    return data.map((item, index) => ({
+  const transformResponse = (data: any[]): Place[] => {
+    return data.map((item) => ({
       id: item.place_id || item.addplace_id || item.id,
       title: item.title,
       address: item.address,
@@ -64,7 +60,6 @@ export function InspirationPage({ onViewAccommodation }: InspirationPageProps) {
       summary: item.summary,
       latitude: item.latitude,
       longitude: item.longitude,
-      badgeText: `현재 가장 인기있는 장소 TOP. ${startIndex + index + 1}`,
     }));
   };
 
@@ -100,10 +95,7 @@ export function InspirationPage({ onViewAccommodation }: InspirationPageProps) {
         console.log('First item id:', response.data[0]?.id);
         console.log('============================');
 
-        const transformedData = transformResponse(
-          response.data,
-          isNewSearch ? 0 : places.length
-        );
+        const transformedData = transformResponse(response.data);
 
         console.log('=== Transformed Data Debug ===');
         console.log('Transformed data:', transformedData);
@@ -138,7 +130,7 @@ export function InspirationPage({ onViewAccommodation }: InspirationPageProps) {
         setIsLoadingMore(false);
       }
     },
-    [page, places.length]
+    [page]
   );
 
   // 초기 로드
@@ -263,7 +255,6 @@ export function InspirationPage({ onViewAccommodation }: InspirationPageProps) {
                   <InspirationCard
                     key={place.id}
                     imageUrl={place.imageUrl}
-                    rank={places.indexOf(place) + 1}
                     title={place.title}
                     address={place.address}
                     onClick={() => handleCardClick(place)}
