@@ -5,7 +5,6 @@ import { CategoryIcon } from './CategoryIcon'; // CategoryIcon 임포트
 
 interface InspirationCardProps {
   imageUrl?: string;
-  rank?: number; // badgeText 대신 rank prop 추가
   title: string;
   category?: string;
   address: string;
@@ -17,37 +16,8 @@ interface InspirationCardProps {
   isLoading?: boolean;
 }
 
-// 메달 아이콘 컴포넌트
-const MedalIcon = ({ rank }: { rank: number }) => {
-  let bgColor = '';
-  let textColor = 'text-white';
-  let iconText = '';
-
-  if (rank === 1) {
-    bgColor = 'bg-yellow-500'; // Gold
-    iconText = '1st';
-  } else if (rank === 2) {
-    bgColor = 'bg-gray-400'; // Silver
-    iconText = '2nd';
-  } else if (rank === 3) {
-    bgColor = 'bg-amber-700'; // Bronze
-    iconText = '3rd';
-  } else {
-    return null; // Only show for top 3
-  }
-
-  return (
-    <div
-      className={`absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${bgColor} ${textColor} shadow-md z-10`}
-    >
-      {iconText}
-    </div>
-  );
-};
-
 export function InspirationCard({
   imageUrl,
-  rank, // rank prop 사용
   title,
   category,
   address,
@@ -174,8 +144,6 @@ export function InspirationCard({
                 )}
               </div>
             )}
-
-            {rank && <MedalIcon rank={rank} />} {/* 메달 아이콘 표시 */}
 
             {renderRecommendationReason} {/* 추천 이유 렌더링 */}
 

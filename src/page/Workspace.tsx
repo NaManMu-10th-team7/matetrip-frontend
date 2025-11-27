@@ -11,7 +11,12 @@ import {
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import { MapPanel } from '../components/MapPanel';
-import type { KakaoPlace, RouteSegment, ChatMessage } from '../types/map';
+import type {
+  KakaoPlace,
+  RouteSegment,
+  ChatMessage,
+  DayLayer,
+} from '../types/map';
 import type { PlanDayDto } from '../types/workspace';
 import { LeftPanel } from '../components/LeftPanel';
 import { PlanRoomHeader } from '../components/PlanRoomHeader';
@@ -26,7 +31,10 @@ import { PdfDocument } from '../components/PdfDocument.tsx';
 import { AIRecommendationLoadingModal } from '../components/AIRecommendationLoadingModal.tsx';
 import { PdfGeneratingLoadingModal } from '../components/PdfGeneratingLoadingModal';
 import { toast } from 'sonner';
-import { ScheduleSidebar, PoiDetailPanel } from '../components/ScheduleSidebar.tsx'; // PoiDetailPanel 임포트
+import {
+  ScheduleSidebar,
+  PoiDetailPanel,
+} from '../components/ScheduleSidebar.tsx'; // PoiDetailPanel 임포트
 import { OptimizationModal } from '../components/OptimizationModal.tsx';
 
 interface WorkspaceProps {
@@ -77,6 +85,15 @@ function DraggablePoiItem({ poi }: { poi: Poi }) {
   );
 }
 
+interface PdfPage {
+  day: DayLayer & { planDate: string };
+  dayIndex: number;
+  poisForPage: Poi[];
+  allPoisForDay: Poi[];
+  routeSegmentsForDay: RouteSegment[];
+  showMap: boolean;
+}
+
 export function Workspace({
   workspaceId,
   workspaceName,
@@ -107,7 +124,7 @@ export function Workspace({
   const [postLocation, setPostLocation] = useState<string | null>(null);
 
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-  const pdfRef = useRef<HTMLDivElement>(null);
+  const [pdfPages, setPdfPages] = useState<PdfPage[]>([]);
 
   // 상세보기 패널 상태 추가
   const [showPlaceDetailPanel, setShowPlaceDetailPanel] = useState(false);
@@ -525,89 +542,131 @@ export function Workspace({
 
   const handleExportToPdf = useCallback(() => {
     if (isGeneratingPdf) return;
-    setIsGeneratingPdf(true);
-  }, [isGeneratingPdf]);
 
-  useEffect(() => {
-    if (!isGeneratingPdf) return;
-
-    const generatePdf = async () => {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      if (!pdfRef.current) {
-        toast.warning('PDF 생성에 실패했습니다: 문서를 찾을 수 없습니다.');
-        setIsGeneratingPdf(false);
+    const pages: PdfPage[] = [];
+    dayLayers.forEach((day, dayIndex) => {
+      const poisForDay = itinerary[day.id] || [];
+      if (poisForDay.length === 0) {
         return;
       }
 
-      const element = pdfRef.current;
-      try {
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Page 1: Map + 2 POIs
+      pages.push({
+        day,
+        dayIndex,
+        poisForPage: poisForDay.slice(0, 2),
+        allPoisForDay: poisForDay,
+        showMap: true,
+        routeSegmentsForDay: routeSegmentsByDay[day.id] || [],
+      });
 
-        const images = Array.from(element.querySelectorAll('img'));
-        const crossOriginImages = images.filter(
-          (img) =>
-            img.src &&
-            (img.src.includes('daumcdn.net') ||
-              img.src.includes('kakaocdn.net') ||
-              img.src.includes('visitkorea.or.kr'))
-        );
-
-        const promises = crossOriginImages.map((img) => {
-          return new Promise<void>((resolve) => {
-            const originalSrc = img.src;
-            if (originalSrc.startsWith('data:')) {
-              resolve();
-              return;
-            }
-            const proxyUrl = `${API_BASE_URL}/proxy/image?url=${encodeURIComponent(
-              originalSrc
-            )}`;
-
-            const newImg = new Image();
-            newImg.crossOrigin = 'Anonymous';
-            newImg.onload = () => {
-              const canvas = document.createElement('canvas');
-              canvas.width = newImg.naturalWidth;
-              canvas.height = newImg.naturalHeight;
-              const ctx = canvas.getContext('2d');
-              ctx?.drawImage(newImg, 0, 0);
-              img.src = canvas.toDataURL('image/png');
-              resolve();
-            };
-            newImg.onerror = () => {
-              console.error(`프록시 이미지 로드 실패: ${originalSrc}`);
-              resolve();
-            };
-            newImg.src = proxyUrl;
-          });
+      // Subsequent pages: 3 POIs each
+      const remainingPois = poisForDay.slice(2);
+      for (let i = 0; i < remainingPois.length; i += 3) {
+        const chunk = remainingPois.slice(i, i + 3);
+        pages.push({
+          day,
+          dayIndex,
+          poisForPage: chunk,
+          allPoisForDay: poisForDay,
+          showMap: false,
+          routeSegmentsForDay: routeSegmentsByDay[day.id] || [],
         });
+      }
+    });
 
-        await Promise.all(promises);
+    setPdfPages(pages);
+    setIsGeneratingPdf(true);
+  }, [isGeneratingPdf, dayLayers, itinerary, routeSegmentsByDay]);
 
-        const canvas = await html2canvas(element, { scale: 2 });
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+  useEffect(() => {
+    if (!isGeneratingPdf || pdfPages.length === 0) return;
+
+    const generatePdf = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+
+      for (let i = 0; i < pdfPages.length; i++) {
+        const element = document.getElementById(`pdf-page-${i}`);
+        if (!element) continue;
+
+        try {
+          const images = Array.from(element.querySelectorAll('img'));
+          const crossOriginImages = images.filter(
+            (img) =>
+              img.src &&
+              (img.src.includes('daumcdn.net') ||
+                img.src.includes('kakaocdn.net') ||
+                img.src.includes('visitkorea.or.kr'))
+          );
+
+          const promises = crossOriginImages.map((img) => {
+            return new Promise<void>((resolve) => {
+              const originalSrc = img.src;
+              if (originalSrc.startsWith('data:')) {
+                resolve();
+                return;
+              }
+              const proxyUrl = `${API_BASE_URL}/proxy/image?url=${encodeURIComponent(
+                originalSrc
+              )}`;
+
+              const newImg = new Image();
+              newImg.crossOrigin = 'Anonymous';
+              newImg.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = newImg.naturalWidth;
+                canvas.height = newImg.naturalHeight;
+                const ctx = canvas.getContext('2d');
+                ctx?.drawImage(newImg, 0, 0);
+                img.src = canvas.toDataURL('image/png');
+                resolve();
+              };
+              newImg.onerror = () => {
+                console.error(`프록시 이미지 로드 실패: ${originalSrc}`);
+                resolve();
+              };
+              newImg.src = proxyUrl;
+            });
+          });
+
+          await Promise.all(promises);
+
+          const canvas = await html2canvas(element, {
+            scale: 2,
+            useCORS: true,
+            width: element.offsetWidth,
+            height: element.offsetHeight,
+          });
+          const imgData = canvas.toDataURL('image/png');
+
+          if (i > 0) {
+            pdf.addPage();
+          }
+          pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        } catch (error) {
+          console.error(`PDF page ${i} generation error:`, error);
+          toast.warning(`PDF 페이지 생성 중 오류가 발생했습니다.`);
+          break;
+        }
+      }
+
+      try {
         pdf.save(`${workspaceName}_여행계획.pdf`);
       } catch (error) {
-        console.error('PDF 생성 중 오류가 발생했습니다.', error);
-        toast.warning('PDF 생성에 실패했습니다. 잠시 후 다시 시도해주세요.');
+        console.error('PDF save error:', error);
+        toast.warning('PDF 파일 저장에 실패했습니다.');
       } finally {
         setIsGeneratingPdf(false);
+        setPdfPages([]);
       }
     };
 
     generatePdf();
-  }, [
-    isGeneratingPdf,
-    workspaceName,
-    itinerary,
-    dayLayers,
-    routeSegmentsByDay,
-  ]);
+  }, [isGeneratingPdf, pdfPages, workspaceName]);
 
   const handleOptimizeRoute = useCallback(
     (dayId: string) => {
@@ -976,13 +1035,19 @@ export function Workspace({
       />
       {isGeneratingPdf && (
         <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
-          <PdfDocument
-            ref={pdfRef}
-            workspaceName={workspaceName}
-            itinerary={itinerary}
-            dayLayers={dayLayers}
-            routeSegmentsByDay={routeSegmentsByDay}
-          />
+          {pdfPages.map((page, index) => (
+            <div key={index} id={`pdf-page-${index}`}>
+              <PdfDocument
+                workspaceName={workspaceName}
+                day={page.day}
+                dayIndex={page.dayIndex}
+                poisForPage={page.poisForPage}
+                allPoisForDay={page.allPoisForDay}
+                routeSegmentsForDay={page.routeSegmentsForDay}
+                showMap={page.showMap}
+              />
+            </div>
+          ))}
         </div>
       )}
       <AIRecommendationLoadingModal isOpen={isRecommendationLoading} />
