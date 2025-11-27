@@ -1757,24 +1757,26 @@ export function MapPanel({
                       gap: '8px',
                     }}
                   >
-                                                                                                                                  <div
-                                                                                                                                    style={{
-                                                                                                                                      background: 'rgba(0, 0, 0, 0.75)',
-                                                                                                                                      color: 'white',
-                                                                                                                                      padding: '8px 12px',
-                                                                                                                                      borderRadius: '8px',
-                                                                                                                                      fontSize: '1.5rem',
-                                                                                                                                      lineHeight: '2rem',
-                                                                                                                                      whiteSpace: 'normal',
-                                                                                                                                      wordBreak: 'break-word',
-                                                                                                                                      maxWidth: '400px',
-                                                                                                                                      overflow: 'hidden',
-                                                                                                                                      textOverflow: 'ellipsis',
-                                                                                                                                      boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
-                                                                                                                                    }}
-                                                                                                                                  >
-                                                                                                                                    {chatBubbles[userId]}
-                                                                                                                                  </div>                  </div>
+                    <div
+                      style={{
+                        background: 'rgba(0, 0, 0, 0.75)',
+                        color: 'white',
+                        padding: '6px 10px',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        lineHeight: '1.2',
+                        whiteSpace: 'normal',
+                        wordBreak: 'break-word',
+                        maxWidth: '300px',
+                        minWidth: '200px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+                      }}
+                    >
+                      {chatBubbles[userId]}
+                    </div>
+                  </div>
                 )}
               </div>
             </CustomOverlayMap>
