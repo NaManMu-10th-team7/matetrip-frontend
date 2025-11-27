@@ -92,7 +92,7 @@ interface MapPanelProps {
   itineraryAiPlaces: AiPlace[] | undefined;
   chatAiPlaces: AiPlace[] | undefined;
   isProgrammaticMove: React.MutableRefObject<boolean>;
-  schedulePosition: 'hidden' | 'overlay' | 'docked';
+  // schedulePosition: 'hidden' | 'overlay' | 'docked'; // 제거
 }
 
 export interface PlaceMarkerProps {
@@ -105,6 +105,7 @@ export interface PlaceMarkerProps {
   scheduledPoiData: Map<string, { label: string; color: string }>;
   recommendedPoiLabelData: Map<string, { label: string; color: string }>;
   highlightedPlaceId: string | null;
+  zoomLevel: number;
 }
 
 export interface PoiMarkerProps {
@@ -125,6 +126,26 @@ export interface DayRouteRendererProps {
   dailyRouteInfo: Record<string, RouteSegment[]>;
   visibleDayIds: Set<string>;
 }
+
+const getCircleMarkerWithIconSvg = (
+  fillColor: string,
+  strokeColor: string,
+  strokeWidth: string,
+  iconContent: string,
+  opacity: number = 1
+) => {
+  const svg = `
+    <svg width="44" height="48" viewBox="0 -6 48 52" xmlns="http://www.w3.org/2000/svg">
+      <g opacity="${opacity}">
+        <circle cx="22" cy="22" r="10" fill="${fillColor}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+        <g transform="translate(22, 22) scale(0.8)">
+          ${iconContent}
+        </g>
+      </g>
+    </svg>
+  `;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+};
 
 const PlaceInfoWindow = memo(
   ({
@@ -263,6 +284,15 @@ const PlaceMarker = memo(
     );
     const isInfoWindowClickedRef = useRef(false);
 
+    const markedPoi = findPoiByCoordinates(
+      pois,
+      place.latitude,
+      place.longitude
+    );
+    const isInItinerary = markedPoi
+      ? scheduledPoiData.has(markedPoi.id)
+      : false;
+
     useEffect(() => {
       return () => {
         if (infoWindowTimeoutRef.current) {
@@ -298,8 +328,94 @@ const PlaceMarker = memo(
       onPlaceClick(place);
     };
 
-    const getMarkerImageSrc = (place: PlaceDto, markedPoi?: Poi): string => {
+    const getMarkerImageSrc = (
+      place: PlaceDto,
+      markedPoi: Poi | undefined
+    ): string => {
+      const isInItinerary = markedPoi
+        ? scheduledPoiData.has(markedPoi.id)
+        : false;
       const categoryCode = place.category;
+      const categoryInfo =
+        CATEGORY_INFO[categoryCode as keyof typeof CATEGORY_INFO];
+      const color =
+        NEW_CATEGORY_COLORS[categoryCode] || categoryInfo?.color || '#808080';
+      const strokeColor = '#000000';
+      const strokeWidth = '0.5';
+
+      let iconSvgContent = '';
+
+      switch (categoryCode) {
+        case '레포츠':
+          iconSvgContent = `
+            <circle cx="-4" cy="4" r="3" stroke="white" stroke-width="1.5" fill="none"/>
+            <circle cx="4" cy="4" r="3" stroke="white" stroke-width="1.5" fill="none"/>
+            <path d="M-4,4 L0,-2 L4,4 M0,-2 L0,1"
+                  stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M-1,-2 L1,-2"
+                  stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+          `;
+          break;
+
+        case '추천코스':
+          iconSvgContent = `
+            <path d="M0,-6 L1.5,-2 L6,-2 L2.5,1 L4,6 L0,3 L-4,6 L-2.5,1 L-6,-2 L-1.5,-2 Z"
+                  fill="white" stroke="white" stroke-width="1"/>
+          `;
+          break;
+
+        case '인문(문화/예술/역사)':
+          iconSvgContent = `
+            <path d="M-7,-4 L0,-7 L7,-4 Z" fill="white" stroke="white" stroke-width="1"/>
+            <rect x="-6" y="-3" width="2" height="8" fill="white"/>
+            <rect x="-1" y="-3" width="2" height="8" fill="white"/>
+            <rect x="4" y="-3" width="2" height="8" fill="white"/>
+            <rect x="-7" y="5" width="14" height="1" fill="white"/>
+          `;
+          break;
+
+        case '자연':
+          iconSvgContent = `
+            <circle cx="0" cy="-3" r="4" fill="white"/>
+            <circle cx="-3" cy="-1" r="3" fill="white"/>
+            <circle cx="3" cy="-1" r="3" fill="white"/>
+            <rect x="-1" y="1" width="2" height="5" fill="white"/>
+          `;
+          break;
+
+        case '숙박':
+          iconSvgContent = `
+              <rect x="-8" y="-5" width="2.5" height="7" fill="white" rx="0.5"/>
+              <rect x="-5.5" y="-0.5" width="12" height="4" fill="white" rx="0.5"/>
+              <rect x="-4.5" y="-3" width="4" height="2.5" fill="white" rx="0.5"/>
+              <rect x="-5.5" y="3.5" width="2" height="3.5" fill="white"/>
+              <rect x="4.5" y="3.5" width="2" height="3.5" fill="white"/>
+          `;
+          break;
+
+        case '음식':
+          iconSvgContent = `
+              <path d="M-5.5,-7 L-5.5,-1 M-7,-7 L-7,-2 C-7,-1 -6,-1 -5.5,-1 M-4,-7 L-4,-2 C-4,-1 -5,-1 -5.5,-1 M-5.5,-1 L-5.5,7"
+                    stroke="white" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M3.5,-7 L3.5,7 M3.5,-7 L6,-6 L6,-4 L3.5,-2.5"
+                    stroke="white" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          `;
+          break;
+
+        default:
+          iconSvgContent = `
+              <circle cx="0" cy="0" r="6" fill="white"/>
+            `;
+      }
+
+      if (!isInItinerary) {
+        return getCircleMarkerWithIconSvg(
+          color,
+          strokeColor,
+          strokeWidth,
+          iconSvgContent
+        );
+      }
       const isMarkedOnly = markedPoi && markedPoi.status === 'MARKED';
       const scheduleInfo = markedPoi?.id
         ? scheduledPoiData.get(markedPoi.id)
@@ -307,99 +423,18 @@ const PlaceMarker = memo(
       const recommendedLabelInfo = recommendedPoiLabelData.get(place.id);
       const badgeInfo = scheduleInfo || recommendedLabelInfo;
 
-      const categoryInfo =
-        CATEGORY_INFO[categoryCode as keyof typeof CATEGORY_INFO];
-      const color =
-        NEW_CATEGORY_COLORS[categoryCode] || categoryInfo?.color || '#808080';
-      const strokeColor = 'white';
-      const strokeWidth = '2';
-
-      let iconSvg = '';
-
-      switch (categoryCode) {
-        case '레포츠':
-          iconSvg = `
-          <g transform="translate(20, 18)">
-            <circle cx="-4" cy="4" r="3" stroke="white" stroke-width="1.5" fill="none"/>
-            <circle cx="4" cy="4" r="3" stroke="white" stroke-width="1.5" fill="none"/>
-            <path d="M-4,4 L0,-2 L4,4 M0,-2 L0,1"
-                  stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M-1,-2 L1,-2"
-                  stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-          </g>
-        `;
-          break;
-
-        case '추천코스':
-          iconSvg = `
-          <g transform="translate(20, 18)">
-            <path d="M0,-6 L1.5,-2 L6,-2 L2.5,1 L4,6 L0,3 L-4,6 L-2.5,1 L-6,-2 L-1.5,-2 Z"
-                  fill="white" stroke="white" stroke-width="1"/>
-          </g>
-        `;
-          break;
-
-        case '인문(문화/예술/역사)':
-          iconSvg = `
-          <g transform="translate(20, 18)">
-            <path d="M-7,-4 L0,-7 L7,-4 Z" fill="white" stroke="white" stroke-width="1"/>
-            <rect x="-6" y="-3" width="2" height="8" fill="white"/>
-            <rect x="-1" y="-3" width="2" height="8" fill="white"/>
-            <rect x="4" y="-3" width="2" height="8" fill="white"/>
-            <rect x="-7" y="5" width="14" height="1" fill="white"/>
-          </g>
-        `;
-          break;
-
-        case '자연':
-          iconSvg = `
-          <g transform="translate(20, 18)">
-            <circle cx="0" cy="-3" r="4" fill="white"/>
-            <circle cx="-3" cy="-1" r="3" fill="white"/>
-            <circle cx="3" cy="-1" r="3" fill="white"/>
-            <rect x="-1" y="1" width="2" height="5" fill="white"/>
-          </g>
-        `;
-          break;
-
-        case '숙박':
-          iconSvg = `
-            <g transform="translate(20, 18)">
-              <rect x="-8" y="-5" width="2.5" height="7" fill="white" rx="0.5"/>
-              <rect x="-5.5" y="-0.5" width="12" height="4" fill="white" rx="0.5"/>
-              <rect x="-4.5" y="-3" width="4" height="2.5" fill="white" rx="0.5"/>
-              <rect x="-5.5" y="3.5" width="2" height="3.5" fill="white"/>
-              <rect x="4.5" y="3.5" width="2" height="3.5" fill="white"/>
-            </g>
-          `;
-          break;
-
-        case '음식':
-          iconSvg = `
-            <g transform="translate(20, 18)">
-              <path d="M-5.5,-7 L-5.5,-1 M-7,-7 L-7,-2 C-7,-1 -6,-1 -5.5,-1 M-4,-7 L-4,-2 C-4,-1 -5,-1 -5.5,-1 M-5.5,-1 L-5.5,7"
-                    stroke="white" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M3.5,-7 L3.5,7 M3.5,-7 L6,-6 L6,-4 L3.5,-2.5"
-                    stroke="white" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-            </g>
-          `;
-          break;
-
-        default:
-          iconSvg = `
-              <circle cx="16" cy="16" r="6" fill="white"/>
-            `;
-      }
-
       const svg = `
       <svg width="44" height="48" viewBox="0 -6 48 52" xmlns="http://www.w3.org/2000/svg">
         <path d="M20 0C11 0 4 8 4 18c0 12 16 28 16 28s16-16 16-28C36 8 29 0 20 0z"
               fill="${color}" 
               stroke="${strokeColor}" stroke-width="${strokeWidth}"/>
+        <g transform="translate(20, 18) scale(0.8)">
+          ${iconSvgContent}
+        </g>
         ${
           badgeInfo
             ? `
-          <g transform="translate(34, 4)">
+          <g transform="translate(38, 0)">
             <circle cx="0" cy="0" r="10" fill="${badgeInfo.color}" stroke="white" stroke-width="2"/>
             <text x="0" y="0" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="white" text-anchor="middle" alignment-baseline="central">
               ${badgeInfo.label}
@@ -408,7 +443,6 @@ const PlaceMarker = memo(
         `
             : ''
         }
-        ${iconSvg}
         ${
           isMarkedOnly
             ? `
@@ -422,35 +456,32 @@ const PlaceMarker = memo(
       return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
     };
 
-    const markedPoi = findPoiByCoordinates(
-      pois,
-      place.latitude,
-      place.longitude
-    );
+    const isVisible = true;
+
     const markerImageSrc = getMarkerImageSrc(place, markedPoi);
+    const size = { width: 44, height: 48 };
+    const offset = { x: 22, y: 48 };
+
     const markerImage = {
       src: markerImageSrc,
-      size: { width: 44, height: 48 },
+      size,
       options: {
-        offset: { x: 22, y: 48 },
+        offset,
       },
     };
 
-    const isMarked = !!markedPoi;
     return (
       <>
         <MapMarker
           position={{ lat: place.latitude, lng: place.longitude }}
           image={markerImage}
-          clickable={true}
-          onMouseOver={handleMouseOver}
-          onMouseOut={handleMouseOut}
-          onClick={handleClick}
-          zIndex={
-            scheduledPoiData.has(markedPoi?.id ?? '') ? 3 : isMarked ? 2 : 1
-          }
+          clickable={isVisible}
+          onMouseOver={isVisible ? handleMouseOver : undefined}
+          onMouseOut={isVisible ? handleMouseOut : undefined}
+          onClick={isVisible ? handleClick : undefined}
+          zIndex={isInItinerary ? 2 : 0}
         />
-        {isInfoWindowOpen && (
+        {isVisible && isInfoWindowOpen && (
           <CustomOverlayMap
             position={{ lat: place.latitude, lng: place.longitude }}
             xAnchor={0.5}
@@ -475,7 +506,7 @@ const PlaceMarker = memo(
             </div>
           </CustomOverlayMap>
         )}
-        {place.id === highlightedPlaceId && (
+        {isVisible && place.id === highlightedPlaceId && (
           <CustomOverlayMap
             position={{ lat: place.latitude, lng: place.longitude }}
             zIndex={0}
@@ -506,27 +537,69 @@ const DayRouteRenderer = memo(
       <>
         {segments && segments.length > 0
           ? segments.map((segment, index) => (
-              <Polyline
-                key={`${layer.id}-segment-${index}`}
-                path={segment.path}
-                strokeWeight={5}
-                strokeColor={layer.color}
-                strokeOpacity={isVisible ? 0.9 : 0}
-                strokeStyle={'solid'}
-              />
+              <React.Fragment key={`${layer.id}-segment-${index}`}>
+                <Polyline
+                  path={segment.path}
+                  strokeWeight={10}
+                  strokeColor={'#000000'}
+                  strokeOpacity={isVisible ? 0.9 : 0}
+                  strokeStyle={'solid'}
+                  zIndex={1}
+                />
+                <Polyline
+                  path={segment.path}
+                  strokeWeight={8}
+                  strokeColor={'#5194F7'}
+                  strokeOpacity={isVisible ? 0.9 : 0}
+                  strokeStyle={'solid'}
+                  zIndex={1}
+                />
+                <Polyline
+                  path={segment.path}
+                  strokeWeight={2}
+                  strokeColor={'#FFFFFF'}
+                  strokeOpacity={isVisible ? 0.7 : 0}
+                  strokeStyle={'dash'}
+                  zIndex={1}
+                />
+              </React.Fragment>
             ))
           : dayPois.length > 1 && (
-              <Polyline
-                key={layer.id}
-                path={dayPois.map((poi) => ({
-                  lat: poi.latitude,
-                  lng: poi.longitude,
-                }))}
-                strokeWeight={5}
-                strokeColor={layer.color}
-                strokeOpacity={isVisible ? 0.9 : 0}
-                strokeStyle={'solid'}
-              />
+              <React.Fragment key={layer.id}>
+                <Polyline
+                  path={dayPois.map((poi) => ({
+                    lat: poi.latitude,
+                    lng: poi.longitude,
+                  }))}
+                  strokeWeight={11}
+                  strokeColor={'#888888'}
+                  strokeOpacity={isVisible ? 0.9 : 0}
+                  strokeStyle={'solid'}
+                  zIndex={1}
+                />
+                <Polyline
+                  path={dayPois.map((poi) => ({
+                    lat: poi.latitude,
+                    lng: poi.longitude,
+                  }))}
+                  strokeWeight={8}
+                  strokeColor={'#5194F7'}
+                  strokeOpacity={isVisible ? 0.9 : 0}
+                  strokeStyle={'solid'}
+                  zIndex={1}
+                />
+                <Polyline
+                  path={dayPois.map((poi) => ({
+                    lat: poi.latitude,
+                    lng: poi.longitude,
+                  }))}
+                  strokeWeight={3}
+                  strokeColor={'#FFFFFF'}
+                  strokeOpacity={isVisible ? 0.7 : 0}
+                  strokeStyle={'dash'}
+                  zIndex={1}
+                />
+              </React.Fragment>
             )}
 
         {segments &&
@@ -599,7 +672,7 @@ export function MapPanel({
   itineraryAiPlaces,
   chatAiPlaces,
   isProgrammaticMove,
-  schedulePosition,
+  // schedulePosition, // 제거
 }: MapPanelProps) {
   const defaultCenter = { lat: 33.450701, lng: 126.570667 };
   const [mapInstance, setMapInstance] = useState<kakao.maps.Map | null>(null);
@@ -609,6 +682,7 @@ export function MapPanel({
   const [dailyRouteInfo, setDailyRouteInfo] = useState<
     Record<string, RouteSegment[]>
   >({});
+  const [zoomLevel, setZoomLevel] = useState(3);
   const [visibleCategories, setVisibleCategories] = useState<Set<string>>(
     new Set(Object.keys(CATEGORY_INFO))
   );
@@ -617,7 +691,27 @@ export function MapPanel({
   const [highlightedPlaceId, setHighlightedPlaceId] = useState<string | null>(
     null
   );
-  const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isOptimizingRef = useRef(false);
+  const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+
+  const itineraryRef = useRef(itinerary);
+
+  useEffect(() => {
+    itineraryRef.current = itinerary;
+  }, [itinerary]);
+
+  const onRouteOptimizedRef = useRef(onRouteOptimized);
+  const onOptimizationCompleteRef = useRef(onOptimizationComplete);
+
+  useEffect(() => {
+    onRouteOptimizedRef.current = onRouteOptimized;
+  }, [onRouteOptimized]);
+
+  useEffect(() => {
+    onOptimizationCompleteRef.current = onOptimizationComplete;
+  }, [onOptimizationComplete]);
 
   const [recommendedRouteInfo, setRecommendedRouteInfo] = useState<
     Record<string, RouteSegment[]>
@@ -634,7 +728,9 @@ export function MapPanel({
   }, [recommendedItinerary]);
 
   const [chatBubbles, setChatBubbles] = useState<Record<string, string>>({});
-  const chatBubbleTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const chatBubbleTimers = useRef<
+    Record<string, ReturnType<typeof setTimeout>>
+  >({});
 
   useEffect(() => {
     if (latestChatMessage) {
@@ -660,6 +756,32 @@ export function MapPanel({
       Object.values(chatBubbleTimers.current).forEach(clearTimeout);
     };
   }, [latestChatMessage]);
+
+  useEffect(() => {
+    if (!mapInstance) return;
+
+    const handleZoomChanged = () => {
+      setZoomLevel(mapInstance.getLevel());
+    };
+
+    window.kakao.maps.event.addListener(
+      mapInstance,
+      'zoom_changed',
+      handleZoomChanged
+    );
+
+    handleZoomChanged();
+
+    return () => {
+      if (mapInstance) {
+        window.kakao.maps.event.removeListener(
+          mapInstance,
+          'zoom_changed',
+          handleZoomChanged
+        );
+      }
+    };
+  }, [mapInstance]);
 
   useEffect(() => {
     if (mapInstance && initialCenter) {
@@ -1115,17 +1237,22 @@ export function MapPanel({
   }, [recommendedItinerary]);
 
   useEffect(() => {
-    if (!optimizingDayId) return;
+    if (!optimizingDayId) {
+      isOptimizingRef.current = false;
+      return;
+    }
+
+    if (isOptimizingRef.current) return;
 
     console.log(`[Effect] Optimizing route for day: ${optimizingDayId}`);
 
     const optimizeRoute = async () => {
-      const dayPois = itinerary[optimizingDayId];
+      const dayPois = itineraryRef.current[optimizingDayId];
       if (!dayPois) {
         console.warn(
           `[Optimization] No POIs found for day ${optimizingDayId}.`
         );
-        onOptimizationComplete?.();
+        onOptimizationCompleteRef.current?.();
         return;
       }
 
@@ -1135,6 +1262,7 @@ export function MapPanel({
       );
 
       try {
+        isOptimizingRef.current = true;
         const poi_list = dayPois.map((poi) => ({
           id: poi.id,
           latitude: poi.latitude,
@@ -1171,7 +1299,7 @@ export function MapPanel({
             optimizedPoiNames
           );
 
-          onRouteOptimized(optimizingDayId, result.ids);
+          onRouteOptimizedRef.current?.(optimizingDayId, result.ids);
         }
       } catch (error) {
         console.error(
@@ -1179,12 +1307,13 @@ export function MapPanel({
           error
         );
       } finally {
-        onOptimizationComplete?.();
+        isOptimizingRef.current = false;
+        onOptimizationCompleteRef.current?.();
       }
     };
 
     optimizeRoute();
-  }, [optimizingDayId, itinerary, onRouteOptimized, onOptimizationComplete]);
+  }, [optimizingDayId]);
 
   const scheduledPoiData = new Map<string, { label: string; color: string }>();
   dayLayers.forEach((dayLayer) => {
@@ -1291,6 +1420,24 @@ export function MapPanel({
   );
 
   const filteredPlacesToRender = allPlacesToRender.filter((place) => {
+    const markedPoi = findPoiByCoordinates(
+      pois,
+      place.latitude,
+      place.longitude
+    );
+
+    // Itinerary POIs are controlled *only* by day visibility.
+    if (markedPoi && markedPoi.planDayId) {
+      return visibleDayIds.has(markedPoi.planDayId);
+    }
+
+    const recommendedDayId = recommendedPoiMap.get(place.id);
+    // Recommended POIs are also controlled by day visibility.
+    if (recommendedDayId) {
+      return visibleDayIds.has(recommendedDayId);
+    }
+
+    // If a place is not part of an itinerary, show it if it's famous or its category is visible.
     if (famousPlaceIds.has(place.id)) {
       return true;
     }
@@ -1299,21 +1446,8 @@ export function MapPanel({
       return true;
     }
 
-    const markedPoi = findPoiByCoordinates(
-      pois,
-      place.latitude,
-      place.longitude
-    );
-    if (
-      markedPoi &&
-      markedPoi.planDayId &&
-      visibleDayIds.has(markedPoi.planDayId)
-    ) {
-      return true;
-    }
-
-    const recommendedDayId = recommendedPoiMap.get(place.id);
-    return !!recommendedDayId && visibleDayIds.has(recommendedDayId);
+    // Default to not showing.
+    return false;
   });
 
   return (
@@ -1384,88 +1518,78 @@ export function MapPanel({
           });
         }}
       >
-        {schedulePosition !== 'overlay' && (
-          <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-2 p-1.5">
-            <button
-              onClick={() => setShowFamousPlaces(!showFamousPlaces)}
-              className="p-1.5 text-gray-600 bg-white rounded-full shadow-md hover:bg-gray-100 flex-shrink-0"
-            >
-              <Star
-                size={18}
-                className={
-                  showFamousPlaces ? 'text-yellow-400 fill-current' : ''
-                }
-              />
-            </button>
-            <div className="border-l border-gray-300 h-6" />
-            <button
-              onClick={() =>
-                setIsCategoryFilterVisible(!isCategoryFilterVisible)
-              }
-              className="p-1.5 text-gray-600 bg-white rounded-full shadow-md hover:bg-gray-100 flex-shrink-0"
-            >
-              {isCategoryFilterVisible ? (
-                <ChevronsRight size={18} />
-              ) : (
-                <Filter size={18} />
-              )}
-            </button>
-            <div
-              className="grid transition-all duration-300 ease-in-out"
-              style={{
-                gridTemplateColumns: isCategoryFilterVisible ? '1fr' : '0fr',
-              }}
-            >
-              <div className="overflow-hidden">
-                <div className="flex items-center gap-2 min-w-max pr-1">
-                  <div className="border-l border-gray-300 h-6" />
+        <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-2 p-1.5">
+          <button
+            onClick={() => setShowFamousPlaces(!showFamousPlaces)}
+            className="p-1.5 text-gray-600 bg-white rounded-full shadow-md hover:bg-gray-100 flex-shrink-0"
+          >
+            <Star
+              size={18}
+              className={showFamousPlaces ? 'text-yellow-400 fill-current' : ''}
+            />
+          </button>
+          <div className="border-l border-gray-300 h-6" />
+          <button
+            onClick={() => setIsCategoryFilterVisible(!isCategoryFilterVisible)}
+            className="p-1.5 text-gray-600 bg-white rounded-full shadow-md hover:bg-gray-100 flex-shrink-0"
+          >
+            {isCategoryFilterVisible ? (
+              <ChevronsRight size={18} />
+            ) : (
+              <Filter size={18} />
+            )}
+          </button>
+          <div
+            className="grid transition-all duration-300 ease-in-out"
+            style={{
+              gridTemplateColumns: isCategoryFilterVisible ? '1fr' : '0fr',
+            }}
+          >
+            <div className="overflow-hidden">
+              <div className="flex items-center gap-2 min-w-max pr-1">
+                <div className="border-l border-gray-300 h-6" />
+                <button
+                  onClick={handleToggleAllCategories}
+                  className="whitespace-nowrap px-3 py-1.5 text-lg font-semibold rounded-full shadow-md transition-all duration-200 flex justify-center items-center gap-1.5"
+                  style={{
+                    backgroundColor:
+                      visibleCategories.size ===
+                      Object.keys(CATEGORY_INFO).length
+                        ? '#374151'
+                        : 'white',
+                    color:
+                      visibleCategories.size ===
+                      Object.keys(CATEGORY_INFO).length
+                        ? 'white'
+                        : '#4B5563',
+                  }}
+                >
+                  전체
+                </button>
+
+                {Object.entries(CATEGORY_INFO).map(([key, { name, color }]) => (
                   <button
-                    onClick={handleToggleAllCategories}
-                    className="whitespace-nowrap px-3 py-1.5 text-xs font-semibold rounded-full shadow-md transition-all duration-200 flex justify-center items-center gap-1.5"
+                    key={key}
+                    onClick={() => handleCategoryToggle(key)}
+                    className="whitespace-nowrap px-3 py-1.5 text-lg font-semibold rounded-full shadow-md transition-all duration-200 flex justify-center items-center gap-1.5"
                     style={{
-                      backgroundColor:
-                        visibleCategories.size ===
-                        Object.keys(CATEGORY_INFO).length
-                          ? '#374151'
-                          : 'white',
-                      color:
-                        visibleCategories.size ===
-                        Object.keys(CATEGORY_INFO).length
-                          ? 'white'
-                          : '#4B5563',
+                      backgroundColor: visibleCategories.has(key)
+                        ? NEW_CATEGORY_COLORS[key] || color
+                        : 'white',
+                      color: visibleCategories.has(key) ? 'white' : '#4B5563',
                     }}
                   >
-                    전체
+                    <CategoryIcon
+                      category={key as CategoryCode}
+                      className="w-4 h-4"
+                    />
+                    {name}
                   </button>
-
-                  {Object.entries(CATEGORY_INFO).map(
-                    ([key, { name, color }]) => (
-                      <button
-                        key={key}
-                        onClick={() => handleCategoryToggle(key)}
-                        className="whitespace-nowrap px-3 py-1.5 text-xs font-semibold rounded-full shadow-md transition-all duration-200 flex justify-center items-center gap-1.5"
-                        style={{
-                          backgroundColor: visibleCategories.has(key)
-                            ? NEW_CATEGORY_COLORS[key] || color
-                            : 'white',
-                          color: visibleCategories.has(key)
-                            ? 'white'
-                            : '#4B5563',
-                        }}
-                      >
-                        <CategoryIcon
-                          category={key as CategoryCode}
-                          className="w-4 h-4"
-                        />
-                        {name}
-                      </button>
-                    )
-                  )}
-                </div>
+                ))}
               </div>
             </div>
           </div>
-        )}
+        </div>
         {filteredPlacesToRender.map((place) => (
           <PlaceMarker
             key={`${place.id}-${place.latitude}-${place.longitude}`}
@@ -1478,6 +1602,7 @@ export function MapPanel({
             scheduledPoiData={scheduledPoiData}
             recommendedPoiLabelData={recommendedPoiLabelData}
             highlightedPlaceId={highlightedPlaceId}
+            zoomLevel={zoomLevel}
           />
         ))}
 
@@ -1590,8 +1715,8 @@ export function MapPanel({
                   src={cursorData.userAvatar}
                   alt={cursorData.userName}
                   style={{
-                    width: '24px',
-                    height: '24px',
+                    width: '32px',
+                    height: '32px',
                     borderRadius: '50%',
                     border: '1px solid white',
                     boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
@@ -1636,11 +1761,14 @@ export function MapPanel({
                       style={{
                         background: 'rgba(0, 0, 0, 0.75)',
                         color: 'white',
-                        padding: '8px 12px',
+                        padding: '6px 10px',
                         borderRadius: '8px',
-                        fontSize: '13px',
-                        whiteSpace: 'nowrap',
-                        maxWidth: '200px',
+                        fontSize: '14px',
+                        lineHeight: '1.2',
+                        whiteSpace: 'normal',
+                        wordBreak: 'break-word',
+                        maxWidth: '300px',
+                        minWidth: '200px',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
@@ -1673,14 +1801,24 @@ export function MapPanel({
           const routeColor = dayLayer ? dayLayer.color : '#FF00FF';
 
           return segments.map((segment, index) => (
-            <Polyline
-              key={`rec-${dayId}-segment-${index}`}
-              path={segment.path}
-              strokeWeight={5}
-              strokeColor={routeColor}
-              strokeOpacity={isVisible ? 0.7 : 0}
-              strokeStyle={'dashed'}
-            />
+            <React.Fragment key={`rec-${dayId}-segment-${index}`}>
+              <Polyline
+                path={segment.path}
+                strokeWeight={7}
+                strokeColor={'#000000'}
+                strokeOpacity={isVisible ? 0.7 : 0}
+                strokeStyle={'dashed'}
+                zIndex={1}
+              />
+              <Polyline
+                path={segment.path}
+                strokeWeight={5}
+                strokeColor={routeColor}
+                strokeOpacity={isVisible ? 0.7 : 0}
+                strokeStyle={'dashed'}
+                zIndex={1}
+              />
+            </React.Fragment>
           ));
         })}
 
@@ -1825,10 +1963,10 @@ export function MapPanel({
         </div>
       )}
 
-      <div
+      {/* <div
         id="map-video-overlay-root"
         className="pointer-events-none absolute top-3 right-3 z-30 flex flex-col items-end gap-2"
-      />
+      /> */}
     </div>
   );
 }

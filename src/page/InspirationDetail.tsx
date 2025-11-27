@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MapPin } from 'lucide-react';
 import { Map as KakaoMap, MapMarker } from 'react-kakao-maps-sdk';
-import { Button } from '../components/ui/button';
 import { InspirationCard } from '../components/InspirationCard';
 import { usePlaceDetail } from '../hooks/usePlaceDetail'; // 커스텀 훅 임포트
 
@@ -23,19 +22,6 @@ export function InspirationDetail() {
       });
     }
   }, [placeDetail]);
-
-  const handlePlanTrip = () => {
-    // CreatePostModal로 라우팅 (장소 정보 전달: 이름, 주소, 좌표)
-    navigate('/post', {
-      state: {
-        placeId: placeDetail?.id,
-        placeName: placeDetail?.title,
-        placeAddress: placeDetail?.address,
-        placeLatitude: placeDetail?.latitude,
-        placeLongitude: placeDetail?.longitude,
-      },
-    });
-  };
 
   const handleNearbyPlaceClick = (nearbyPlaceId: string) => {
     navigate(`/inspiration/${nearbyPlaceId}`);
@@ -105,12 +91,6 @@ export function InspirationDetail() {
               {placeDetail.address}
             </p>
           </div>
-          <Button
-            onClick={handlePlanTrip}
-            className="w-fit bg-white text-black hover:bg-gray-100 rounded-full px-6 py-2 text-lg font-medium"
-          >
-            여행을 계획하세요.
-          </Button>
         </div>
 
         {/* 소개 섹션 */}

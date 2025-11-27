@@ -1,12 +1,13 @@
 import {
-  Map,
   FileText,
   Plane,
   LogIn,
   Heart,
   Sparkles,
+  Plus, // PlusCircle 대신 Plus 아이콘으로 변경
   ChevronLeft,
   ChevronRight,
+  Flame,
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { useAuthStore } from '../store/authStore';
@@ -27,8 +28,9 @@ export function Sidebar({
   isLoggedIn,
   onLoginClick,
   onProfileClick,
+  onCreatePost,
 }: SidebarProps) {
-  const { user } = useAuthStore();
+  const { user, isAuthLoading } = useAuthStore(); // isAuthLoading 추가
   const location = useLocation();
   const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(true);
@@ -36,6 +38,11 @@ export function Sidebar({
 
   useEffect(() => {
     let cancelled = false;
+
+    // isAuthLoading 중에는 프로필 이미지 페칭을 하지 않음
+    if (isAuthLoading) {
+      return;
+    }
 
     const fetchProfileImage = async () => {
       const imageId = user?.profile?.profileImageId;
@@ -63,29 +70,75 @@ export function Sidebar({
     return () => {
       cancelled = true;
     };
-  }, [user?.profile?.profileImageId]);
+  }, [user?.profile?.profileImageId, isAuthLoading]); // isAuthLoading 의존성 추가
 
   const isActive = (path: string) => location.pathname === path;
+
+  // 인증 로딩 중일 때 스켈레톤 UI를 보여줍니다.
+  if (isAuthLoading) {
+    return (
+      <div
+        className={`relative flex shrink-0 bg-white border-r border-gray-200 h-screen flex-col animate-pulse ${
+          isExpanded ? 'w-[260px]' : 'w-[80px]'
+        }`}
+      >
+        {/* Logo Skeleton */}
+        <div className="border-b border-gray-200 py-6 h-[81px] flex items-center justify-center">
+          <div className="w-14 h-14 bg-gray-200 rounded-full"></div>
+          {isExpanded && (
+            <div className="h-6 w-24 bg-gray-200 rounded ml-2"></div>
+          )}
+        </div>
+
+        {/* Navigation Menu Skeleton */}
+        <nav className="flex-1 px-2 py-4 flex flex-col gap-1">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div
+              key={i}
+              className={`h-12 bg-gray-200 rounded-[10px] ${isExpanded ? 'w-full' : 'w-12 mx-auto'}`}
+            ></div>
+          ))}
+        </nav>
+
+        {/* Bottom Section Skeleton */}
+        <div className="border-t border-gray-200 px-4 py-4 mt-2">
+          <div
+            className={`flex items-center justify-between ${isExpanded ? 'flex-row gap-3' : 'flex-col gap-10'}`}
+          >
+            <div className="w-11 h-11 rounded-full bg-gray-200"></div>
+            {isExpanded && <div className="h-4 w-20 bg-gray-200 rounded"></div>}
+          </div>
+        </div>
+
+        {/* Toggle Button Skeleton (기존 버튼과 동일한 위치에 회색 블록으로 표시) */}
+        <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-5 h-20 bg-gray-200 rounded-lg"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative flex shrink-0">
       <div
         className={`bg-white border-r border-gray-200 h-screen flex flex-col shrink-0 transition-all duration-300 ${
-          isExpanded ? 'w-[180px]' : 'w-[64px]'
+          isExpanded ? 'w-[260px]' : 'w-[80px]'
         }`}
       >
         {/* Logo Section */}
-        <div className="border-b border-gray-200 px-6 py-6 h-[81px] flex items-center">
+        <div
+          className={`border-b border-gray-200 py-6 h-[81px] flex items-center justify-center ${isExpanded ? 'px-6' : 'px-4'}`}
+        >
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/main')}
             className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
           >
-            <div className="w-8 h-8 bg-[#101828] rounded-[10px] flex items-center justify-center shrink-0">
-              <Map className="w-5 h-5 text-white" />
-            </div>
+            <img
+              src="/logo-without-title.png"
+              alt="MateTrip Logo"
+              className="w-14 h-14 shrink-0"
+            />
             {isExpanded && (
               <span
-                className="text-2xl text-gray-900 whitespace-nowrap"
+                className="text-3xl text-gray-900 whitespace-nowrap"
                 style={{ fontFamily: 'Princess Sofia, cursive' }}
               >
                 MateTrip
@@ -95,41 +148,23 @@ export function Sidebar({
         </div>
 
         {/* Navigation Menu */}
-        <nav className="flex-1 px-2 py-4 flex flex-col justify-between">
+        <nav className="flex-1 px-2 py-4 flex flex-col">
           <div className="flex flex-col gap-1">
-            {/* AI Chat */}
-            {/* <button
-            onClick={handleAIChatClick}
-            className={`flex items-center gap-3 h-12 rounded-[10px] transition-colors ${
-              isExpanded ? 'px-4' : 'justify-center'
-            } ${
-              isActive('/ai-chat')
-                ? 'bg-[#101828] text-white'
-                : 'text-[#364153] hover:bg-gray-100'
-            }`}
-            title={!isExpanded ? 'AI Chat' : ''}
-          >
-            <MessageSquare className="w-5 h-5 shrink-0" />
-            {isExpanded && <span className="font-normal text-base whitespace-nowrap">AI Chat</span>}
-          </button> */}
-
-            {/* 여행 모두보기 */}
-
             {/* Main */}
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/main')}
               className={`flex items-center gap-3 h-12 rounded-[10px] transition-colors ${
                 isExpanded ? 'px-4' : 'justify-center'
               } ${
-                isActive('/')
-                  ? 'bg-[#101828] text-white'
-                  : 'text-[#364153] hover:bg-gray-100'
+                isActive('/main')
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-[#364153] hover:bg-primary hover:text-primary-foreground'
               }`}
               title={!isExpanded ? 'AI 동행 찾기' : ''}
             >
               <Plane className="w-5 h-5 shrink-0" />
               {isExpanded && (
-                <span className="font-normal text-base whitespace-nowrap">
+                <span className="font-normal text-lg whitespace-nowrap">
                   Main
                 </span>
               )}
@@ -142,14 +177,14 @@ export function Sidebar({
                 isExpanded ? 'px-4' : 'justify-center'
               } ${
                 isActive('/ai-matching')
-                  ? 'bg-[#101828] text-white'
-                  : 'text-[#364153] hover:bg-gray-100'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-[#364153] hover:bg-primary hover:text-primary-foreground'
               }`}
               title={!isExpanded ? 'All-Trip' : ''}
             >
               <Sparkles className="w-5 h-5 shrink-0" />
               {isExpanded && (
-                <span className="font-normal text-base whitespace-nowrap">
+                <span className="font-normal text-lg whitespace-nowrap">
                   메이트 매칭
                 </span>
               )}
@@ -162,14 +197,14 @@ export function Sidebar({
                 isExpanded ? 'px-4' : 'justify-center'
               } ${
                 isActive('/all-posts')
-                  ? 'bg-[#101828] text-white'
-                  : 'text-[#364153] hover:bg-gray-100'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-[#364153] hover:bg-primary hover:text-primary-foreground'
               }`}
               title={!isExpanded ? '모든 여행' : ''}
             >
               <FileText className="w-5 h-5 shrink-0" />
               {isExpanded && (
-                <span className="font-normal text-base whitespace-nowrap">
+                <span className="font-normal text-lg whitespace-nowrap">
                   모든 여행
                 </span>
               )}
@@ -183,14 +218,14 @@ export function Sidebar({
                   isExpanded ? 'px-4' : 'justify-center'
                 } ${
                   isActive('/save')
-                    ? 'bg-[#101828] text-white'
-                    : 'text-[#364153] hover:bg-gray-100'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-[#364153] hover:bg-primary hover:text-primary-foreground'
                 }`}
                 title={!isExpanded ? 'SAVE' : ''}
               >
                 <Heart className="w-5 h-5 shrink-0" />
                 {isExpanded && (
-                  <span className="font-normal text-base whitespace-nowrap">
+                  <span className="font-normal text-lg whitespace-nowrap">
                     나의 여행
                   </span>
                 )}
@@ -204,29 +239,46 @@ export function Sidebar({
                 isExpanded ? 'px-4' : 'justify-center'
               } ${
                 isActive('/inspiration')
-                  ? 'bg-[#101828] text-white'
-                  : 'text-[#364153] hover:bg-gray-100'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-[#364153] hover:bg-primary hover:text-primary-foreground'
               }`}
               title={!isExpanded ? 'Inspiration' : ''}
             >
-              <Sparkles className="w-5 h-5 shrink-0" />
+              <Flame className="w-5 h-5 shrink-0" />
               {isExpanded && (
-                <span className="font-normal text-base whitespace-nowrap">
+                <span className="font-normal text-lg whitespace-nowrap">
                   Hot Place
                 </span>
               )}
             </button>
           </div>
 
-          {/* Vertical Mate Trip Text */}
-          <div
-            className="flex justify-center items-center overflow-hidden transition-all duration-300"
-            style={{ height: isExpanded ? 'auto' : '100px' }}
-          ></div>
+          {/* Spacer */}
+          <div className="flex-grow" />
+
+          {/* 동행 모집 버튼 - 로그인 사용자만 */}
+          {isLoggedIn && (
+            <div className="px-2 mt-4">
+              <Button
+                onClick={onCreatePost}
+                className={`w-full h-14 rounded-[10px] bg-primary text-primary-foreground hover:bg-primary-strong transition-colors flex items-center justify-center gap-3 ${
+                  isExpanded ? 'px-4' : ''
+                }`}
+                title={!isExpanded ? '새로운 여행' : ''}
+              >
+                <Plus className="w-6 h-6 shrink-0" />
+                {isExpanded && (
+                  <span className="font-semibold text-lg whitespace-nowrap">
+                    새로운 여행
+                  </span>
+                )}
+              </Button>
+            </div>
+          )}
         </nav>
 
         {/* Bottom Section */}
-        <div className="border-t border-gray-200 px-4 py-4">
+        <div className="border-t border-gray-200 px-4 py-4 mt-2">
           {/* Profile or Login Section */}
           {isLoggedIn ? (
             <div
@@ -254,7 +306,7 @@ export function Sidebar({
                 </div>
                 {isExpanded && (
                   <div className="flex-1 text-left overflow-hidden transition-all duration-300">
-                    <p className="text-sm font-normal text-gray-900 truncate">
+                    <p className="text-lg font-normal text-gray-900 truncate">
                       {user?.profile.nickname}
                     </p>
                   </div>
@@ -267,13 +319,13 @@ export function Sidebar({
           ) : (
             <Button
               onClick={onLoginClick}
-              className={`w-full gap-2 bg-[#101828] hover:bg-[#1f2937] transition-all duration-300 ${
+              className={`w-full gap-2 bg-primary text-primary-foreground hover:bg-primary-strong transition-all duration-300 ${
                 !isExpanded ? 'px-2' : ''
               }`}
               title={!isExpanded ? '로그인' : ''}
             >
               <LogIn className="w-4 h-4" />
-              {isExpanded && '로그인'}
+              {isExpanded && <span className="text-base">로그인</span>}
             </Button>
           )}
         </div>

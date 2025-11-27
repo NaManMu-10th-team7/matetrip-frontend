@@ -1,19 +1,33 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+  MapPin,
+  Star,
+  CheckCircle,
+  ChevronRight,
+  Plus,
+  Sparkles,
+  Flame,
+} from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { PlaceRecommendationSection } from '../components/PlaceRecommendationSection';
-import { InspirationCard } from '../components/InspirationCard';
 import { PostDetail } from './PostDetail';
 import { useAuthStore } from '../store/authStore';
 import client, { API_BASE_URL } from '../api/client';
 import { type Post } from '../types/post';
-import { /*type PlaceDto,*/ type CategoryCode } from '../types/place'; // PlaceDto 임포트 제거
+import { type CategoryCode } from '../types/place';
 import type { MatchCandidateDto } from '../types/matching';
 import { GridMatchingCard } from '../components/GridMatchingCard';
 import { MainPostCardSkeleton } from '../components/AIMatchingSkeletion';
-import { PoiDetailPanel } from '../components/ScheduleSidebar'; // PoiDetailPanel 임포트
-// import { usePlaceDetail } from '../hooks/usePlaceDetail'; // usePlaceDetail 훅 임포트 - 제거
+import { PoiDetailPanel } from '../components/ScheduleSidebar';
+import PageContainer from '../components/PageContainer';
+import { CategoryIcon } from '../components/CategoryIcon';
+import { ReviewablePlacesCarousel } from '../components/ReviewablePlacesCarousel';
+import { RecommendedPlaceCard } from '../components/RecommendedPlaceCard';
+import type { AiPlace } from '../hooks/useChatSocket'; // AiPlace 임포트
+import type { Poi } from '../hooks/usePoiSocket'; // Poi 임포트
 
+// --- Interfaces ---
 interface PopularPlaceResponse {
   addplace_id: string;
   title: string;
@@ -32,7 +46,31 @@ interface Place {
   summary?: string;
   latitude: number;
   longitude: number;
-  category: CategoryCode; // category 필드 추가
+  category: CategoryCode;
+}
+
+interface ReviewablePlaceInfo {
+  id: string;
+  title: string;
+  address: string;
+  region: string;
+  latitude: number;
+  longitude: number;
+  category: string;
+  image_url: string;
+  tags: string[];
+  summary: string;
+  sido: string;
+  createdAt: string;
+  planDate: string;
+}
+
+interface ReviewableTrip {
+  post: {
+    id: string;
+    title: string;
+  };
+  places: ReviewablePlaceInfo[];
 }
 
 interface NewMainPageProps {
@@ -41,52 +79,271 @@ interface NewMainPageProps {
   onViewProfile: (userId: string) => void;
   onEditPost: (post: Post) => void;
   onDeleteSuccess?: () => void;
-  // onViewPost: (postId: string) => void; // onViewPost prop 제거
 }
 
-// type SelectedType = 'post' | 'place' | 'inspiration' | null; // 제거
+// --- Constants ---
+const CATEGORY_REVIEW_EXAMPLES: Record<string, string[]> = {
+  음식: [
+    '음식이 정말 맛있어요! 😋',
+    '분위기 좋은 맛집이에요.',
+    '가성비가 좋아서 만족스러웠어요.',
+    '직원분들이 친절해요.',
+  ],
+  숙박: [
+    '시설이 깨끗하고 편안했어요. 😴',
+    '직원분들이 친절하고 서비스가 좋았어요.',
+    '위치가 좋아서 여행하기 편했어요.',
+    '뷰가 정말 멋진 숙소였어요! 🌇',
+  ],
+  '인문(문화/예술/역사)': [
+    '유익하고 의미있는 시간이었어요. 🧐',
+    '볼거리가 많아서 시간 가는 줄 몰랐어요.',
+    '조용하고 평화로워서 힐링됐어요.',
+    '아이들과 함께 오기 좋은 곳 같아요.',
+  ],
+  자연: [
+    '경치가 정말 아름다워요. 🏞️',
+    '산책하기 좋은 곳이에요.',
+    '공기가 맑고 상쾌해서 좋았어요.',
+    '인생샷을 건질 수 있어요! 📸',
+  ],
+  default: [
+    '다음에 꼭 다시 방문하고 싶어요. 😊',
+    '기대했던 것보다는 조금 아쉬웠어요.',
+    '한 번쯤 가볼 만한 곳이에요.',
+    '전반적으로 만족스러웠습니다! 👍',
+  ],
+};
 
-// AIMatchingPage.tsx에서 가져온 헬퍼 함수들 (수정: 배열 반환)
+// --- Helper Functions ---
 const normalizeTextList = (values?: unknown): string[] => {
-  if (!values) {
-    return [];
-  }
-
+  if (!values) return [];
   const arrayValues = Array.isArray(values) ? values : [values];
-
-  const normalized = arrayValues
+  return arrayValues
     .map((value) => {
-      if (!value) {
-        return '';
-      }
+      if (!value) return '';
       if (typeof value === 'object') {
         const candidate = value as Record<string, unknown>;
-        if (typeof candidate.label === 'string') {
-          return candidate.label;
-        }
-        if (typeof candidate.value === 'string') {
-          return candidate.value;
-        }
-        if (typeof candidate.name === 'string') {
-          return candidate.name;
-        }
+        if (typeof candidate.label === 'string') return candidate.label;
+        if (typeof candidate.value === 'string') return candidate.value;
+        if (typeof candidate.name === 'string') return candidate.name;
       }
       return String(value);
     })
     .map((text) => text.trim())
     .filter((text) => text.length > 0);
-
-  return normalized;
 };
 
-// normalizeOverlapText는 이제 사용하지 않음 (개별 키워드 배열로 전달)
+// --- Sub-components ---
+function ReviewablePlaceCard({
+  place,
+  onClick,
+}: {
+  place: ReviewablePlaceInfo;
+  onClick: () => void;
+}) {
+  return (
+    <div
+      className="group flex flex-col w-80 cursor-pointer overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:shadow-lg mr-4 flex-shrink-0"
+      onClick={onClick}
+    >
+      <div className="relative h-48 bg-cover bg-center overflow-hidden w-full">
+        <img
+          src={place.image_url || 'https://via.placeholder.com/300x200'}
+          alt={place.title}
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+        />
+      </div>
+      <div className="flex flex-col flex-1 p-4">
+        <h3 className="text-lg font-bold text-gray-800 leading-snug truncate">
+          {place.title}
+        </h3>
+        <div className="flex flex-col gap-1.5 text-sm text-gray-600 mt-2">
+          <div className="flex items-center gap-1.5">
+            <CategoryIcon
+              category={place.category}
+              className="w-4 h-4 text-gray-400"
+            />
+            <span>{place.category}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <MapPin className="w-4 h-4 text-gray-400" />
+            <p className="truncate">{place.address}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
+function ReviewModal({
+  isOpen,
+  onClose,
+  place,
+  onSubmit,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  place: ReviewablePlaceInfo;
+  onSubmit: (review: {
+    placeId: string;
+    rating: number;
+    content: string;
+  }) => void;
+}) {
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [content, setContent] = useState('');
+
+  if (!isOpen) return null;
+
+  const handleSubmit = () => {
+    if (rating === 0) {
+      alert('별점을 선택해주세요.');
+      return;
+    }
+    if (!content.trim()) {
+      alert('리뷰 내용을 입력해주세요.');
+      return;
+    }
+    onSubmit({ placeId: place.id, rating, content });
+  };
+
+  const reviewExamples =
+    CATEGORY_REVIEW_EXAMPLES[place.category] ||
+    CATEGORY_REVIEW_EXAMPLES.default;
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/60 z-50 flex justify-center items-center"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div
+          className="relative h-32 bg-cover bg-center p-6 flex flex-col justify-end"
+          style={{ backgroundImage: `url(${place.image_url})` }}
+        >
+          <div className="absolute inset-0 bg-black/50" />
+          <div className="relative z-10">
+            <h2 className="text-2xl font-bold text-white">리뷰 작성하기</h2>
+            <p className="text-gray-200">
+              <span className="font-semibold">{place.title}</span>에서의 경험은
+              어떠셨나요?
+            </p>
+          </div>
+        </div>
+
+        <div className="p-6">
+          <div className="mb-5">
+            <label className="block text-lg font-bold text-gray-800 mb-2">
+              별점
+            </label>
+            <div className="flex items-center">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star
+                  key={star}
+                  className="w-9 h-9 cursor-pointer"
+                  fill={
+                    star <= (hoverRating || rating) ? '#FFC107' : 'transparent'
+                  }
+                  stroke={
+                    star <= (hoverRating || rating) ? '#FFC107' : '#A0A0A0'
+                  }
+                  onMouseEnter={() => setHoverRating(star)}
+                  onMouseLeave={() => setHoverRating(0)}
+                  onClick={() => setRating(star)}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="mb-6">
+            <label
+              htmlFor="review-content"
+              className="block text-lg font-bold text-gray-800 mb-2"
+            >
+              한 줄 리뷰
+            </label>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {reviewExamples.map((example) => (
+                <button
+                  key={example}
+                  type="button"
+                  onClick={() => setContent(example)}
+                  className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200 transition-colors"
+                >
+                  {example}
+                </button>
+              ))}
+            </div>
+            <input
+              type="text"
+              id="review-content"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="직접 입력하거나 위 예시를 선택하세요."
+              className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base"
+            />
+          </div>
+
+          <div className="flex justify-end space-x-3 mt-8">
+            <Button variant="ghost" onClick={onClose}>
+              취소
+            </Button>
+            <Button onClick={handleSubmit}>제출하기</Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// [신규] 성공 모달 컴포넌트
+function SuccessModal({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) {
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/60 z-50 flex justify-center items-center"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-lg shadow-xl w-full max-w-sm p-8 text-center"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100">
+          <CheckCircle className="h-10 w-10 text-green-600" />
+        </div>
+        <h2 className="text-2xl font-bold mt-4 mb-2 text-gray-800">
+          리뷰 등록 완료!
+        </h2>
+        <p className="text-gray-600 mb-6">
+          소중한 리뷰를 남겨주셔서 감사합니다.
+        </p>
+        <Button onClick={onClose} className="w-full">
+          확인
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// --- Main Component ---
 export function NewMainPage({
+  onCreatePost,
   onJoinWorkspace,
   onViewProfile,
   onEditPost,
   onDeleteSuccess,
-  // onViewPost, // Destructure onViewPost 제거
 }: NewMainPageProps) {
   const navigate = useNavigate();
   const { user, isAuthLoading } = useAuthStore();
@@ -96,40 +353,40 @@ export function NewMainPage({
   const [posts, setPosts] = useState<Post[]>([]);
   const [matches, setMatches] = useState<MatchCandidateDto[]>([]);
   const [inspirations, setInspirations] = useState<Place[]>([]);
+  const [reviewableTrips, setReviewableTrips] = useState<ReviewableTrip[]>([]);
 
   // Loading states
   const [isPostsLoading, setIsPostsLoading] = useState(true);
   const [isMatchesLoading, setIsMatchesLoading] = useState(true);
   const [isInspirationsLoading, setIsInspirationsLoading] = useState(true);
+  const [isReviewablePlacesLoading, setIsReviewablePlacesLoading] =
+    useState(true);
 
-  // Selection states (기존 PostDetail 모달 관련) - 제거
-  // const [selectedType, setSelectedType] = useState<SelectedType>(null);
-  // const [selectedId, setSelectedId] = useState<string | null>(null);
-  // const [showPostDetailModal, setShowPostDetailModal] = useState(false);
+  const [activeReviewTabs, setActiveReviewTabs] = useState<
+    Record<string, string>
+  >({});
 
-  // [신규] PoiDetailPanel 관련 상태
+  // Panel/Modal states
   const [showPlaceDetailPanel, setShowPlaceDetailPanel] = useState(false);
   const [selectedPlaceIdForPanel, setSelectedPlaceIdForPanel] = useState<
     string | null
   >(null);
-
-  // [신규] PostDetailPanel 관련 상태
   const [showPostDetailPanel, setShowPostDetailPanel] = useState(false);
   const [selectedPostIdForPanel, setSelectedPostIdForPanel] = useState<
     string | null
   >(null);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [selectedPlaceForReview, setSelectedPlaceForReview] =
+    useState<ReviewablePlaceInfo | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false); // [신규]
 
-  // 작성자 프로필 이미지 관리
   const [writerProfileImages, setWriterProfileImages] = useState<
     Record<string, string | null>
   >({});
 
-  // Fetch all posts
+  // --- Data Fetching Effects ---
   useEffect(() => {
-    if (isAuthLoading) {
-      return;
-    }
-
+    if (isAuthLoading) return; // 인증 로딩 중에는 데이터 페칭을 하지 않음
     const fetchPosts = async () => {
       setIsPostsLoading(true);
       try {
@@ -138,59 +395,44 @@ export function NewMainPage({
           (a, b) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
-        const recruiting = sorted.filter((post) => post.status === '모집중');
-        setPosts(recruiting);
+        setPosts(sorted.filter((post) => post.status === '모집중'));
       } catch (error) {
         console.error('Failed to fetch posts:', error);
       } finally {
         setIsPostsLoading(false);
       }
     };
-
     fetchPosts();
   }, [isAuthLoading]);
 
-  // Fetch matching data (로그인 필요)
   useEffect(() => {
     if (isAuthLoading || !isLoggedIn || !user?.userId) {
       setIsMatchesLoading(false);
       return;
     }
-
     let isMounted = true;
-
     const fetchMatches = async () => {
       setIsMatchesLoading(true);
       try {
         const response = await client.post<MatchCandidateDto[]>(
           '/profile/matching/search',
-          { limit: 5 }
+          { limit: 6 }
         );
-        if (!isMounted) return;
-        setMatches(response.data ?? []);
+        if (isMounted) setMatches(response.data ?? []);
       } catch (error) {
-        if (!isMounted) return;
-        console.error('Failed to fetch matches:', error);
+        if (isMounted) console.error('Failed to fetch matches:', error);
       } finally {
-        if (isMounted) {
-          setIsMatchesLoading(false);
-        }
+        if (isMounted) setIsMatchesLoading(false);
       }
     };
-
     fetchMatches();
-
     return () => {
       isMounted = false;
     };
   }, [isAuthLoading, isLoggedIn, user?.userId]);
 
-  // Fetch inspiration places
   useEffect(() => {
-    if (isAuthLoading) {
-      return;
-    }
-
+    if (isAuthLoading) return; // 인증 로딩 중에는 데이터 페칭을 하지 않음
     const fetchInspirations = async () => {
       setIsInspirationsLoading(true);
       try {
@@ -198,15 +440,13 @@ export function NewMainPage({
           '/places/popular',
           { params: { page: 1, limit: 5 } }
         );
-
         const detailedPlaces = await Promise.all(
           response.data.map(async (item) => {
             try {
               const detailResponse = await client.get(
                 `/places/${item.addplace_id}`
               );
-
-              return {
+              const place: Place = {
                 id: item.addplace_id,
                 title: item.title,
                 address: item.address,
@@ -214,102 +454,117 @@ export function NewMainPage({
                 summary: detailResponse.data.summary,
                 latitude: detailResponse.data.latitude,
                 longitude: detailResponse.data.longitude,
-                category: detailResponse.data.category, // category 추가
+                category: detailResponse.data.category,
               };
+              return place;
             } catch (error) {
               console.error(
                 `Failed to fetch detail for ${item.addplace_id}:`,
                 error
               );
-              return {
-                id: item.addplace_id,
-                title: item.title,
-                address: item.address,
-                imageUrl: item.image_url,
-                summary: undefined,
-                latitude: 37.5665,
-                longitude: 126.978,
-                category: '기타', // 기본값 설정
-              };
+              return null;
             }
           })
         );
-
-        setInspirations(detailedPlaces);
+        setInspirations(detailedPlaces.filter((p): p is Place => p !== null));
       } catch (error) {
         console.error('Failed to fetch inspirations:', error);
       } finally {
         setIsInspirationsLoading(false);
       }
     };
-
     fetchInspirations();
   }, [isAuthLoading]);
 
-  // Calculate matched posts with scores using useMemo
+  const fetchReviewablePlaces = async () => {
+    if (!isLoggedIn) {
+      setIsReviewablePlacesLoading(false);
+      return;
+    }
+    setIsReviewablePlacesLoading(true);
+    try {
+      const response = await client.get<ReviewableTrip[]>(
+        '/place-user-reviews/reviewable'
+      );
+      const trips = response.data ?? [];
+      setReviewableTrips(trips);
+
+      if (trips.length > 0) {
+        const initialTabs: Record<string, string> = {};
+        trips.forEach((trip) => {
+          if (trip.places.length > 0) {
+            const firstDate = trip.places.reduce((earliest, current) => {
+              return earliest < current.planDate ? earliest : current.planDate;
+            }, trip.places[0].planDate);
+            initialTabs[trip.post.id] = firstDate;
+          }
+        });
+        setActiveReviewTabs(initialTabs);
+      }
+    } catch (error) {
+      console.error('Failed to fetch reviewable places:', error);
+      setReviewableTrips([]);
+    } finally {
+      setIsReviewablePlacesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isAuthLoading) return; // 인증 로딩 중에는 데이터 페칭을 하지 않음
+    fetchReviewablePlaces();
+  }, [isLoggedIn, isAuthLoading]);
+
+  // --- Memoized Calculations ---
   const matchedPosts = useMemo(() => {
     return matches
       .map((match) => {
-        const post = posts.find((p) => {
-          const writerIds = [
-            p.writerId,
-            p.writer?.id,
-            p.writerProfile?.id,
-          ].filter(Boolean);
-          return writerIds.includes(match.userId);
-        });
-
+        const post = posts.find((p) =>
+          [p.writerId, p.writer?.id, p.writerProfile?.id]
+            .filter(Boolean)
+            .includes(match.userId)
+        );
         if (!post) return null;
-
-        // normalizeTextList를 사용하여 배열로 전달
-        const tendencyKeywords = normalizeTextList(match.overlappingTendencies);
-        const styleKeywords = normalizeTextList(match.overlappingTravelStyles);
-
         return {
           post,
           score: Math.round(match.score * 100),
-          tendency: tendencyKeywords, // 배열로 저장
-          style: styleKeywords, // 배열로 저장
+          tendency: normalizeTextList(match.overlappingTendencies),
+          style: normalizeTextList(match.overlappingTravelStyles),
         };
       })
       .filter(
-        (item): item is { post: Post; score: number; tendency: string[]; style: string[] } =>
-          item !== null
+        (
+          item
+        ): item is {
+          post: Post;
+          score: number;
+          tendency: string[];
+          style: string[];
+        } => item !== null
       )
-      .slice(0, 5);
+      .slice(0, 6);
   }, [matches, posts]);
 
-  // 작성자 프로필 이미지 일괄 로드
   useEffect(() => {
     const fetchAllWriterProfileImages = async () => {
       const imageIds = matchedPosts
         .map((item) => item.post.writer?.profile?.profileImageId)
-        .filter((id): id is string => id != null && id.length > 0);
-
+        .filter((id): id is string => !!id);
       const uniqueImageIds = Array.from(new Set(imageIds));
-
       if (uniqueImageIds.length === 0) {
         setWriterProfileImages({});
         return;
       }
-
       try {
         const results = await Promise.all(
           uniqueImageIds.map(async (imageId) => {
             try {
               const response = await fetch(
                 `${API_BASE_URL}/binary-content/${imageId}/presigned-url`,
-                {
-                  credentials: 'include',
-                }
+                { credentials: 'include' }
               );
-
-              if (!response.ok) {
-                throw new Error('프로필 이미지를 불러오지 못했습니다.');
-              }
-
-              const payload = await response.json();
-              const { url } = payload;
+              if (!response.ok)
+                throw new Error('Failed to fetch presigned URL');
+              const { url } = await response.json();
               return { imageId, url };
             } catch (error) {
               console.error(`Failed to load profile image ${imageId}:`, error);
@@ -317,7 +572,6 @@ export function NewMainPage({
             }
           })
         );
-
         const imageMap: Record<string, string | null> = {};
         results.forEach(({ imageId, url }) => {
           imageMap[imageId] = url;
@@ -327,256 +581,465 @@ export function NewMainPage({
         console.error('Failed to fetch writer profile images:', error);
       }
     };
-
-    if (matchedPosts.length > 0) {
-      fetchAllWriterProfileImages();
-    } else {
-      setWriterProfileImages({});
-    }
+    if (matchedPosts.length > 0) fetchAllWriterProfileImages();
+    else setWriterProfileImages({});
   }, [matchedPosts]);
 
-  // [신규] PoiDetailPanel 열기 핸들러
+  // --- Handlers ---
   const handleOpenPlaceDetailPanel = (placeId: string) => {
-    console.log('handleOpenPlaceDetailPanel called with placeId:', placeId);
     setSelectedPlaceIdForPanel(placeId);
-    setShowPlaceDetailPanel(true);
+    requestAnimationFrame(() => setShowPlaceDetailPanel(true));
   };
 
-  // [신규] PoiDetailPanel 닫기 핸들러
   const handleClosePlaceDetailPanel = () => {
-    console.log('handleClosePlaceDetailPanel called.');
     setShowPlaceDetailPanel(false);
-    setSelectedPlaceIdForPanel(null);
+    setTimeout(() => setSelectedPlaceIdForPanel(null), 300);
   };
 
-  // [신규] PostDetailPanel 열기 핸들러
   const handleOpenPostDetailPanel = (postId: string) => {
-    console.log('handleOpenPostDetailPanel called with postId:', postId);
     setSelectedPostIdForPanel(postId);
     setShowPostDetailPanel(true);
   };
 
-  // [신규] PostDetailPanel 닫기 핸들러
   const handleClosePostDetailPanel = () => {
-    console.log('handleClosePostDetailPanel called.');
     setShowPostDetailPanel(false);
     setSelectedPostIdForPanel(null);
   };
 
-  // Handlers
   const handlePostClick = (postId: string) => {
-    console.log('🟢 handlePostClick 호출됨!', {
-      postId,
-      isLoggedIn,
-      // 현재상태: { selectedType, selectedId }, // 제거
-    });
-    // onViewPost(postId); // Use the onViewPost prop 대신 패널 열기
     handleOpenPostDetailPanel(postId);
   };
 
-  const handlePlaceClick = (placeId: string) => { // _place: PlaceDto 인자 제거
-    console.log('handlePlaceClick called with placeId:', placeId);
+  const handlePlaceClick = (placeId: string) => {
     if (!isLoggedIn) {
       navigate('/login');
       return;
     }
-    // 기존 setSelectedType, setSelectedId, setSelectedPlace는 더 이상 필요 없음
-    handleOpenPlaceDetailPanel(placeId); // 패널 열기
+    handleOpenPlaceDetailPanel(placeId);
   };
 
   const handleInspirationClick = (place: Place) => {
-    console.log('handleInspirationClick called with placeId:', place.id);
-    // 기존 setSelectedType, setSelectedId, setSelectedPlace는 더 이상 필요 없음
-    handleOpenPlaceDetailPanel(place.id); // 패널 열기
+    handleOpenPlaceDetailPanel(place.id);
   };
 
   const handleAllViewMatching = () => {
-    if (!isLoggedIn) {
-      navigate('/login');
-      return;
-    }
-    navigate('/ai-matching');
+    if (!isLoggedIn) navigate('/login');
+    else navigate('/ai-matching');
   };
 
   const handleAllViewInspiration = () => {
     navigate('/inspiration');
   };
 
-  return (
-    <div className="flex h-full bg-white relative">
-      {/* Center Content */}
-      <div className="flex-1 overflow-y-auto px-8 md:px-16 lg:px-24 py-6 md:py-8 lg:py-12">
-        {/* Section 1: AI 추천 동행 (유저-게시글 매칭) */}
-        <section className="mb-8 md:mb-10 lg:mb-12">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3">
-            <div>
-              <h2 className="text-xl md:text-xl font-bold text-gray-900">
-                {user?.profile.nickname}님의 성향에 맞을 수도 있는 동행의
-                여행일정
-              </h2>
-              <p className="text-xs md:text-sm text-gray-600 mt-1">
-                MateTrip AI가 추천하는 최적의 여행 파트너
-              </p>
-            </div>
-            <Button
-              onClick={handleAllViewMatching}
-              variant="ghost"
-              className="text-sm self-start sm:self-auto"
-            >
-              View All
-            </Button>
-          </div>
+  const handleOpenReviewModal = (place: ReviewablePlaceInfo) => {
+    setSelectedPlaceForReview(place);
+    setIsReviewModalOpen(true);
+  };
 
-          {(() => {
-            console.log('🎯 Section 1 렌더링 조건:', {
-              isLoggedIn,
-              isMatchesLoading,
-              isPostsLoading,
-              matchedPostsLength: matchedPosts.length,
-              렌더링할내용: !isLoggedIn
-                ? '로그인 필요'
-                : isMatchesLoading || isPostsLoading
-                  ? '로딩 중'
-                  : matchedPosts.length === 0
-                    ? '추천 없음'
-                    : '카드 렌더링',
-            });
-            return null;
-          })()}
-          {!isLoggedIn ? (
-            <div className="bg-gradient-to-r from-blue-50 to-pink-50 rounded-2xl p-6 border border-blue-100">
-              <div className="text-center">
-                <h3 className="text-lg font-bold text-gray-900 mb-2">
-                  로그인이 필요합니다
-                </h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  당신에게 딱 맞는 동행을 AI가 추천해드려요
-                </p>
+  const handleCloseReviewModal = () => {
+    setIsReviewModalOpen(false);
+    setSelectedPlaceForReview(null);
+  };
+
+  // [수정] 성공 모달을 띄우도록 핸들러 수정
+  const handleSubmitReview = async ({
+    placeId,
+    rating,
+    content,
+  }: {
+    placeId: string;
+    rating: number;
+    content: string;
+  }) => {
+    try {
+      await client.post('/place-user-reviews', { placeId, rating, content });
+      handleCloseReviewModal();
+      setShowSuccessModal(true); // 성공 모달 띄우기
+      fetchReviewablePlaces();
+    } catch (error) {
+      console.error('Failed to submit review:', error);
+      alert('리뷰 등록에 실패했습니다.');
+    }
+  };
+
+  // Placeholder for onAddPoiToItinerary, as this section doesn't directly add to itinerary
+  const handleAddPoiToItinerary = (poi: Poi) => {
+    console.log('POI added to itinerary (from NewMainPage Hot Place):', poi);
+    // Implement actual logic if needed
+  };
+
+  // 인증 로딩 중일 때 스켈레톤 UI를 보여줍니다.
+  if (isAuthLoading) {
+    return (
+      <div className="flex flex-col min-h-screen bg-white p-4 sm:p-6 lg:p-8 animate-pulse">
+        {/* CTA/로그인 섹션 스켈레톤 */}
+        <div className="h-48 bg-gray-200 rounded-lg mb-8"></div>
+
+        {/* 맞춤 여행 추천 섹션 스켈레톤 */}
+        <div className="mb-8">
+          <div className="h-8 w-1/3 bg-gray-200 rounded mb-4"></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="h-64 bg-gray-200 rounded-xl"></div>
+            ))}
+          </div>
+        </div>
+
+        {/* 리뷰를 기다리는 장소 섹션 스켈레톤 */}
+        <div className="mb-8">
+          <div className="h-8 w-1/2 bg-gray-200 rounded mb-4"></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-48 bg-gray-200 rounded-xl"></div>
+            ))}
+          </div>
+        </div>
+
+        {/* Place Recommendation Section 스켈레톤 */}
+        <div className="mb-8">
+          <div className="h-8 w-1/3 bg-gray-200 rounded mb-4"></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-64 bg-gray-200 rounded-xl"></div>
+            ))}
+          </div>
+        </div>
+
+        {/* Hot Place 섹션 스켈레톤 */}
+        <div className="mb-8">
+          <div className="h-8 w-1/4 bg-gray-200 rounded mb-4"></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-64 bg-gray-200 rounded-xl"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex bg-white relative">
+      <div className="flex-1 overflow-y-auto">
+        {/* Section 0: CTA */}
+        {isLoggedIn && (
+          <section
+            className="relative bg-gray-800 bg-cover bg-center"
+            style={{
+              backgroundImage: `url(/cta-bg.jpg)`,
+            }}
+          >
+            <div className="absolute inset-0 bg-black/50" />
+            <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+              <h2 className="text-4xl font-bold text-white">
+                {user.profile.nickname}님, 새로운 여행을 떠나보세요!
+              </h2>
+              <p className="mt-2 text-gray-200 max-w-2xl text-lg">
+                나와 꼭 맞는 동행자와 함께 잊지 못할 추억을 만들 수 있어요. 지금
+                바로 여행 계획을 시작해보세요.
+              </p>
+              <Button
+                onClick={onCreatePost}
+                className="mt-6 bg-primary text-primary-foreground hover:bg-primary-strong font-bold py-6 px-14 text-xl flex items-center gap-2 transition-colors w-fit"
+              >
+                <Plus className="w-5 h-5" />
+                새로운 여행
+              </Button>
+            </div>
+          </section>
+        )}
+
+        <div className="flex flex-col">
+          <section>
+            <PageContainer className="py-12">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-6 h-6 text-primary" />
+                    <h2 className="text-3xl font-bold text-gray-900">
+                      {user?.profile.nickname}님을 위한 맞춤 여행 추천
+                    </h2>
+                  </div>
+                  <p className="text-sm md:text-base text-gray-600 mt-1">
+                    나의 여행 성향을 분석해 MateTrip AI가 찾아낸 최고의 여행
+                    파트너예요.
+                  </p>
+                </div>
                 <Button
-                  onClick={() => navigate('/login')}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={handleAllViewMatching}
+                  variant="ghost"
+                  className="text-base self-start sm:self-auto flex items-center text-gray-600 hover:bg-primary hover:text-primary-foreground"
                 >
-                  로그인하기
+                  전체보기
+                  <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
               </div>
-            </div>
-          ) : isMatchesLoading || isPostsLoading ? (
-            <div className="grid grid-cols-5 gap-4 md:gap-6">
-              {Array.from({ length: 5 }).map((_, index) => (
-                <MainPostCardSkeleton key={index} />
-              ))}
-            </div>
-          ) : matchedPosts.length === 0 ? (
-            <div className="text-center text-gray-500 py-10">
-              추천할 동행이 없습니다.
-            </div>
-          ) : (
-            <div className="grid grid-cols-5 gap-4 md:gap-6">
-              {matchedPosts.map(({ post, score, tendency, style }, index) => {
-                // tendency와 style을 string[]에서 string으로 변환
-                const formattedTendency = tendency.join(', ');
-                const formattedStyle = style.join(', ');
+              {!isLoggedIn ? (
+                <div className="bg-gradient-to-r from-blue-50 to-pink-50 rounded-2xl p-6 border border-blue-100 text-center">
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">
+                    로그인이 필요합니다
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    당신에게 딱 맞는 동행을 AI가 추천해드려요
+                  </p>
+                  <Button
+                    onClick={() => navigate('/login')}
+                    className="bg-primary hover:bg-primary-strong text-primary-foreground"
+                  >
+                    로그인하기
+                  </Button>
+                </div>
+              ) : isMatchesLoading || isPostsLoading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 items-start">
+                  {Array.from({ length: 3 }).map((_, index) => (
+                    <MainPostCardSkeleton key={index} />
+                  ))}
+                </div>
+              ) : matchedPosts.length === 0 ? (
+                <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200 text-center flex flex-col items-center justify-center min-h-[200px]">
+                  <Sparkles className="w-12 h-12 text-gray-400 mb-4" />
+                  <h3 className="text-lg font-bold text-gray-800 mb-2">
+                    아직 추천할 동행이 없어요.
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    프로필을 자세히 작성하거나 새로운 여행 계획을 세워보세요!
+                  </p>
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={() => navigate('/profile')}
+                      variant="outline"
+                      className="text-primary border-primary hover:bg-primary hover:text-primary-foreground"
+                    >
+                      프로필 수정하기
+                    </Button>
+                    <Button onClick={onCreatePost}>새로운 여행 만들기</Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 items-start">
+                  {matchedPosts.map(
+                    ({ post, score, tendency, style }, index) => (
+                      <GridMatchingCard
+                        key={post.id}
+                        post={post}
+                        matchingInfo={{
+                          score,
+                          tendency: tendency.join(', '),
+                          style: style.join(', '),
+                        }}
+                        rank={index + 1}
+                        writerProfileImageUrl={
+                          post.writer?.profile?.profileImageId
+                            ? (writerProfileImages[
+                                post.writer.profile.profileImageId
+                              ] ?? null)
+                            : null
+                        }
+                        writerNickname={post.writer?.profile?.nickname ?? null}
+                        onClick={() => handlePostClick(post.id)}
+                      />
+                    )
+                  )}
+                </div>
+              )}
+            </PageContainer>
+          </section>
 
-                return (
-                  <GridMatchingCard
-                    key={post.id}
-                    post={post}
-                    matchingInfo={{
-                      score: score,
-                      tendency: formattedTendency, // 변환된 string 사용
-                      style: formattedStyle,       // 변환된 string 사용
-                    }}
-                    rank={index + 1}
-                    writerProfileImageUrl={
-                      post.writer?.profile?.profileImageId
-                        ? (writerProfileImages[
-                            post.writer.profile.profileImageId
-                          ] ?? null)
-                        : null
-                    }
-                    writerNickname={post.writer?.profile?.nickname ?? null}
-                    onClick={() => handlePostClick(post.id)}
-                  />
-                );
-              })}
-            </div>
+          {isLoggedIn && (
+            <section className="bg-gray-50">
+              <PageContainer className="py-12">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Star className="w-6 h-6 text-secondary" />
+                      <h2 className="text-3xl font-bold text-gray-900">
+                        {user?.profile.nickname}님의 리뷰를 기다리는 장소
+                      </h2>
+                    </div>
+                    <p className="text-sm md:text-base text-gray-600 mt-1">
+                      다녀오신 장소에 대한 리뷰를 남겨주세요!
+                    </p>
+                  </div>
+                </div>
+                {isReviewablePlacesLoading ? (
+                  <div className="space-y-4">
+                    <div className="h-8 w-1/3 bg-gray-200 rounded animate-pulse" />
+                    <div className="grid grid-cols-5 gap-4 md:gap-6">
+                      {Array.from({ length: 5 }).map((_, index) => (
+                        <div
+                          key={index}
+                          className="w-full h-40 bg-gray-200 rounded-xl animate-pulse"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : reviewableTrips.length === 0 ? (
+                  <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200 text-center flex flex-col items-center justify-center min-h-[200px]">
+                    <Star className="w-12 h-12 text-gray-400 mb-4" />
+                    <h3 className="text-lg font-bold text-gray-800 mb-2">
+                      아직 리뷰할 장소가 없어요.
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      새로운 여행을 떠나거나, 지난 여행을 확인해보세요!
+                    </p>
+                    <div className="flex gap-3">
+                      <Button onClick={onCreatePost}>새로운 여행 만들기</Button>
+                      <Button
+                        onClick={() => navigate('/my-trips')}
+                        variant="outline"
+                        className="text-primary border-primary hover:bg-primary hover:text-primary-foreground"
+                      >
+                        내 여행 확인하기
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-y-8">
+                    {reviewableTrips.map((trip) => {
+                      const placesByDate = trip.places.reduce(
+                        (acc, place) => {
+                          const date = place.planDate;
+                          if (!acc[date]) {
+                            acc[date] = [];
+                          }
+                          acc[date].push(place);
+                          return acc;
+                        },
+                        {} as Record<string, ReviewablePlaceInfo[]>
+                      );
+
+                      const sortedDates = Object.keys(placesByDate).sort();
+                      const activeDate = activeReviewTabs[trip.post.id];
+
+                      return (
+                        <div key={trip.post.id}>
+                          <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                            <span className="text-primary">
+                              "{trip.post.title}"
+                            </span>{' '}
+                            여행
+                          </h3>
+                          <div className="border-b border-gray-200">
+                            <nav
+                              className="-mb-px flex space-x-6"
+                              aria-label="Tabs"
+                            >
+                              {sortedDates.map((date) => (
+                                <button
+                                  key={date}
+                                  type="button"
+                                  onClick={() =>
+                                    setActiveReviewTabs((prev) => ({
+                                      ...prev,
+                                      [trip.post.id]: date,
+                                    }))
+                                  }
+                                  className={`${
+                                    date === activeDate
+                                      ? 'border-primary text-primary'
+                                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                  } whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm`}
+                                >
+                                  {date}
+                                </button>
+                              ))}
+                            </nav>
+                          </div>
+                          <div className="pt-6">
+                            {activeDate && placesByDate[activeDate] && (
+                              <ReviewablePlacesCarousel>
+                                {placesByDate[activeDate].map((place) => (
+                                  <ReviewablePlaceCard
+                                    key={place.id}
+                                    place={place}
+                                    onClick={() => handleOpenReviewModal(place)}
+                                  />
+                                ))}
+                              </ReviewablePlacesCarousel>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </PageContainer>
+            </section>
           )}
-        </section>
 
-        {/* Section 2: 장소 추천 */}
-        <PlaceRecommendationSection onPlaceClick={handlePlaceClick} />
+          <section>
+            <PageContainer>
+              <PlaceRecommendationSection onPlaceClick={handlePlaceClick} />
+            </PageContainer>
+          </section>
 
-        {/* Section 3: Inspiration */}
-        <section className="mb-8 md:mb-10 lg:mb-12">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3">
-            <div>
-              <h2 className="text-xl md:text-xl font-bold text-gray-900">
-                Hot Place
-              </h2>
-              <p className="text-xs md:text-sm text-gray-600 mt-1text-xs md:text-sm text-gray-600 mt-1">
-                MateTrip 유저들의 Pick!
-              </p>
-            </div>
-            <Button
-              onClick={handleAllViewInspiration}
-              variant="ghost"
-              className="text-sm self-start sm:self-auto"
-            >
-              View All
-            </Button>
-          </div>
-
-          {isInspirationsLoading ? (
-            <div className="grid grid-cols-5 gap-4 md:gap-6">
-              {Array.from({ length: 5 }).map((_, index) => (
-                <div
-                  key={index}
-                  className="w-full h-64 bg-gray-200 rounded-xl animate-pulse"
-                />
-              ))}
-            </div>
-          ) : inspirations.length === 0 ? (
-            <div className="text-center text-gray-500 py-10">
-              추천할 장소가 없습니다.
-            </div>
-          ) : (
-            <div className="grid grid-cols-5 gap-4 md:gap-6">
-              {inspirations.map((place, index) => (
-                <InspirationCard
-                  key={place.id}
-                  imageUrl={place.imageUrl}
-                  title={place.title}
-                  address={place.address}
-                  category={place.category}
-                  summary={place.summary}
-                  rank={index + 1} // rank prop 추가
-                  onClick={() => handleInspirationClick(place)}
-                />
-              ))}
-            </div>
-          )}
-        </section>
+          <section className="bg-gray-50">
+            <PageContainer className="py-12">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Flame className="w-6 h-6 text-destructive" />
+                    <h2 className="text-3xl font-bold text-gray-900">
+                      Hot Place
+                    </h2>
+                  </div>
+                  <p className="text-sm md:text-base text-gray-600 mt-1">
+                    MateTrip 유저들의 Pick!
+                  </p>
+                </div>
+                <Button
+                  onClick={handleAllViewInspiration}
+                  variant="ghost"
+                  className="text-base self-start sm:self-auto flex items-center text-gray-600 hover:bg-primary hover:text-primary-foreground"
+                >
+                  전체보기
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
+              {isInspirationsLoading ? (
+                <div className="grid grid-cols-5 gap-4 md:gap-6">
+                  {Array.from({ length: 5 }).map((_, index) => (
+                    <div
+                      key={index}
+                      className="w-full h-64 bg-gray-200 rounded-xl animate-pulse"
+                    />
+                  ))}
+                </div>
+              ) : inspirations.length === 0 ? (
+                <div className="text-center text-gray-500 py-10">
+                  추천할 장소가 없습니다.
+                </div>
+              ) : (
+                <ReviewablePlacesCarousel>
+                  {inspirations.map((place) => (
+                    <RecommendedPlaceCard
+                      key={place.id}
+                      place={{
+                        id: place.id,
+                        title: place.title,
+                        address: place.address,
+                        summary: place.summary,
+                        imageUrl: place.imageUrl,
+                        longitude: place.longitude,
+                        latitude: place.latitude,
+                        category: place.category as AiPlace['category'],
+                        recommendationReason: undefined, // Hot Place doesn't have this
+                      }} // recommendationReasonStyle="text-primary"
+                      onAddPoiToItinerary={handleAddPoiToItinerary}
+                      onCardClick={() =>
+                        handleInspirationClick(place)
+                      }
+                      showAddButton={false} // '일정에 추가' 버튼을 숨깁니다.
+                    />
+                  ))}
+                </ReviewablePlacesCarousel>
+              )}
+            </PageContainer>
+          </section>
+        </div>
       </div>
 
-      {/* PostDetail Modal - 전체 상세보기 (제거) */}
-      {/* {showPostDetailModal && selectedId && (
-        <PostDetail
-          postId={selectedId}
-          onJoinWorkspace={onJoinWorkspace}
-          onViewProfile={onViewProfile}
-          onEditPost={onEditPost}
-          onDeleteSuccess={onDeleteSuccess || (() => {})}
-          onOpenChange={(open) => {
-            setShowPostDetailModal(open);
-            if (!open) {
-              setSelectedType(null);
-              setSelectedId(null);
-            }
-          }}
-        />
-      )} */}
-
-      {/* [신규] PoiDetailPanel 및 오버레이 */}
+      {/* Panels & Overlays */}
       <div
         className={`fixed inset-0 z-20 bg-black/50 transition-opacity duration-300 ${
           showPlaceDetailPanel || showPostDetailPanel
@@ -588,8 +1051,6 @@ export function NewMainPage({
           if (showPostDetailPanel) handleClosePostDetailPanel();
         }}
       />
-
-      {/* PoiDetailPanel: 오버레이의 형제 요소로 분리 */}
       <PoiDetailPanel
         placeId={selectedPlaceIdForPanel}
         isVisible={showPlaceDetailPanel}
@@ -598,9 +1059,8 @@ export function NewMainPage({
         onPoiSelect={() => {}}
         widthClass="w-1/2"
         onClick={(e) => e.stopPropagation()}
+        positioning="fixed"
       />
-
-      {/* PostDetailPanel: 오버레이의 형제 요소로 분리 */}
       <div
         className={`fixed right-0 top-0 h-full bg-white shadow-lg transform transition-transform duration-300 ease-in-out z-30 ${
           showPostDetailPanel ? 'translate-x-0' : 'translate-x-full'
@@ -611,22 +1071,32 @@ export function NewMainPage({
           <PostDetail
             postId={selectedPostIdForPanel}
             onJoinWorkspace={(postId, workspaceName) => {
-              console.log('🔵 [NewMainPage] PostDetail onJoinWorkspace called', { postId, workspaceName });
-              // 워크스페이스 입장: 먼저 실행한 후 패널 닫기
               onJoinWorkspace(postId, workspaceName);
               handleClosePostDetailPanel();
             }}
-            onViewProfile={(userId) => {
-              console.log('🔵 [NewMainPage] PostDetail onViewProfile called', { userId });
-              // 프로필 모달 열기: PostDetail 패널은 유지
-              onViewProfile(userId);
-            }}
+            onViewProfile={onViewProfile}
             onEditPost={onEditPost}
             onDeleteSuccess={onDeleteSuccess || (() => {})}
             onOpenChange={handleClosePostDetailPanel}
           />
         )}
       </div>
+
+      {/* 리뷰 모달 렌더링 */}
+      {isReviewModalOpen && selectedPlaceForReview && (
+        <ReviewModal
+          isOpen={isReviewModalOpen}
+          onClose={handleCloseReviewModal}
+          place={selectedPlaceForReview}
+          onSubmit={handleSubmitReview}
+        />
+      )}
+
+      {/* [신규] 성공 모달 렌더링 */}
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+      />
     </div>
   );
 }

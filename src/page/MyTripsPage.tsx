@@ -6,6 +6,7 @@ import { MainPostCardSkeleton } from '../components/AIMatchingSkeletion';
 import { WorkspaceCarousel } from '../components/WorkspaceCarousel';
 import { useAuthStore } from '../store/authStore';
 import { PostDetail } from './PostDetail'; // PostDetail 임포트
+import PageContainer from '../components/PageContainer';
 
 interface MyTripsPageProps {
   // onViewPost: (postId: string) => void; // onViewPost prop 제거
@@ -98,10 +99,10 @@ export function MyTripsPage({
 
   return (
     <div className="bg-white min-h-screen">
-      <div className="max-w-7xl mx-auto px-16 py-12">
+      <PageContainer>
         {/* Header Section */}
         <div className="mb-8">
-          <h1 className="text-3xl font-medium text-gray-900 mb-2">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
             {isLoading ? (
               <div className="h-9 bg-gray-200 rounded w-48 animate-pulse"></div>
             ) : (
@@ -116,8 +117,8 @@ export function MyTripsPage({
         {/* User's Participating Trips Section */}
         <section className="mb-12">
           <div className="flex items-center gap-2 mb-6">
-            <ClipboardList className="w-5 h-5 text-blue-600" />
-            <h2 className="text-xl font-bold text-gray-900">
+            <ClipboardList className="w-5 h-5 text-primary" />
+            <h2 className="text-2xl font-bold text-gray-900">
               {isLoading ? (
                 <div className="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>
               ) : (
@@ -147,7 +148,7 @@ export function MyTripsPage({
         <section className="mb-12">
           <div className="flex items-center gap-2 mb-6">
             <ClipboardList className="w-5 h-5 text-green-600" />
-            <h2 className="text-xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-gray-900">
               {isLoading ? (
                 <div className="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>
               ) : (
@@ -172,7 +173,7 @@ export function MyTripsPage({
             />
           )}
         </section>
-      </div>
+      </PageContainer>
 
       {/* PostDetail Panel 및 오버레이 */}
       <div
@@ -194,12 +195,18 @@ export function MyTripsPage({
               postId={selectedPostIdForPanel}
               onOpenChange={handleClosePostDetailPanel}
               onJoinWorkspace={(postId, workspaceName) => {
-                console.log('🔵 [MyTripsPage] PostDetail onJoinWorkspace called', { postId, workspaceName });
+                console.log(
+                  '🔵 [MyTripsPage] PostDetail onJoinWorkspace called',
+                  { postId, workspaceName }
+                );
                 onJoinWorkspace(postId, workspaceName);
                 handleClosePostDetailPanel();
               }}
               onViewProfile={(userId) => {
-                console.log('🔵 [MyTripsPage] PostDetail onViewProfile called', { userId });
+                console.log(
+                  '🔵 [MyTripsPage] PostDetail onViewProfile called',
+                  { userId }
+                );
                 // 프로필 모달 열기: PostDetail 패널은 유지
                 onViewProfile(userId);
               }}

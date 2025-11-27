@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { MapPin, Calendar, Users } from 'lucide-react';
 import { Badge } from './ui/badge';
@@ -15,10 +15,7 @@ interface WorkspaceCardProps {
   buttonText?: string;
 }
 
-export function WorkspaceCard({
-  post,
-  onClick,
-}: WorkspaceCardProps) {
+export function WorkspaceCard({ post, onClick }: WorkspaceCardProps) {
   const {
     title,
     location,
@@ -31,20 +28,7 @@ export function WorkspaceCard({
     status,
   } = post;
 
-  const titleRef = useRef<HTMLHeadingElement>(null);
-  const [isTitleOverflowing, setIsTitleOverflowing] = useState(false);
-  const [scrollAmount, setScrollAmount] = useState(0);
-
-  useEffect(() => {
-    const titleElement = titleRef.current;
-    if (titleElement) {
-      const isOverflowing = titleElement.scrollWidth > titleElement.clientWidth;
-      setIsTitleOverflowing(isOverflowing);
-      if (isOverflowing) {
-        setScrollAmount(titleElement.clientWidth - titleElement.scrollWidth);
-      }
-    }
-  }, [title]);
+  // Removed titleRef and related overflow logic for simplicity and consistency with NewMainPage cards
 
   // 총 일수 계산
   const calculateDays = () => {
@@ -191,15 +175,15 @@ export function WorkspaceCard({
 
   return (
     <div
-      className="relative min-w-[250px] w-[250px] h-[420px] flex flex-col gap-[12px] cursor-pointer"
+      className="group flex flex-col cursor-pointer overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:shadow-lg"
       onClick={onClick}
     >
       {/* 이미지 영역 */}
-      <div className="h-[252px] rounded-2xl overflow-hidden relative flex-shrink-0">
+      <div className="relative h-48 bg-cover bg-center overflow-hidden w-full">
         <ImageWithFallback
           src={coverImageUrl ?? defaultCoverImage}
           alt={title}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
         {/* 상태 배지 */}
         {(status === '모집중' ||
@@ -212,88 +196,79 @@ export function WorkspaceCard({
             {status === '모집중' ? '모집중' : '모집완료'}
           </Badge>
         )}
+      </div>
+
+      {/* 콘텐츠 */}
+      <div className="flex flex-col flex-1 p-4">
+        {/* 제목 */}
+        <h3 className="text-lg font-bold text-gray-800 leading-snug truncate mb-2">
+          {title}
+        </h3>
+
         {/* 여행 키워드 */}
         {keywords && keywords.length > 0 && (
-          <div className="absolute bottom-2 left-2 right-2 flex flex-wrap gap-1">
+          <div className="flex flex-wrap gap-1 mb-2">
             {keywords.map((keyword, index) => (
               <Badge
                 key={index}
                 variant="secondary"
-                className="text-xs px-2 py-1 bg-gray-50 border border-gray-200"
+                className="text-xs px-2 py-1 bg-gray-50 border border-gray-200 text-gray-600"
               >
                 #{translateKeyword(keyword)}
               </Badge>
             ))}
           </div>
         )}
-      </div>
-
-      {/* 콘텐츠 */}
-      <div className="flex flex-col gap-2 px-2 pt-2 flex-grow">
-        {/* 제목 */}
-        <div className="relative overflow-hidden group">
-          <h3
-            ref={titleRef}
-            className={`text-lg font-bold text-black leading-tight whitespace-nowrap ${
-              isTitleOverflowing ? 'marquee-on-hover' : 'truncate'
-            }`}
-            style={{ '--scroll-x': `${scrollAmount}px` } as React.CSSProperties}
-          >
-            {title}
-          </h3>
-        </div>
 
         {/* 여행지 */}
-        <div className="flex items-center gap-1">
-          <MapPin className="w-5 h-5 flex-shrink-0 text-gray-600" />
-          <span className="text-sm font-medium text-gray-600 truncate">
-            {location}
-          </span>
+        <div className="flex items-center gap-1.5 text-sm text-gray-600 mb-1">
+          <MapPin className="w-4 h-4 flex-shrink-0 text-gray-400" />
+          <span className="truncate">{location}</span>
         </div>
 
         {/* 여행 기간 */}
-        <div className="flex items-start gap-1">
-          <Calendar className="w-5 h-5 flex-shrink-0 text-gray-600 mt-0.5" />
-          <div className="flex flex-col">
-            <span className="text-sm font-medium text-gray-600 leading-tight">
-              {startDate} ~ {endDate}
-            </span>
-            <span className="text-sm font-medium text-gray-600 leading-tight">
-              ({calculateDays()}일)
+        <div className="flex items-center gap-1.5 text-sm text-gray-600 mb-3">
+          <Calendar className="w-4 h-4 flex-shrink-0 text-gray-400" />
+          <span>
+            {startDate} ~ {endDate} ({calculateDays()}일)
+          </span>
+        </div>
+
+        {/* 참여자 정보 */}
+        <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-100">
+          {/* 참여자 프로필 이미지 (중첩) */}
+          <div className="flex -space-x-2">
+            {displayParticipants.slice(0, 3).map((participant, index) => {
+              if (!participant) return null;
+
+              const resolvedUrl = participant.profileImageId
+                ? profileImageUrls[participant.profileImageId]
+                : undefined;
+
+              return (
+                <ImageWithFallback
+                  key={participant.id}
+                  src={resolvedUrl ?? participant.fallback}
+                  alt={participant.name}
+                  className="w-7 h-7 rounded-full object-cover border-2 border-white"
+                  style={{ zIndex: displayParticipants.length - index }}
+                />
+              );
+            })}
+            {displayParticipants.length > 3 && (
+              <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-600 border-2 border-white">
+                +{displayParticipants.length - 3}
+              </div>
+            )}
+          </div>
+
+          {/* 모집 인원 */}
+          <div className="flex items-center gap-1 text-sm text-gray-500">
+            <Users className="w-4 h-4 text-gray-400" />
+            <span>
+              {displayParticipants.length}/{maxParticipants || 0}명
             </span>
           </div>
-        </div>
-      </div>
-
-      {/* 참여자 정보 */}
-      <div className="flex items-center gap-2 px-2 flex-shrink-0">
-        {/* 참여자 프로필 이미지 (중첩) */}
-        <div className="flex -space-x-8">
-          {displayParticipants.slice(0, 3).map((participant, index) => {
-            if (!participant) return null;
-
-            const resolvedUrl = participant.profileImageId
-              ? profileImageUrls[participant.profileImageId]
-              : undefined;
-
-            return (
-              <ImageWithFallback
-                key={participant.id}
-                src={resolvedUrl ?? participant.fallback}
-                alt={participant.name}
-                className="w-8 h-8 rounded-full object-cover"
-                style={{ zIndex: displayParticipants.length - index }}
-              />
-            );
-          })}
-        </div>
-
-        {/* 모집 인원 */}
-        <div className="flex items-center gap-1">
-          <Users className="w-6 h-6 text-[#4e4a65]" />
-          <span className="text-xs font-medium text-[#4e4a65]">
-            {displayParticipants.length}/{maxParticipants || 0}명 모집중
-          </span>
         </div>
       </div>
     </div>

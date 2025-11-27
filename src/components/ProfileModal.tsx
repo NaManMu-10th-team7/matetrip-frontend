@@ -1,4 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useLayoutEffect,
+} from 'react';
 import {
   Dialog,
   DialogContent,
@@ -76,7 +82,7 @@ function ProfileModalSkeleton({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-4xl min-w-[900px] h-[80vh] p-0 overflow-hidden flex flex-col border-0"
+        className="max-w-4xl min-w-[900px] h-[80vh] p-0 overflow-hidden flex flex-col border-0 gap-0"
         aria-describedby={undefined}
       >
         <DialogHeader className="flex flex-row items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-10 text-left">
@@ -157,6 +163,8 @@ export function ProfileModal({
   const [isBioExpanded, setIsBioExpanded] = useState(false);
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const [error, setError] = useState<unknown>(null);
+  const [isBioClamped, setIsBioClamped] = useState(false);
+  const bioRef = useRef<HTMLDivElement>(null);
 
   const isCurrentUser = loggedInUser?.userId === userId;
 
@@ -271,10 +279,77 @@ export function ProfileModal({
         setProfileImageUrl(null);
         setTravelHistory([]);
         setReviews([]);
+        setIsBioExpanded(false);
+        setIsBioClamped(false);
       }, 300);
       return () => clearTimeout(timer);
     }
   }, [open, userId, fetchProfileData]);
+
+  // 텍스트 길이 기반으로 1차 판정(렌더 전에 버튼이 사라지는 것 방지)
+  useEffect(() => {
+    const text = (profile?.description ?? '').trim();
+    if (!text) {
+      setIsBioClamped(false);
+      return;
+    }
+    const approxLines = text
+      .split('\n')
+      .reduce((sum, line) => sum + Math.max(1, Math.ceil(line.length / 40)), 0);
+    setIsBioClamped(approxLines > 2);
+  }, [profile?.id, profile?.description]);
+
+  useLayoutEffect(() => {
+    const el = bioRef.current;
+    if (!el) return;
+
+    const measureClampingNeeded = () => {
+      // line-clamp가 적용된 상태에서는 scrollHeight가 줄어서 정확히 측정되지 않으므로
+      // 잠깐 line-clamp를 해제한 뒤 실제 높이를 잽니다.
+      const prevClamp = el.style.webkitLineClamp;
+      const prevDisplay = el.style.display;
+      const prevOverflow = el.style.overflow;
+      const prevBoxOrient = el.style.webkitBoxOrient;
+
+      el.style.webkitLineClamp = 'unset';
+      el.style.display = 'block';
+      el.style.overflow = 'visible';
+      el.style.webkitBoxOrient = 'unset';
+
+      const styles = getComputedStyle(el);
+      const parsedLineHeight = parseFloat(styles.lineHeight);
+      const parsedFontSize = parseFloat(styles.fontSize);
+      const lineHeight =
+        Number.isFinite(parsedLineHeight) && parsedLineHeight > 0
+          ? parsedLineHeight
+          : Number.isFinite(parsedFontSize) && parsedFontSize > 0
+            ? parsedFontSize * 1.4
+            : 24;
+
+      const fullHeight = el.scrollHeight;
+      const needsClampFromHeight = fullHeight - lineHeight * 2 > 1;
+
+      // DOM 기반 측정 결과를 추가로 반영(줄 수 추정 기반이 false더라도 실제 높이면 clamp)
+      setIsBioClamped((prev) => prev || needsClampFromHeight);
+
+      el.style.webkitLineClamp = prevClamp;
+      el.style.display = prevDisplay;
+      el.style.overflow = prevOverflow;
+      el.style.webkitBoxOrient = prevBoxOrient;
+    };
+
+    // 렌더 직후와 리사이즈 시 모두 측정
+    const rafId = requestAnimationFrame(measureClampingNeeded);
+    const resizeObserver =
+      typeof ResizeObserver !== 'undefined'
+        ? new ResizeObserver(measureClampingNeeded)
+        : null;
+    resizeObserver?.observe(el);
+    return () => {
+      cancelAnimationFrame(rafId);
+      resizeObserver?.disconnect();
+    };
+  }, [profile?.id, profile?.description, open]);
 
   const handleEditProfile = () => {
     setIsEditProfileModalOpen(true);
@@ -329,7 +404,7 @@ export function ProfileModal({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
-          className="max-w-4xl min-w-[900px] h-[80vh] p-0 overflow-hidden flex flex-col border-0"
+          className="max-w-4xl min-w-[900px] h-[80vh] p-0 overflow-hidden flex flex-col border-0 gap-0"
           aria-describedby={undefined}
         >
           <DialogHeader className="flex flex-row items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-10 text-left">
@@ -367,7 +442,7 @@ export function ProfileModal({
                         {profile.travelStyles?.map((style) => (
                           <Badge
                             key={style}
-                            className="bg-gray-800 text-gray-100 hover:bg-gray-700"
+                            className="rounded-full bg-gray-100 text-gray-800 text-base"
                           >
                             {translateKeyword(style)}
                           </Badge>
@@ -379,7 +454,7 @@ export function ProfileModal({
                     <div className="flex gap-2 flex-shrink-0">
                       <Button
                         size="sm"
-                        className="h-9 bg-gray-900 text-white hover:bg-gray-700"
+                        className="h-9 bg-primary text-white hover:bg-primary-strong"
                         onClick={handleEditProfile}
                       >
                         <Pencil className="w-4 h-4 mr-2" />
@@ -406,9 +481,9 @@ export function ProfileModal({
                 <div className="grid grid-cols-3 gap-4 mt-6">
                   <div className="bg-gray-100 rounded-lg p-4 text-center">
                     <p className="text-gray-600 text-sm mb-1">매너온도</p>
-                    <div className="flex items-center justify-center gap-1 text-blue-600 font-semibold">
-                      <Thermometer className="w-4 h-4" />
-                      <p>
+                    <div className="flex items-center justify-center gap-1 text-primary font-semibold">
+                      <Thermometer className="w-4 h-4 text-primary" />
+                      <p className="text-primary">
                         {mannerTemperature != null
                           ? `${mannerTemperature.toFixed(1)}°C`
                           : '정보 없음'}
@@ -443,8 +518,8 @@ export function ProfileModal({
                     key={tab.key}
                     className={`flex-1 py-3 text-center transition-colors text-sm font-medium ${
                       activeTab === tab.key
-                        ? 'border-b-2 border-gray-900 text-gray-900'
-                        : 'text-gray-500 hover:text-gray-700'
+                        ? 'border-b-2 border-primary text-primary font-bold'
+                        : 'text-gray-500 hover:text-gray-800'
                     }`}
                     onClick={() => setActiveTab(tab.key)}
                   >
@@ -470,16 +545,23 @@ export function ProfileModal({
                         상세 소개
                       </h4>
                       <div
-                        className={`text-gray-700 leading-relaxed whitespace-pre-wrap ${
-                          !isBioExpanded && 'line-clamp-3'
-                        }`}
+                        ref={bioRef}
+                        className="text-gray-700 leading-relaxed whitespace-pre-wrap"
+                        style={
+                          isBioClamped && !isBioExpanded
+                            ? {
+                                display: '-webkit-box',
+                                WebkitLineClamp: '2',
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                              }
+                            : undefined
+                        }
                       >
                         {profile.description ||
                           '아직 상세 소개가 작성되지 않았습니다.'}
                       </div>
-                      {(profile.description?.split('\n').length > 3 ||
-                        (profile.description &&
-                          profile.description.length > 150)) && (
+                      {isBioClamped && (
                         <button
                           onClick={() => setIsBioExpanded(!isBioExpanded)}
                           className="w-full mt-3 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center justify-center gap-1"
@@ -502,7 +584,7 @@ export function ProfileModal({
                           {profile.tendency.map((tendency) => (
                             <Badge
                               key={tendency}
-                              className="bg-gray-800 text-gray-100 hover:bg-gray-700"
+                              className="rounded-full bg-gray-100 text-gray-800 text-base"
                             >
                               {translateKeyword(tendency)}
                             </Badge>

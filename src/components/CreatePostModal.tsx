@@ -25,7 +25,7 @@ import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { useAuthStore } from '../store/authStore';
 import client, { API_BASE_URL } from '../api/client';
 import { KEYWORD_OPTIONS, type KeywordValue } from '../utils/keyword';
-import { toast } from 'sonner';
+// import { toast } from 'sonner'; // toast import 제거
 
 interface CreatePostModalProps {
   onClose: () => void;
@@ -224,7 +224,7 @@ export function CreatePostModal({
 
       try {
         await createPost(postData);
-        toast.success('동행 모집 게시글이 작성되었습니다.');
+        // toast.success('동행 모집 게시글이 작성되었습니다.'); // 중복 알림 방지를 위해 제거
 
         onClose(); // 성공 시 모달 닫기
         onPostCreated?.(); // 부모 컴포넌트에 알림

@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { MapPin, Search as SearchIcon } from 'lucide-react'; // SearchIcon 추가
+import { MapPin, Search as SearchIcon, Sparkles } from 'lucide-react'; // SearchIcon, Sparkles 추가
 import { Button } from '../components/ui/button';
 import client from '../api/client';
 import { type Post, type Writer } from '../types/post';
 import { MainPostCardSkeleton } from '../components/AIMatchingSkeletion';
-import { MatchingCarousel } from '../components/MatchingCarousel';
+// import { MatchingCarousel } from '../components/MatchingCarousel';
 import { GridMatchingCard } from '../components/GridMatchingCard';
 import { PostDetail } from './PostDetail';
 // import { Dialog, DialogContent } from '../components/ui/dialog'; // Dialog 관련 임포트 제거
@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 import type { MatchingResult } from '../types/matchSearch'; // MatchingResult 타입 임포트
 import type { KeywordValue } from '../utils/keyword'; // KeywordValue 타입 임포트
 import { ProfileModal } from '../components/ProfileModal'; // ProfileModal 임포트 추가
+import PageContainer from '../components/PageContainer';
 
 interface MainPageProps {
   onSearch: (params: {
@@ -267,9 +268,7 @@ export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
 
     matches.forEach((candidate) => {
       const writer = buildWriterFromCandidate(candidate);
-      const tendencyList = normalizeTextList(
-        candidate.overlappingTendencies
-      );
+      const tendencyList = normalizeTextList(candidate.overlappingTendencies);
       const styleList = normalizeTextList(candidate.overlappingTravelStyles);
 
       (candidate.recruitingPosts ?? []).forEach((matchPost) => {
@@ -294,7 +293,7 @@ export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
                 ? toPercent(candidate.vectorScore)
                 : undefined,
             tendency: tendencyList.join(', '), // string[]를 string으로 변환
-            style: styleList.join(', '),       // string[]를 string으로 변환
+            style: styleList.join(', '), // string[]를 string으로 변환
           },
         });
       });
@@ -304,13 +303,10 @@ export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
       recommendedPosts: entries.map((entry) => entry.post),
       matchingInfoByPostId: entries.reduce<
         Record<string, MatchingInfo> // MatchingInfo 타입으로 변경
-      >(
-        (acc, entry) => {
-          acc[entry.post.id] = entry.info;
-          return acc;
-        },
-        {}
-      ),
+      >((acc, entry) => {
+        acc[entry.post.id] = entry.info;
+        return acc;
+      }, {}),
     };
   }, [matches]);
 
@@ -440,12 +436,15 @@ export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
 
   return (
     <div className="bg-white min-h-screen">
-      <div className="max-w-7xl mx-auto px-16 py-22">
+      <PageContainer>
         {/* Header Section */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-center text-gray-900 mb-2">
-            MateTrip AI가 추천하는 최적의 여행 파트너
-          </h1>
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-7 h-7 text-primary" />
+            <h1 className="text-3xl font-bold text-gray-900">
+              MateTrip AI가 추천하는 최적의 여행 파트너
+            </h1>
+          </div>
         </div>
         {/* 로그인하지 않은 사용자를 위한 안내 배너 */}
         {!isLoggedIn && (
@@ -456,10 +455,10 @@ export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
                   <MapPin className="w-6 h-6 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-1">
+                  <h3 className="text-xl font-bold text-gray-900 mb-1">
                     AI 맞춤 추천을 받아보세요
                   </h3>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-base text-gray-600">
                     로그인하면 당신에게 딱 맞는 동행을 AI가 추천해드려요
                   </p>
                 </div>
@@ -473,8 +472,8 @@ export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
             </div>
           </div>
         )}
-        {/* Recommended Posts Section - 모든 사용자에게 표시 */}
-        {!searchResults && ( // 검색 결과가 없을 때만 캐러셀 표시
+        {/* Recommended Posts Section - 캐러셀 (주석 처리) */}
+        {/* {!searchResults && ( // 검색 결과가 없을 때만 캐러셀 표시
           <section className="mb-12">
             {isLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
@@ -495,7 +494,7 @@ export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
               />
             )}
           </section>
-        )}
+        )} */}
 
         {/* 전체 추천 동행 그리드 또는 검색 결과 */}
         <section className="mb-12">
@@ -508,12 +507,11 @@ export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
             <div className="mt-8">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                 <div>
-                  <h1 className="text-gray-900 mb-2">맞춤 동행 검색 결과</h1>
+                  <h1 className="text-3xl text-gray-900 mb-2">맞춤 동행 검색 결과</h1>
                   {keywordsText && (
-                    <p className="text-gray-600">
-                      "{keywordsText}" 검색 결과 {searchResults.length}개
-                    </p>
-                  )}
+                                      <p className="text-lg text-gray-600">
+                                        "{keywordsText}" 검색 결과 {searchResults.length}개
+                                      </p>                  )}
                 </div>
                 {/* 검색 초기화 버튼 (검색 결과가 있을 때 항상 표시) */}
                 <Button
@@ -523,13 +521,13 @@ export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
                     setSearchResults(null);
                     setSearchQueryInfo(null);
                   }}
+                  className="text-lg"
                 >
                   전체 목록 보기 {/* 버튼 텍스트 변경 */}
                 </Button>
               </div>
               {searchResults.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-22">
-                  {' '}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-x-6 gap-y-14 items-start">
                   {/* 그리드 클래스 수정 */}
                   {searchResults.map((result, index) => (
                     <GridMatchingCard
@@ -558,10 +556,10 @@ export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <SearchIcon className="w-8 h-8 text-gray-400" />
                   </div>
-                  <h3 className="text-gray-900 mb-2">
+                  <h3 className="text-lg text-gray-900 mb-2">
                     표시할 추천 결과가 없습니다
                   </h3>
-                  <p className="text-gray-600 mb-6">
+                  <p className="text-base text-gray-600 mb-6">
                     검색 조건을 다시 입력하거나 다른 키워드로 시도해보세요.
                   </p>
                   {/* 검색 결과가 없을 때의 초기화 버튼은 제거 */}
@@ -580,7 +578,7 @@ export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
               추천할 동행이 없습니다.
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-14 mt-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-x-6 gap-y-14 mt-8 items-start">
               {recommendedPosts.map((post, index) => (
                 <GridMatchingCard
                   key={post.id}
@@ -601,7 +599,7 @@ export function MainPage({ fetchTrigger, isLoggedIn }: MainPageProps) {
             </div>
           )}
         </section>
-      </div>
+      </PageContainer>
 
       {/* PostDetail Panel 및 오버레이 */}
       <div

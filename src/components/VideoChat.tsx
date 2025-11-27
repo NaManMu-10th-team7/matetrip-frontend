@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import {
   AlertCircle,
   Loader2,
@@ -11,6 +10,7 @@ import {
   Video,
   VideoOff,
   WifiOff,
+  X, // 닫기 버튼 아이콘 추가
 } from 'lucide-react';
 import {
   type Attendee,
@@ -27,29 +27,36 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { useAuthStore } from '../store/authStore';
 import client from '../api/client';
-import type { ActiveMember } from '../types/member';
+import { cn } from './ui/utils'; // cn 유틸리티 임포트
 
 // amazon-chime-sdk-js는 브라우저 환경에서 node의 global 객체를 기대하므로 안전하게 polyfill
-if (typeof window !== 'undefined' && typeof (window as any).global === 'undefined') {
+if (typeof (global as any) === 'undefined' && typeof window !== 'undefined') {
   (window as any).global = window;
 }
 
 interface Props {
   workspaceId: string;
   onClose: () => void;
-  activeMembers?: ActiveMember[];
+  activeMembers?: {
+    id: string;
+    name: string;
+    avatar?: string;
+    userId?: string;
+    profileId?: string;
+    email?: string;
+  }[];
 }
 
 interface JoinResponse {
-  meeting: any; // The Meeting type is not exported from the SDK
+  meeting: any; // `Meeting` 타입이 export되지 않으므로 any로 변경
   attendee: Attendee;
 }
 
 type MeetingStatus = 'idle' | 'joining' | 'joined' | 'error';
 
 interface TileInfo {
-  tileId: number;
-  attendeeId: string | null;
+  tileId: number | null; // null이 될 수 있으므로 타입 변경
+  attendeeId: string;
   name: string;
   externalUserId?: string;
   isLocal: boolean;
@@ -69,32 +76,27 @@ export const VideoChat = ({
   const [status, setStatus] = useState<MeetingStatus>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isMicMuted, setIsMicMuted] = useState(true);
-  const [isCameraOn, setIsCameraOn] = useState(false);
+  const [isCameraOn, setIsCameraOn] = useState(false); // 카메라 기본값 OFF
   const [tiles, setTiles] = useState<TileInfo[]>([]);
   const [participantCount, setParticipantCount] = useState(0);
-  const [isOverlayCollapsed, setIsOverlayCollapsed] = useState(false);
 
   const audioVideoRef = useRef<AudioVideoFacade | null>(null);
   const meetingSessionRef = useRef<DefaultMeetingSession | null>(null);
   const videoElementRefs = useRef<Record<number, HTMLVideoElement | null>>({});
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
   const observerRef = useRef<AudioVideoObserver | null>(null);
-  const attendeePresenceHandlerRef =
-    useRef<
-      | ((
-          attendeeId: string,
-          present: boolean,
-          externalUserId?: string,
-          dropped?: boolean
-        ) => void)
-      | null
-    >(null);
+  const attendeePresenceHandlerRef = useRef<
+    | ((
+        attendeeId: string,
+        present: boolean,
+        externalUserId?: string,
+        dropped?: boolean
+      ) => void)
+    | null
+  >(null);
   const attendeeNamesRef = useRef<Record<string, string>>({});
 
-  const localDisplayName = useMemo(
-    () => username?.trim() || 'Me',
-    [username]
-  );
+  const localDisplayName = useMemo(() => username?.trim() || 'Me', [username]);
 
   const resetSessionState = useCallback(() => {
     setIsMicMuted(true);
@@ -118,6 +120,9 @@ export const VideoChat = ({
       }
       audioVideo.stopLocalVideoTile();
       audioVideo.stop();
+      // [추가] 명시적으로 비디오/오디오 입력 중지
+      audioVideo.stopVideoInput();
+      audioVideo.stopAudioInput();
     }
 
     audioVideoRef.current = null;
@@ -129,17 +134,23 @@ export const VideoChat = ({
 
   useEffect(() => cleanupMeeting, [cleanupMeeting]);
 
-  const bindVideoElement = useCallback((tileId: number, el: HTMLVideoElement | null) => {
-    videoElementRefs.current[tileId] = el;
-    if (audioVideoRef.current && el) {
-      audioVideoRef.current.bindVideoElement(tileId, el);
-    }
-  }, []);
+  const bindVideoElement = useCallback(
+    (tileId: number, el: HTMLVideoElement | null) => {
+      videoElementRefs.current[tileId] = el;
+      if (audioVideoRef.current && el) {
+        audioVideoRef.current.bindVideoElement(tileId, el);
+      }
+    },
+    []
+  );
 
-  const updateParticipantCount = useCallback((names: Record<string, string>) => {
-    const uniqueIds = Object.keys(names);
-    setParticipantCount(uniqueIds.length);
-  }, []);
+  const updateParticipantCount = useCallback(
+    (names: Record<string, string>) => {
+      // [수정] attendeeNamesRef.current에 로컬 사용자가 이미 포함되어 있으므로, 단순히 키의 개수를 셉니다.
+      setParticipantCount(Object.keys(names).length);
+    },
+    []
+  );
 
   const handleJoin = async () => {
     if (!workspaceId || !userId) {
@@ -182,53 +193,55 @@ export const VideoChat = ({
         await audioVideo.startAudioInput(audioInputs[0].deviceId);
       }
 
-      const videoInputs = await audioVideo.listVideoInputDevices();
-      if (videoInputs.length > 0) {
-        await audioVideo.startVideoInput(videoInputs[0].deviceId);
-      }
+      // [수정] 카메라를 자동으로 켜지 않음. 로컬 비디오 타일은 시작하지 않음.
+      setIsCameraOn(false);
 
       const observer: AudioVideoObserver = {
         audioVideoDidStart: () => setStatus('joined'),
         videoTileDidUpdate: (tileState: VideoTileState) => {
           if (!tileState.boundAttendeeId || tileState.isContent) return;
 
-          const isLocal = tileState.boundAttendeeId === meetingSession.configuration.credentials?.attendeeId;
+          const boundAttendeeId = tileState.boundAttendeeId;
+
+          const isLocal =
+            boundAttendeeId ===
+            meetingSession.configuration.credentials?.attendeeId;
           const name = resolveParticipantName(
-            tileState.boundAttendeeId,
-            tileState.boundExternalUserId ?? undefined,
+            boundAttendeeId,
+            tileState.boundExternalUserId,
             isLocal
           );
-          const isVideoActive = !!tileState.active && !tileState.paused;
+          // [추가] 로컬 타일의 isVideoActive 상태를 isCameraOn과 동기화
+          const isVideoActive = isLocal
+            ? isCameraOn
+            : !!tileState.active && !tileState.paused;
 
           if (!isLocal) {
-            attendeeNamesRef.current[tileState.boundAttendeeId] = name;
+            attendeeNamesRef.current[boundAttendeeId] = name;
             updateParticipantCount(attendeeNamesRef.current);
           }
 
           setTiles((prev) => {
             const others = prev.filter((t) => t.tileId !== tileState.tileId);
-            return [
+            const newTiles = [
               ...others,
               {
-                tileId: tileState.tileId as number,
-                attendeeId: tileState.boundAttendeeId,
+                tileId: tileState.tileId,
+                attendeeId: boundAttendeeId,
                 name,
                 externalUserId: tileState.boundExternalUserId ?? undefined,
                 isLocal,
                 isVideoActive,
               },
             ];
+            return newTiles;
           });
-
-          if (tileState.tileId) {
-            const videoEl = videoElementRefs.current[tileState.tileId];
-            if (videoEl) {
-              audioVideo.bindVideoElement(tileState.tileId, videoEl);
-            }
-          }
         },
         videoTileWasRemoved: (tileId: number) => {
-          setTiles((prev) => prev.filter((t) => t.tileId !== tileId));
+          setTiles((prev) => {
+            const newTiles = prev.filter((t) => t.tileId !== tileId);
+            return newTiles;
+          });
         },
         audioVideoDidStop: () => {
           setStatus('idle');
@@ -239,6 +252,7 @@ export const VideoChat = ({
       observerRef.current = observer;
       audioVideo.addObserver(observer);
 
+      // [수정] 로컬 사용자 이름은 여기서 한 번만 추가
       attendeeNamesRef.current[data.attendee.attendeeId] = localDisplayName;
       updateParticipantCount(attendeeNamesRef.current);
 
@@ -247,10 +261,17 @@ export const VideoChat = ({
         present: boolean,
         externalUserId?: string
       ) => {
-      const externalMatch =
-        nameFromExternal(externalUserId) ||
-        activeMemberNameMap[attendeeId] ||
-        activeMemberNameMap[attendeeId.toLowerCase()];
+        // [수정] 로컬 사용자는 presenceHandler에서 처리하지 않음
+        if (
+          attendeeId === meetingSession.configuration.credentials?.attendeeId
+        ) {
+          return;
+        }
+
+        const externalMatch =
+          nameFromExternal(externalUserId) ||
+          activeMemberNameMap[attendeeId] ||
+          activeMemberNameMap[attendeeId.toLowerCase()];
 
         attendeeNamesRef.current = {
           ...attendeeNamesRef.current,
@@ -258,8 +279,8 @@ export const VideoChat = ({
             ? {
                 [attendeeId]: resolveParticipantName(
                   attendeeId,
-                  externalUserId ?? externalMatch ?? undefined,
-                  attendeeId === meetingSession.configuration.credentials?.attendeeId
+                  externalUserId || externalMatch || undefined,
+                  false // isLocal은 항상 false
                 ),
               }
             : {}),
@@ -283,7 +304,6 @@ export const VideoChat = ({
       audioVideo.start();
       audioVideo.realtimeMuteLocalAudio();
       setIsMicMuted(true);
-      setIsCameraOn(false);
     } catch (error: any) {
       console.error('Amazon Chime 회의 접속 실패:', error);
       setStatus('error');
@@ -331,6 +351,7 @@ export const VideoChat = ({
       return;
     }
 
+    // [수정] 카메라 켤 때 순서 명확히
     await audioVideo.startVideoInput(videoInputs[0].deviceId);
     audioVideo.startLocalVideoTile();
     setIsCameraOn(true);
@@ -364,35 +385,60 @@ export const VideoChat = ({
   const nameFromExternal = useCallback(
     (externalUserId?: string) => {
       if (!externalUserId) return null;
-      const trimmed = externalUserId.trim();
-      const byId = activeMemberNameMap[trimmed] || activeMemberNameMap[trimmed.toLowerCase()];
+
+      // [수정] 비알파벳 숫자 접두사 제거
+      const cleanedExternalUserId = externalUserId.replace(
+        /^[^a-zA-Z0-9]+/,
+        ''
+      );
+      const trimmed = cleanedExternalUserId.trim();
+
+      // [추가] externalUserId가 userId와 동일한 경우 activeMemberNameMap에서 찾도록
+      const memberByUserId = activeMembers.find(
+        (member) => member.userId === trimmed
+      );
+      if (memberByUserId) return memberByUserId.name;
+
+      const byId =
+        activeMemberNameMap[trimmed] ||
+        activeMemberNameMap[trimmed.toLowerCase()];
       if (byId) return byId;
       if (!isUuid(trimmed)) return trimmed;
       return null;
     },
-    [activeMemberNameMap, isUuid]
+    [activeMemberNameMap, isUuid, activeMembers]
   );
 
   const resolveParticipantName = useCallback(
     (
       attendeeId: string,
-      externalUserId: string | undefined,
+      externalUserId: string | undefined | null,
       isLocal: boolean
     ) => {
-      if (isLocal) return localDisplayName;
+      if (isLocal) {
+        return localDisplayName;
+      }
 
-      const extName = nameFromExternal(externalUserId);
-      if (extName) return extName;
+      const extName = nameFromExternal(externalUserId ?? undefined);
+      if (extName) {
+        return extName;
+      }
 
       const mappedByAttendeeId =
         activeMemberNameMap[attendeeId] ||
         activeMemberNameMap[attendeeId.toLowerCase()];
-      if (mappedByAttendeeId) return mappedByAttendeeId;
+      if (mappedByAttendeeId) {
+        return mappedByAttendeeId;
+      }
 
       const stored = attendeeNamesRef.current[attendeeId];
-      if (stored && !isUuid(stored)) return stored;
+      if (stored && !isUuid(stored)) {
+        return stored;
+      }
 
-      if (externalUserId && !isUuid(externalUserId)) return externalUserId.trim();
+      if (externalUserId && !isUuid(externalUserId)) {
+        return externalUserId.trim();
+      }
 
       return '참가자';
     },
@@ -400,10 +446,6 @@ export const VideoChat = ({
   );
 
   const isBusy = status === 'joining';
-  const overlayRoot =
-    typeof document !== 'undefined'
-      ? document.getElementById('map-video-overlay-root')
-      : null;
 
   useEffect(() => {
     if (tiles.length === 0) return;
@@ -431,10 +473,17 @@ export const VideoChat = ({
     }
   }, [activeMembers, tiles, resolveParticipantName, updateParticipantCount]);
 
+  // [추가] joined 상태가 되고 isCameraOn이 false일 때 로컬 비디오 타일 중지
+  useEffect(() => {
+    if (status === 'joined' && !isCameraOn && audioVideoRef.current) {
+      audioVideoRef.current.stopLocalVideoTile();
+    }
+  }, [status, isCameraOn]);
+
   const renderVideoTiles = () => {
     if (tiles.length === 0) {
       return (
-        <div className="col-span-1 flex aspect-video w-full max-h-[220px] flex-col items-center justify-center gap-2 rounded-md border border-dashed border-gray-300 bg-gray-50 text-gray-500">
+        <div className="col-span-1 flex aspect-video w-full max-h-[180px] flex-col items-center justify-center gap-2 rounded-md border border-dashed border-gray-300 bg-gray-50 text-gray-500">
           {status === 'joining' ? (
             <Loader2 className="h-6 w-6 animate-spin" />
           ) : (
@@ -447,15 +496,36 @@ export const VideoChat = ({
       );
     }
 
+    // 참가자 수에 따라 그리드 레이아웃 동적 변경
+    const gridColsClass = tiles.length > 1 ? 'grid-cols-2' : 'grid-cols-1';
+    const tileHeightClass =
+      tiles.length > 1
+        ? 'min-h-[120px] max-h-[180px]'
+        : 'min-h-[160px] max-h-[220px]';
+
     return (
-      <div className="grid grid-cols-1 gap-2 max-h-[440px] overflow-y-auto">
+      <div
+        className={cn(
+          'grid gap-2',
+          gridColsClass,
+          tiles.length > 2 ? 'max-h-[360px]' : 'max-h-[220px]',
+          'overflow-y-auto'
+        )}
+      >
         {tiles.map((tile) => (
           <div
             key={tile.tileId}
-            className="relative flex aspect-video w-full min-h-[160px] max-h-[220px] overflow-hidden rounded-md bg-gray-900 text-white shadow-inner"
+            className={cn(
+              'relative flex aspect-video w-full overflow-hidden rounded-md bg-gray-900 text-white shadow-inner',
+              tileHeightClass
+            )}
           >
             <video
-              ref={(el) => bindVideoElement(tile.tileId, el)}
+              ref={(el: HTMLVideoElement | null) => {
+                if (tile.tileId !== null) {
+                  bindVideoElement(tile.tileId, el);
+                }
+              }}
               className={`h-full w-full object-cover ${
                 tile.isLocal
                   ? !isCameraOn
@@ -490,66 +560,44 @@ export const VideoChat = ({
     );
   };
 
-  const overlayContent =
-    overlayRoot && (status === 'joining' || status === 'joined')
-      ? createPortal(
-          <div className="pointer-events-auto w-[320px] max-w-[88vw] mt-14">
-            <div className="mb-1 flex justify-end">
-              {isOverlayCollapsed && (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="rounded-full bg-gray-900 text-white hover:bg-gray-800"
-                  onClick={() => setIsOverlayCollapsed(false)}
-                >
-                  <Video className="h-4 w-4 mr-2" />
-                  영상 다시 보기
-                </Button>
-              )}
-            </div>
-            <div
-              className={`overflow-hidden rounded-xl border border-gray-200 bg-white/90 shadow-lg backdrop-blur ${
-                isOverlayCollapsed ? 'hidden' : ''
-              }`}
-            >
-              <div className="flex items-center justify-between gap-2 bg-gray-900 px-3 py-2 text-white">
-                <div className="flex items-center gap-2">
-                  <Video className="h-4 w-4" />
-                  <span className="text-sm font-semibold">화상 통화</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge
-                    variant="secondary"
-                    className="bg-white/20 text-white hover:bg-white/30"
-                  >
-                    참가자 {participantCount}명
-                  </Badge>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 text-white/80 hover:bg-white/10"
-                    onClick={() => setIsOverlayCollapsed(true)}
-                  >
-                    접기
-                  </Button>
-                </div>
-              </div>
-              <div className="bg-gray-50 p-2">{renderVideoTiles()}</div>
-            </div>
-          </div>,
-          overlayRoot
-        )
-      : null;
-
   return (
-    <div className="flex flex-col gap-4 rounded-lg border bg-white p-4 shadow-sm">
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <div className="flex w-full flex-row gap-2 md:w-auto md:min-w-[160px] md:flex-nowrap">
+    <div className="flex h-full flex-col rounded-lg border border-gray-200 bg-white shadow-sm">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-4 py-3">
+        <div className="flex items-center gap-2">
+          <Video className="h-5 w-5 text-primary" />
+          <h3 className="text-lg font-semibold text-gray-800">화상 통화</h3>
+          <Badge
+            variant={status === 'joined' ? 'default' : 'secondary'}
+            className={cn(
+              'flex items-center gap-1',
+              status === 'joined'
+                ? 'bg-green-500 text-white'
+                : 'bg-gray-300 text-gray-700'
+            )}
+          >
+            <Users className="h-4 w-4" />
+            <span>참가자 {participantCount}명</span>
+          </Badge>
+        </div>
+        <Button size="icon" variant="ghost" onClick={handleLeave}>
+          <X className="h-5 w-5 text-gray-500" />
+        </Button>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-y-auto p-4">
+        {status === 'idle' && (
+          <div className="flex flex-col items-center justify-center gap-4 py-8">
+            <VideoOff className="h-12 w-12 text-gray-400" />
+            <p className="text-center text-gray-600">
+              아직 회의에 참여하지 않았습니다. <br />
+              아래 버튼을 눌러 화상 통화를 시작하세요.
+            </p>
             <Button
               onClick={handleJoin}
               disabled={isBusy}
-              className="flex-1 md:w-32"
+              className="w-full max-w-[200px]"
             >
               {isBusy ? (
                 <span className="flex items-center gap-2">
@@ -560,100 +608,94 @@ export const VideoChat = ({
                 '회의 접속'
               )}
             </Button>
-            <Button
-              onClick={handleLeave}
-              variant="secondary"
-              className="flex-1 bg-red-100 text-red-700 hover:bg-red-200 md:w-28"
-            >
-              종료
+          </div>
+        )}
+
+        {status === 'joining' && (
+          <div className="flex flex-col items-center justify-center gap-4 py-8">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <p className="text-center text-gray-600">
+              화상 통화에 연결 중입니다... <br />
+              잠시만 기다려주세요.
+            </p>
+          </div>
+        )}
+
+        {status === 'error' && errorMessage && (
+          <div className="flex flex-col items-center justify-center gap-4 py-8">
+            <AlertCircle className="h-12 w-12 text-red-500" />
+            <p className="text-center text-red-600">
+              회의 연결에 실패했습니다. <br />
+              {errorMessage}
+            </p>
+            <Button onClick={handleJoin} className="w-full max-w-[200px]">
+              재시도
             </Button>
           </div>
-        </div>
+        )}
 
-        <div className="flex flex-wrap items-center gap-3">
-          <Badge
-            variant={status === 'joined' ? 'default' : 'secondary'}
-            className="flex items-center gap-1"
-          >
-            <Users className="h-4 w-4" />
-            <span>참가자 {participantCount}명</span>
-          </Badge>
-          {status === 'joining' && (
-            <span className="flex items-center gap-2 text-sm text-gray-600">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              연결 중입니다...
-            </span>
-          )}
-          {status === 'joined' && (
-            <span className="flex items-center gap-2 text-sm text-green-700">
-              <Video className="h-4 w-4" />
-              Amazon Chime에 연결됨
-            </span>
-          )}
-          {status === 'error' && errorMessage && (
-            <div className="flex items-center gap-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-              <AlertCircle className="h-4 w-4" />
-              <span className="flex-1">{errorMessage}</span>
+        {status === 'joined' && (
+          <>
+            <div className="mb-4">{renderVideoTiles()}</div>{' '}
+            {/* 영상 타일 직접 렌더링 */}
+            <div className="flex flex-wrap items-center justify-center gap-2">
               <Button
-                size="sm"
-                variant="ghost"
-                className="text-red-700 hover:bg-red-100"
-                onClick={handleJoin}
+                size="icon"
+                variant={isMicMuted ? 'destructive' : 'secondary'}
+                onClick={toggleMic}
+                className={cn(
+                  'h-12 w-12 rounded-full',
+                  isMicMuted
+                    ? 'bg-red-500 hover:bg-red-600 text-white'
+                    : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                )}
               >
-                재시도
+                {isMicMuted ? (
+                  <MicOff className="h-6 w-6" />
+                ) : (
+                  <Mic className="h-6 w-6" />
+                )}
+              </Button>
+              <Button
+                size="icon"
+                variant={isCameraOn ? 'secondary' : 'destructive'}
+                onClick={toggleCamera}
+                className={cn(
+                  'h-12 w-12 rounded-full',
+                  isCameraOn
+                    ? 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                    : 'bg-red-500 hover:bg-red-600 text-white'
+                )}
+              >
+                {isCameraOn ? (
+                  <Video className="h-6 w-6" />
+                ) : (
+                  <VideoOff className="h-6 w-6" />
+                )}
+              </Button>
+              <Button
+                size="icon"
+                variant="secondary"
+                onClick={handleJoin}
+                disabled={isBusy}
+                className="h-12 w-12 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-700"
+              >
+                <RefreshCw className="h-6 w-6" />
+              </Button>
+              <Button
+                size="icon"
+                variant="destructive"
+                onClick={handleLeave}
+                className="h-12 w-12 rounded-full bg-red-500 hover:bg-red-600 text-white"
+              >
+                <X className="h-6 w-6" />
               </Button>
             </div>
-          )}
-        </div>
-      </div>
-
-      <div className="rounded-md border border-dashed border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
-        {overlayRoot ? (
-          <div className="flex items-center gap-2">
-            <Video className="h-4 w-4 text-gray-500" />
-            <span>영상은 지도 오른쪽 상단 레이어에서 표시됩니다.</span>
-          </div>
-        ) : (
-          renderVideoTiles()
+          </>
         )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          size="icon"
-          variant={isMicMuted ? 'destructive' : 'secondary'}
-          onClick={toggleMic}
-          disabled={status !== 'joined'}
-          className="h-10 w-10 rounded-full"
-        >
-          {isMicMuted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
-        </Button>
-        <Button
-          size="icon"
-          variant={isCameraOn ? 'secondary' : 'destructive'}
-          onClick={toggleCamera}
-          disabled={status !== 'joined'}
-          className="h-10 w-10 rounded-full"
-        >
-          {isCameraOn ? (
-            <Video className="h-5 w-5" />
-          ) : (
-            <VideoOff className="h-5 w-5" />
-          )}
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="flex items-center gap-2 text-gray-600 hover:bg-gray-100"
-          onClick={handleJoin}
-          disabled={isBusy}
-        >
-          <RefreshCw className="h-4 w-4" />
-          재접속
-        </Button>
-      </div>
       <audio ref={audioElementRef} className="hidden" />
-      {overlayContent}
     </div>
   );
 };

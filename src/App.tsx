@@ -33,6 +33,7 @@ import { Toaster /*, toast*/ } from 'sonner'; // toast 제거
 import { ProfileModal } from './components/ProfileModal';
 import PublicOnlyRoute from './components/PublicOnlyRoute';
 import { MatchSearchResults } from './components/MatchSearchResults';
+import RealMainPage from './page/RealMainPage';
 // Layout component for pages with Sidebar
 function Layout({
   isLoggedIn,
@@ -204,7 +205,7 @@ function WorkspaceWrapper() {
   const planDayDtos = location.state?.planDayDtos || [];
 
   const handleEndTrip = () => {
-    navigate('/');
+    navigate('/save'); // 이 부분을 '/'에서 '/save'로 변경합니다.
   };
 
   return (
@@ -289,7 +290,7 @@ export default function App() {
     // 로그인 성공 후, Zustand 스토어의 checkAuth를 호출하여 상태를 동기화합니다.
     // 이 시점에서 서버는 HttpOnly 쿠키를 설정했을 것입니다.
     checkAuth();
-    navigate('/');
+    navigate('/main');
   };
 
   const handleLogout = async () => {
@@ -322,6 +323,11 @@ export default function App() {
     setFetchTrigger((prev) => prev + 1); // fetch 트리거 상태 변경
   };
 
+  const handlePostCreated = () => {
+    setShowCreatePost(false); // 모달 닫기
+    setFetchTrigger((prev) => prev + 1); // 목록 새로고침을 위해 트리거
+  };
+
   const handleAIChatClick = () => {
     setChatPanelOpen(true);
   };
@@ -339,10 +345,23 @@ export default function App() {
     <div className="h-screen bg-gray-50">
       {' '}
       {/* h-screen 유지 */}
-      <Toaster richColors position="top-right" />
+      <Toaster
+        richColors
+        position="top-right"
+        toastOptions={{
+          style: {
+            padding: '1.5rem', // 20px
+            fontSize: '1rem', // 18px, 원하는 크기로 조절
+            minHeight: '60px',
+          },
+        }}
+      />
       {isLoggedIn && <NotificationListener />}
       <Routes location={background || location}>
         {/* Routes without Header */}
+        {/* Landing Page */}
+        <Route path="/" element={<RealMainPage />} />
+
         <Route element={<PublicOnlyRoute />}>
           <Route
             path="/login"
@@ -367,11 +386,10 @@ export default function App() {
           }
         >
           <Route
-            path="/"
+            path="/main"
             element={
               <NewMainPageWrapper
-                onCreatePost={() => setShowCreatePost(true)}
-                onJoinWorkspace={(postId, workspaceName) => {
+                onCreatePost={() => setShowCreatePost(true)} onJoinWorkspace={(postId, workspaceName) => {
                   const createAndNavigate = async () => {
                     try {
                       const response =
@@ -379,8 +397,7 @@ export default function App() {
                           '/workspace',
                           { postId, workspaceName }
                         );
-                      const { planDayDtos, workspaceResDto } = response.data;
-                      const { id, workspaceName: resWorkspaceName } =
+                      const { planDayDtos, workspaceResDto } = response.data; const { id, workspaceName: resWorkspaceName } =
                         workspaceResDto;
                       navigate(`/workspace/${id}`, {
                         state: {
@@ -423,8 +440,7 @@ export default function App() {
             element={
               <AllPostsPageWrapper
                 // onViewPost={handleViewPost} // onViewPost prop 제거
-                fetchTrigger={fetchTrigger}
-                onJoinWorkspace={(postId, workspaceName) => {
+                fetchTrigger={fetchTrigger} onJoinWorkspace={(postId, workspaceName) => {
                   const createAndNavigate = async () => {
                     try {
                       const response =
@@ -432,8 +448,7 @@ export default function App() {
                           '/workspace',
                           { postId, workspaceName }
                         );
-                      const { planDayDtos, workspaceResDto } = response.data;
-                      const { id, workspaceName: resWorkspaceName } =
+                      const { planDayDtos, workspaceResDto } = response.data; const { id, workspaceName: resWorkspaceName } =
                         workspaceResDto;
                       navigate(`/workspace/${id}`, {
                         state: {
@@ -468,9 +483,7 @@ export default function App() {
             element={
               <MyTripsPage
                 // onViewPost={handleViewPost} // onViewPost prop 제거
-                isLoggedIn={isLoggedIn}
-                fetchTrigger={fetchTrigger}
-                onJoinWorkspace={(postId, workspaceName) => {
+                isLoggedIn={isLoggedIn} fetchTrigger={fetchTrigger} onJoinWorkspace={(postId, workspaceName) => {
                   const createAndNavigate = async () => {
                     try {
                       const response =
@@ -478,8 +491,7 @@ export default function App() {
                           '/workspace',
                           { postId, workspaceName }
                         );
-                      const { planDayDtos, workspaceResDto } = response.data;
-                      const { id, workspaceName: resWorkspaceName } =
+                      const { planDayDtos, workspaceResDto } = response.data; const { id, workspaceName: resWorkspaceName } =
                         workspaceResDto;
                       navigate(`/workspace/${id}`, {
                         state: {
@@ -518,8 +530,7 @@ export default function App() {
                           '/workspace',
                           { postId, workspaceName }
                         );
-                      const { planDayDtos, workspaceResDto } = response.data;
-                      const { id, workspaceName: resWorkspaceName } =
+                      const { planDayDtos, workspaceResDto } = response.data; const { id, workspaceName: resWorkspaceName } =
                         workspaceResDto;
                       navigate(`/workspace/${id}`, {
                         state: {
@@ -619,7 +630,10 @@ setShowEditPost(true);
       )} */}
       <AIChatPanel open={chatPanelOpen} onOpenChange={setChatPanelOpen} />
       {showCreatePost && (
-        <CreatePostModal onClose={() => setShowCreatePost(false)} />
+        <CreatePostModal
+          onClose={() => setShowCreatePost(false)}
+          onPostCreated={handlePostCreated}
+        />
       )}
       {showEditPost && selectedPostForEdit && (
         <EditPostModal
